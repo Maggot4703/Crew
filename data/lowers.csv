@@ -1,0 +1,11 @@
+LOWERS,REASON
+arcs.csv,WHAT
+clones.csv,no need
+columns.csv,list all columns in db
+encounters.csv,meetings
+locations.csv,locations
+lowers.csv,important
+npcs.csv,WHO
+schedules.csv,WHERE
+sequences.csv,WHEN
+tlinks.csv,WHY

@@ -1,0 +1,45 @@
+
+##########
+
+create conways game of life in python to view in a browser
+
+##########
+
+GetLinks(<NPC>,<LINK>,<TO>)
+write a function in python to:
+	select .csv file
+	select search words (look for 'Capitalized' words in <COL>)
+	search all csv files in directory for links and list links as links.txt
+	
+	open every web page in <LINK> to take a snapshot of web page
+	find main pictures and list in file called pics.txt
+	search words capitalized
+
+##########
+
+create ai agent to investigate 'Traveller 5' rpg websites and supply list of links from the top 100 sites
+
+##########
+
+use *args as a non-keyword argument. You will then be able to pass any number of arguments.
+def manyArgs(*arg):
+  print "I was called with", len(arg), "arguments:", arg
+
+>>> manyArgs(1)
+I was called with 1 arguments: (1,)
+>>> manyArgs(1, 2, 3)def myfunc2(*args, **kwargs):
+   for a in args:
+       print a
+   for k,v in kwargs.iteritems():
+       print "%s = %s" % (k, v)
+
+myfunc2(1, 2, 3, banan=123)
+# 1
+# 2
+# 3
+# banan = 123
+
+I was called with 3 arguments: (1, 2, 3)
+
+##########
+
