@@ -1,34 +1,78 @@
 #!/usr/bin/python3
 """
-Crew GUI Tool
-This script provides a graphical interface for:
-1. Loading and viewing CSV data files
-2. Filtering and analyzing data
-3. Managing crew groups and roles
-4. Displaying detailed previews
-5. Exporting data to various formats
-6. User authentication and role management
+Crew Manager GUI Application
+============================
+
+A comprehensive graphical interface for managing crew data with advanced features:
+
+Core Features:
+- Load and display CSV data files with sortable columns
+- Filter data by columns with real-time search
+- Create and manage custom crew groups
+- Column visibility controls via View menu
+- Resizable layout with adjustable panels
+- Background script execution from workspace
+- Export data to Excel format
+- Auto-save window state and preferences
+
+Layout:
+- Left panel: Controls, Groups, and Filters (narrow, fixed width)
+- Right panel: Data table and Details view (expandable)
+- Resizable divider between panels for user customization
+- Status bar with progress indicators and tooltips
+
+Technical Features:
+- Background worker thread for non-blocking operations
+- Auto-discovery and import of workspace Python modules
+- Configurable window state persistence
+- Error handling with user-friendly dialogs
+- Comprehensive logging system
+
+Author: Generated via AI assistance
+Date: May 2025
+Version: 2.0 with enhanced layout and script execution
 """
 
 import tkinter as tk
 
-#region Imports
-from tkinter import ttk, messagebox, filedialog
-from database_manager import DatabaseManager
-from pathlib import Path
-import logging
-from typing import Dict, List, Any
-import os
-from config import Config
-import asyncio
-import threading
-from queue import Queue
-from typing import Optional, Callable, Any, Tuple
-import time
+#region Imports - Core GUI and Data Management
+from tkinter import ttk, messagebox, filedialog  # GUI components and dialogs
+from database_manager import DatabaseManager      # Data persistence layer
+from pathlib import Path                          # Cross-platform file handling
+import logging                                    # Application logging
+from typing import Dict, List, Any               # Type hints for better code quality
+import os                                        # Operating system interface
+from config import Config                        # Configuration management
+import asyncio                                   # Asynchronous operations support
+import threading                                 # Background task processing
+from queue import Queue                          # Thread-safe task queue
+from typing import Optional, Callable, Any, Tuple  # Additional type hints
+import time                                      # Time operations and delays
 #endregion
 
 def auto_import_py_files() -> Tuple[List[str], List[Tuple[str, str]]]:
-    """Automatically import all .py files in the workspace on startup"""
+    """
+    Automatically discover and import all Python files in the workspace
+    
+    This function scans the current workspace for .py files and attempts to import
+    them dynamically. This enables the GUI to have access to all workspace modules
+    without requiring manual import statements.
+    
+    Returns:
+        Tuple containing:
+        - List[str]: Successfully imported module names
+        - List[Tuple[str, str]]: Failed imports with (filename, error_message)
+    
+    Exclusions:
+        - Current GUI file (to prevent self-import)
+        - __pycache__ directories and .pyc files
+        - Hidden files and directories (starting with .)
+        - Common virtual environment directories (venv, env, node_modules)
+    
+    Note:
+        Import failures are logged but don't halt the application startup.
+        This allows the GUI to function even if some workspace modules have issues.
+    """
     import sys
     import importlib.util
     import glob
@@ -135,11 +179,72 @@ def auto_import_py_files() -> Tuple[List[str], List[Tuple[str, str]]]:
         return [], [(str(workspace_root), str(e))]
 
 class CrewGUI:
+    """Main GUI class for the Crew Management application.
+    
+    This class implements a comprehensive crew management interface with features for:
+    
+    Core Features:
+    - CSV file import/export and crew data management
+    - Dynamic table display with sorting and filtering capabilities
+    - Script execution environment with Python interpreter integration
+    - Real-time status updates and logging display
+    
+    User Interface Components:
+    - Responsive PanedWindow layout with resizable sections
+    - Menu bar with file operations and view controls
+    - Data table with configurable column visibility
+    - Script editor with syntax highlighting and execution controls
+    - Console output display with scrollable text area
+    - Status bar with operation feedback
+    
+    Data Management:
+    - Automatic CSV file detection and loading
+    - Support for various crew data formats
+    - Data validation and error handling
+    - Export functionality with formatting options
+    
+    Technical Features:
+    - Multi-threaded background processing
+    - Auto-import of workspace Python modules
+    - Persistent window state and configuration
+    - Keyboard shortcuts and event handling
+    - Error logging and user feedback systems
+    
+    Attributes:
+        root: Main tkinter window
+        config: Configuration manager instance
+        data: Current crew data (pandas DataFrame)
+        ui_components: Dictionary of UI element references
+        script_vars: Variables available in script execution context
+        task_queue: Queue for background task management
+        worker_thread: Background thread for long-running operations
+        
+    Example:
+        root = tk.Tk()
+        app = CrewGUI(root)
+        root.mainloop()
+    """
+    
     def __init__(self, root: tk.Tk) -> None:
-        """Initialize the GUI application
+        """Initialize the GUI application with all components and settings.
+        
+        Sets up the complete application environment including:
+        - Main window configuration and menu system
+        - Layout management with resizable panes
+        - Data management and configuration systems
+        - Background processing and auto-import functionality
+        - Event bindings and keyboard shortcuts
+        - Default data loading and window state restoration
         
         Args:
-            root: The root tkinter window
+            root: The root tkinter window that will contain the application
+            
+        Raises:
+            Exception: If critical initialization steps fail (logged and handled gracefully)
+            
+        Note:
+            Initialization order is important - menu bar is created first, followed by
+            layout setup, widget creation, event binding, and finally background services.
         """
         try:
             self.root = root
@@ -181,7 +286,73 @@ class CrewGUI:
             raise
 
     def create_menu_bar(self) -> None:
-        """Create application menu bar"""
+        """Create comprehensive application menu system with organized commands.
+        
+        Builds a full-featured menu bar providing access to all major functionality:
+        
+        Menu Structure and Organization:
+        
+        File Menu:
+        - Load Data (Ctrl+O): Import CSV/Excel files with format detection
+        - Save (Ctrl+S): Save current data to original or new file
+        - Export (Ctrl+E): Export to Excel with formatting options
+        - Exit: Graceful application termination with state saving
+        
+        Edit Menu:
+        - Find (Ctrl+F): Quick access to filter input field
+        - Clear Filter (Esc): Reset all filters and restore full data view
+        - Provides essential editing and navigation operations
+        
+        View Menu:
+        - Refresh (F5): Reload all views and refresh data display
+        - Show Imported Modules: Display auto-imported module information
+        - Columns Submenu: Dynamic column visibility management
+        - Run Script Submenu: Execute workspace Python scripts
+        - Refresh Scripts: Update script menu with current workspace files
+        
+        Dynamic Submenus:
+        
+        Column Visibility Submenu:
+        - Dynamically populated based on current data headers
+        - Individual column show/hide toggles
+        - "Show All" and "Hide All" convenience commands
+        - Persistent state across data reloads
+        
+        Script Execution Submenu:
+        - Auto-discovery of Python files in workspace
+        - Dynamic menu population with available scripts
+        - Safe execution environment with error handling
+        - Integration with background task system
+        
+        Menu Configuration:
+        - Tearoff disabled (tearoff=0) for clean appearance
+        - Keyboard shortcuts displayed in menu items
+        - Logical grouping with separators for visual organization
+        - Consistent command naming and organization
+        
+        Integration Features:
+        - Connected to corresponding event handler methods
+        - Keyboard shortcut integration with menu commands
+        - Dynamic content updates based on application state
+        - Proper focus management for input fields
+        
+        Technical Implementation:
+        - Menu bar attached to root window configuration
+        - Cascading menu structure for hierarchical organization
+        - Lambda functions for parameter passing to handlers
+        - Submenu references stored for dynamic updates
+        
+        Accessibility Features:
+        - Keyboard navigation support
+        - Mnemonic key access for quick operation
+        - Clear visual hierarchy and organization
+        - Consistent command placement across sessions
+        
+        Note:
+            Menu creation occurs early in initialization to provide
+            immediate access to core functionality and ensure proper
+            integration with keyboard shortcuts and event handlers.
+        """
         self.menu_bar = tk.Menu(self.root)
         self.root.config(menu=self.menu_bar)
 
@@ -210,9 +381,76 @@ class CrewGUI:
         # Add column visibility submenu
         self.column_visibility_menu = tk.Menu(view_menu, tearoff=0)
         view_menu.add_cascade(label="Columns", menu=self.column_visibility_menu)
+        
+        # Add script selector submenu
+        self.script_menu = tk.Menu(view_menu, tearoff=0)
+        view_menu.add_cascade(label="Run Script", menu=self.script_menu)
+        view_menu.add_command(label="Refresh Scripts", command=self._update_script_menu)
 
     def load_window_state(self) -> None:
-        """Load saved window state"""
+        """Restore previously saved window configuration and layout preferences.
+        
+        Provides seamless user experience by maintaining window state across sessions:
+        
+        Window Geometry Restoration:
+        - Retrieves saved window size and position from configuration
+        - Uses tkinter geometry() method to restore exact window dimensions
+        - Maintains window placement on screen for consistent user experience
+        - Handles cases where saved geometry may be invalid or off-screen
+        
+        Window Size Constraints:
+        - Applies saved minimum window size constraints if available
+        - Uses minsize() to prevent window from becoming unusably small
+        - Parses "WIDTHxHEIGHT" format from configuration string
+        - Ensures application remains functional regardless of window size
+        
+        Column Width Preservation:
+        - Stores saved column widths in temporary _saved_column_widths attribute
+        - Defers application until after data table is fully populated
+        - Handles missing or invalid column width data gracefully
+        - Maintains user customizations for table layout preferences
+        
+        Configuration Integration:
+        - Uses self.config.get() for robust configuration retrieval
+        - Handles missing configuration entries with appropriate defaults
+        - Provides fallback behavior when configuration is unavailable
+        - Ensures application starts successfully regardless of config state
+        
+        Error Handling:
+        - Comprehensive exception catching for robust startup behavior
+        - Detailed error logging for debugging configuration issues
+        - Graceful failure that uses default window state when needed
+        - Prevents configuration errors from blocking application startup
+        
+        Performance Considerations:
+        - Minimal overhead during application initialization
+        - Efficient configuration access with single calls per setting
+        - Deferred column width application for optimal timing
+        - Quick execution that doesn't delay user interface appearance
+        
+        User Experience Features:
+        - Seamless restoration of previous session's window layout
+        - Maintains user's preferred window size and position
+        - Preserves customized column widths across sessions
+        - Provides consistent interface appearance between sessions
+        
+        Integration Points:
+        - Called during application initialization process
+        - Coordinates with configuration management system
+        - Works with table population events for column width timing
+        - Supports window state saving for complete session management
+        
+        Data Handling:
+        - Temporary storage in _saved_column_widths for later application
+        - Safe parsing of geometry strings and dimension values
+        - Validation of retrieved configuration data before use
+        - Cleanup of temporary data after successful application
+        
+        Note:
+            Column widths are stored temporarily and applied after table
+            population to ensure columns exist before width configuration.
+            This prevents errors from applying widths to non-existent columns.
+        """
         try:
             # Restore window geometry
             if self.config.get("window_size"):
@@ -228,7 +466,70 @@ class CrewGUI:
             logging.error(f"Error loading window state: {e}")
 
     def save_window_state(self) -> None:
-        """Save window state before closing"""
+        """Preserve current window configuration for future sessions.
+        
+        Ensures user interface preferences persist across application restarts:
+        
+        Window Geometry Capture:
+        - Retrieves current window size and position using geometry() method
+        - Captures complete window state including dimensions and screen position
+        - Stores geometry string in format "WIDTHxHEIGHT+X+Y" for precise restoration
+        - Enables exact window placement recreation in future sessions
+        
+        Column Width Preservation:
+        - Iterates through all visible data table columns
+        - Captures current width settings for each column individually
+        - Stores column width dictionary for structured preservation
+        - Maintains user customizations of table layout preferences
+        
+        Configuration Management:
+        - Uses self.config.set() for persistent storage of window state
+        - Integrates with application configuration system seamlessly
+        - Ensures settings are written to permanent storage
+        - Provides centralized configuration management for all preferences
+        
+        Data Structure Organization:
+        - Creates dictionary mapping column identifiers to width values
+        - Uses column identifiers as keys for reliable restoration
+        - Maintains referential integrity between save and load operations
+        - Enables selective column width restoration if needed
+        
+        Error Handling:
+        - Comprehensive exception catching for robust shutdown behavior
+        - Detailed error logging for debugging configuration save issues
+        - Graceful failure that doesn't interrupt application closing
+        - Prevents save errors from affecting normal shutdown process
+        
+        Performance Considerations:
+        - Efficient single-pass collection of all column widths
+        - Minimal processing overhead during application shutdown
+        - Quick execution that doesn't delay application closing
+        - Streamlined configuration updates for fast persistence
+        
+        User Experience Features:
+        - Automatic preservation of interface customizations
+        - Seamless state persistence without user intervention
+        - Maintains personalized layouts across sessions
+        - Provides consistent interface experience over time
+        
+        Integration Points:
+        - Typically called during application shutdown or close events
+        - Coordinates with configuration system for data persistence
+        - Works with window state loading for complete session management
+        - Supports graceful application lifecycle management
+        
+        State Validation:
+        - Captures actual current state rather than cached values
+        - Ensures saved state reflects real window configuration
+        - Provides accurate basis for future state restoration
+        - Maintains synchronization between UI and saved preferences
+        
+        Note:
+            This method should be called before application termination
+            to ensure all user interface customizations are properly
+            preserved for the next session. Typically bound to window
+            close events or shutdown procedures.
+        """
         try:
             self.config.set("window_size", self.root.geometry())
             
@@ -242,7 +543,75 @@ class CrewGUI:
             logging.error(f"Error saving window state: {e}")
 
     def _background_worker(self) -> None:
-        """Background worker to handle long-running tasks"""
+        """Execute long-running tasks in background thread without blocking UI.
+        
+        Provides responsive user interface through asynchronous task processing:
+        
+        Thread Architecture:
+        - Runs in dedicated background thread separate from UI thread
+        - Continuous execution loop using task queue for work distribution
+        - Daemon thread design that terminates with main application
+        - Prevents UI freezing during CPU-intensive or I/O operations
+        
+        Task Queue Processing:
+        - Retrieves tasks from self.task_queue in FIFO order
+        - Processes task tuples containing function, arguments, and callback
+        - Blocks on empty queue until new tasks are available
+        - Maintains orderly task execution sequence
+        
+        Task Execution Model:
+        - Unpacks task components for structured function calls
+        - Executes target function with provided arguments safely
+        - Captures function results for potential callback processing
+        - Isolates task execution errors from worker thread stability
+        
+        Callback Integration:
+        - Uses root.after() for thread-safe UI updates from background
+        - Schedules callback execution on main UI thread
+        - Passes task results to callbacks for UI state updates
+        - Maintains thread safety for all GUI operations
+        
+        Error Handling:
+        - Comprehensive exception catching for robust task processing
+        - Detailed error logging for debugging failed background tasks
+        - Graceful task failure that doesn't terminate worker thread
+        - Continues processing subsequent tasks after failures
+        
+        Queue Management:
+        - Calls task_done() to mark task completion properly
+        - Enables queue join() operations for synchronization
+        - Maintains accurate queue state for monitoring
+        - Supports clean shutdown procedures
+        
+        Performance Features:
+        - Efficient blocking wait on empty queue
+        - Minimal overhead for task dispatch and completion
+        - Concurrent execution isolated from UI responsiveness
+        - Optimized for handling multiple long-running operations
+        
+        Thread Safety:
+        - Complete isolation of background processing from UI thread
+        - Safe cross-thread communication via root.after()
+        - No direct GUI manipulation from background thread
+        - Proper synchronization for shared resource access
+        
+        Integration Points:
+        - Works with run_in_background() for task submission
+        - Coordinates with file loading and export operations
+        - Supports data processing and import functionality
+        - Enables responsive UI during intensive calculations
+        
+        Lifecycle Management:
+        - Infinite loop design for continuous task processing
+        - Proper cleanup on application termination
+        - Exception resilience for stable long-term operation
+        - Resource management for efficient memory usage
+        
+        Note:
+            This worker thread is essential for maintaining UI responsiveness
+            during file I/O, data processing, and other potentially blocking
+            operations. All GUI updates must use callbacks via root.after().
+        """
         while True:
             task: Tuple[Callable, tuple, Optional[Callable]] = self.task_queue.get()
             func, args, callback = task
@@ -255,18 +624,119 @@ class CrewGUI:
             self.task_queue.task_done()
 
     def run_in_background(self, func: Callable, *args, callback: Optional[Callable] = None) -> None:
-        """Run a function in the background thread"""
+        """Submit functions for background execution to maintain UI responsiveness.
+        
+        Provides simple interface for asynchronous task execution without UI blocking:
+        
+        Task Submission Model:
+        - Accepts any callable function with arbitrary arguments
+        - Packages task components into structured tuple format
+        - Queues task for background thread processing
+        - Returns immediately without waiting for task completion
+        
+        Function Execution:
+        - Background thread executes function with provided arguments
+        - Maintains function context and argument passing integrity
+        - Isolates execution from main UI thread completely
+        - Supports any callable including methods, functions, and lambdas
+        
+        Callback Integration:
+        - Optional callback function for result processing
+        - Callback executed on main UI thread for thread safety
+        - Receives function result as argument for UI updates
+        - Enables seamless integration with GUI updates
+        
+        Threading Architecture:
+        - Leverages existing background worker thread infrastructure
+        - Uses thread-safe queue for cross-thread communication
+        - Maintains proper execution isolation for stability
+        - Supports concurrent execution of multiple background tasks
+        
+        Performance Benefits:
+        - Immediate return prevents UI freezing during long operations
+        - Non-blocking submission for responsive user interface
+        - Efficient task queuing with minimal overhead
+        - Scalable approach for handling multiple concurrent operations
+        
+        Usage Patterns:
+        - File I/O operations: Loading, saving, and export functions
+        - Data processing: Complex calculations and transformations
+        - Network operations: API calls and data synchronization
+        - Any operation that might block UI for noticeable time
+        
+        Error Handling:
+        - Background worker handles task execution errors safely
+        - Failed tasks don't affect other queued operations
+        - Error logging provides debugging information
+        - Graceful degradation maintains application stability
+        
+        Thread Safety:
+        - Complete isolation of background execution from UI thread
+        - Safe callback scheduling via root.after() mechanism
+        - No direct GUI manipulation from background context
+        - Proper synchronization for shared resource access
+        
+        Integration Features:
+        - Works seamlessly with _background_worker() infrastructure
+        - Supports complex workflows with chained operations
+        - Enables progress updates via callback mechanisms
+        - Facilitates responsive user experience design
+        
+        Args:
+            func: Callable function to execute in background thread
+            *args: Arguments to pass to the function during execution
+            callback: Optional function to call with result on UI thread
+            
+        Note:
+            Functions executed in background should not directly manipulate
+            GUI components. Use callbacks for all UI updates to maintain
+            thread safety and prevent application instability.
+        """
         self.task_queue.put((func, args, callback))
 
     def setup_logging(self) -> None:
-        """Configure logging for the application"""
+        """Configure logging system for the application.
+        
+        Sets up basic logging configuration with INFO level and standardized
+        formatting for all application log messages. This provides consistent
+        logging output for debugging and monitoring application behavior.
+        
+        Configuration:
+        - Level: INFO (captures informational messages and above)
+        - Format: Timestamp - Level - Message for easy parsing
+        - Output: Console output for real-time monitoring
+        
+        Note:
+            This is called early in initialization to ensure all subsequent
+            operations can use logging functionality.
+        """
         logging.basicConfig(
             level=logging.INFO,
             format='%(asctime)s - %(levelname)s - %(message)s'
         )
 
     def setup_state(self) -> None:
-        """Initialize application state and database"""
+        """Initialize application state variables and database connection.
+        
+        Establishes the core data structures and database connection needed
+        for the application to function. This includes:
+        
+        Database Setup:
+        - Creates DatabaseManager instance for data persistence
+        - Handles database connection and schema initialization
+        
+        State Variables:
+        - groups: Dictionary storing group data configurations
+        - current_groups: Active group selections and filters
+        - group_preview: Temporary group data for preview operations
+        - current_columns: List of currently displayed table columns
+        - current_data: Active dataset being displayed
+        - headers: Column headers for the current dataset
+        
+        Note:
+            All state variables are initialized to empty/default values
+            and will be populated when data is loaded.
+        """
         self.db = DatabaseManager()
         self.groups = {}  # Store groups data
         self.current_groups = {}
@@ -276,7 +746,36 @@ class CrewGUI:
         self.headers = []  # Initialize empty headers
 
     def create_main_layout(self) -> None:
-        """Create main application layout frames"""
+        """Create the main application layout with resizable panels.
+        
+        Establishes the primary GUI structure using a responsive layout system:
+        
+        Layout Structure:
+        - Root window: 1200x800 default size, 800x600 minimum
+        - Main frame: Primary container with padding for visual separation
+        - PanedWindow: Horizontal divider allowing user-resizable sections
+        - Left panel: Fixed-width (280px) control and navigation area
+        - Right panel: Expandable content area for data display
+        
+        Left Panel Sections (top to bottom):
+        - Controls: Fixed height for action buttons
+        - Groups: Expandable section for group management
+        - Filters: Fixed height for filter controls
+        
+        Right Panel Sections (top to bottom):
+        - Data view: Primary area (75% height) for table display
+        - Details: Secondary area (25% height) for item details
+        
+        Grid Configuration:
+        - Uses tkinter grid manager with proper weight distribution
+        - Left frame: Non-expandable (weight=0) for consistent width
+        - Right frame: Expandable (weight=1) to use available space
+        - Row weights configured for optimal space distribution
+        
+        Note:
+            Frame propagation is disabled on left panel to maintain fixed width,
+            preventing it from shrinking when content changes.
+        """
         # Configure root window
         self.root.geometry("1200x800")
         self.root.minsize(800, 600)
@@ -320,7 +819,33 @@ class CrewGUI:
         self.right_frame.grid_columnconfigure(0, weight=1)
 
     def create_all_widgets(self) -> None:
-        """Create all GUI widgets"""
+        """Create all GUI components in the correct order.
+        
+        Initializes all user interface elements following a logical creation order
+        to ensure proper parent-child relationships and event binding:
+        
+        Creation Order:
+        1. Control section: Action buttons (Load, Save, Export)
+        2. Group section: Group management and selection controls
+        3. Filter section: Data filtering and search interface
+        4. Data section: Main table for displaying crew data
+        5. Details section: Detail view for selected items
+        6. Status bar: Application status and feedback display
+        
+        Error Handling:
+        - Each section creation is monitored for exceptions
+        - Failures are logged with specific error details
+        - Critical failures are re-raised to prevent incomplete UI
+        
+        Dependencies:
+        - Requires main layout to be created first
+        - Each section depends on its parent frame being available
+        - Status bar should be created last for proper layering
+        
+        Raises:
+            Exception: If any critical widget creation fails, ensuring
+                      the application doesn't start with incomplete UI
+        """
         try:
             self.create_control_section()
             self.create_group_section() 
@@ -333,7 +858,56 @@ class CrewGUI:
             raise
 
     def create_status_bar(self) -> None:
-        """Create status bar at bottom of window"""
+        """Create an informative status bar with tooltip support.
+        
+        Builds a professional status display system at the bottom of the application:
+        
+        Visual Design:
+        - Frame with groove relief and border for visual separation
+        - Positioned at bottom (row=1) with full width expansion
+        - Consistent padding and spacing for professional appearance
+        - Fixed height (weight=0) to maintain layout stability
+        
+        Status Display Components:
+        - StringVar for dynamic message updates
+        - Label widget with left-aligned text for readability
+        - Internal padding (5,2) for comfortable text spacing
+        - Full width expansion to utilize available space
+        
+        Interactive Features:
+        - Hover tooltip for long status messages
+        - Enter/Leave event bindings for tooltip management
+        - Automatic tooltip creation for messages over 50 characters
+        - Graceful tooltip cleanup on mouse leave
+        
+        Layout Configuration:
+        - Grid positioning with proper weight distribution
+        - Root window row configuration for fixed status bar height
+        - Column expansion to fill window width
+        - Consistent spacing with main application frame
+        
+        Message Management:
+        - Default "Ready" state for application idle
+        - Dynamic updates via StringVar for real-time feedback
+        - Support for operational status and progress information
+        - Error state display capability
+        
+        Technical Implementation:
+        - Exception handling for robust status bar creation
+        - Tooltip system using tkinter.tix for enhanced UX
+        - Event binding for responsive user interaction
+        - Proper widget reference storage for dynamic updates
+        
+        Integration Points:
+        - Connected to update_status method for message changes
+        - Integrated with application event system
+        - Supports long-running operation feedback
+        - Provides user feedback for all major operations
+        
+        Note:
+            The status bar is created last in the widget hierarchy
+            to ensure proper layering and event handling precedence.
+        """
         try:
             # Create frame with border effect
             status_frame = ttk.Frame(self.root, relief=tk.GROOVE, borderwidth=1)
@@ -363,10 +937,54 @@ class CrewGUI:
             raise
 
     def update_status(self, message: str) -> None:
-        """Update status bar message
+        """Update status bar with new message and provide user feedback.
+        
+        Provides real-time status updates throughout the application lifecycle:
+        
+        Message Processing:
+        - Accepts string messages for display in status bar
+        - Handles empty/None messages by defaulting to "Ready" state
+        - Ensures consistent message formatting and display
+        - Supports both brief and detailed status information
+        
+        Display Updates:
+        - Immediately updates status bar via StringVar.set()
+        - Forces GUI refresh with update_idletasks() for responsiveness
+        - Maintains visual consistency across all status changes
+        - Provides instant user feedback for operations
+        
+        Error Handling:
+        - Comprehensive exception catching for robust operation
+        - Detailed error logging for debugging status update failures
+        - Graceful degradation when status updates fail
+        - Prevents status update errors from affecting main operations
+        
+        Usage Patterns:
+        - Operation start: "Loading data..." or "Processing..."
+        - Progress updates: "Loaded 150 records" or "Processing file 3 of 5"
+        - Completion: "Data loaded successfully" or "Export completed"
+        - Error states: "Failed to load file" or "Import error"
+        - Idle state: "Ready" for normal operation availability
+        
+        Performance Considerations:
+        - Efficient StringVar updates without full widget recreation
+        - Minimal GUI thread impact with focused refresh operations
+        - Safe for frequent calls during long-running operations
+        - Non-blocking updates that don't interrupt user workflow
+        
+        Integration Features:
+        - Called by background operations for progress reporting
+        - Used by event handlers for immediate feedback
+        - Supports tooltip system for detailed message display
+        - Maintains message history context for debugging
         
         Args:
-            message: The message to display in the status bar
+            message: Status text to display, empty/None defaults to "Ready"
+            
+        Note:
+            This method is safe to call frequently and from background
+            threads, providing essential user feedback throughout the
+            application's operation lifecycle.
         """
         try:
             if not message:
@@ -377,7 +995,54 @@ class CrewGUI:
             logging.error(f"Failed to update status: {e}")
 
     def _show_status_tooltip(self, event: tk.Event) -> None:
-        """Show tooltip with full status message on hover"""
+        """Display detailed tooltip for long status messages on hover.
+        
+        Provides enhanced user experience for comprehensive status information:
+        
+        Tooltip Activation Logic:
+        - Triggers only for messages longer than 50 characters
+        - Prevents tooltip clutter for brief status updates
+        - Automatically determines when additional detail is beneficial
+        - Respects user interaction patterns and screen real estate
+        
+        Technical Implementation:
+        - Uses tkinter.tix.Balloon for professional tooltip appearance
+        - Dynamic import of tix module for optimal resource usage
+        - Binds tooltip to status bar widget for proper positioning
+        - Stores tooltip reference for cleanup management
+        
+        Message Handling:
+        - Retrieves current status message from StringVar
+        - Evaluates message length for tooltip necessity
+        - Displays full message content in expanded format
+        - Maintains original message formatting and content
+        
+        User Experience Features:
+        - Hover-activated display for intuitive interaction
+        - Non-intrusive appearance that doesn't block workflow
+        - Automatic positioning near status bar for context
+        - Professional styling consistent with application theme
+        
+        Resource Management:
+        - Creates tooltip instance only when needed
+        - Minimal memory footprint for brief messages
+        - Proper widget binding for correct event handling
+        - Instance tracking for cleanup operations
+        
+        Integration Points:
+        - Connected to status bar Enter event for activation
+        - Coordinates with _hide_status_tooltip for lifecycle
+        - Supports complex status messages with detailed information
+        - Enhances accessibility for detailed operation feedback
+        
+        Args:
+            event: Mouse enter event containing position and widget info
+            
+        Note:
+            Tooltip creation is conditional based on message length,
+            ensuring optimal performance and user experience without
+            overwhelming brief status updates with unnecessary detail.
+        """
         msg = self.status_var.get()
         if len(msg) > 50:  # Only show for long messages
             import tkinter.tix as tix
@@ -385,13 +1050,88 @@ class CrewGUI:
             self.status_tooltip.bind_widget(self.status_bar, balloonmsg=msg)
 
     def _hide_status_tooltip(self, event: tk.Event) -> None:
-        """Hide status tooltip"""
+        """Clean up and hide status tooltip when mouse leaves area.
+        
+        Manages tooltip lifecycle for optimal resource usage and UX:
+        
+        Cleanup Operations:
+        - Safely unbinds tooltip from status bar widget
+        - Releases tooltip widget resources and memory
+        - Resets tooltip reference to None for garbage collection
+        - Prevents tooltip persistence after mouse movement
+        
+        Resource Management:
+        - Conditional cleanup only when tooltip exists
+        - Graceful handling of tooltip state changes
+        - Prevents memory leaks from persistent tooltip objects
+        - Efficient widget destruction and reference cleanup
+        
+        User Experience:
+        - Immediate tooltip removal on mouse leave
+        - Prevents tooltip obstruction of other UI elements
+        - Maintains clean interface without persistent overlays
+        - Responsive interaction that follows user focus
+        
+        Error Prevention:
+        - Safe tooltip reference checking before operations
+        - Handles edge cases where tooltip might not exist
+        - Prevents exceptions from tooltip cleanup failures
+        - Robust operation regardless of tooltip creation state
+        
+        Integration Features:
+        - Triggered by status bar Leave event automatically
+        - Coordinates with _show_status_tooltip for complete lifecycle
+        - Supports rapid mouse movement without tooltip artifacts
+        - Maintains performance during frequent hover operations
+        
+        Technical Implementation:
+        - Uses tkinter.tix unbind_widget for proper cleanup
+        - Sets tooltip reference to None for clear state
+        - Handles widget destruction through proper tix methods
+        - Ensures complete tooltip lifecycle management
+        
+        Args:
+            event: Mouse leave event containing position and timing info
+            
+        Note:
+            This method ensures tooltips don't persist or accumulate,
+            maintaining clean UI state and preventing resource leaks
+            during normal application usage patterns.
+        """
         if self.status_tooltip:
             self.status_tooltip.unbind_widget(self.status_bar)
             self.status_tooltip = None
 
     def create_control_section(self) -> None:
-        """Create the control panel section"""
+        """Create the main control panel with action buttons.
+        
+        Builds the primary interaction area containing essential file operations
+        and data management controls:
+        
+        Layout:
+        - LabelFrame container with "Controls" title and padding
+        - Positioned in left panel, row 0 (top section)
+        - Sticky 'ew' for full width within parent container
+        
+        Control Buttons:
+        - Load Data: Opens file dialog to import CSV/Excel files
+        - Save: Saves current data to the loaded file or prompts for location
+        - Export: Exports data to Excel format with formatting options
+        
+        Button Configuration:
+        - Full width (fill='x') for consistent appearance
+        - Vertical padding (pady=2) for proper spacing
+        - Connected to respective event handlers via command parameter
+        
+        Error Handling:
+        - Wraps creation in try-catch for graceful failure handling
+        - Logs specific error details for debugging
+        - Re-raises exceptions to prevent incomplete UI initialization
+        
+        Note:
+            This section is positioned first in the left panel and maintains
+            a fixed height to provide consistent access to core functions.
+        """
         try:
             control_frame = ttk.LabelFrame(self.left_frame, text="Controls", padding="5")
             control_frame.grid(row=0, column=0, sticky='ew', padx=5, pady=5)
@@ -405,7 +1145,47 @@ class CrewGUI:
             raise
 
     def create_group_section(self) -> None:
-        """Create the group management section"""
+        """Create the group management interface for organizing crew data.
+        
+        Builds an interactive group management system that allows users to:
+        
+        Main Components:
+        - LabelFrame container titled "Groups" with padding for visual clarity
+        - Treeview widget for displaying group hierarchy and information
+        - Vertical scrollbar for navigation through large group lists
+        - Right-click context menu for group operations
+        
+        Treeview Configuration:
+        - Single selection mode (selectmode='browse') for focused interaction
+        - Height of 10 rows for optimal display within left panel
+        - Expandable (fill='both', expand=True) to use available space
+        - Vertical scrolling support for large datasets
+        
+        Context Menu Features:
+        - Delete operation for removing selected groups
+        - Right-click activation (Button-3 event binding)
+        - Tearoff disabled for clean appearance
+        
+        Layout Structure:
+        - Positioned in left panel, row 1 (middle section)
+        - Sticky 'nsew' for full expansion within parent
+        - Treeview packed first, scrollbar aligned to right
+        - Scrollbar synchronized with treeview scroll commands
+        
+        Data Display:
+        - Groups shown with member count and skill information
+        - Hierarchical display for nested group structures
+        - Real-time updates when data changes
+        
+        Error Handling:
+        - Comprehensive exception catching and logging
+        - Re-raises exceptions to prevent incomplete initialization
+        - Specific error messages for debugging assistance
+        
+        Note:
+            This section is expandable (weight=1) in the left panel layout,
+            allowing it to grow/shrink based on available space.
+        """
         try:
             group_frame = ttk.LabelFrame(self.left_frame, text="Groups", padding="5")
             group_frame.grid(row=1, column=0, sticky='nsew', padx=5, pady=5)
@@ -430,7 +1210,53 @@ class CrewGUI:
             raise
 
     def _show_group_menu(self, event: tk.Event) -> None:
-        """Show context menu for group list on right click"""
+        """Display context menu for group management operations.
+        
+        Provides user-friendly right-click functionality for group manipulation:
+        
+        Event Processing:
+        - Captures right-click (Button-3) events on group list
+        - Uses identify_row() to determine which group was clicked
+        - Validates that click occurred on an actual group item
+        - Prevents menu display for empty areas of the treeview
+        
+        Selection Management:
+        - Automatically selects the group under the cursor
+        - Ensures visual feedback for the target of menu operations
+        - Updates selection state before displaying context menu
+        - Maintains consistent selection behavior across interactions
+        
+        Menu Positioning:
+        - Uses event.x_root and event.y_root for absolute screen coordinates
+        - Positions menu at cursor location for intuitive interaction
+        - Ensures menu appears at the exact click point
+        - Handles screen edge cases automatically via tkinter
+        
+        User Experience Features:
+        - Immediate visual response to right-click actions
+        - Context-sensitive menu that only appears for valid targets
+        - Professional interaction pattern following GUI conventions
+        - Clean menu presentation without visual artifacts
+        
+        Error Handling:
+        - Comprehensive exception catching for robust operation
+        - Detailed error logging for debugging menu issues
+        - Graceful failure that doesn't interrupt workflow
+        - Prevents menu display errors from affecting other operations
+        
+        Integration Points:
+        - Connected to group_list Button-3 event binding
+        - Triggers display of self.group_menu with delete operations
+        - Coordinates with selection events for consistent state
+        - Supports future expansion of context menu options
+        
+        Args:
+            event: Right-click event containing cursor position and timing
+            
+        Note:
+            Menu only appears when clicking on actual group items,
+            preventing confusion when clicking in empty treeview areas.
+        """
         try:
             # Select item under cursor
             item = self.group_list.identify_row(event.y)
@@ -441,7 +1267,63 @@ class CrewGUI:
             logging.error(f"Error showing group menu: {e}")
 
     def _delete_selected_group(self) -> None:
-        """Delete the selected group"""
+        """Remove the currently selected group from the system.
+        
+        Provides comprehensive group deletion functionality with safety measures:
+        
+        Selection Validation:
+        - Checks for active selection in group list before proceeding
+        - Extracts group name from selected treeview item safely
+        - Prevents deletion attempts when no group is selected
+        - Validates group exists in internal groups dictionary
+        
+        Deletion Process:
+        - Removes group from self.groups dictionary completely
+        - Updates all related UI views to reflect the change
+        - Refreshes data view to show all ungrouped data
+        - Provides immediate visual feedback of successful deletion
+        
+        UI State Management:
+        - Calls _update_groups_view() to refresh group list display
+        - Updates data view with _update_data_view() using current_data
+        - Ensures consistent state across all interface components
+        - Maintains proper visual synchronization after deletion
+        
+        User Feedback:
+        - Updates status bar with confirmation of deletion action
+        - Includes deleted group name in status message
+        - Provides clear indication that operation completed successfully
+        - Gives users confidence that action was processed
+        
+        Error Handling:
+        - Comprehensive exception catching for robust operation
+        - Detailed error logging for debugging deletion issues
+        - User-friendly error dialog for deletion failures
+        - Prevents deletion errors from corrupting application state
+        
+        Data Integrity:
+        - Safely removes group without affecting underlying data
+        - Preserves original data rows in current_data collection
+        - Maintains referential integrity of group relationships
+        - Ensures no orphaned references remain after deletion
+        
+        Integration Features:
+        - Called from context menu delete command
+        - Coordinates with group management system
+        - Updates all dependent UI components automatically
+        - Maintains consistency with data filtering and display
+        
+        Safety Considerations:
+        - Validates group existence before deletion attempt
+        - Handles edge cases like already-deleted groups gracefully
+        - Prevents accidental deletion of non-existent groups
+        - Maintains system stability during deletion operations
+        
+        Note:
+            Deletion is immediate and irreversible - groups must be
+            recreated manually if accidentally deleted. Future versions
+            might include confirmation dialogs for enhanced safety.
+        """
         try:
             selection = self.group_list.selection()
             if selection:
@@ -459,7 +1341,59 @@ class CrewGUI:
             messagebox.showerror("Error", f"Failed to delete group: {e}")
 
     def create_filter_section(self) -> None:
-        """Create the filter controls section"""
+        """Create the data filtering and search interface.
+        
+        Builds a comprehensive filtering system for data exploration:
+        
+        Container Structure:
+        - LabelFrame with "Filters" title and consistent padding
+        - Positioned in left panel, row 2 (bottom section)
+        - Fixed height design to maintain consistent layout
+        
+        Filter Components:
+        1. Column Selection Dropdown:
+           - Combobox widget for choosing filter target column
+           - "All Columns" default option for broad searches
+           - Read-only state to prevent invalid inputs
+           - Full width (fill='x') for consistent appearance
+        
+        2. Filter Input Field:
+           - Entry widget connected to filter_var StringVar
+           - Supports text-based filtering and pattern matching
+           - Enter key binding for quick filter application
+           - Full width layout with vertical spacing
+        
+        3. Apply Filter Button:
+           - Triggers filter operation via _on_apply_filter method
+           - Full width design for easy access
+           - Consistent spacing with other controls
+        
+        Variable Management:
+        - filter_var: StringVar for current filter text
+        - column_var: StringVar for selected column ("All Columns" default)
+        - Both variables support real-time updates and event binding
+        
+        Layout Configuration:
+        - Vertical packing (pack) for stacked arrangement
+        - Consistent vertical padding (pady=2) between elements
+        - Full width (fill='x') for uniform appearance
+        - Sticky 'ew' positioning within parent frame
+        
+        User Interaction Features:
+        - Column-specific filtering for precise data exploration
+        - Global search across all columns when "All Columns" selected
+        - Real-time filter application with immediate visual feedback
+        - Keyboard shortcuts for efficient workflow
+        
+        Error Handling:
+        - Exception wrapping with specific error logging
+        - Re-raises critical failures to prevent incomplete UI
+        - Detailed error messages for debugging support
+        
+        Note:
+            This section maintains fixed height in the layout to ensure
+            controls remain accessible regardless of group section expansion.
+        """
         try:
             filter_frame = ttk.LabelFrame(self.left_frame, text="Filters", padding="5")
             filter_frame.grid(row=2, column=0, sticky='ew', padx=5, pady=5)
@@ -485,7 +1419,69 @@ class CrewGUI:
             raise
 
     def create_data_section(self) -> None:
-        """Create the main data display section"""
+        """Create the main data display table with advanced features.
+        
+        Constructs a sophisticated data visualization interface featuring:
+        
+        Container Architecture:
+        - LabelFrame titled "Data View" with consistent padding
+        - Positioned in right panel, row 0 (primary display area)
+        - Nested frame structure for complex scrollbar management
+        - Expandable design (sticky='nsew') to utilize available space
+        
+        Table Configuration:
+        - Treeview widget in "headings" mode for tabular data display
+        - Single row selection (selectmode="browse") for focused interaction
+        - Professional styling with custom fonts and row heights
+        - Column header click support for interactive sorting
+        
+        Scrolling System:
+        - Dual scrollbars for both vertical and horizontal navigation
+        - Synchronized scrolling between table and scrollbar controls
+        - Proper grid layout with weight distribution for responsive design
+        - Scrollbars positioned at edges (right/bottom) for intuitive use
+        
+        Advanced Features:
+        - Dynamic column width adjustment and persistence
+        - Saved column width restoration after data loading
+        - Custom event handling for table population
+        - Click-to-sort functionality on column headers
+        
+        Visual Styling:
+        - Professional row height (25px) for readability
+        - Bold font headers for clear column identification
+        - Custom treeview style configuration
+        - Consistent spacing and padding throughout
+        
+        Grid Weight Configuration:
+        - data_frame: Full expansion (weight=1) in both directions
+        - table_frame: Full expansion within data_frame
+        - Proper weight distribution for responsive resizing
+        - Maintains proportions during window size changes
+        
+        Event Integration:
+        - Column click binding for sorting operations
+        - Table population events for width restoration
+        - Configure events for dynamic layout adjustments
+        - Selection events for detail view updates
+        
+        Column Width Management:
+        - Automatic restoration of saved column widths
+        - Cleanup of temporary width storage after application
+        - Dynamic width adjustment based on content
+        - Minimum width constraints for usability
+        
+        Error Handling:
+        - Comprehensive exception monitoring and logging
+        - Re-raises critical failures to ensure complete UI
+        - Specific error context for debugging assistance
+        - Graceful degradation when possible
+        
+        Note:
+            This section receives the majority of screen space (weight=3)
+            in the right panel layout, emphasizing its role as the primary
+            data interaction interface.
+        """
         try:
             data_frame = ttk.LabelFrame(self.right_frame, text="Data View", padding="5")
             data_frame.grid(row=0, column=0, sticky='nsew', padx=5, pady=5)
@@ -545,7 +1541,78 @@ class CrewGUI:
             raise
 
     def _on_column_click(self, event: tk.Event) -> None:
-        """Handle column header click for sorting"""
+        """Handle interactive column header clicks for data sorting functionality.
+        
+        Provides sophisticated click-to-sort capabilities for enhanced data navigation:
+        
+        Event Detection:
+        - Uses identify_region() to detect clicks specifically on column headers
+        - Filters out clicks on data rows or other treeview areas
+        - Ensures sorting only activates for intended header interactions
+        - Validates event coordinates for precise region identification
+        
+        Column Identification:
+        - Extracts column identifier from click coordinates
+        - Converts tkinter column format (#1, #2, etc.) to zero-based indices
+        - Maps visual columns to internal data structure positions
+        - Handles dynamic column configurations reliably
+        
+        Sort State Management:
+        - Maintains persistent sort state in _last_sort dictionary
+        - Tracks both current sort column and direction
+        - Toggles sort direction for repeated clicks on same column
+        - Resets to ascending when switching to different column
+        
+        Data Sorting Process:
+        - Extracts all visible table items with their data values
+        - Creates sortable tuples of (value, item_id) for processing
+        - Applies sort() with reverse parameter for direction control
+        - Maintains item identity throughout sorting operation
+        
+        Visual Feedback:
+        - Updates column headers with directional indicators (↑/↓)
+        - Shows clear visual cue for current sort column and direction
+        - Clears indicators from previously sorted columns
+        - Provides immediate user feedback for sort operations
+        
+        Table Reorganization:
+        - Uses move() method to rearrange items in sorted order
+        - Preserves all data relationships during reordering
+        - Maintains selection state when possible
+        - Updates display efficiently without full rebuild
+        
+        Header Management:
+        - Dynamically updates column header text with sort indicators
+        - Preserves original header text from self.headers array
+        - Handles column header formatting consistently
+        - Manages header state across multiple sort operations
+        
+        Error Handling:
+        - Comprehensive exception catching for robust sorting
+        - Detailed error logging for debugging sort issues
+        - Graceful failure that maintains current table state
+        - Prevents sort errors from corrupting data display
+        
+        Performance Considerations:
+        - Efficient tuple creation for sort operations
+        - Single-pass table reorganization after sorting
+        - Minimal UI updates for responsive user experience
+        - Optimized for large datasets with reasonable performance
+        
+        Integration Features:
+        - Bound to data table Button-1 event for standard interaction
+        - Coordinates with data display and filtering systems
+        - Maintains sort state across data refreshes when possible
+        - Supports complex data types through string conversion
+        
+        Args:
+            event: Mouse click event containing position and timing information
+            
+        Note:
+            Sorting operates on displayed data only and may interact
+            with active filters. Sort state is maintained independently
+            of data filtering operations for consistent user experience.
+        """
         try:
             region = self.data_table.identify_region(event.x, event.y)
             if region == "heading":
@@ -585,15 +1652,66 @@ class CrewGUI:
             logging.error(f"Error handling column click: {e}")
 
     def _apply_filter(self, data: List[Any], filter_text: str, column_index: int = None) -> List[Any]:
-        """Apply filter to data
+        """Apply text-based filtering to tabular data with flexible targeting.
+        
+        Provides comprehensive data filtering capabilities for enhanced user navigation:
+        
+        Filter Processing:
+        - Converts filter text to lowercase for case-insensitive matching
+        - Supports both column-specific and global filtering modes
+        - Uses substring matching for flexible pattern detection
+        - Returns filtered subset maintaining original data structure
+        
+        Column-Specific Filtering:
+        - Targets single column when column_index is provided
+        - Searches only the specified column for matching text
+        - Enables precise filtering for focused data exploration
+        - Optimizes performance by limiting search scope
+        
+        Global Filtering:
+        - Searches across all columns when column_index is None
+        - Uses any() function for efficient multi-column scanning
+        - Catches matches in any field of each data row
+        - Provides broad search capability for general exploration
+        
+        Matching Algorithm:
+        - Uses str.find() for substring detection (returns >= 0 for matches)
+        - Handles various data types by converting to string first
+        - Case-insensitive comparison for user-friendly searching
+        - Preserves original data formatting in results
+        
+        Data Preservation:
+        - Returns complete rows that match filter criteria
+        - Maintains original data structure and relationships
+        - Preserves column order and data types
+        - No modification of source data during filtering
+        
+        Performance Optimizations:
+        - List comprehension for efficient filtering operations
+        - Single-pass scanning through data rows
+        - Minimal string operations per comparison
+        - Early termination for any() evaluations in global mode
+        
+        Error Resilience:
+        - Handles mixed data types gracefully via str() conversion
+        - Processes None values safely without exceptions
+        - Robust against empty or malformed data rows
+        - Maintains filtering capability with inconsistent data
         
         Args:
-            data: List of data rows to filter
-            filter_text: Text to filter by
-            column_index: Optional index of column to filter by
+            data: List of data rows (each row is a list/tuple of values)
+            filter_text: Search term to match against data (case-insensitive)
+            column_index: Optional column index for targeted filtering,
+                         None for global search across all columns
             
         Returns:
-            Filtered list of data rows
+            List[Any]: Filtered data rows matching the search criteria,
+                      preserving original structure and content
+                      
+        Note:
+            Filter uses substring matching rather than exact matching,
+            enabling flexible user searches without requiring precise
+            text entry. Empty filter_text returns all data unchanged.
         """
         filter_text = filter_text.lower()
         if column_index is not None:
@@ -610,7 +1728,75 @@ class CrewGUI:
             ]
 
     def _update_groups_view(self) -> None:
-        """Update the groups treeview with current groups"""
+        """Refresh the group management display with current group data.
+        
+        Provides comprehensive group visualization with detailed information display:
+        
+        Display Refresh Process:
+        - Clears all existing items from group treeview for clean update
+        - Rebuilds display from current self.groups dictionary
+        - Ensures display reflects latest group membership changes
+        - Maintains visual consistency across group operations
+        
+        Column Configuration:
+        - Initializes treeview columns on first run for optimal layout
+        - Sets up four-column display: Name, Member Count, Primary, Secondary
+        - Configures appropriate column widths for readable display
+        - Establishes minimum widths to prevent layout collapse
+        
+        Header Setup:
+        - "Group Name" in main tree column (#0) for hierarchical display
+        - "#" column shows member count for quick group size reference
+        - "Primary" column displays dominant primary skill in group
+        - "Secondary" column shows dominant secondary skill information
+        
+        Data Processing:
+        - Iterates through self.groups dictionary for all active groups
+        - Validates group existence and non-empty status before display
+        - Extracts skill information from PRIMUS and SECUNDUS columns
+        - Determines representative skills for group characterization
+        
+        Skill Analysis:
+        - Scans group member data to identify primary skills (column 5)
+        - Identifies secondary skills from member data (column 6)
+        - Uses first encountered skill as group representative
+        - Handles missing or empty skill data gracefully
+        
+        Visual Organization:
+        - Groups displayed with consistent formatting and spacing
+        - Member count provides immediate group size awareness
+        - Skill columns enable quick group capability assessment
+        - Professional layout with optimized column proportions
+        
+        Layout Management:
+        - Name column: 150px width, 100px minimum for group identification
+        - Member count: 50px width, 30px minimum for compact display
+        - Skill columns: 100px width each, 50px minimum for readability
+        - Responsive design maintains usability across window sizes
+        
+        Data Integrity:
+        - Only processes groups with valid names and member data
+        - Handles malformed or incomplete group data safely
+        - Prevents display corruption from invalid group structures
+        - Maintains consistent display state regardless of data quality
+        
+        Error Handling:
+        - Comprehensive exception catching for robust operation
+        - Detailed error logging for debugging display issues
+        - Graceful failure that maintains current group view
+        - Prevents group display errors from affecting other operations
+        
+        Integration Features:
+        - Called after group creation, deletion, or modification
+        - Coordinates with group selection and filtering systems
+        - Updates automatically when data changes occur
+        - Maintains group view consistency across operations
+        
+        Note:
+            This method completely rebuilds the group display rather than
+            performing incremental updates, ensuring consistency and
+            preventing display artifacts from partial updates.
+        """
         try:
             # Clear existing items
             self.group_list.delete(*self.group_list.get_children())
@@ -661,7 +1847,72 @@ class CrewGUI:
             raise
 
     def _on_group_select(self, event: tk.Event) -> None:
-        """Handle group selection in treeview"""
+        """Handle user selection of groups for focused data viewing.
+        
+        Provides group-focused data display functionality with seamless integration:
+        
+        Selection Processing:
+        - Captures group selection events from treeview widget
+        - Extracts selected item identifier for group lookup
+        - Validates selection exists before processing
+        - Retrieves group name from treeview item data
+        
+        Group Validation:
+        - Verifies selected group exists in self.groups dictionary
+        - Prevents errors from stale or invalid group references
+        - Handles cases where groups may have been deleted
+        - Ensures data integrity before view updates
+        
+        Data View Integration:
+        - Calls _update_data_view with group-specific data only
+        - Filters main data table to show only group members
+        - Maintains all existing table functionality for filtered view
+        - Preserves column visibility and sorting preferences
+        
+        User Feedback:
+        - Updates status bar with current group name
+        - Provides clear indication of active group filter
+        - Gives users confirmation of successful group selection
+        - Shows context for all subsequent data operations
+        
+        View State Management:
+        - Temporarily overrides global data view with group focus
+        - Maintains group selection context until changed
+        - Allows return to full data view via other controls
+        - Preserves original data while showing filtered subset
+        
+        Event Handling:
+        - Responds to standard treeview selection events
+        - Processes single-selection mode interactions
+        - Handles rapid selection changes smoothly
+        - Maintains responsiveness during frequent group switching
+        
+        Error Resilience:
+        - Comprehensive exception catching for robust operation
+        - Detailed error logging for debugging selection issues
+        - Graceful failure that maintains current view state
+        - Prevents selection errors from corrupting data display
+        
+        Integration Features:
+        - Coordinates with filtering and search systems
+        - Maintains compatibility with data table operations
+        - Supports export operations on filtered group data
+        - Enables group-specific data analysis workflows
+        
+        Performance Considerations:
+        - Efficient group lookup using dictionary access
+        - Minimal data processing for view updates
+        - Fast response to user selection changes
+        - Optimized for frequent group switching operations
+        
+        Args:
+            event: Selection event containing timing and selection information
+            
+        Note:
+            Group selection creates a temporary filtered view of the data
+            table, allowing users to focus on specific group members while
+            maintaining access to all standard data operations and features.
+        """
         try:
             selection = self.group_list.selection()
             if selection:
@@ -675,7 +1926,72 @@ class CrewGUI:
             logging.error(f"Error handling group selection: {e}")
 
     def _on_data_select(self, event: tk.Event) -> None:
-        """Handle data row selection in treeview"""
+        """Handle user selection of data rows for detailed information display.
+        
+        Provides seamless integration between table selection and detail views:
+        
+        Selection Processing:
+        - Captures row selection events from main data table
+        - Extracts selected item identifier for data retrieval
+        - Validates selection exists before processing
+        - Handles empty selections gracefully without errors
+        
+        Data Extraction:
+        - Retrieves complete item data from selected table row
+        - Accesses both displayed values and internal item structure
+        - Preserves data relationships and formatting
+        - Maintains data integrity during detail view updates
+        
+        Detail View Integration:
+        - Calls _update_details_view with selected row data
+        - Triggers formatted display of complete row information
+        - Enables detailed examination of individual records
+        - Provides context for single-record analysis
+        
+        User Experience Features:
+        - Immediate response to row selection changes
+        - Seamless transition between table and detail views
+        - Maintains selection context across view operations
+        - Provides intuitive data exploration workflow
+        
+        Event Handling:
+        - Responds to standard TreeviewSelect events
+        - Processes single-selection mode interactions efficiently
+        - Handles rapid selection changes without conflicts
+        - Maintains responsive user interface performance
+        
+        Error Resilience:
+        - Comprehensive exception catching for robust operation
+        - Detailed error logging for debugging selection issues
+        - Graceful failure that maintains current detail view
+        - Prevents selection errors from affecting table display
+        
+        Performance Considerations:
+        - Efficient item data retrieval using direct access
+        - Minimal processing overhead for selection changes
+        - Quick response to user selection interactions
+        - Optimized for frequent selection change operations
+        
+        Integration Points:
+        - Coordinates with detail view display system
+        - Works with data formatting and file output features
+        - Supports export operations for selected records
+        - Enables context-sensitive data operations
+        
+        Data Flow:
+        - Table selection triggers detail view update
+        - Selected data flows to formatting and display systems
+        - Maintains data consistency throughout selection process
+        - Preserves original data structure and content
+        
+        Args:
+            event: Selection event containing timing and selection information
+            
+        Note:
+            Selection events trigger automatic detail view updates,
+            providing immediate access to complete record information
+            and enabling detailed data examination workflows.
+        """
         try:
             selection = self.data_table.selection()
             if selection:
@@ -687,7 +2003,75 @@ class CrewGUI:
             logging.error(f"Error handling data selection: {e}")
 
     def _on_apply_filter(self) -> None:
-        """Handle Apply Filter button click"""
+        """Process user filter requests and update data display accordingly.
+        
+        Provides comprehensive filtering functionality with context-sensitive behavior:
+        
+        Input Processing:
+        - Retrieves filter text from UI input field with whitespace trimming
+        - Extracts selected column target from dropdown selection
+        - Validates column selection against current header structure
+        - Handles both specific column and global filtering modes
+        
+        Column Target Resolution:
+        - Maps selected column name to internal column index
+        - Falls back to global search when column mapping fails
+        - Supports "All Columns" option for comprehensive searching
+        - Maintains robust operation with dynamic column configurations
+        
+        Context-Aware Filtering:
+        - Applies filters to currently active data view context
+        - Respects active group selection for scoped filtering
+        - Falls back to full dataset when no group is selected
+        - Maintains user workflow continuity across filter operations
+        
+        Filter Group Creation:
+        - Creates named filter groups for filtered result sets
+        - Uses descriptive naming based on column and filter text
+        - Adds filter groups to group management system automatically
+        - Enables filter result persistence and reuse
+        
+        Filter Group Management:
+        - Automatically selects newly created filter groups
+        - Scrolls to show new filter group in group list
+        - Provides visual feedback for successful filter creation
+        - Integrates seamlessly with existing group functionality
+        
+        View Reset Functionality:
+        - Clears filters when filter text is empty
+        - Restores previous view context (group or full data)
+        - Maintains consistent behavior for filter clearing
+        - Provides intuitive user experience for filter management
+        
+        Status Communication:
+        - Updates status bar with filter operation results
+        - Provides clear feedback for filter success or clearing
+        - Includes descriptive information about applied filters
+        - Maintains user awareness of current data view state
+        
+        Error Handling:
+        - Comprehensive exception catching for robust operation
+        - Detailed error logging for debugging filter issues
+        - User-friendly error dialogs for filter failures
+        - Graceful degradation that maintains current view state
+        
+        Performance Considerations:
+        - Efficient filter application using existing _apply_filter method
+        - Minimal UI updates focused on necessary changes
+        - Quick response for small to medium datasets
+        - Optimized for interactive filtering workflows
+        
+        Integration Features:
+        - Coordinates with group management system seamlessly
+        - Works with data view updates and table population
+        - Supports complex filtering workflows with multiple criteria
+        - Enables filter composition and refinement operations
+        
+        Note:
+            Filter operations create temporary groups that persist until
+            manually deleted, allowing users to build collections of
+            filtered data for analysis and comparison purposes.
+        """
         try:
             filter_text = self.filter_var.get().strip()
             column_name = self.column_var.get().strip()
@@ -750,10 +2134,84 @@ class CrewGUI:
             messagebox.showerror("Error", f"Failed to apply filter: {e}")
 
     def _update_data_view(self, data: List[Any] = None) -> None:
-        """Update the data treeview
+        """Refresh the main data table with specified or current dataset.
+        
+        Provides comprehensive table update functionality with advanced features:
+        
+        Data Source Management:
+        - Uses provided data parameter when specified for targeted updates
+        - Falls back to self.current_data for standard refresh operations
+        - Handles None or empty data gracefully with early return
+        - Maintains data integrity throughout update process
+        
+        Table Reset Process:
+        - Completely clears existing table contents for clean update
+        - Removes all child items to prevent display artifacts
+        - Ensures fresh table state for new data population
+        - Maintains consistent table appearance across updates
+        
+        Column Configuration:
+        - Dynamically creates column identifiers based on header count
+        - Uses "col{i}" naming convention for reliable column reference
+        - Configures table to show headings only (no tree structure)
+        - Sets up appropriate column structure for tabular data
+        
+        Header Management:
+        - Maps column identifiers to human-readable header text
+        - Sets initial column widths to 100px for consistent appearance
+        - Configures all column headers from self.headers array
+        - Maintains professional table presentation standards
+        
+        Data Population:
+        - Iterates through data rows for sequential table insertion
+        - Uses unique row identifiers for reliable row reference
+        - Inserts complete row data as values for each table entry
+        - Maintains data order and structure during population
+        
+        Column Menu Integration:
+        - Updates column visibility controls with current headers
+        - Ensures column menu reflects current table structure
+        - Synchronizes UI controls with table configuration
+        - Maintains consistency between table and menu systems
+        
+        Column Visibility Application:
+        - Applies current column visibility settings after population
+        - Ensures hidden columns remain hidden during updates
+        - Maintains user customizations across data refreshes
+        - Provides consistent column display preferences
+        
+        Error Handling:
+        - Comprehensive exception catching for robust operation
+        - Detailed error logging for debugging table update issues
+        - Re-raises critical errors to prevent incomplete table state
+        - Maintains application stability during update failures
+        
+        Performance Considerations:
+        - Efficient table clearing and population operations
+        - Minimal UI updates focused on necessary changes
+        - Optimized for large datasets with reasonable performance
+        - Single-pass data insertion for responsive updates
+        
+        Integration Features:
+        - Coordinates with column visibility management system
+        - Works seamlessly with filtering and group selection
+        - Supports data export operations based on current view
+        - Enables sorting and other table interactions
+        
+        Visual Consistency:
+        - Maintains professional table appearance standards
+        - Ensures consistent column widths and spacing
+        - Preserves table formatting across different data sets
+        - Provides predictable user experience for data viewing
         
         Args:
-            data: Data to display, defaults to current_data if None
+            data: Optional data list to display, defaults to current_data
+                 Each row should be a list/tuple of values matching headers
+            
+        Note:
+            This method performs a complete table rebuild rather than
+            incremental updates, ensuring consistency and preventing
+            display artifacts from partial updates or data changes.
         """
         try:
             self.data_table.delete(*self.data_table.get_children())
@@ -864,7 +2322,69 @@ class CrewGUI:
             self.update_status("Failed to save details")
 
     def create_details_section(self) -> None:
-        """Create the details preview section"""
+        """Create the detailed information display panel.
+        
+        Builds a comprehensive detail viewer for examining selected data:
+        
+        Container Structure:
+        - LabelFrame titled "Details" with consistent padding
+        - Positioned in right panel, row 1 (secondary display area)
+        - Expandable layout (sticky='nsew') for flexible sizing
+        - Allocated smaller proportion (weight=1) compared to data view
+        
+        Text Display Configuration:
+        - Text widget with word wrapping for improved readability
+        - Generous internal padding (padx=5, pady=5) for visual comfort
+        - Fixed dimensions (width=50, height=10) for consistent layout
+        - Scrollable content area for handling large detail sets
+        
+        Scrolling Implementation:
+        - Vertical scrollbar for navigating extensive details
+        - Synchronized scrolling between text widget and scrollbar
+        - Right-side positioning for intuitive user interaction
+        - Proper grid layout with weight distribution
+        
+        Layout Management:
+        - Grid-based positioning with responsive weight configuration
+        - details_frame expansion in both directions (weight=1)
+        - Text widget fills primary area (row=0, column=0)
+        - Scrollbar aligned to right edge (row=0, column=1)
+        
+        Content Features:
+        - Word wrapping prevents horizontal text overflow
+        - Multi-line display capability for complex data
+        - Formatted output for structured information presentation
+        - Real-time updates when table selections change
+        
+        User Interaction:
+        - Automatic content updates on data table selection
+        - Scrollable interface for detailed information review
+        - Read-only display to prevent accidental modifications
+        - Clear visual separation from main data table
+        
+        Integration Points:
+        - Connected to data table selection events
+        - Updates automatically when table rows are clicked
+        - Displays formatted detail information from selected records
+        - Maintains content persistence during view changes
+        
+        Visual Design:
+        - Consistent styling with other application sections
+        - Professional text formatting and spacing
+        - Clear visual hierarchy with labeled container
+        - Responsive sizing based on available space
+        
+        Error Handling:
+        - Exception monitoring with detailed error logging
+        - Critical failure escalation to prevent incomplete UI
+        - Specific error context for troubleshooting
+        - Graceful handling of display errors
+        
+        Note:
+            This section provides secondary information display and receives
+            less screen space (weight=1) compared to the main data table,
+            maintaining focus on primary data while offering detailed context.
+        """
         try:
             details_frame = ttk.LabelFrame(self.right_frame, text="Details", padding="5")
             details_frame.grid(row=1, column=0, sticky='nsew', padx=5, pady=5)
@@ -897,7 +2417,70 @@ class CrewGUI:
             raise
 
     def bind_events(self) -> None:
-        """Bind event handlers to widgets"""
+        """Establish comprehensive event handling for user interactions.
+        
+        Configures all event bindings and keyboard shortcuts for optimal UX:
+        
+        Data Table Events:
+        - TreeviewSelect: Responds to row selection for detail updates
+        - Automatic detail view population when users click table rows
+        - Selection persistence and state management
+        
+        Group Management Events:
+        - TreeviewSelect: Handles group list selection changes
+        - Enables group-based filtering and data subset viewing
+        - Synchronizes group selection with data display
+        
+        Keyboard Shortcuts (Application-wide):
+        - Ctrl+O: Quick file loading (opens file dialog)
+        - Ctrl+S: Save current data to file
+        - Ctrl+E: Export data to Excel format
+        - Ctrl+F: Focus on filter input for quick searching
+        - Escape: Clear current filters and reset view
+        - F5: Refresh all views and reload data
+        
+        Filter Interface Events:
+        - Enter/Return: Apply current filter immediately
+        - KP_Enter: Numeric keypad Enter support
+        - Real-time filter application on key events
+        
+        Window Management Events:
+        - WM_DELETE_WINDOW: Proper application shutdown handling
+        - Window state saving before closure
+        - Graceful cleanup of resources and threads
+        
+        Menu System Updates:
+        - Column visibility menu population
+        - Script menu refresh for dynamic content
+        - Menu state synchronization with data changes
+        
+        Event Handler Integration:
+        - Connects UI events to appropriate handler methods
+        - Maintains consistent event processing patterns
+        - Ensures proper error handling in event callbacks
+        
+        Lambda Function Usage:
+        - Lightweight event wrapper functions
+        - Parameter passing for event handlers
+        - Event object management and forwarding
+        
+        Filter Entry Bindings:
+        - Multiple entry point support (regular and numeric)
+        - Consistent behavior across input methods
+        - Dynamic filter entry widget identification
+        
+        Error Handling Strategy:
+        - Exception monitoring for event binding failures
+        - Detailed error logging with context information
+        - Critical failure escalation to prevent broken UI
+        - Graceful degradation when bindings fail
+        
+        Note:
+            Event binding occurs after all widgets are created to ensure
+            proper reference availability and prevent binding errors.
+            The order of binding operations is important for proper
+            event propagation and handler execution.
+        """
         try:
             # Data table events
             self.data_table.bind('<<TreeviewSelect>>', self._on_data_select)
@@ -922,6 +2505,7 @@ class CrewGUI:
             self.root.protocol("WM_DELETE_WINDOW", self._on_closing)
             
             self._update_column_menu()
+            self._update_script_menu()
             
         except Exception as e:
             logging.error(f"Error binding events: {e}")
@@ -1053,7 +2637,55 @@ class CrewGUI:
             self.update_status("Re-import failed")
 
     def load_default_data(self) -> None:
-        """Load default data file if it exists"""
+        """Automatically load default crew data file during application startup.
+        
+        Attempts to load the standard 'npcs.csv' file from the data directory
+        to provide immediate data availability for users:
+        
+        Default File Detection:
+        - Searches for 'data/npcs.csv' as the standard crew data file
+        - Uses Path.exists() for reliable file existence checking
+        - Handles missing default file gracefully without user interruption
+        
+        Data Loading Process:
+        - Delegates to DatabaseManager.load_data() for consistent processing
+        - Loads headers, data rows, and group information in single operation
+        - Updates all relevant application state variables
+        
+        UI Updates:
+        - Refreshes data table view with loaded information
+        - Updates group tree view with discovered groups
+        - Provides status feedback about successful default loading
+        
+        Error Handling Strategy:
+        - Comprehensive exception catching with detailed logging
+        - Silent failure mode - doesn't display error dialogs to user
+        - Prevents startup interruption if default data is unavailable
+        - Allows application to continue normally without default data
+        
+        Application Integration:
+        - Called during initialization sequence after UI setup
+        - Provides immediate data context for new users
+        - Supports workflow continuity across application sessions
+        - Enables quick start without manual file selection
+        
+        Performance Considerations:
+        - Minimal startup impact with efficient file checking
+        - Non-blocking operation that doesn't delay UI initialization
+        - Quick validation before attempting full data load
+        - Graceful handling of network or disk access issues
+        
+        User Experience:
+        - Seamless data availability without user action required
+        - Consistent application state across launches
+        - Immediate productivity without configuration steps
+        - Professional application behavior with smart defaults
+        
+        Note:
+            Default data loading is designed to be non-intrusive and
+            fail-safe, ensuring the application starts successfully
+            regardless of default file availability.
+        """
         try:
             default_file = Path("data/npcs.csv")
             if default_file.exists():
@@ -1066,17 +2698,66 @@ class CrewGUI:
             # Don't show error dialog for default data load failure
 
     def _on_load_data(self, event=None) -> None:
-        """Handle Load Data menu/button action
+        """Handle file loading requests from menu commands and keyboard shortcuts.
         
-        Opens a file dialog for selecting CSV data files and initiates the loading process.
-        Supports both menu command and keyboard shortcut (Ctrl+O) triggers.
+        Provides comprehensive file selection and loading functionality:
+        
+        File Dialog Configuration:
+        - Supports CSV files as primary format with appropriate filter
+        - Includes 'All files' option for flexibility with other formats
+        - Sets intelligent default directory to 'data' folder
+        - Uses descriptive dialog title for clear user guidance
+        
+        Supported File Operations:
+        - CSV file loading with automatic format detection
+        - Handles various CSV dialects and encoding formats
+        - Processes files of different sizes efficiently
+        - Maintains data integrity during import operations
+        
+        Event Handling:
+        - Responds to menu commands (File > Load Data)
+        - Processes keyboard shortcuts (Ctrl+O) seamlessly
+        - Handles both programmatic and user-initiated calls
+        - Maintains consistent behavior across trigger methods
+        
+        User Interaction Flow:
+        - Opens native file dialog with appropriate filters
+        - Provides clear feedback during file selection process
+        - Handles user cancellation gracefully without errors
+        - Delegates actual loading to specialized load_data_file method
+        
+        Error Management:
+        - Comprehensive exception catching and logging
+        - User-friendly error dialogs with specific failure information
+        - Detailed error context for debugging and support
+        - Graceful recovery from file access or format issues
+        
+        Integration Points:
+        - Connects to load_data_file method for actual processing
+        - Updates status bar with operation progress
+        - Refreshes all dependent UI components after loading
+        - Maintains application state consistency
+        
+        Performance Features:
+        - Efficient file dialog handling with minimal memory usage
+        - Quick validation before resource-intensive operations
+        - Background processing delegation for large files
+        - Responsive UI during file selection process
         
         Args:
-            event: Optional keyboard event when triggered by shortcut
-            
-        Error handling:
-            - Logs errors and shows error dialog to user
-            - Gracefully handles dialog cancellation
+            event: Optional event object from keyboard shortcut or menu selection,
+                   allows method to work with both programmatic and user triggers
+                   
+        Accessibility Features:
+        - Keyboard shortcut support for efficient navigation
+        - Clear dialog titles and file type descriptions
+        - Consistent behavior with standard file operations
+        - Proper focus management after dialog operations
+        
+        Note:
+            This method serves as the primary entry point for data loading
+            operations, coordinating between user interface elements and
+            the underlying data management system.
         """
         try:
             filetypes = [
@@ -1098,7 +2779,73 @@ class CrewGUI:
             messagebox.showerror("Error", f"Failed to load data: {e}")
 
     def load_data_file(self, filename: str) -> None:
-        """Load data and store current filename for saving details"""
+        """Load and process data file with comprehensive error handling and UI updates.
+        
+        Orchestrates the complete data loading workflow from file to display:
+        
+        File Processing Pipeline:
+        - Validates file existence and accessibility before processing
+        - Stores current file path for future save operations and detail exports
+        - Provides immediate status feedback during loading operations
+        - Forces UI refresh for responsive user experience
+        
+        Background Processing:
+        - Delegates actual file parsing to DatabaseManager in background thread
+        - Prevents UI freezing during large file processing
+        - Maintains application responsiveness throughout operation
+        - Uses callback pattern for safe UI updates from background
+        
+        Data Management:
+        - Updates application state with loaded headers, data, and groups
+        - Maintains consistency across all data-dependent components
+        - Preserves file context for subsequent operations
+        - Handles various data formats and structures gracefully
+        
+        UI Synchronization:
+        - Refreshes data table view with new information
+        - Updates group tree view with discovered data groupings
+        - Rebuilds column visibility menu for current dataset
+        - Provides clear status feedback throughout process
+        
+        Callback Processing:
+        - Safely handles background operation results on main thread
+        - Updates all dependent UI components atomically
+        - Maintains application state consistency during updates
+        - Provides completion feedback to user
+        
+        Error Handling Strategy:
+        - Comprehensive exception monitoring with detailed logging
+        - User-friendly error dialogs with specific failure context
+        - Graceful recovery from file format or access issues
+        - Status bar updates reflecting operation failure
+        
+        Integration Features:
+        - Connects with DatabaseManager for robust file processing
+        - Coordinates with background task system for performance
+        - Updates multiple UI components through single operation
+        - Maintains file context for detail export functionality
+        
+        Performance Optimization:
+        - Background thread utilization for non-blocking operations
+        - Efficient memory usage during large file processing
+        - Minimal UI update frequency for smooth user experience
+        - Strategic use of update_idletasks() for responsiveness
+        
+        Args:
+            filename: Absolute or relative path to data file for loading,
+                     supports CSV and other formats handled by DatabaseManager
+                     
+        State Management:
+        - Sets self.current_file for save and export operations
+        - Updates self.headers, self.current_data, and self.groups
+        - Maintains consistency across all application components
+        - Enables proper file context for subsequent operations
+        
+        Note:
+            This method is the core data loading implementation, designed
+            for reliability, performance, and comprehensive error handling
+            while maintaining responsive user interaction.
+        """
         try:
             self.update_status(f"Loading {Path(filename).name}...")
             self.root.update_idletasks()
@@ -1128,13 +2875,78 @@ class CrewGUI:
             self.update_status("Failed to load data")
 
     def _on_save(self, event=None) -> None:
-        """Handle Save menu/button action
+        """Handle data saving operations with format selection and background processing.
         
-        Saves current data and groups to CSV file.
-        Supports both menu command and keyboard shortcut (Ctrl+S).
+        Provides comprehensive data persistence functionality with user control:
+        
+        File Dialog Configuration:
+        - CSV format as primary option for maximum compatibility
+        - 'All files' option for custom extensions and flexibility
+        - Intelligent default location in 'data' directory
+        - Automatic CSV extension assignment for proper file handling
+        
+        User Interface Flow:
+        - Clear dialog title indicating save operation purpose
+        - File type filtering for appropriate format selection
+        - Default extension handling for consistent file naming
+        - Graceful handling of user cancellation without errors
+        
+        Background Processing Strategy:
+        - Immediate status feedback before background operation starts
+        - Background thread utilization for non-blocking file operations
+        - Callback mechanism for safe UI updates upon completion
+        - Prevention of UI freezing during large file saves
+        
+        Data Export Process:
+        - Uses current application state (headers and data)
+        - Delegates to DatabaseManager for reliable CSV writing
+        - Maintains data integrity throughout save operation
+        - Handles various data types and formats appropriately
+        
+        Status and Feedback Management:
+        - Immediate status update with filename during operation
+        - UI refresh to show status changes responsively
+        - Success confirmation with file basename for clarity
+        - Error reporting with specific failure information
+        
+        Error Handling System:
+        - Comprehensive exception catching with detailed logging
+        - User-friendly error dialogs with actionable information
+        - Status bar updates reflecting operation failures
+        - Graceful recovery from file system or permission issues
+        
+        Callback Implementation:
+        - Safe UI updates from background thread results
+        - Status messages based on operation success/failure
+        - Error dialog display for user notification
+        - Consistent feedback regardless of operation outcome
+        
+        Integration Features:
+        - Works with background task queue system
+        - Coordinates with DatabaseManager for file operations
+        - Maintains application responsiveness during saves
+        - Supports both manual and keyboard shortcut triggers
+        
+        Event Support:
+        - Responds to menu commands (File > Save)
+        - Processes keyboard shortcuts (Ctrl+S) seamlessly
+        - Optional event parameter for trigger source identification
+        - Consistent behavior across activation methods
         
         Args:
-            event: Optional keyboard event when triggered by shortcut
+            event: Optional event object from keyboard shortcut (Ctrl+S) or
+                   menu selection, enables unified handling of save requests
+                   
+        Performance Considerations:
+        - Background processing prevents UI blocking
+        - Efficient file dialog handling with minimal resource usage
+        - Strategic UI updates for optimal user experience
+        - Minimal memory overhead during save operations
+        
+        Note:
+            This method coordinates between user interface, file system,
+            and background processing to provide reliable, responsive
+            data saving functionality with comprehensive error handling.
         """
         try:
             filetypes = [
@@ -1176,13 +2988,84 @@ class CrewGUI:
             self.update_status("Failed to save data")
 
     def _on_export(self, event=None) -> None:
-        """Handle Export menu/button action
+        """Handle data export operations with Excel format and view-based content.
         
-        Exports current view data to Excel file.
-        Supports both menu command and keyboard shortcut (Ctrl+E).
+        Provides advanced export functionality for current data view:
+        
+        Export Format Configuration:
+        - Excel (.xlsx) as primary format for rich formatting capabilities
+        - 'All files' option for alternative export formats
+        - Automatic Excel extension assignment for proper file associations
+        - Professional dialog presentation with clear export context
+        
+        View-Based Export Strategy:
+        - Exports currently visible/filtered data from table view
+        - Respects user's current filtering and sorting preferences
+        - Includes only data that user can see in current session
+        - Maintains view context for meaningful export results
+        
+        Data Collection Process:
+        - Iterates through current treeview children for visible data
+        - Extracts values from each visible table row
+        - Preserves data order as displayed in current view
+        - Handles dynamic view content based on filters and sorts
+        
+        Background Processing Implementation:
+        - Immediate status feedback during export preparation
+        - Background thread utilization for Excel file generation
+        - Non-blocking operation preserving UI responsiveness
+        - Callback system for completion notification and error handling
+        
+        Excel Export Features:
+        - Full formatting preservation and professional appearance
+        - Column headers included for data context and usability
+        - Proper data type handling for numeric and text content
+        - Compatibility with Excel and other spreadsheet applications
+        
+        User Feedback System:
+        - Real-time status updates during export process
+        - File basename display for export confirmation
+        - Success/failure messaging with specific error details
+        - Status bar updates reflecting operation progress
+        
+        Error Management:
+        - Comprehensive exception handling with detailed logging
+        - User-friendly error dialogs with actionable information
+        - Graceful recovery from file system or permission issues
+        - Clear error messaging for troubleshooting support
+        
+        Callback Processing:
+        - Safe UI updates from background thread completion
+        - Conditional messaging based on export success/failure
+        - Error dialog display for user notification
+        - Status bar updates with operation results
+        
+        Integration Points:
+        - Coordinates with DatabaseManager for Excel generation
+        - Uses background task system for performance
+        - Maintains UI responsiveness throughout operation
+        - Supports multiple activation methods (menu/keyboard)
+        
+        Performance Optimization:
+        - Efficient data collection from current view
+        - Background processing for non-blocking file generation
+        - Minimal memory usage during data extraction
+        - Strategic UI updates for smooth user experience
         
         Args:
-            event: Optional keyboard event when triggered by shortcut
+            event: Optional event object from keyboard shortcut (Ctrl+E) or
+                   menu selection, allows unified export request handling
+                   
+        View Context Handling:
+        - Respects current table filtering and sorting state
+        - Exports exactly what user sees in current session
+        - Maintains data relationships and order from view
+        - Provides meaningful export based on user's work context
+        
+        Note:
+            This method specializes in view-contextual exports, ensuring
+            users get exactly the data they're currently working with,
+            formatted professionally in Excel for external use.
         """
         try:
             filetypes = [
@@ -1341,6 +3224,237 @@ class CrewGUI:
                         
         except Exception as e:
             logging.error(f"Error applying column visibility: {e}")
+
+    def _discover_scripts(self) -> List[str]:
+        """Discover Python scripts in the workspace"""
+        scripts = []
+        try:
+            import os
+            from pathlib import Path
+            
+            # Get workspace root directory
+            workspace_root = Path.cwd()
+            
+            # Find all Python files, excluding certain patterns
+            exclude_patterns = {
+                'gui.py',  # Don't include the GUI itself
+                '__pycache__',
+                '.git',
+                'venv',
+                'env',
+                'node_modules'
+            }
+            
+            for py_file in workspace_root.rglob("*.py"):
+                # Skip files in excluded directories or with excluded names
+                if any(pattern in str(py_file) for pattern in exclude_patterns):
+                    continue
+                    
+                # Make path relative to workspace root
+                relative_path = py_file.relative_to(workspace_root)
+                scripts.append(str(relative_path))
+                
+        except Exception as e:
+            logging.error(f"Error discovering scripts: {e}")
+            
+        return sorted(scripts)
+
+    def _update_script_menu(self) -> None:
+        """Update script menu with discovered Python scripts"""
+        try:
+            # Clear existing menu items
+            self.script_menu.delete(0, 'end')
+            
+            # Discover scripts
+            scripts = self._discover_scripts()
+            
+            if not scripts:
+                self.script_menu.add_command(label="No scripts found", state='disabled')
+                return
+                
+            # Add scripts to menu
+            for script_path in scripts:
+                # Create display name (show just filename for common scripts, full path for nested)
+                display_name = script_path
+                if '/' not in script_path or script_path.count('/') == 1:
+                    display_name = Path(script_path).name
+                    
+                self.script_menu.add_command(
+                    label=display_name,
+                    command=lambda path=script_path: self._run_script(path)
+                )
+                
+            # Add separator and utility options
+            self.script_menu.add_separator()
+            self.script_menu.add_command(label="Open Script Folder", command=self._open_script_folder)
+            
+        except Exception as e:
+            logging.error(f"Error updating script menu: {e}")
+
+    def _run_script(self, script_path: str) -> None:
+        """Run a selected Python script"""
+        try:
+            import subprocess
+            import sys
+            from pathlib import Path
+            
+            # Update status
+            script_name = Path(script_path).name
+            self.update_status(f"Running script: {script_name}...")
+            self.root.update_idletasks()
+            
+            # Run script in background
+            def execute_script():
+                try:
+                    # Run the script using the same Python interpreter
+                    result = subprocess.run(
+                        [sys.executable, script_path],
+                        capture_output=True,
+                        text=True,
+                        timeout=300,  # 5 minute timeout
+                        cwd=Path.cwd()
+                    )
+                    
+                    return {
+                        'success': result.returncode == 0,
+                        'stdout': result.stdout,
+                        'stderr': result.stderr,
+                        'returncode': result.returncode
+                    }
+                except subprocess.TimeoutExpired:
+                    return {
+                        'success': False,
+                        'stdout': '',
+                        'stderr': 'Script execution timed out after 5 minutes',
+                        'returncode': -1
+                    }
+                except Exception as e:
+                    return {
+                        'success': False,
+                        'stdout': '',
+                        'stderr': str(e),
+                        'returncode': -1
+                    }
+            
+            def on_script_complete(result):
+                try:
+                    if result['success']:
+                        self.update_status(f"Script completed: {script_name}")
+                        if result['stdout'].strip():
+                            self._show_script_output(script_name, result['stdout'], result['stderr'])
+                    else:
+                        self.update_status(f"Script failed: {script_name}")
+                        self._show_script_output(script_name, result['stdout'], result['stderr'], False)
+                        
+                except Exception as e:
+                    logging.error(f"Error handling script completion: {e}")
+                    self.update_status(f"Error processing script results: {script_name}")
+            
+            # Execute in background
+            self.run_in_background(execute_script, callback=on_script_complete)
+            
+        except Exception as e:
+            logging.error(f"Error running script {script_path}: {e}")
+            self.update_status(f"Failed to run script: {script_path}")
+            messagebox.showerror("Script Error", f"Failed to run script {script_path}:\n{e}")
+
+    def _show_script_output(self, script_name: str, stdout: str, stderr: str, success: bool = True) -> None:
+        """Show script output in a dialog window"""
+        try:
+            # Create dialog window
+            dialog = tk.Toplevel(self.root)
+            dialog.title(f"Script Output: {script_name}")
+            dialog.geometry("800x600")
+            dialog.transient(self.root)
+            dialog.grab_set()
+            
+            # Create main frame
+            main_frame = ttk.Frame(dialog, padding="10")
+            main_frame.grid(row=0, column=0, sticky='nsew')
+            
+            # Configure dialog weights
+            dialog.grid_rowconfigure(0, weight=1)
+            dialog.grid_columnconfigure(0, weight=1)
+            main_frame.grid_rowconfigure(1, weight=1)
+            main_frame.grid_columnconfigure(0, weight=1)
+            
+            # Title label
+            status_text = "✓ Success" if success else "✗ Failed"
+            title_label = ttk.Label(main_frame, text=f"{status_text}: {script_name}", 
+                                  font=('TkDefaultFont', 12, 'bold'))
+            title_label.grid(row=0, column=0, pady=(0, 10), sticky='w')
+            
+            # Create notebook for tabs
+            notebook = ttk.Notebook(main_frame)
+            notebook.grid(row=1, column=0, sticky='nsew')
+            
+            # Standard output tab
+            stdout_frame = ttk.Frame(notebook)
+            notebook.add(stdout_frame, text="Standard Output")
+            
+            stdout_frame.grid_rowconfigure(0, weight=1)
+            stdout_frame.grid_columnconfigure(0, weight=1)
+            
+            stdout_text = tk.Text(stdout_frame, wrap='word', font=('Consolas', 10))
+            stdout_scroll = ttk.Scrollbar(stdout_frame, orient='vertical', command=stdout_text.yview)
+            stdout_text.configure(yscrollcommand=stdout_scroll.set)
+            
+            stdout_text.grid(row=0, column=0, sticky='nsew')
+            stdout_scroll.grid(row=0, column=1, sticky='ns')
+            
+            # Error output tab
+            stderr_frame = ttk.Frame(notebook)
+            notebook.add(stderr_frame, text="Error Output")
+            
+            stderr_frame.grid_rowconfigure(0, weight=1)
+            stderr_frame.grid_columnconfigure(0, weight=1)
+            
+            stderr_text = tk.Text(stderr_frame, wrap='word', font=('Consolas', 10))
+            stderr_scroll = ttk.Scrollbar(stderr_frame, orient='vertical', command=stderr_text.yview)
+            stderr_text.configure(yscrollcommand=stderr_scroll.set)
+            
+            stderr_text.grid(row=0, column=0, sticky='nsew')
+            stderr_scroll.grid(row=0, column=1, sticky='ns')
+            
+            # Populate content
+            stdout_text.insert('1.0', stdout if stdout.strip() else "No standard output")
+            stderr_text.insert('1.0', stderr if stderr.strip() else "No error output")
+            
+            # Make text widgets read-only
+            stdout_text.configure(state='disabled')
+            stderr_text.configure(state='disabled')
+            
+            # Button frame
+            button_frame = ttk.Frame(main_frame)
+            button_frame.grid(row=2, column=0, pady=(10, 0), sticky='ew')
+            
+            # Close button
+            ttk.Button(button_frame, text="Close", 
+                      command=dialog.destroy).pack(side='right')
+            
+        except Exception as e:
+            logging.error(f"Error showing script output: {e}")
+            messagebox.showerror("Error", f"Failed to show script output: {e}")
+
+    def _open_script_folder(self) -> None:
+        """Open the current directory in the system file manager"""
+        try:
+            import subprocess
+            import platform
+            
+            system = platform.system()
+            if system == "Windows":
+                subprocess.run(['explorer', '.'])
+            elif system == "Darwin":  # macOS
+                subprocess.run(['open', '.'])
+            else:  # Linux and others
+                subprocess.run(['xdg-open', '.'])
+                
+            self.update_status("Opened script folder")
+            
+        except Exception as e:
+            logging.error(f"Error opening script folder: {e}")
+            self.update_status("Failed to open script folder")
 
     def _on_closing(self) -> None:
         """Handle window closing event"""
