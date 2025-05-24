@@ -26,6 +26,114 @@ from queue import Queue
 from typing import Optional, Callable, Any, Tuple
 import time
 #endregion
+
+def auto_import_py_files() -> Tuple[List[str], List[Tuple[str, str]]]:
+    """Automatically import all .py files in the workspace on startup"""
+    import sys
+    import importlib.util
+    import glob
+    import os
+    
+    try:
+        # Get the current working directory
+        workspace_root = Path.cwd()
+        
+        # Find all .py files in the workspace
+        py_files = []
+        
+        # Main directory .py files (excluding current file and known problematic files)
+        main_py_files = glob.glob(str(workspace_root / "*.py"))
+        py_files.extend(main_py_files)
+        
+        # Subdirectory .py files  
+        sub_py_files = glob.glob(str(workspace_root / "**/*.py"), recursive=True)
+        py_files.extend(sub_py_files)
+        
+        # Remove duplicates and sort
+        py_files = sorted(list(set(py_files)))
+        
+        imported_modules = []
+        failed_imports = []
+        
+        # Files to skip (known problematic files or current file)
+        skip_files = {
+            'gui.py',
+            'setup.py',
+            '__init__.py'
+        }
+        
+        # Directories to skip
+        skip_dirs = {
+            '__pycache__',
+            '.git',
+            'venv',
+            'env',
+            'tests',
+            'test'
+        }
+        
+        for py_file in py_files:
+            try:
+                py_path = Path(py_file)
+                relative_path = py_path.relative_to(workspace_root)
+                
+                # Skip files in excluded directories
+                if any(skip_dir in relative_path.parts for skip_dir in skip_dirs):
+                    continue
+                
+                # Skip excluded files
+                if py_path.name in skip_files:
+                    continue
+                
+                # Skip test files
+                if py_path.name.startswith('test_') or 'unittest' in py_path.name:
+                    continue
+                
+                # Create module name from path
+                module_name = str(relative_path.with_suffix(''))
+                module_name = module_name.replace('/', '.').replace('\\', '.')
+                
+                # Handle files with spaces or special characters in names
+                if ' ' in module_name or any(char in module_name for char in ',-'):
+                    # Create a safe module name
+                    safe_name = module_name.replace(' ', '_').replace(',', '_').replace('-', '_')
+                    module_name = safe_name
+                
+                # Try to import the module
+                spec = importlib.util.spec_from_file_location(module_name, py_file)
+                if spec and spec.loader:
+                    # Check if module is already loaded to avoid conflicts
+                    if module_name in sys.modules:
+                        imported_modules.append(f"{module_name} (already loaded)")
+                        continue
+                        
+                    module = importlib.util.module_from_spec(spec)
+                    sys.modules[module_name] = module
+                    spec.loader.exec_module(module)
+                    imported_modules.append(module_name)
+                    
+            except (ImportError, SyntaxError, ModuleNotFoundError) as e:
+                # These are expected for some files
+                failed_imports.append((str(relative_path), f"Import error: {str(e)[:100]}"))
+                continue
+            except Exception as e:
+                failed_imports.append((str(relative_path), f"Unexpected error: {str(e)[:100]}"))
+                logging.warning(f"Failed to auto-import {py_file}: {e}")
+                continue
+        
+        # Log the results
+        if imported_modules:
+            logging.info(f"Auto-imported {len(imported_modules)} modules")
+        
+        if failed_imports:
+            logging.info(f"Skipped {len(failed_imports)} modules (expected for some files)")
+                
+        return imported_modules, failed_imports
+        
+    except Exception as e:
+        logging.error(f"Auto-import process failed: {e}")
+        return [], [(str(workspace_root), str(e))]
+
 class CrewGUI:
     def __init__(self, root: tk.Tk) -> None:
         """Initialize the GUI application
@@ -47,6 +155,10 @@ class CrewGUI:
             self.create_all_widgets()
             self.bind_events()
             
+            # Auto-import all .py files in workspace after GUI is set up
+            self.update_status("Auto-importing workspace modules...")
+            self.imported_modules, self.failed_imports = auto_import_py_files()
+            
             # Initialize background worker
             self.task_queue: Queue = Queue()
             self.worker_thread = threading.Thread(target=self._background_worker, daemon=True)
@@ -57,6 +169,11 @@ class CrewGUI:
             
             # Load default data file if exists
             self.load_default_data()
+            
+            # Update status with import results
+            total_imported = len(self.imported_modules) if hasattr(self, 'imported_modules') else 0
+            total_failed = len(self.failed_imports) if hasattr(self, 'failed_imports') else 0
+            self.update_status(f"Ready - Auto-imported {total_imported} modules ({total_failed} failed)")
             
         except Exception as e:
             logging.error(f"Failed to initialize GUI: {e}")
@@ -87,11 +204,12 @@ class CrewGUI:
         view_menu = tk.Menu(self.menu_bar, tearoff=0)
         self.menu_bar.add_cascade(label="View", menu=view_menu)
         view_menu.add_command(label="Refresh (F5)", command=self._refresh_views)
+        view_menu.add_command(label="Show Imported Modules", command=self._show_imported_modules)
         view_menu.add_separator()
         
         # Add column visibility submenu
-        self.column_menu = tk.Menu(view_menu, tearoff=0)
-        view_menu.add_cascade(label="Columns", menu=self.column_menu)
+        self.column_visibility_menu = tk.Menu(view_menu, tearoff=0)
+        view_menu.add_cascade(label="Columns", menu=self.column_visibility_menu)
 
     def load_window_state(self) -> None:
         """Load saved window state"""
@@ -171,21 +289,35 @@ class CrewGUI:
         self.root.grid_rowconfigure(0, weight=1)
         self.root.grid_columnconfigure(0, weight=1)
         
-        # Left and right panels
-        self.left_frame = ttk.Frame(self.main_frame)
-        self.left_frame.grid(row=0, column=0, padx=5, pady=5, sticky='nsew')
-        
-        self.right_frame = ttk.Frame(self.main_frame)
-        self.right_frame.grid(row=0, column=1, padx=5, pady=5, sticky='nsew')
-        
         # Configure main frame weights
-        self.main_frame.grid_columnconfigure(0, weight=0)  # Left frame fixed width
-        self.main_frame.grid_columnconfigure(1, weight=1)  # Right frame expandable
         self.main_frame.grid_rowconfigure(0, weight=1)
+        self.main_frame.grid_columnconfigure(0, weight=1)
+        
+        # Create PanedWindow for resizable divider between left and right sections
+        self.paned_window = ttk.PanedWindow(self.main_frame, orient='horizontal')
+        self.paned_window.grid(row=0, column=0, sticky='nsew', padx=5, pady=5)
+        
+        # Left panel with fixed narrow width
+        self.left_frame = ttk.Frame(self.paned_window, width=280)
+        self.left_frame.grid_propagate(False)  # Prevent frame from shrinking
+        
+        # Right panel 
+        self.right_frame = ttk.Frame(self.paned_window)
+        
+        # Add frames to paned window
+        self.paned_window.add(self.left_frame, weight=0)  # Left: narrow, not expandable
+        self.paned_window.add(self.right_frame, weight=1)  # Right: expandable
+
+        # Configure left frame grid weights for sections
+        self.left_frame.grid_columnconfigure(0, weight=1)
+        self.left_frame.grid_rowconfigure(0, weight=0)  # Controls section - fixed height
+        self.left_frame.grid_rowconfigure(1, weight=1)  # Groups section - expandable
+        self.left_frame.grid_rowconfigure(2, weight=0)  # Filter section - fixed height
 
         # Configure right frame row weights
         self.right_frame.grid_rowconfigure(0, weight=3)  # Data view gets more space
         self.right_frame.grid_rowconfigure(1, weight=1)  # Details view gets less space
+        self.right_frame.grid_columnconfigure(0, weight=1)
 
     def create_all_widgets(self) -> None:
         """Create all GUI widgets"""
@@ -648,6 +780,9 @@ class CrewGUI:
             
             # Update column menu with current headers
             self._update_column_menu()
+            
+            # Apply current column visibility settings
+            self._apply_column_visibility()
                 
         except Exception as e:
             logging.error(f"Error updating data view: {e}")
@@ -803,14 +938,119 @@ class CrewGUI:
         self._update_groups_view()
         self.update_status("Views refreshed")
 
-    def _on_closing(self) -> None:
-        """Handle window closing event"""
+    def _show_imported_modules(self) -> None:
+        """Show dialog with imported modules information"""
         try:
-            self.save_window_state()
-            self.root.destroy()
+            # Create dialog window
+            dialog = tk.Toplevel(self.root)
+            dialog.title("Auto-Imported Modules")
+            dialog.geometry("800x600")
+            dialog.transient(self.root)
+            dialog.grab_set()
+            
+            # Create main frame
+            main_frame = ttk.Frame(dialog, padding="10")
+            main_frame.grid(row=0, column=0, sticky='nsew')
+            
+            # Configure dialog weights
+            dialog.grid_rowconfigure(0, weight=1)
+            dialog.grid_columnconfigure(0, weight=1)
+            main_frame.grid_rowconfigure(1, weight=1)
+            main_frame.grid_columnconfigure(0, weight=1)
+            
+            # Title label
+            title_label = ttk.Label(main_frame, text="Auto-Imported Python Modules", 
+                                  font=('TkDefaultFont', 12, 'bold'))
+            title_label.grid(row=0, column=0, pady=(0, 10), sticky='w')
+            
+            # Create notebook for tabs
+            notebook = ttk.Notebook(main_frame)
+            notebook.grid(row=1, column=0, sticky='nsew')
+            
+            # Successful imports tab
+            success_frame = ttk.Frame(notebook)
+            notebook.add(success_frame, text=f"Successfully Imported ({len(getattr(self, 'imported_modules', []))})")
+            
+            success_frame.grid_rowconfigure(0, weight=1)
+            success_frame.grid_columnconfigure(0, weight=1)
+            
+            success_text = tk.Text(success_frame, wrap='word', font=('Consolas', 10))
+            success_scroll = ttk.Scrollbar(success_frame, orient='vertical', command=success_text.yview)
+            success_text.configure(yscrollcommand=success_scroll.set)
+            
+            success_text.grid(row=0, column=0, sticky='nsew')
+            success_scroll.grid(row=0, column=1, sticky='ns')
+            
+            # Failed imports tab
+            failed_frame = ttk.Frame(notebook)
+            notebook.add(failed_frame, text=f"Failed Imports ({len(getattr(self, 'failed_imports', []))})")
+            
+            failed_frame.grid_rowconfigure(0, weight=1)
+            failed_frame.grid_columnconfigure(0, weight=1)
+            
+            failed_text = tk.Text(failed_frame, wrap='word', font=('Consolas', 10))
+            failed_scroll = ttk.Scrollbar(failed_frame, orient='vertical', command=failed_text.yview)
+            failed_text.configure(yscrollcommand=failed_scroll.set)
+            
+            failed_text.grid(row=0, column=0, sticky='nsew')
+            failed_scroll.grid(row=0, column=1, sticky='ns')
+            
+            # Populate successful imports
+            if hasattr(self, 'imported_modules'):
+                success_text.insert('1.0', "Successfully imported modules:\n\n")
+                for i, module in enumerate(self.imported_modules, 1):
+                    success_text.insert('end', f"{i:3d}. {module}\n")
+            else:
+                success_text.insert('1.0', "No import information available.\nAuto-import may not have run yet.")
+            
+            # Populate failed imports
+            if hasattr(self, 'failed_imports') and self.failed_imports:
+                failed_text.insert('1.0', "Failed imports:\n\n")
+                for i, (file_path, error) in enumerate(self.failed_imports, 1):
+                    failed_text.insert('end', f"{i:3d}. {file_path}\n")
+                    failed_text.insert('end', f"     Error: {error}\n\n")
+            else:
+                failed_text.insert('1.0', "No failed imports!")
+            
+            # Make text widgets read-only
+            success_text.configure(state='disabled')
+            failed_text.configure(state='disabled')
+            
+            # Button frame
+            button_frame = ttk.Frame(main_frame)
+            button_frame.grid(row=2, column=0, pady=(10, 0), sticky='ew')
+            
+            # Re-import button
+            ttk.Button(button_frame, text="Re-import All", 
+                      command=lambda: self._reimport_modules(dialog)).pack(side='left', padx=(0, 5))
+            
+            # Close button
+            ttk.Button(button_frame, text="Close", 
+                      command=dialog.destroy).pack(side='right')
+            
         except Exception as e:
-            logging.error(f"Error during shutdown: {e}")
-            self.root.destroy()
+            logging.error(f"Error showing imported modules dialog: {e}")
+            messagebox.showerror("Error", f"Failed to show imported modules: {e}")
+
+    def _reimport_modules(self, dialog=None) -> None:
+        """Re-run the auto-import process"""
+        try:
+            self.update_status("Re-importing workspace modules...")
+            self.imported_modules, self.failed_imports = auto_import_py_files()
+            
+            # Update status with import results
+            total_imported = len(self.imported_modules)
+            total_failed = len(self.failed_imports)
+            self.update_status(f"Re-import complete - {total_imported} modules ({total_failed} failed)")
+            
+            # Close dialog if provided and show new one
+            if dialog:
+                dialog.destroy()
+                self._show_imported_modules()
+                
+        except Exception as e:
+            logging.error(f"Error re-importing modules: {e}")
+            self.update_status("Re-import failed")
 
     def load_default_data(self) -> None:
         """Load default data file if it exists"""
@@ -989,15 +1229,127 @@ class CrewGUI:
             self.update_status("Failed to export data")
 
     def _update_column_menu(self) -> None:
-        """Update column selection dropdown with current headers"""
+        """Update column visibility menu with current headers"""
         try:
-            if hasattr(self, 'column_menu'):
+            if hasattr(self, 'column_visibility_menu') and hasattr(self, 'headers'):
+                # Clear existing menu items
+                self.column_visibility_menu.delete(0, 'end')
+                
+                # Initialize column visibility tracking if not exists
+                if not hasattr(self, 'column_visibility'):
+                    self.column_visibility = {}
+                
+                # Add "Show All" and "Hide All" options
+                self.column_visibility_menu.add_command(label="Show All", command=self._show_all_columns)
+                self.column_visibility_menu.add_command(label="Hide All", command=self._hide_all_columns)
+                self.column_visibility_menu.add_separator()
+                
+                # Add toggle option for each column
+                for i, header in enumerate(self.headers):
+                    # Initialize visibility state if not set
+                    if header not in self.column_visibility:
+                        self.column_visibility[header] = True
+                    
+                    # Create checkable menu item
+                    var = tk.BooleanVar(value=self.column_visibility[header])
+                    self.column_visibility_menu.add_checkbutton(
+                        label=header,
+                        variable=var,
+                        command=lambda h=header, v=var: self._toggle_column_visibility(h, v)
+                    )
+                    
+                    # Store variable for later reference
+                    setattr(self, f'column_var_{i}', var)
+                    
+            # Also update the filter dropdown with column names
+            if hasattr(self, 'column_menu') and hasattr(self, 'headers'):
                 headers = ['All Columns'] + self.headers
                 self.column_menu['values'] = headers
                 if self.column_var.get() not in headers:
                     self.column_var.set('All Columns')
+                    
         except Exception as e:
             logging.error(f"Error updating column menu: {e}")
+
+    def _show_all_columns(self) -> None:
+        """Show all columns in the data view"""
+        try:
+            if hasattr(self, 'headers') and hasattr(self, 'column_visibility'):
+                for i, header in enumerate(self.headers):
+                    self.column_visibility[header] = True
+                    if hasattr(self, f'column_var_{i}'):
+                        getattr(self, f'column_var_{i}').set(True)
+                
+                self._apply_column_visibility()
+                self.update_status("All columns shown")
+                
+        except Exception as e:
+            logging.error(f"Error showing all columns: {e}")
+
+    def _hide_all_columns(self) -> None:
+        """Hide all columns except the first one (to maintain table structure)"""
+        try:
+            if hasattr(self, 'headers') and hasattr(self, 'column_visibility'):
+                for i, header in enumerate(self.headers):
+                    # Keep at least the first column visible
+                    visibility = True if i == 0 else False
+                    self.column_visibility[header] = visibility
+                    if hasattr(self, f'column_var_{i}'):
+                        getattr(self, f'column_var_{i}').set(visibility)
+                
+                self._apply_column_visibility()
+                self.update_status("All columns hidden except first")
+                
+        except Exception as e:
+            logging.error(f"Error hiding all columns: {e}")
+
+    def _toggle_column_visibility(self, header: str, var: tk.BooleanVar) -> None:
+        """Toggle visibility of a specific column"""
+        try:
+            if hasattr(self, 'column_visibility'):
+                self.column_visibility[header] = var.get()
+                self._apply_column_visibility()
+                status = "shown" if var.get() else "hidden"
+                self.update_status(f"Column '{header}' {status}")
+                
+        except Exception as e:
+            logging.error(f"Error toggling column visibility for {header}: {e}")
+
+    def _apply_column_visibility(self) -> None:
+        """Apply current column visibility settings to the data table"""
+        try:
+            if not hasattr(self, 'column_visibility') or not hasattr(self, 'headers'):
+                return
+                
+            # Get current columns
+            columns = self.data_table["columns"]
+            if not columns:
+                return
+            
+            # Apply visibility settings
+            for i, header in enumerate(self.headers):
+                if i < len(columns):
+                    column_id = columns[i]
+                    is_visible = self.column_visibility.get(header, True)
+                    
+                    if is_visible:
+                        # Show column - restore width
+                        self.data_table.column(column_id, width=100, minwidth=50)
+                    else:
+                        # Hide column - set width to 0
+                        self.data_table.column(column_id, width=0, minwidth=0)
+                        
+        except Exception as e:
+            logging.error(f"Error applying column visibility: {e}")
+
+    def _on_closing(self) -> None:
+        """Handle window closing event"""
+        try:
+            self.save_window_state()
+            self.root.destroy()
+        except Exception as e:
+            logging.error(f"Error during shutdown: {e}")
+            self.root.destroy()
 
 def main() -> None:
     """Main entry point for the Crew Manager application"""

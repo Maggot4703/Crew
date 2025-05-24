@@ -25,6 +25,7 @@ from PIL import Image, ImageDraw
 import matplotlib as plt
 import numpy as np
 import ijson
+import math
 #endregion
 
 #region globals
@@ -134,10 +135,12 @@ def overlayGrid(image_path: str,
         return img
     
     except FileNotFoundError:
-        print(f"Error: Image file '{image_path}' not found")
+        # print(f"Error: Image file '{image_path}' not found")
+        logging.error(f"Error: Image file '{image_path}' not found")
         raise
     except Exception as e:
-        print(f"Error processing image: {e}")
+        # print(f"Error processing image: {e}")
+        logging.error(f"Error processing image: {e}")
         raise
 #endregion
 
@@ -193,20 +196,30 @@ def read_file(filename: str):
             raise ValueError("Unsupported file format. Use .csv or .xlsx/.xls")
         return df
     except FileNotFoundError:
-        print(f"Error: Could not find file '{filename}'")
+        # print(f"Error: Could not find file '{filename}'")
+        logging.error(f"Error: Could not find file '{filename}'")
     except Exception as e:
-        print(f"Error reading file: {e}")
+        # print(f"Error reading file: {e}")
+        logging.error(f"Error reading file: {e}")
     return None
 
 def showColumn(col: str = "SQUAD") -> str:
     string = f"Column: {col}"
     print(string)
-    with open("data/columns.csv","w") as f:
-        reader = csv.reader(f)
-        for row in reader:
-            if not row[0].startswith("#"):
-                print(row[0], row[1])
-                f.write(f"{row[0]}, {row[1]}\n")
+    try:
+        with open("data/columns.csv","r") as f: # Changed "w" to "r"
+            reader = csv.reader(f)
+            for row in reader:
+                if row and not row[0].startswith("#"): # Added check for empty row
+                    if len(row) > 1:
+                        print(row[0], row[1])
+                        # f.write(f"{row[0]}, {row[1]}\\n") # Removed problematic write
+                    else:
+                        print(row[0])
+    except FileNotFoundError:
+        logging.error("Error: data/columns.csv not found in showColumn")
+    except Exception as e:
+        logging.error(f"Error in showColumn: {e}")
     return string
 
 def showAllColumns(columns: list) -> None:
@@ -322,14 +335,14 @@ def job4(filename: str = "data/npcs.csv"):
     try:
         # Read data files
         print(filename)
-        csv_df = read_file(filename)
-        excel_df = read_file(filename)
+        df = read_file(filename) # Read file once
         # Analyze data
-        analyze_data(csv_df)
-        analyze_data(excel_df)
+        analyze_data(df) # Analyze once
+        # excel_df = read_file(filename) # Removed redundant read
+        # analyze_data(excel_df) # Removed redundant analysis
     except Exception as e:
         print(f"Error in job4: {e}")
-    print("\n=== NPC Analysis complete ===\n")
+    print("\\n=== NPC Analysis complete ===\\n")
     print("job4 show columns complete.")  
     print("\n=== CSV file analysis complete ===\n")
 
@@ -385,8 +398,7 @@ def job7(filename: str = "data/npcs.csv"):
 def job8(filename: str = "data/npcs.csv"):
     display_npc_groups(filename)
     split_csv_groups(filename)
-    print("job8 complete.")  # Changed from job1 to job8
-
+    print("job8 complete.")
 #close
 def Ending(filename: str = "data/npcs.csv"):
     print("\n=== Role Analysis Complete ===")
@@ -452,6 +464,46 @@ def rgb_to_hex(rgb: tuple) -> str:
         str: Hex color string (e.g., '#FF5733')
     """
     return '#' + ''.join(f'{int(c):02X}' for c in rgb)
+
+#TODO: Add more functions for hex calculations
+
+def calculate_hexagon_points(height: int, center_x: int = 0, center_y: int = 0) -> List[Tuple[int, int]]:
+    """
+    Calculate point positions of 6 points of a hexagon by supplying the height only.
+    Returns int values for point coordinates.
+    The hexagon is oriented with two horizontal sides (top and bottom).
+
+    Args:
+        height: The height of the hexagon (distance between parallel horizontal sides).
+        center_x: The x-coordinate of the center of the hexagon.
+        center_y: The y-coordinate of the center of the hexagon.
+
+    Returns:
+        List[Tuple[int, int]]: A list of 6 (x, y) tuples representing the vertices.
+    """
+    if height <= 0:
+        return []
+
+    # Side length 's' of the hexagon.
+    # For a hexagon with height H (distance between parallel sides), s = H / sqrt(3)
+    s = height / math.sqrt(3)
+
+    points = [
+        (center_x + s / 2, center_y + height / 2),  # Top-right
+        (center_x - s / 2, center_y + height / 2),  # Top-left
+        (center_x - s, center_y),                   # Middle-left
+        (center_x - s / 2, center_y - height / 2),  # Bottom-left
+        (center_x + s / 2, center_y - height / 2),  # Bottom-right
+        (center_x + s, center_y)                    # Middle-right
+    ]
+
+    # Round coordinates to the nearest integer
+    int_points = [(round(p[0]), round(p[1])) for p in points]
+    return int_points
+
+#TODO: Calculate point positions of 6 points of a hexagon by supplying the height only as integer.  Return int values for point coordinates only.
+
+
 #endregion
 
 #region CSV Data Processing Functions
@@ -518,7 +570,7 @@ def split_csv_groups(filename: str = "data/npcs.csv") -> dict:
                 df = pd.DataFrame(normalized_group, columns=header)
                 df = df.dropna(how='all')
                 groups[group_index] = df
-        print(current_group)
+        # print(current_group) # Removed debug print
         return groups
     except Exception as e:
         logging.error(f"Error splitting CSV into groups: {e}")
@@ -630,7 +682,8 @@ def main():
 if __name__ == "__main__":
     main()
     display_ascii_characters()
-    start_gui() 
+    start_gui()
+    
 #endregion
 
 #region Documentation

@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 import json
 
 # Define the movie title
-movie_title = "Blade Runner"
+movie_title = "Babylon 5"
 
 # Create a folder to save the information
 folder_name = f"{movie_title.replace(' ', '_')}_Research"
