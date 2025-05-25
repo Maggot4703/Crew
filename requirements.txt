@@ -19,3 +19,8 @@ beautifulsoup4>=4.9.3
 
 # Testing
 pytest>=7.0.0
+
+# Development tools
+black>=22.0.0
+flake8>=5.0.0
+pre-commit>=2.20.0

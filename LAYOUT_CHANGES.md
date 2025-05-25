@@ -22,9 +22,9 @@
 - **Constraints**: Respects minimum sizes (250px left, 400px right)
 
 ### 5. Improved Grid Configuration
-- **Left Frame**: 
+- **Left Frame**:
   - Row 0 (Controls): Fixed height (weight=0)
-  - Row 1 (Groups): Expandable (weight=1) 
+  - Row 1 (Groups): Expandable (weight=1)
   - Row 2 (Filter): Fixed height (weight=0)
 - **Right Frame**:
   - Row 0 (Data View): 3x space (weight=3)

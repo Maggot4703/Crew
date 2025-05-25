@@ -24,96 +24,73 @@ Version: 1.0.0
 Date: 2024
 """
 
-from typing import Type, Callable, Any, Optional
-import functools
-import logging
-from tkinter import messagebox
+"""
+Defines custom exception classes for the application.
 
-class AppError(Exception):
-    """
-    Base exception class for application errors.
-    
-    This is the parent class for all custom exceptions in the Crew Manager
-    application. It provides consistent error handling with optional details.
-    
-    Attributes:
-        message (str): The main error message
-        details (str, optional): Additional error details or context
-        
-    Example:
-        raise AppError("Operation failed", "Database connection timeout")
-    """
-    def __init__(self, message: str, details: Optional[str] = None):
-        self.message = message
-        self.details = details
+This module centralizes all custom exceptions, making error handling
+more specific and manageable throughout the application.
+"""
+
+
+class CrewManagerError(Exception):
+    """Base class for exceptions in the Crew Manager application."""
+
+    pass
+
+
+class DatabaseError(CrewManagerError):
+    """Raised for errors related to database operations."""
+
+    pass
+
+
+class ConfigError(CrewManagerError):
+    """Raised for errors related to application configuration."""
+
+    pass
+
+
+class CacheError(CrewManagerError):
+    """Raised for errors related to caching operations."""
+
+    pass
+
+
+class ScraperError(CrewManagerError):
+    """Raised for errors encountered during web scraping."""
+
+    pass
+
+
+class FileOperationError(CrewManagerError):
+    """Raised for errors related to file operations (read, write, etc.)."""
+
+    pass
+
+
+class GUIError(CrewManagerError):
+    """Raised for errors specific to the GUI components or operations."""
+
+    pass
+
+
+# Example of a more specific error:
+class TravellerDataNotFoundError(ScraperError):
+    """Raised when specific Traveller data cannot be found by the scraper."""
+
+    def __init__(self, message="Traveller data not found", item_searched=None):
+        """
+        Initialize the TravellerDataNotFoundError exception.
+
+        Args:
+            message (str): The error message.
+            item_searched (str, optional): The specific item that was being searched for.
+        """
         super().__init__(message)
+        self.item_searched = item_searched
 
-class DatabaseError(AppError):
-    """
-    Database operation errors.
-    
-    Raised when database operations fail, including connection issues,
-    query execution errors, and data integrity problems.
-    
-    Example:
-        raise DatabaseError("Failed to save data", "Foreign key constraint violation")
-    """
-    pass
-
-class FileOperationError(AppError):
-    """
-    File operation errors.
-    
-    Raised when file I/O operations fail, including reading, writing,
-    file not found, and permission errors.
-    
-    Example:
-        raise FileOperationError("Cannot read file", "Permission denied")
-    """
-    pass
-
-class ValidationError(AppError):
-    """
-    Data validation errors.
-    
-    Raised when data validation fails, including format validation,
-    required field checks, and business rule violations.
-    
-    Example:
-        raise ValidationError("Invalid email format", "Email must contain @ symbol")
-    """
-    pass
-
-class ConfigError(AppError):
-    """
-    Configuration errors.
-    
-    Raised when configuration loading or validation fails, including
-    missing config files, invalid settings, and environment issues.
-    
-    Example:
-        raise ConfigError("Missing config file", "config.json not found")
-    """
-    pass
-
-def format_error_message(error: AppError) -> str:
-    """Format error message with details if available"""
-    if error.details:
-        return f"{error.message}\nDetails: {error.details}"
-    return error.message
-
-def handle_errors(error_types: tuple[Type[Exception], ...] = (Exception,),
-                 show_message: bool = True):
-    """Decorator for error handling"""
-    def decorator(func: Callable) -> Callable:
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs) -> Any:
-            try:
-                return func(*args, **kwargs)
-            except error_types as e:
-                logging.error(f"Error in {func.__name__}: {e}")
-                if show_message:
-                    messagebox.showerror("Error", str(e))
-                raise
-        return wrapper
-    return decorator
+    def __str__(self):
+        """Return a string representation of the exception."""
+        if self.item_searched:
+            return f"{super().__str__()} (Item: {self.item_searched})"
+        return super().__str__()

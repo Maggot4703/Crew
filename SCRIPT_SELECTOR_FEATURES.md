@@ -26,7 +26,7 @@ Added a comprehensive script selector to the View menu that allows users to disc
 
 ### 4. Output Display
 - **Output Dialog**: Custom dialog window showing script results
-- **Tabbed Interface**: 
+- **Tabbed Interface**:
   - "Standard Output" tab for normal output
   - "Error Output" tab for error messages
 - **Success/Failure Indicators**: Visual indicators for script execution status

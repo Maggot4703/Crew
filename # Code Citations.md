@@ -59,7 +59,7 @@ Menu(self.root)
 
             # File menu
             file_menu = tk.Menu(self.menu_bar, tearoff=0)
-            
+
 ```
 
 
@@ -101,4 +101,3 @@ Menu(self.root)
             self.menu_bar.add_cascade(label="File", menu=file_menu)
             file_menu.add_command(
 ```
-
