@@ -1,0 +1,31 @@
+QUICK GITHUB PUSH FIX COMMANDS
+
+1. BASIC SETUP:
+   cd /home/me/BACKUP/PROJECTS/Crew
+   git init
+   git add .
+   git commit -m "Initial commit"
+
+2. ADD REMOTE (replace YOUR_USERNAME):
+   git remote add origin https://github.com/YOUR_USERNAME/Crew.git
+
+3. PUSH:
+   git branch -M main
+   git push -u origin main
+
+4. IF AUTHENTICATION FAILS:
+   - Use Personal Access Token instead of password
+   - Go to GitHub Settings > Developer settings > Personal access tokens
+   - Generate token with 'repo' permissions
+
+5. IF REPOSITORY DOESN'T EXIST:
+   - Create repository on GitHub.com first
+   - Then run commands above
+
+6. FORCE PUSH (LAST RESORT):
+   git push -u origin main --force
+
+7. CHECK STATUS:
+   git status
+   git remote -v
+   git branch

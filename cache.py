@@ -86,6 +86,15 @@ class Cache:
             for file in self.cache_dir.glob("*.cache"):
                 file.unlink()
 
+    def save(self) -> None:
+        """Save all cache items to disk"""
+        for key in self.cache.keys():
+            self._save_to_disk(key)
+
+    def load(self) -> None:
+        """Load all cache items from disk"""
+        self._load_from_disk()
+
     def _save_to_disk(self, key: str) -> None:
         """Persist cache item to disk"""
         try:

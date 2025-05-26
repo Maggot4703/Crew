@@ -65,7 +65,7 @@ class Traveller5Scraper:
         #     print(f"Error fetching {url}: {e}")
         #     return None
         print(f"Fetching page: {url}")  # Placeholder
-        return "<html><body>Mock HTML content</body></html>"  # Placeholder
+        return None  # Placeholder - currently not implemented
 
     def scrape_ship_data(self, ship_name: str) -> dict | None:
         """

@@ -81,7 +81,7 @@ class DatabaseManager:
         """Load data from CSV file with error handling and validation"""
         try:
             if not Path(filename).exists():
-                raise DatabaseError(f"File not found: {filename}")
+                raise FileNotFoundError(f"File not found: {filename}")
 
             data = pd.read_csv(filename)
             headers = list(data.columns)
@@ -101,6 +101,9 @@ class DatabaseManager:
 
             return headers, rows, groups
 
+        except FileNotFoundError:
+            # Re-raise FileNotFoundError without wrapping
+            raise
         except Exception as e:
             self.logger.error(f"Failed to load data from {filename}: {e}")
             raise DatabaseError(f"Failed to load data: {e}")
