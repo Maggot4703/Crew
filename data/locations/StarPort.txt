@@ -1,0 +1,2 @@
+LOCATION: StarPort
+SYSTEM: Regina

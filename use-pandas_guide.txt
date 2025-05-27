@@ -1,0 +1,420 @@
+# COMPREHENSIVE GUIDE TO PANDAS
+
+## 1. Introduction to pandas
+
+Pandas is a powerful Python data analysis toolkit that provides fast, flexible, and expressive data structures designed to make working with "relational" or "labeled" data both easy and intuitive. It's built on top of NumPy and is a fundamental package for data manipulation and analysis in Python.
+
+### Key Components:
+- DataFrame: 2-dimensional labeled data structure with columns of potentially different types
+- Series: 1-dimensional labeled array capable of holding any data type
+
+## 2. Installation
+
+```python
+pip install pandas
+```
+
+Basic import:
+```python
+import pandas as pd
+import numpy as np  # Often used alongside pandas
+```
+
+## 3. Creating Data Structures
+
+### DataFrames
+
+```python
+# From a dictionary
+df = pd.DataFrame({
+    'A': [1, 2, 3],
+    'B': ['a', 'b', 'c'],
+    'C': [4.0, 5.0, 6.0]
+})
+
+# From a list of dictionaries
+df = pd.DataFrame([
+    {'A': 1, 'B': 'a', 'C': 4.0},
+    {'A': 2, 'B': 'b', 'C': 5.0},
+    {'A': 3, 'B': 'c', 'C': 6.0}
+])
+
+# From a NumPy array
+df = pd.DataFrame(np.random.randn(3, 3), columns=['A', 'B', 'C'])
+
+# With custom index
+df = pd.DataFrame({
+    'A': [1, 2, 3],
+    'B': ['a', 'b', 'c']
+}, index=['row1', 'row2', 'row3'])
+```
+
+### Series
+
+```python
+# From a list
+s = pd.Series([1, 3, 5, np.nan, 6, 8])
+
+# From a dictionary
+s = pd.Series({'a': 1, 'b': 2, 'c': 3})
+
+# With custom index
+s = pd.Series([1, 2, 3], index=['x', 'y', 'z'])
+```
+
+## 4. Reading and Writing Data
+
+### Reading Data
+
+```python
+# CSV
+df = pd.read_csv('filename.csv')
+
+# Excel
+df = pd.read_excel('filename.xlsx', sheet_name='Sheet1')
+
+# JSON
+df = pd.read_json('filename.json')
+
+# SQL
+import sqlite3
+conn = sqlite3.connect('database.db')
+df = pd.read_sql('SELECT * FROM table_name', conn)
+
+# HTML tables
+df = pd.read_html('https://example.com/table.html')[0]
+
+# Parquet
+df = pd.read_parquet('filename.parquet')
+
+# With options
+df = pd.read_csv('filename.csv', 
+                header=0,              # Row to use as column names
+                index_col=0,           # Column to use as index
+                skiprows=[1, 2],       # Skip specific rows
+                na_values=['NA', '?'], # Custom NA values
+                parse_dates=['date'])  # Parse date columns
+```
+
+### Writing Data
+
+```python
+# CSV
+df.to_csv('output.csv', index=False)
+
+# Excel
+df.to_excel('output.xlsx', sheet_name='Sheet1')
+
+# JSON
+df.to_json('output.json')
+
+# SQL
+df.to_sql('table_name', conn, if_exists='replace')
+
+# Parquet
+df.to_parquet('output.parquet')
+```
+
+## 5. Basic Manipulation
+
+### Viewing Data
+
+```python
+# View first/last rows
+df.head()  # First 5 rows
+df.tail(3) # Last 3 rows
+
+# Basic info
+df.info()
+df.describe()  # Statistical summary
+
+# Dimensions, shape
+df.shape
+
+# Column and index names
+df.columns
+df.index
+
+# Data types
+df.dtypes
+```
+
+### Selection
+
+```python
+# Column selection
+df['A']         # Single column (returns Series)
+df[['A', 'B']]  # Multiple columns (returns DataFrame)
+
+# Row selection by position
+df.iloc[0]      # First row
+df.iloc[0:3]    # First three rows
+df.iloc[1:3, 2:4]  # Rows 1-2, columns 2-3
+
+# Row selection by label
+df.loc['row1']        # By row label
+df.loc['row1':'row3'] # Range of row labels
+df.loc['row1', 'A']   # Specific cell
+df.loc[:, 'A':'C']    # All rows, columns A through C
+
+# Boolean indexing
+df[df['A'] > 2]                # Rows where A > 2
+df[(df['A'] > 2) & (df['B'] < 5)]  # Combining conditions
+```
+
+### Data Modification
+
+```python
+# Setting values
+df['A'] = 10           # Set entire column to 10
+df.loc[0, 'A'] = 100   # Set specific value
+df.iloc[0, 0] = 100    # Set by position
+
+# Adding new columns
+df['D'] = df['A'] + df['B']
+df.assign(E=df['A'] * 2)
+
+# Dropping columns/rows
+df.drop('A', axis=1)   # Drop column A
+df.drop([0, 1])        # Drop rows 0 and 1
+df.drop(columns=['A', 'B'])  # Drop multiple columns
+df.drop(index=['row1', 'row2'])  # Drop by index
+
+# Note: These don't modify the original DataFrame unless inplace=True
+df.drop('A', axis=1, inplace=True)  # Modifies df directly
+```
+
+## 6. Data Cleaning
+
+### Missing Values
+
+```python
+# Finding missing values
+df.isna()       # Returns boolean DataFrame
+df.isna().sum() # Count NaNs per column
+
+# Handling missing values
+df.dropna()                 # Drop rows with any NaN
+df.dropna(axis=1)           # Drop columns with any NaN
+df.dropna(thresh=3)         # Drop rows with fewer than 3 non-NaN values
+df.fillna(0)                # Replace NaN with 0
+df.fillna({'A': 0, 'B': -1})  # Different values per column
+df['A'].fillna(df['A'].mean())  # Replace with mean
+```
+
+### Duplicates
+
+```python
+# Find duplicates
+df.duplicated()       # Boolean Series (True for duplicate rows)
+df.duplicated().sum() # Count of duplicates
+
+# Remove duplicates
+df.drop_duplicates()
+df.drop_duplicates(subset=['A', 'B'])  # Based on specific columns
+df.drop_duplicates(keep='last')  # Keep last occurrence
+```
+
+### Data Type Conversion
+
+```python
+# Convert types
+df['A'] = df['A'].astype(float)
+df['date'] = pd.to_datetime(df['date'])
+df['B'] = pd.to_numeric(df['B'], errors='coerce')  # 'coerce' turns invalid values to NaN
+
+# Type checking
+df['A'].dtype
+```
+
+## 7. Operations and Calculations
+
+### Aggregations
+
+```python
+# Basic statistics
+df.mean()       # Mean of each column
+df['A'].sum()   # Sum of column A
+df.max()        # Max of each column
+df.min()        # Min of each column
+df.median()     # Median of each column
+df.std()        # Standard deviation
+df.quantile(0.25)  # 25th percentile
+
+# Multiple aggregations
+df.agg(['min', 'max', 'mean'])
+df['A'].agg(['min', 'max', 'mean'])
+```
+
+### GroupBy Operations
+
+```python
+# Simple groupby
+df.groupby('category').mean()
+df.groupby('category')['value'].sum()
+
+# Multiple groups
+df.groupby(['category', 'subcategory']).mean()
+
+# Multiple aggregations
+df.groupby('category').agg({
+    'A': 'sum',
+    'B': 'mean',
+    'C': ['min', 'max', 'count']
+})
+
+# Reset index after groupby
+df.groupby('category').mean().reset_index()
+```
+
+### Apply Functions
+
+```python
+# Apply to columns
+df['A'].apply(lambda x: x*2)
+df[['A', 'B']].apply(np.square)
+
+# Apply to rows
+df.apply(lambda row: row['A'] + row['B'], axis=1)
+
+# Map values
+df['category'].map({'A': 'Group A', 'B': 'Group B'})
+```
+
+## 8. Merging, Joining and Concatenating
+
+```python
+# Concatenate DataFrames
+pd.concat([df1, df2])              # Vertically (rows)
+pd.concat([df1, df2], axis=1)      # Horizontally (columns)
+pd.concat([df1, df2], ignore_index=True)  # Reset index
+
+# Merge DataFrames (SQL-like joins)
+pd.merge(df1, df2, on='key')                  # Inner join on 'key'
+pd.merge(df1, df2, on='key', how='left')      # Left join
+pd.merge(df1, df2, on='key', how='right')     # Right join
+pd.merge(df1, df2, on='key', how='outer')     # Full outer join
+pd.merge(df1, df2, left_on='key1', right_on='key2')  # Different key names
+
+# Join on index
+df1.join(df2)
+df1.join(df2, how='outer')
+```
+
+## 9. Reshaping Data
+
+```python
+# Pivot tables
+pivot = pd.pivot_table(df, 
+                       values='value',        # Values to aggregate
+                       index=['row_category'], # Goes to rows 
+                       columns=['col_category'], # Goes to columns
+                       aggfunc='mean')         # Aggregation function
+
+# Stacking and unstacking
+stacked = df.stack()       # Pivot columns to rows (makes hierarchical index)
+unstacked = stacked.unstack()   # Pivot hierarchical index to columns
+
+# Melting (wide to long format)
+pd.melt(df, 
+        id_vars=['id'],           # Columns to keep as is
+        value_vars=['A', 'B'],    # Columns to melt
+        var_name='variable',      # Name for the variable column
+        value_name='value')       # Name for the value column
+```
+
+## 10. Time Series Analysis
+
+```python
+# Create date range
+dates = pd.date_range('20230101', periods=6)
+df = pd.DataFrame(np.random.randn(6, 4), index=dates, columns=list('ABCD'))
+
+# Date selection
+df['2023-01-01']            # Specific date
+df['2023-01-01':'2023-01-03']  # Date range
+
+# Resampling time series
+df.resample('D').mean()     # Daily mean
+df.resample('W').sum()      # Weekly sum
+df.resample('M').max()      # Monthly maximum
+
+# Date offsets
+from pandas.tseries.offsets import Day, MonthEnd
+df.shift(periods=1)         # Shift values by 1 period
+df.shift(periods=1, freq=Day())  # Shift dates by 1 day
+
+# Time zone handling
+df.tz_localize('UTC')
+df.tz_convert('US/Eastern')
+```
+
+## 11. Performance Tips
+
+1. Use vectorized operations instead of loops (df['A'] * 2 vs applying a loop)
+2. Use appropriate data types (e.g., categories for categorical data)
+3. Use query() and eval() for complex filters
+4. Consider using pandas built-in methods rather than applying custom functions
+5. For very large datasets, consider dask or vaex as alternatives
+6. Use chunksize parameter when reading large files
+7. Use inplace=True only when necessary as it can create unexpected behavior
+
+## 12. Advanced Features
+
+### MultiIndex
+
+```python
+# Creating a MultiIndex DataFrame
+arrays = [['A', 'A', 'B', 'B'], ['one', 'two', 'one', 'two']]
+index = pd.MultiIndex.from_arrays(arrays, names=('letter', 'number'))
+df = pd.DataFrame({'value': [1, 2, 3, 4]}, index=index)
+
+# Selection with MultiIndex
+df.loc[('A', 'one')]  # Select specific multi-index
+df.xs('one', level='number')  # Cross-section by level
+```
+
+### Categories
+
+```python
+# Convert to categorical
+df['category'] = df['category'].astype('category')
+
+# Create ordered categories
+df['size'] = pd.Categorical(df['size'], 
+                           categories=['small', 'medium', 'large'],
+                           ordered=True)
+```
+
+### String Methods
+
+```python
+# String operations on columns
+df['name'].str.upper()
+df['name'].str.contains('John')
+df['name'].str.replace('John', 'Jon')
+df['name'].str.split(' ').str[0]  # Get first name
+```
+
+## 13. Plotting with pandas
+
+```python
+# Basic plots
+df.plot()  # Line plot by default
+df.plot.bar()
+df.plot.hist()
+df.plot.scatter(x='A', y='B')
+df.plot.box()
+df.plot.kde()
+df.plot.area()
+df.plot.pie(y='A')
+
+# Customizing plots
+import matplotlib.pyplot as plt
+df.plot(figsize=(10, 6), title='My Plot')
+plt.xlabel('X Label')
+plt.ylabel('Y Label')
+plt.show()
+```
+
+For more detailed information, refer to the official pandas documentation at: https://pandas.pydata.org/docs/

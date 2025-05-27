@@ -1,0 +1,126 @@
+# COMPREHENSIVE MODEL CONTEXT PROTOCOL (MCP) GUIDE
+=============================
+
+## WHAT IS MCP?
+------------------------
+
+**Model Context Protocol (MCP)** is an open protocol for exchanging context, data, and instructions between AI models, tools, and applications. It is designed to standardize how context is shared, enabling better interoperability, reproducibility, and extensibility for AI-powered systems.
+
+Official site: https://modelcontext.org/
+
+## INSTALLATION & SETUP
+------------------------
+
+### Install MCP Python Package
+```bash
+pip install model-context-protocol
+```
+
+### Install from Source
+```bash
+git clone https://github.com/modelcontext/model-context-protocol.git
+cd model-context-protocol
+pip install .
+```
+
+## BASIC USAGE
+------------------------
+
+### Import MCP in Python
+```python
+from mcp import MCPClient, MCPServer
+```
+
+### Start an MCP Server
+```python
+from mcp import MCPServer
+
+server = MCPServer(host='127.0.0.1', port=8000)
+server.start()
+```
+
+### Connect as an MCP Client
+```python
+from mcp import MCPClient
+
+client = MCPClient('127.0.0.1', 8000)
+client.connect()
+```
+
+### Send and Receive Context
+```python
+# Send context
+data = {"user": "alice", "query": "What is MCP?"}
+client.send_context(data)
+
+# Receive context
+context = client.receive_context()
+print(context)
+```
+
+## KEY CONCEPTS
+------------------------
+
+- **Context**: Structured data (text, code, metadata, etc.) shared between models and tools.
+- **Session**: A persistent connection for exchanging context and results.
+- **Schema**: Defines the structure of context objects (JSON Schema, YAML, etc.).
+- **Adapters**: Plugins for integrating with different models, tools, or data sources.
+- **Streaming**: MCP supports streaming context and results for large or real-time data.
+
+## ADVANCED USAGE
+------------------------
+
+### Define Custom Context Schemas
+```python
+custom_schema = {
+    "type": "object",
+    "properties": {
+        "user": {"type": "string"},
+        "query": {"type": "string"},
+        "timestamp": {"type": "string", "format": "date-time"}
+    },
+    "required": ["user", "query"]
+}
+client.set_schema(custom_schema)
+```
+
+### Use Adapters
+```python
+from mcp.adapters import OpenAIAdapter
+adapter = OpenAIAdapter(api_key="sk-...")
+client.register_adapter(adapter)
+```
+
+### Streaming Context
+```python
+for chunk in client.stream_context():
+    print(chunk)
+```
+
+### Integrate with Other Tools
+- Use adapters or write your own to connect MCP to databases, LLMs, APIs, or custom tools.
+
+## TROUBLESHOOTING
+------------------------
+
+- **Connection Issues**: Ensure server and client are using the same host/port and firewall allows traffic.
+- **Schema Errors**: Validate your context data matches the schema.
+- **Adapter Problems**: Check adapter documentation and API keys.
+- **Debugging**: Use logging or MCP's debug mode for more information.
+
+## BEST PRACTICES
+------------------------
+1. Always define clear context schemas for reproducibility.
+2. Use sessions for multi-step workflows.
+3. Secure your MCP server if exposed to a network.
+4. Use adapters to modularize integrations.
+5. Log all context exchanges for traceability.
+
+## RESOURCES
+------------------------
+- [MCP GitHub](https://github.com/modelcontext/model-context-protocol)
+- [MCP Documentation](https://modelcontext.org/docs)
+- [MCP Python Package](https://pypi.org/project/model-context-protocol/)
+- [MCP Community](https://discord.gg/modelcontext)
+
+This guide should help you use MCP for context exchange and AI tool integration from basic to advanced usage!

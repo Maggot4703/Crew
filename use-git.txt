@@ -1,0 +1,307 @@
+# COMPREHENSIVE GIT GUIDE
+=============================
+
+## BASIC SETUP AND CONFIGURATION
+-------------------------------
+
+### Initial Setup
+```bash
+# Install Git (Ubuntu/Debian)
+sudo apt-get install git
+
+# Configure your identity
+git config --global user.name "Your Name"
+git config --global user.email "your.email@example.com"
+
+# Set default editor
+git config --global core.editor "nano"  # or vim, code, etc.
+
+# Check your configuration
+git config --list
+```
+
+### Repository Operations
+```bash
+# Initialize a new repository
+git init
+
+# Clone an existing repository
+git clone https://github.com/username/repository.git
+
+# Clone to a specific folder
+git clone https://github.com/username/repository.git my-folder
+```
+
+## DAILY WORKFLOW
+---------------
+
+### Basic Commands
+```bash
+# Check status of working directory
+git status
+
+# Add files to staging area
+git add filename.txt
+git add .                 # Add all files
+
+# Commit changes
+git commit -m "Descriptive message"
+git commit -am "Add and commit in one step" # Only works for modified files, not new files
+
+# View commit history
+git log
+git log --oneline         # Compact view
+git log --graph --oneline # Visual representation
+```
+
+### Branching and Merging
+```bash
+# List all branches
+git branch
+
+# Create a new branch
+git branch feature-branch
+
+# Switch to a branch
+git checkout feature-branch
+git switch feature-branch  # New command in modern Git
+
+# Create and switch in one command
+git checkout -b feature-branch
+git switch -c feature-branch  # Modern equivalent
+
+# Merge a branch into current branch
+git merge feature-branch
+
+# Delete a branch
+git branch -d feature-branch  # Safe delete (won't delete unmerged changes)
+git branch -D feature-branch  # Force delete
+```
+
+## REMOTE REPOSITORIES
+--------------------
+
+### Managing Remotes
+```bash
+# List remote repositories
+git remote -v
+
+# Add a remote
+git remote add origin https://github.com/username/repository.git
+
+# Change remote URL
+git remote set-url origin https://github.com/username/new-repository.git
+
+# Remove a remote
+git remote remove origin
+```
+
+### Synchronizing
+```bash
+# Fetch changes without merging
+git fetch origin
+
+# Pull changes (fetch + merge)
+git pull origin main
+
+# Push changes to remote
+git push origin main
+
+# Push a new branch to remote
+git push -u origin feature-branch
+```
+
+## ADVANCED OPERATIONS
+-------------------
+
+### Stashing
+```bash
+# Temporarily store changes
+git stash
+
+# List stashes
+git stash list
+
+# Apply and drop the most recent stash
+git stash pop
+
+# Apply without dropping
+git stash apply
+
+# Create a named stash
+git stash save "work in progress for feature x"
+
+# Drop a specific stash
+git stash drop stash@{1}
+
+# Clear all stashes
+git stash clear
+```
+
+### Rewriting History
+```bash
+# Amend the last commit
+git commit --amend
+
+# Interactive rebase
+git rebase -i HEAD~3  # Rebase last 3 commits
+
+# Squash commits during merge
+git merge --squash feature-branch
+
+# Reset to a specific commit (dangerous)
+git reset --soft HEAD~1  # Keep changes in staging
+git reset --mixed HEAD~1 # Keep changes in working directory (default)
+git reset --hard HEAD~1  # Discard changes (dangerous)
+```
+
+### Advanced Inspection
+```bash
+# Show changes between commits, commit and working tree, etc
+git diff
+git diff --staged  # Show staged changes
+git diff HEAD~1 HEAD  # Compare with previous commit
+
+# Show who changed each line
+git blame filename.txt
+
+# Search commit history
+git log -S"search string"  # Search for changes containing string
+git log --grep="commit message pattern"  # Search commit messages
+```
+
+## BEST PRACTICES
+--------------
+
+### Commit Guidelines
+1. Make atomic commits (one logical change per commit)
+2. Write clear, concise commit messages
+3. Use present tense in commit messages ("Add feature" not "Added feature")
+4. Reference issue numbers in commit messages if using an issue tracker
+
+### Branching Strategy
+1. Keep the main branch stable
+2. Use feature branches for new work
+3. Use descriptive branch names (feature/add-login, bugfix/header-overlap)
+4. Delete branches after merging
+
+### Workflow Examples
+1. **Git Flow**: main/develop branches with feature, release, and hotfix branches
+2. **GitHub Flow**: main branch with feature branches, pull requests
+3. **GitLab Flow**: main branch with feature branches and environment branches
+
+## TROUBLESHOOTING
+---------------
+
+### Common Issues
+```bash
+# Undo last commit but keep changes
+git reset --soft HEAD~1
+
+# Discard all local changes
+git reset --hard HEAD
+
+# Recover deleted branch (if recent)
+git reflog
+git checkout -b recovered-branch [SHA]
+
+# Remove file from staging area
+git restore --staged filename.txt  # Modern Git
+git reset HEAD filename.txt        # Older Git
+
+# Discard changes to a file
+git restore filename.txt  # Modern Git
+git checkout -- filename.txt  # Older Git
+
+# Fix detached HEAD
+git checkout main  # Or another branch name
+```
+
+### Configuration Issues
+```bash
+# Check where config is stored
+git config --list --show-origin
+
+# Remove a specific config setting
+git config --global --unset user.email
+
+# Edit global config directly
+git config --global --edit
+```
+
+## GITIGNORE AND ATTRIBUTES
+------------------------
+
+### .gitignore Patterns
+```
+# Ignore specific file
+specific-file.txt
+
+# Ignore file type
+*.log
+
+# Ignore directory
+node_modules/
+
+# Negation (don't ignore)
+!important.log
+
+# Ignore all files in directory except one type
+logs/*
+!logs/*.txt
+```
+
+### .gitattributes Examples
+```
+# Auto detect text files and normalize line endings
+* text=auto
+
+# Treat specific files as text
+*.txt text
+*.md text
+
+# Treat specific files as binary
+*.png binary
+*.jpg binary
+
+# Define merge strategy
+database.xml merge=ours
+```
+
+## GIT HOOKS
+---------
+
+### Common Hooks
+- pre-commit: Run before committing (e.g., linting, tests)
+- commit-msg: Validate commit messages
+- pre-push: Run before pushing (e.g., integration tests)
+
+### Example pre-commit Hook
+```bash
+#!/bin/bash
+# .git/hooks/pre-commit
+
+echo "Running linter..."
+npm run lint
+
+if [ $? -ne 0 ]; then
+  echo "Linting failed. Fix errors before committing."
+  exit 1
+fi
+```
+
+## RESOURCES
+---------
+
+### Documentation
+- [Official Git Documentation](https://git-scm.com/doc)
+- [Pro Git Book](https://git-scm.com/book/en/v2)
+
+### Tools
+- [GitHub Desktop](https://desktop.github.com/)
+- [GitKraken](https://www.gitkraken.com/)
+- [Sourcetree](https://www.sourcetreeapp.com/)
+- [Visual Studio Code Git Integration](https://code.visualstudio.com/docs/editor/versioncontrol)
+```
+
+This guide should help you navigate Git from basic to advanced usage!
