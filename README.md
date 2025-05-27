@@ -26,7 +26,7 @@ Crew Manager is a data processing and GUI tool for managing crew or NPC data. It
 
 3. Install dependencies:
     ```bash
-    pip install -r requirements.txt
+    uv pip install -r requirements.txt
     ```
 
 ## Usage

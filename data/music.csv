@@ -2,5 +2,3 @@ MUSIC
 cd /home/me/BACKUP/PROJECTS/Crew/data/music
 ln -s /home/me/Music .
 ln -s /home/me/Videos .
-
-

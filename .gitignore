@@ -1,35 +1,13 @@
-# Byte-compiled / optimized / DLL files
 __pycache__/
-*.py[cod]
-*.so
-
-# Virtual environment
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
 venv/
-.env/
-.venv/
-
-# Database and logs
-*.db
-*.log
-.cache/
-
-# Output files
+.env
+.venv
 output.txt
-output/
-data/npcs/
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# Test & coverage reports
-htmlcov/
-.tox/
-.coverage
-.cache
-pytest_cache/
-
-# Editor/IDE
-.vscode/
-.idea/
-*.swp
+*.log
+data/*
+!data/.gitkeep

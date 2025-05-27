@@ -1,0 +1,41 @@
+> git -c user.useConfigOnly=true commit --quiet --allow-empty-message --file -
+[WARNING] Unstaged files detected.
+[INFO] Stashing unstaged files to /home/me/.cache/pre-commit/patch1748189986-130012.
+trim trailing whitespace.................................................Failed
+- hook id: trailing-whitespace
+- exit code: 1
+- files were modified by this hook
+
+Fixing setup.cfg
+
+fix end of files.........................................................Failed
+- hook id: end-of-file-fixer
+- exit code: 1
+- files were modified by this hook
+
+Fixing data/TERTIUS.csv
+Fixing data/COMPANY.csv
+Fixing data/AI.csv
+Fixing data/VEHICLE.csv
+Fixing data/QUOTE.csv
+Fixing data/PRIMUS.csv
+Fixing data/SHIP.csv
+Fixing data/NPC.csv
+Fixing data/ROLE.csv
+Fixing requirements-dev.txt
+Fixing data/SECUNDUS.csv
+Fixing data/SQUAD.csv
+Fixing data/MUSIC.csv
+Fixing data/SYSTEM.csv
+Fixing data/LIKENESS.csv
+Fixing data/RANK.csv
+Fixing data/R-S.csv
+Fixing data/CLASS.csv
+
+check yaml...............................................................Passed
+check for added large files..............................................Passed
+black....................................................................Passed
+flake8...................................................................Passed
+isort....................................................................Passed
+[WARNING] Stashed changes conflicted with hook auto-fixes... Rolling back fixes...
+[INFO] Restored changes from /home/me/.cache/pre-commit/patch1748189986-130012.

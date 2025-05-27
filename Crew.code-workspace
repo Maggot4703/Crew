@@ -8,6 +8,7 @@
 	"settings": {
 		"cSpell.words": [
 			"Battlestar"
-		]
+		],
+		"DockerRun.DisableDockerrc": true
 	}
 }
