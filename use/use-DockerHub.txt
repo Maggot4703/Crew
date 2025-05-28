@@ -1,0 +1,310 @@
+# Docker Hub Guide
+
+## Introduction
+Docker Hub is Docker's official cloud-based registry service for storing and sharing container images. It provides a centralized resource for container image discovery, distribution, and change management, as well as team and workflow collaboration tools.
+
+## Key Features
+- Public and private repositories
+- Automated builds from GitHub and Bitbucket
+- Official and verified images
+- Team collaboration
+- Webhooks integration
+- Image scanning for vulnerabilities
+
+## Getting Started with Docker Hub
+
+### Creating an Account
+1. Go to [Docker Hub](https://hub.docker.com)
+2. Click "Sign Up" and follow the registration process
+3. Verify your email address
+
+### Logging In
+#### Via Web Interface
+1. Go to [Docker Hub](https://hub.docker.com)
+2. Enter your username/email and password
+
+#### Via Command Line
+```bash
+docker login
+# Enter your username and password when prompted
+```
+
+## Working with Docker Hub Images
+
+### Searching for Images
+#### Via Web Interface
+1. Go to Docker Hub and use the search bar
+2. Use filters for Official Images, Verified Publishers, etc.
+
+#### Via Command Line
+```bash
+docker search nginx
+docker search --filter is-official=true nginx
+```
+
+### Pulling Images
+```bash
+# Pull the latest version
+docker pull nginx
+
+# Pull a specific version
+docker pull nginx:1.19
+
+# Pull from a specific repository
+docker pull username/repository:tag
+```
+
+### Pushing Images to Docker Hub
+
+#### Creating a Repository
+1. Log into Docker Hub
+2. Click "Create Repository"
+3. Enter repository name and description
+4. Choose visibility (public or private)
+5. Click "Create"
+
+#### Tagging and Pushing Images
+```bash
+# Tag an existing image with your Docker Hub username
+docker tag local-image:tag username/repository:tag
+
+# Push the image to Docker Hub
+docker push username/repository:tag
+```
+
+#### Example: Building, Tagging, and Pushing
+```bash
+# Build an image from your Dockerfile
+docker build -t myapp:latest .
+
+# Tag it for Docker Hub
+docker tag myapp:latest username/myapp:latest
+
+# Push to Docker Hub
+docker push username/myapp:latest
+```
+
+## Repository Management
+
+### Repository Visibility
+- **Public**: Visible to everyone, can be pulled without authentication
+- **Private**: Only visible to you and collaborators, requires authentication to pull
+
+### Adding Repository Descriptions
+1. Navigate to your repository
+2. Click "Edit" next to the repository name
+3. Add a short and full description
+4. Optionally add a README file in Markdown format
+
+### Repository Tags
+- Tags help version your images
+- Common tagging conventions:
+  - `latest`: Most recent build
+  - Version numbers: `1.0`, `2.1.3`
+  - OS/architecture specific: `alpine`, `slim`, `buster`
+
+```bash
+# Adding multiple tags to an image
+docker tag myapp:latest username/myapp:1.0
+docker tag myapp:latest username/myapp:stable
+docker push username/myapp:1.0
+docker push username/myapp:stable
+```
+
+## Automated Builds
+
+### Setting Up Automated Builds
+1. Link your GitHub or Bitbucket account to Docker Hub
+   - Profile > Settings > Linked Accounts
+
+2. Create a new repository with automated build:
+   - Click "Create Repository"
+   - Choose "GitHub" or "Bitbucket" as the source
+   - Select the repository and branch
+   - Configure build rules
+   - Click "Create & Build"
+
+### Build Rules
+Build rules define when and how Docker Hub builds images:
+- Source Type: Branch or Tag
+- Source: Branch/tag name (e.g., main, master, develop)
+- Docker Tag: Tag to apply to the built image
+- Dockerfile Location: Path to the Dockerfile
+- Build Context: Directory to use as build context
+
+### Build Triggers
+Manually trigger builds using webhooks:
+```
+https://hub.docker.com/api/build/v1/source/[trigger-token]/trigger/[trigger-name]/call/
+```
+
+## Organizations and Teams
+
+### Creating an Organization
+1. Click on your username > "Organizations" > "Create Organization"
+2. Enter organization details and billing information
+
+### Managing Teams
+1. Go to your organization
+2. Click "Teams" > "Create Team"
+3. Add team members by username or email
+4. Set team permissions (read, write, admin)
+
+### Repository Permissions
+- **Read**: Pull images
+- **Write**: Push and pull images
+- **Admin**: Push, pull, manage settings, delete repository
+
+## Docker Hub Features
+
+### Docker Verified Publishers
+Verified Publisher badges indicate images from trusted commercial vendors that:
+- Are regularly scanned for vulnerabilities
+- Have clearly documented functionality
+- Follow best practices
+
+### Official Images
+Official images are:
+- Curated by Docker
+- Documented well
+- Updated regularly
+- Follow best practices
+
+### Image Tags and Digests
+- Tags are mutable identifiers (e.g., `latest`, `1.0`)
+- Digests are immutable SHA256 hashes of the image content
+
+```bash
+# Pull by digest
+docker pull nginx@sha256:abcd1234...
+```
+
+### Docker Content Trust
+Enable signed images for additional security:
+```bash
+# Enable Docker Content Trust
+export DOCKER_CONTENT_TRUST=1
+
+# Push signed image
+docker push username/repository:tag
+```
+
+## Vulnerability Scanning
+
+### Enabling Scanning
+1. Navigate to your repository
+2. Click "Settings"
+3. Enable "Image Scanning"
+
+### Viewing Scan Results
+1. Navigate to your repository
+2. Click on a tag
+3. View "Vulnerabilities" tab
+
+## Webhooks
+
+### Adding Webhooks
+1. Navigate to your repository
+2. Click "Webhooks"
+3. Click "Create Webhook"
+4. Enter webhook name and URL
+5. Select trigger events
+
+### Webhook Events
+- Successfully pushed image
+- New image build success
+- New image build failure
+
+## Rate Limits and Quotas
+
+### Pull Rate Limits
+- Anonymous pulls: 100 per 6 hours per IP
+- Authenticated users: 200 per 6 hours
+- Paid accounts: Higher limits
+
+### Repository Limits
+- Free tier: Unlimited public repositories, 1 private repository
+- Pro tier: Unlimited public and private repositories
+- Team tier: Additional collaboration features
+
+## Docker Hub CLI (Hub Extension)
+```bash
+# Install the Docker Hub CLI extension
+docker plugin install docker/hub-tool
+
+# Login to Docker Hub
+docker hub login
+
+# List your repositories
+docker hub repo ls
+
+# View repository information
+docker hub repo inspect username/repository
+```
+
+## Best Practices
+
+### Image Naming and Tagging
+1. Use descriptive repository names
+2. Include version numbers in tags
+3. Use immutable tags (avoid overwriting)
+4. Consider using semantic versioning
+
+### Repository Organization
+1. Group related images in organizations
+2. Use consistent naming conventions
+3. Document image usage in README files
+4. Keep the number of tags manageable
+
+### Security
+1. Use private repositories for sensitive images
+2. Enable and review vulnerability scanning
+3. Implement Docker Content Trust for signed images
+4. Regularly update and rebuild images
+5. Limit access to repositories using teams
+
+### Automated Workflows
+1. Implement CI/CD with automated builds
+2. Use webhooks to trigger deployments
+3. Include automated testing before pushing to Docker Hub
+4. Set up notifications for failed builds
+
+## Troubleshooting
+
+### Authentication Issues
+```bash
+# Re-login to Docker Hub
+docker logout
+docker login
+
+# Check Docker Hub status
+curl https://status.docker.com/api/v2/status.json
+```
+
+### Push/Pull Errors
+1. Check your internet connection
+2. Verify repository permissions
+3. Check rate limits
+4. Ensure image tags are correct
+
+### Rate Limit Errors
+1. Authenticate to increase limits
+2. Use a Docker Hub mirror
+3. Pull images less frequently
+4. Consider a paid subscription
+
+## Docker Hub Alternatives
+- **GitHub Container Registry**: Integrated with GitHub
+- **GitLab Container Registry**: Integrated with GitLab
+- **Amazon ECR**: AWS container registry
+- **Google Container Registry**: GCP container registry
+- **Azure Container Registry**: Azure container registry
+- **Harbor**: Open-source registry
+- **Nexus Repository**: Multi-format artifact repository
+
+## Resources
+- [Docker Hub Documentation](https://docs.docker.com/docker-hub/)
+- [Docker Hub](https://hub.docker.com/)
+- [Docker Official Images](https://hub.docker.com/search?q=&type=image&image_filter=official)
+- [Docker Verified Publishers](https://hub.docker.com/search?q=&type=image&image_filter=store)
+- [Docker Hub Pricing](https://www.docker.com/pricing/)
