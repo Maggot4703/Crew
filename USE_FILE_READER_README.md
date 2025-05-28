@@ -75,10 +75,74 @@ A convenient shell script for quick access to any use file.
 
 ## Requirements
 
-These tools require the pyttsx3 library, which will be automatically installed if missing.
+### Python Dependencies
+
+- **pyttsx3**: Python text-to-speech library (automatically installed if missing)
+
+### System Dependencies
+
+- **espeak**: Speech synthesis engine used by pyttsx3 on Linux
+- **libespeak-dev**: Development files for espeak (may be required on some systems)
+- **python3-espeak**: Python bindings for espeak (optional)
+
+The `read_use.sh` script automatically checks for and installs these dependencies if they're missing.
+
+### Installation Methods
+
+#### Automated Installation with Virtual Environment (Recommended)
+
+Use the provided installation script:
+
+```bash
+./install_tts.sh
+```
+
+This script will:
+
+- Create a Python virtual environment (`tts_venv`) if it doesn't exist if it doesn't exist
+- Install pyttsx3 in the virtual environment
+- Install espeak and related system dependencies
+- Make all scripts executable
+- Create virtual environment wrapper scripts for convenience
+
+After installation, use the following wrapper scripts:
+
+- `./read_use_file_venv.sh` - GUI version
+- `./read_use_file_cli_venv.sh --list` - CLI version (list all available files)
+- `./read_use_file_cli_venv.sh --file Docker` - CLI version (read specific file)
+- `./read_use_venv.sh Docker` - Quick access version
+
+#### Semi-Automated Installation
+
+The `read_use.sh` script includes built-in dependency checking (but doesn't use a virtual environment):
+
+```bash
+./read_use.sh
+```
+
+#### Manual Installation
+
+If you prefer to install dependencies manually:
+
+```bash
+# Create and activate a virtual environment
+python3 -m venv tts_venv
+source tts_venv/bin/activate
+
+# Install Python dependencies in the virtual environment
+pip install pyttsx3
+
+# Install system dependencies (Debian/Ubuntu)
+sudo apt-get install espeak libespeak-dev
+
+# For other Linux distributions, use the appropriate package manager
+# Fedora/CentOS: sudo dnf install espeak espeak-devel
+# Arch: sudo pacman -S espeak
+```
 
 ## Notes
 
 - Press Ctrl+C to stop reading at any time in the CLI version
 - The tools search for use-*.txt files in the current directory and all subdirectories
 - Duplicate files (same name in different directories) are handled by only showing one copy
+- On first run, there might be a delay as the required dependencies are installed

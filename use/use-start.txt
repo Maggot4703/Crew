@@ -3,11 +3,12 @@ could you give me comprehensive details of using the folowing list of langauges/
 LIST:
 BASH
 Python
-
+Node
+NPM
 
 
 
 create a file to read out contents of a selected "use-" file to be read out loud
 
-
+read "use-" files to see what may be missing (programming languages and useful tools, etc)
 create script to suggest further files to write as new  "use-"+filename+".txt" files

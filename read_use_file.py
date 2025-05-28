@@ -32,6 +32,9 @@ class UseFileReader:
         self.root.title("Use File Reader")
         self.root.geometry("800x600")
         
+        # Initialize file paths list
+        self.file_paths = []
+        
         self.setup_ui()
         self.load_files()
         
@@ -43,6 +46,9 @@ class UseFileReader:
         # Default voice settings
         self.engine.setProperty('rate', 150)
         self.engine.setProperty('volume', 1.0)
+        
+        # Set female voice if available
+        self.setup_female_voice()
     
     def setup_ui(self):
         """Set up the user interface."""
@@ -124,6 +130,30 @@ class UseFileReader:
     def change_volume(self, value):
         """Change the TTS volume."""
         self.engine.setProperty('volume', float(value))
+        
+    def setup_female_voice(self):
+        """Set up a female voice if available"""
+        try:
+            # Get all available voices
+            voices = self.engine.getProperty('voices')
+            
+            # Find an English voice to use as base
+            english_voice = None
+            for voice in voices:
+                if "english" in voice.id.lower():
+                    english_voice = voice
+                    break
+            
+            if english_voice:
+                # Configure for female voice using espeak variant
+                # In espeak, adding '+f3' to the voice ID makes it female
+                fem_voice = english_voice.id + '+f3'
+                self.engine.setProperty('voice', fem_voice)
+                self.status_var.set("Using female voice")
+        except Exception as e:
+            # If anything goes wrong, just use the default voice
+            print(f"Could not set female voice: {e}")
+            self.status_var.set("Using default voice")
     
     def load_files(self):
         """Load all use- files from the directory and subdirectories."""
@@ -147,12 +177,14 @@ class UseFileReader:
         # Sort files by name
         use_files.sort()
         
+        # Store file paths for later retrieval
+        self.file_paths = []
+        
         for file_path in use_files:
-            # Display filename in listbox, store full path as data
+            # Display filename in listbox, store full path in our list
             filename = os.path.basename(file_path)
             self.file_listbox.insert(tk.END, filename)
-            idx = self.file_listbox.size() - 1
-            self.file_listbox.itemconfig(idx, {'path': file_path})
+            self.file_paths.append(file_path)
         
         if self.file_listbox.size() > 0:
             self.file_listbox.selection_set(0)
@@ -168,7 +200,7 @@ class UseFileReader:
             return None
         
         idx = selection[0]
-        return self.file_listbox.itemconfig(idx, 'path')[-1]
+        return self.file_paths[idx]
     
     def load_selected_file(self):
         """Load the content of the selected file into the preview area."""

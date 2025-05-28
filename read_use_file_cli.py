@@ -46,6 +46,30 @@ def clean_text(text):
     text = re.sub(r'https?://\S+', ' URL link ', text)
     return text
 
+def setup_female_voice(engine):
+    """Set up a female voice if available"""
+    try:
+        # Get all available voices
+        voices = engine.getProperty('voices')
+        
+        # Find an English voice to use as base
+        english_voice = None
+        for voice in voices:
+            if "english" in voice.id.lower():
+                english_voice = voice
+                break
+        
+        if english_voice:
+            # Configure for female voice using espeak variant
+            # In espeak, adding '+f3' to the voice ID makes it female
+            fem_voice = english_voice.id + '+f3'
+            engine.setProperty('voice', fem_voice)
+            return True
+    except Exception as e:
+        print(f"Could not set female voice: {e}")
+    
+    return False
+
 def read_text(file_path, rate=150):
     """Read the file aloud"""
     try:
@@ -55,6 +79,12 @@ def read_text(file_path, rate=150):
         # Initialize TTS engine
         engine = pyttsx3.init()
         engine.setProperty('rate', rate)
+        
+        # Set up female voice
+        if setup_female_voice(engine):
+            print("Using female voice")
+        else:
+            print("Using default voice")
         
         # Clean text for better reading
         clean_content = clean_text(content)
