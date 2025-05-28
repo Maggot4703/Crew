@@ -2,12 +2,7 @@ import io
 
 import numpy as np
 import pytest
-
-from pandas import (
-    NA,
-    DataFrame,
-    read_csv,
-)
+from pandas import NA, DataFrame, read_csv
 
 pytest.importorskip("jinja2")
 

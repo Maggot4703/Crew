@@ -1,13 +1,7 @@
 import numpy as np
-import pytest
-
-from pandas import (
-    Index,
-    Series,
-    Timedelta,
-    timedelta_range,
-)
 import pandas._testing as tm
+import pytest
+from pandas import Index, Series, Timedelta, timedelta_range
 
 
 class TestTimedeltaIndex:

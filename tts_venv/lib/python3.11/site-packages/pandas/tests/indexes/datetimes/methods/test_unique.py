@@ -1,14 +1,7 @@
-from datetime import (
-    datetime,
-    timedelta,
-)
+from datetime import datetime, timedelta
 
-from pandas import (
-    DatetimeIndex,
-    NaT,
-    Timestamp,
-)
 import pandas._testing as tm
+from pandas import DatetimeIndex, NaT, Timestamp
 
 
 def test_unique(tz_naive_fixture):

@@ -1,15 +1,9 @@
 import numpy as np
-import pytest
-
-from pandas.core.dtypes.concat import union_categoricals
-
 import pandas as pd
-from pandas import (
-    Categorical,
-    CategoricalIndex,
-    Series,
-)
 import pandas._testing as tm
+import pytest
+from pandas import Categorical, CategoricalIndex, Series
+from pandas.core.dtypes.concat import union_categoricals
 
 
 class TestUnionCategoricals:

@@ -3,13 +3,7 @@ Includes test for last_valid_index.
 """
 import numpy as np
 import pytest
-
-from pandas import (
-    DataFrame,
-    Index,
-    Series,
-    date_range,
-)
+from pandas import DataFrame, Index, Series, date_range
 
 
 class TestFirstValidIndex:

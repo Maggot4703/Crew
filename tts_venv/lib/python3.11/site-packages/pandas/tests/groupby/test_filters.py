@@ -1,15 +1,10 @@
 from string import ascii_lowercase
 
 import numpy as np
-import pytest
-
 import pandas as pd
-from pandas import (
-    DataFrame,
-    Series,
-    Timestamp,
-)
 import pandas._testing as tm
+import pytest
+from pandas import DataFrame, Series, Timestamp
 
 
 def test_filter_series():

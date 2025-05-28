@@ -2,12 +2,8 @@ import json
 import os
 import re
 
-from pandas.util._print_versions import (
-    _get_dependency_info,
-    _get_sys_info,
-)
-
 import pandas as pd
+from pandas.util._print_versions import _get_dependency_info, _get_sys_info
 
 
 def test_show_versions(tmpdir):

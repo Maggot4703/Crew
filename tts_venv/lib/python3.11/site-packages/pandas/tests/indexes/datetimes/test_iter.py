@@ -1,12 +1,7 @@
 import dateutil.tz
 import numpy as np
 import pytest
-
-from pandas import (
-    DatetimeIndex,
-    date_range,
-    to_datetime,
-)
+from pandas import DatetimeIndex, date_range, to_datetime
 from pandas.core.arrays import datetimes
 
 

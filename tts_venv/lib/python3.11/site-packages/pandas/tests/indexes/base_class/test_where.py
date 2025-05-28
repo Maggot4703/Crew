@@ -1,7 +1,6 @@
 import numpy as np
-
-from pandas import Index
 import pandas._testing as tm
+from pandas import Index
 
 
 class TestWhere:

@@ -1,28 +1,20 @@
 """
 Tests for Timestamp parsing, aimed at pandas/_libs/tslibs/parsing.pyx
 """
-from datetime import datetime
 import re
+from datetime import datetime
 
+import numpy as np
+import pandas._testing as tm
+import pandas.util._test_decorators as td
+import pytest
 from dateutil.parser import parse as du_parse
 from dateutil.tz import tzlocal
 from hypothesis import given
-import numpy as np
-import pytest
-
-from pandas._libs.tslibs import (
-    parsing,
-    strptime,
-)
+from pandas._libs.tslibs import parsing, strptime
 from pandas._libs.tslibs.parsing import parse_datetime_string_with_reso
-from pandas.compat import (
-    ISMUSL,
-    is_platform_windows,
-)
-import pandas.util._test_decorators as td
-
-import pandas._testing as tm
 from pandas._testing._hypothesis import DATETIME_NO_TZ
+from pandas.compat import ISMUSL, is_platform_windows
 
 
 @pytest.mark.skipif(

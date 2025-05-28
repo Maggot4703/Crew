@@ -1,16 +1,10 @@
 import numpy as np
-import pytest
-
-from pandas.compat import PY311
-
-from pandas.core.dtypes.dtypes import DatetimeTZDtype
-
 import pandas as pd
-from pandas import (
-    CategoricalIndex,
-    MultiIndex,
-)
 import pandas._testing as tm
+import pytest
+from pandas import CategoricalIndex, MultiIndex
+from pandas.compat import PY311
+from pandas.core.dtypes.dtypes import DatetimeTZDtype
 
 
 def assert_matching(actual, expected, check_dtype=False):

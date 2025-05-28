@@ -1,7 +1,6 @@
 import numpy as np
-
-from pandas import date_range
 import pandas._testing as tm
+from pandas import date_range
 
 
 class TestSplit:

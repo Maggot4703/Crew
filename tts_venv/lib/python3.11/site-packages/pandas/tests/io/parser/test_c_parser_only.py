@@ -4,31 +4,19 @@ as a CParser-specific issue, the goal is to eventually move as many of
 these tests out of this module as soon as the Python parser can accept
 further arguments when parsing.
 """
-from decimal import Decimal
-from io import (
-    BytesIO,
-    StringIO,
-    TextIOWrapper,
-)
 import mmap
 import os
 import tarfile
+from decimal import Decimal
+from io import BytesIO, StringIO, TextIOWrapper
 
 import numpy as np
-import pytest
-
-from pandas.compat.numpy import np_version_gte1p24
-from pandas.errors import (
-    ParserError,
-    ParserWarning,
-)
-import pandas.util._test_decorators as td
-
-from pandas import (
-    DataFrame,
-    concat,
-)
 import pandas._testing as tm
+import pandas.util._test_decorators as td
+import pytest
+from pandas import DataFrame, concat
+from pandas.compat.numpy import np_version_gte1p24
+from pandas.errors import ParserError, ParserWarning
 
 
 @pytest.mark.parametrize(

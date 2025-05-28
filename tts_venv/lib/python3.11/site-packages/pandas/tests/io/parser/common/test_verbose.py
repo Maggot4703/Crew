@@ -4,9 +4,8 @@ specific classification into the other test modules.
 """
 from io import StringIO
 
-import pytest
-
 import pandas._testing as tm
+import pytest
 
 depr_msg = "The 'verbose' keyword in pd.read_csv is deprecated"
 

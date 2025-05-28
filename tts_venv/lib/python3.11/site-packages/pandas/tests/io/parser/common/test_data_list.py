@@ -5,11 +5,9 @@ specific classification into the other test modules.
 import csv
 from io import StringIO
 
-import pytest
-
-from pandas import DataFrame
 import pandas._testing as tm
-
+import pytest
+from pandas import DataFrame
 from pandas.io.parsers import TextParser
 
 pytestmark = pytest.mark.filterwarnings(

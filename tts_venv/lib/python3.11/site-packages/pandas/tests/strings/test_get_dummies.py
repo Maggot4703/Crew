@@ -1,12 +1,6 @@
 import numpy as np
-
-from pandas import (
-    DataFrame,
-    Index,
-    MultiIndex,
-    Series,
-    _testing as tm,
-)
+from pandas import DataFrame, Index, MultiIndex, Series
+from pandas import _testing as tm
 
 
 def test_get_dummies(any_string_dtype):

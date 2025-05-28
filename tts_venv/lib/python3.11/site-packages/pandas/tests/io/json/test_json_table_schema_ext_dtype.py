@@ -1,37 +1,20 @@
 """Tests for ExtensionDtype Table Schema integration."""
 
-from collections import OrderedDict
 import datetime as dt
 import decimal
-from io import StringIO
 import json
+from collections import OrderedDict
+from io import StringIO
 
-import pytest
-
-from pandas import (
-    NA,
-    DataFrame,
-    Index,
-    array,
-    read_json,
-)
 import pandas._testing as tm
+import pytest
+from pandas import NA, DataFrame, Index, array, read_json
 from pandas.core.arrays.integer import Int64Dtype
 from pandas.core.arrays.string_ import StringDtype
 from pandas.core.series import Series
-from pandas.tests.extension.date import (
-    DateArray,
-    DateDtype,
-)
-from pandas.tests.extension.decimal.array import (
-    DecimalArray,
-    DecimalDtype,
-)
-
-from pandas.io.json._table_schema import (
-    as_json_table_type,
-    build_table_schema,
-)
+from pandas.io.json._table_schema import as_json_table_type, build_table_schema
+from pandas.tests.extension.date import DateArray, DateDtype
+from pandas.tests.extension.decimal.array import DecimalArray, DecimalDtype
 
 
 class TestBuildSchema:

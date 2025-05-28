@@ -2,30 +2,18 @@
 Tests that work on both the Python and C engines but do not have a
 specific classification into the other test modules.
 """
+import os
+import sys
 from datetime import datetime
 from inspect import signature
 from io import StringIO
-import os
 from pathlib import Path
-import sys
 
 import numpy as np
-import pytest
-
-from pandas.errors import (
-    EmptyDataError,
-    ParserError,
-    ParserWarning,
-)
-
-from pandas import (
-    DataFrame,
-    Index,
-    Timestamp,
-    compat,
-)
 import pandas._testing as tm
-
+import pytest
+from pandas import DataFrame, Index, Timestamp, compat
+from pandas.errors import EmptyDataError, ParserError, ParserWarning
 from pandas.io.parsers import TextFileReader
 from pandas.io.parsers.c_parser_wrapper import CParserWrapper
 

@@ -1,20 +1,12 @@
 import datetime
 
 import numpy as np
+import pandas as pd
+import pandas._testing as tm
+import pandas.util._test_decorators as td
 import pytest
 import pytz
-
-import pandas.util._test_decorators as td
-
-import pandas as pd
-from pandas import (
-    Index,
-    Timedelta,
-    merge_asof,
-    option_context,
-    to_datetime,
-)
-import pandas._testing as tm
+from pandas import Index, Timedelta, merge_asof, option_context, to_datetime
 from pandas.core.reshape.merge import MergeError
 
 

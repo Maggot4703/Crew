@@ -1,23 +1,15 @@
-from datetime import datetime
-from io import StringIO
 import itertools
 import re
 import textwrap
+from datetime import datetime
+from io import StringIO
 
 import numpy as np
-import pytest
-
 import pandas as pd
-from pandas import (
-    DataFrame,
-    Index,
-    MultiIndex,
-    get_option,
-    option_context,
-)
 import pandas._testing as tm
-
 import pandas.io.formats.format as fmt
+import pytest
+from pandas import DataFrame, Index, MultiIndex, get_option, option_context
 
 lorem_ipsum = (
     "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod "

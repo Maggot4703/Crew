@@ -2,7 +2,6 @@
 from numpy.f2py._src_pyf import process_str
 from numpy.testing import assert_equal
 
-
 pyf_src = """
 python module foo
     <_rd=real,double precision>
@@ -33,7 +32,7 @@ def normalize_whitespace(s):
     Remove leading and trailing whitespace, and convert internal
     stretches of whitespace to a single space.
     """
-    return ' '.join(s.split())
+    return " ".join(s.split())
 
 
 def test_from_template():

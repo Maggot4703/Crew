@@ -2,25 +2,16 @@
 Tests the TextReader class in parsers.pyx, which
 is integral to the C engine in parsers.py
 """
-from io import (
-    BytesIO,
-    StringIO,
-)
+from io import BytesIO, StringIO
 
 import numpy as np
-import pytest
-
 import pandas._libs.parsers as parser
+import pandas._testing as tm
+import pytest
+from pandas import DataFrame
 from pandas._libs.parsers import TextReader
 from pandas.errors import ParserWarning
-
-from pandas import DataFrame
-import pandas._testing as tm
-
-from pandas.io.parsers import (
-    TextFileReader,
-    read_csv,
-)
+from pandas.io.parsers import TextFileReader, read_csv
 from pandas.io.parsers.c_parser_wrapper import ensure_dtype_objs
 
 

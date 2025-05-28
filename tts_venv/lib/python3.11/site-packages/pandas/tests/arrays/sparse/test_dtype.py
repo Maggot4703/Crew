@@ -2,9 +2,8 @@ import re
 import warnings
 
 import numpy as np
-import pytest
-
 import pandas as pd
+import pytest
 from pandas import SparseDtype
 
 

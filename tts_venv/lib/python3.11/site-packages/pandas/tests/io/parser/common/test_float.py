@@ -5,12 +5,10 @@ specific classification into the other test modules.
 from io import StringIO
 
 import numpy as np
-import pytest
-
-from pandas.compat import is_platform_linux
-
-from pandas import DataFrame
 import pandas._testing as tm
+import pytest
+from pandas import DataFrame
+from pandas.compat import is_platform_linux
 
 pytestmark = pytest.mark.filterwarnings(
     "ignore:Passing a BlockManager to DataFrame:DeprecationWarning"

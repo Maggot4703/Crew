@@ -1,5 +1,4 @@
 import pytest
-
 from pandas.core.dtypes.cast import construct_1d_object_array_from_listlike
 
 

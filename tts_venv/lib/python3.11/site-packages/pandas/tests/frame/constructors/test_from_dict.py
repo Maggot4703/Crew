@@ -1,18 +1,10 @@
 from collections import OrderedDict
 
 import numpy as np
-import pytest
-
-from pandas._config import using_pyarrow_string_dtype
-
-from pandas import (
-    DataFrame,
-    Index,
-    MultiIndex,
-    RangeIndex,
-    Series,
-)
 import pandas._testing as tm
+import pytest
+from pandas import DataFrame, Index, MultiIndex, RangeIndex, Series
+from pandas._config import using_pyarrow_string_dtype
 
 
 class TestFromDict:

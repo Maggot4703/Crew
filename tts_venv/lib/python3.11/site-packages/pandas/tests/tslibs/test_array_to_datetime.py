@@ -1,24 +1,13 @@
-from datetime import (
-    date,
-    datetime,
-    timedelta,
-    timezone,
-)
+from datetime import date, datetime, timedelta, timezone
 
-from dateutil.tz.tz import tzoffset
 import numpy as np
+import pandas._testing as tm
 import pytest
-
-from pandas._libs import (
-    NaT,
-    iNaT,
-    tslib,
-)
+from dateutil.tz.tz import tzoffset
+from pandas import Timestamp
+from pandas._libs import NaT, iNaT, tslib
 from pandas._libs.tslibs.dtypes import NpyDatetimeUnit
 from pandas._libs.tslibs.np_datetime import OutOfBoundsDatetime
-
-from pandas import Timestamp
-import pandas._testing as tm
 
 creso_infer = NpyDatetimeUnit.NPY_FR_GENERIC.value
 

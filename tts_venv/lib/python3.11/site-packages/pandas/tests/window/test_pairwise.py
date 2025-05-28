@@ -1,16 +1,8 @@
 import numpy as np
-import pytest
-
-from pandas.compat import IS64
-
-from pandas import (
-    DataFrame,
-    Index,
-    MultiIndex,
-    Series,
-    date_range,
-)
 import pandas._testing as tm
+import pytest
+from pandas import DataFrame, Index, MultiIndex, Series, date_range
+from pandas.compat import IS64
 from pandas.core.algorithms import safe_sort
 
 

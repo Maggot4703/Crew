@@ -1,7 +1,6 @@
-import pytest
-
-from pandas import Series
 import pandas._testing as tm
+import pytest
+from pandas import Series
 
 
 class TestStrAccessor:

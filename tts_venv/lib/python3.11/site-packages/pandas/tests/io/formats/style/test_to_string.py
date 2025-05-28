@@ -1,11 +1,7 @@
 from textwrap import dedent
 
 import pytest
-
-from pandas import (
-    DataFrame,
-    Series,
-)
+from pandas import DataFrame, Series
 
 pytest.importorskip("jinja2")
 from pandas.io.formats.style import Styler

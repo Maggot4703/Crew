@@ -1,22 +1,15 @@
-from .artist import Artist
-from .axes import Axes
-from .backend_bases import MouseEvent, FigureCanvasBase
-from .path import Path
-from .transforms import Bbox
-
 from collections.abc import Callable, Sequence
 from typing import Any, Literal, overload
-from .typing import (
-    ColorType,
-    DrawStyleType,
-    FillStyleType,
-    LineStyleType,
-    CapStyleType,
-    JoinStyleType,
-    MarkEveryType,
-    MarkerType,
-)
+
 from numpy.typing import ArrayLike
+
+from .artist import Artist
+from .axes import Axes
+from .backend_bases import FigureCanvasBase, MouseEvent
+from .path import Path
+from .transforms import Bbox
+from .typing import (CapStyleType, ColorType, DrawStyleType, FillStyleType,
+                     JoinStyleType, LineStyleType, MarkerType, MarkEveryType)
 
 def segment_hits(
     cx: ArrayLike, cy: ArrayLike, x: ArrayLike, y: ArrayLike, radius: ArrayLike

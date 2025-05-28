@@ -2,19 +2,11 @@ from __future__ import annotations
 
 from io import StringIO
 
-import pytest
-
-from pandas.errors import ParserWarning
-import pandas.util._test_decorators as td
-
-from pandas import (
-    DataFrame,
-    DatetimeIndex,
-    Series,
-    to_datetime,
-)
 import pandas._testing as tm
-
+import pandas.util._test_decorators as td
+import pytest
+from pandas import DataFrame, DatetimeIndex, Series, to_datetime
+from pandas.errors import ParserWarning
 from pandas.io.xml import read_xml
 
 

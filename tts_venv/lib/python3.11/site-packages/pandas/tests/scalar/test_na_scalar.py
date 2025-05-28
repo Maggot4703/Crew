@@ -1,19 +1,12 @@
-from datetime import (
-    date,
-    time,
-    timedelta,
-)
 import pickle
+from datetime import date, time, timedelta
 
 import numpy as np
-import pytest
-
-from pandas._libs.missing import NA
-
-from pandas.core.dtypes.common import is_scalar
-
 import pandas as pd
 import pandas._testing as tm
+import pytest
+from pandas._libs.missing import NA
+from pandas.core.dtypes.common import is_scalar
 
 
 def test_singleton():

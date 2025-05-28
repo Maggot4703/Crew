@@ -1,23 +1,13 @@
-from datetime import (
-    datetime,
-    timedelta,
-)
+from datetime import datetime, timedelta
 
 import dateutil.tz
-from dateutil.tz import gettz
 import numpy as np
+import pandas._testing as tm
 import pytest
 import pytz
-
-from pandas import (
-    DatetimeIndex,
-    Timestamp,
-    bdate_range,
-    date_range,
-    offsets,
-    to_datetime,
-)
-import pandas._testing as tm
+from dateutil.tz import gettz
+from pandas import (DatetimeIndex, Timestamp, bdate_range, date_range, offsets,
+                    to_datetime)
 
 try:
     from zoneinfo import ZoneInfo

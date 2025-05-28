@@ -1,12 +1,6 @@
 import numpy as np
-
-from pandas import (
-    DataFrame,
-    Index,
-    Timedelta,
-    timedelta_range,
-)
 import pandas._testing as tm
+from pandas import DataFrame, Index, Timedelta, timedelta_range
 
 
 class TestJoin:

@@ -1,14 +1,7 @@
 import numpy as np
-import pytest
-
-from pandas import (
-    NA,
-    DataFrame,
-    MultiIndex,
-    Series,
-    array,
-)
 import pandas._testing as tm
+import pytest
+from pandas import NA, DataFrame, MultiIndex, Series, array
 
 
 class TestMultiIndexSorted:

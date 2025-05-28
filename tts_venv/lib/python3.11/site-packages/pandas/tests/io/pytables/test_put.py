@@ -1,25 +1,13 @@
 import re
 
 import numpy as np
-import pytest
-
-from pandas._libs.tslibs import Timestamp
-
 import pandas as pd
-from pandas import (
-    DataFrame,
-    HDFStore,
-    Index,
-    MultiIndex,
-    Series,
-    _testing as tm,
-    concat,
-    date_range,
-)
-from pandas.tests.io.pytables.common import (
-    _maybe_remove,
-    ensure_clean_store,
-)
+import pytest
+from pandas import DataFrame, HDFStore, Index, MultiIndex, Series
+from pandas import _testing as tm
+from pandas import concat, date_range
+from pandas._libs.tslibs import Timestamp
+from pandas.tests.io.pytables.common import _maybe_remove, ensure_clean_store
 from pandas.util import _test_decorators as td
 
 pytestmark = pytest.mark.single_cpu

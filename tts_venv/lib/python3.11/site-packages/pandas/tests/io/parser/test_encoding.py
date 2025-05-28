@@ -2,22 +2,15 @@
 Tests encoding functionality during parsing
 for all of the parsers defined in parsers.py
 """
-from io import (
-    BytesIO,
-    TextIOWrapper,
-)
 import os
 import tempfile
 import uuid
+from io import BytesIO, TextIOWrapper
 
 import numpy as np
-import pytest
-
-from pandas import (
-    DataFrame,
-    read_csv,
-)
 import pandas._testing as tm
+import pytest
+from pandas import DataFrame, read_csv
 
 pytestmark = pytest.mark.filterwarnings(
     "ignore:Passing a BlockManager to DataFrame:DeprecationWarning"

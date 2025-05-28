@@ -1,21 +1,11 @@
 import numpy as np
-import pytest
-
-from pandas._libs.parsers import (
-    _maybe_upcast,
-    na_values,
-)
-
 import pandas as pd
-from pandas import NA
 import pandas._testing as tm
-from pandas.core.arrays import (
-    ArrowStringArray,
-    BooleanArray,
-    FloatingArray,
-    IntegerArray,
-    StringArray,
-)
+import pytest
+from pandas import NA
+from pandas._libs.parsers import _maybe_upcast, na_values
+from pandas.core.arrays import (ArrowStringArray, BooleanArray, FloatingArray,
+                                IntegerArray, StringArray)
 
 
 def test_maybe_upcast(any_real_numpy_dtype):

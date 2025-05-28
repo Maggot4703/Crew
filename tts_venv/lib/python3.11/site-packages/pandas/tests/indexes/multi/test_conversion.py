@@ -1,12 +1,8 @@
 import numpy as np
-import pytest
-
 import pandas as pd
-from pandas import (
-    DataFrame,
-    MultiIndex,
-)
 import pandas._testing as tm
+import pytest
+from pandas import DataFrame, MultiIndex
 
 
 def test_to_numpy(idx):

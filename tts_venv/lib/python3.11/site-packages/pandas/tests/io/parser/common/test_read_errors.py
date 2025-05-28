@@ -4,22 +4,16 @@ specific classification into the other test modules.
 """
 import codecs
 import csv
-from io import StringIO
 import os
+from io import StringIO
 from pathlib import Path
 
 import numpy as np
-import pytest
-
-from pandas.compat import PY311
-from pandas.errors import (
-    EmptyDataError,
-    ParserError,
-    ParserWarning,
-)
-
-from pandas import DataFrame
 import pandas._testing as tm
+import pytest
+from pandas import DataFrame
+from pandas.compat import PY311
+from pandas.errors import EmptyDataError, ParserError, ParserWarning
 
 xfail_pyarrow = pytest.mark.usefixtures("pyarrow_xfail")
 skip_pyarrow = pytest.mark.usefixtures("pyarrow_skip")

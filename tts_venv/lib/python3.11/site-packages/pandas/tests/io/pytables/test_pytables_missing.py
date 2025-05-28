@@ -1,9 +1,7 @@
-import pytest
-
-import pandas.util._test_decorators as td
-
 import pandas as pd
 import pandas._testing as tm
+import pandas.util._test_decorators as td
+import pytest
 
 
 @td.skip_if_installed("tables")

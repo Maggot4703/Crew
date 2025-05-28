@@ -1,19 +1,11 @@
 import re
 
 import numpy as np
-import pytest
-
 import pandas.util._test_decorators as td
-
-from pandas import (
-    DataFrame,
-    Index,
-    MultiIndex,
-    Series,
-    _testing as tm,
-    concat,
-    option_context,
-)
+import pytest
+from pandas import DataFrame, Index, MultiIndex, Series
+from pandas import _testing as tm
+from pandas import concat, option_context
 
 
 @pytest.mark.parametrize("other", [None, Series, Index])

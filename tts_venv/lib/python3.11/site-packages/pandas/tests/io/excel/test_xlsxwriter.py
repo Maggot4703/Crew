@@ -1,12 +1,9 @@
 import contextlib
 
-import pytest
-
-from pandas.compat import is_platform_windows
-
-from pandas import DataFrame
 import pandas._testing as tm
-
+import pytest
+from pandas import DataFrame
+from pandas.compat import is_platform_windows
 from pandas.io.excel import ExcelWriter
 
 xlsxwriter = pytest.importorskip("xlsxwriter")

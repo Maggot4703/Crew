@@ -11,11 +11,10 @@ such as:
  - test_raises
 """
 
-import pytest
-
 import pandas as pd
-from pandas import DataFrame
 import pandas._testing as tm
+import pytest
+from pandas import DataFrame
 from pandas.tests.groupby import get_groupby_method_args
 
 

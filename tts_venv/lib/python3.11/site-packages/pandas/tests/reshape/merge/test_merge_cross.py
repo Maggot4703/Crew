@@ -1,14 +1,7 @@
-import pytest
-
-from pandas import (
-    DataFrame,
-    Series,
-)
 import pandas._testing as tm
-from pandas.core.reshape.merge import (
-    MergeError,
-    merge,
-)
+import pytest
+from pandas import DataFrame, Series
+from pandas.core.reshape.merge import MergeError, merge
 
 
 @pytest.mark.parametrize(

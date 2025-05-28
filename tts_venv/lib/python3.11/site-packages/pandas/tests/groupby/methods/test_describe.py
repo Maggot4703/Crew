@@ -1,16 +1,8 @@
 import numpy as np
-import pytest
-
 import pandas as pd
-from pandas import (
-    DataFrame,
-    Index,
-    MultiIndex,
-    Series,
-    Timestamp,
-    date_range,
-)
 import pandas._testing as tm
+import pytest
+from pandas import DataFrame, Index, MultiIndex, Series, Timestamp, date_range
 
 
 def test_apply_describe_bug(multiindex_dataframe_random_data):

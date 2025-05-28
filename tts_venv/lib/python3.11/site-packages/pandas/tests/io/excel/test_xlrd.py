@@ -1,13 +1,10 @@
 import io
 
 import numpy as np
-import pytest
-
-from pandas.compat import is_platform_windows
-
 import pandas as pd
 import pandas._testing as tm
-
+import pytest
+from pandas.compat import is_platform_windows
 from pandas.io.excel import ExcelFile
 from pandas.io.excel._base import inspect_excel_format
 

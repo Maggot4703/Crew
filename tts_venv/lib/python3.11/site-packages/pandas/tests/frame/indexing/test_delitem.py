@@ -2,11 +2,7 @@ import re
 
 import numpy as np
 import pytest
-
-from pandas import (
-    DataFrame,
-    MultiIndex,
-)
+from pandas import DataFrame, MultiIndex
 
 
 class TestDataFrameDelItem:

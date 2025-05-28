@@ -1,11 +1,6 @@
-import pytest
-
 import pandas as pd
-from pandas.tests.extension.list.array import (
-    ListArray,
-    ListDtype,
-    make_data,
-)
+import pytest
+from pandas.tests.extension.list.array import ListArray, ListDtype, make_data
 
 
 @pytest.fixture

@@ -1,20 +1,10 @@
 import re
 
 import numpy as np
-import pytest
-
-from pandas.errors import SettingWithCopyError
-
-from pandas import (
-    DataFrame,
-    Index,
-    IndexSlice,
-    MultiIndex,
-    Series,
-    concat,
-)
 import pandas._testing as tm
-
+import pytest
+from pandas import DataFrame, Index, IndexSlice, MultiIndex, Series, concat
+from pandas.errors import SettingWithCopyError
 from pandas.tseries.offsets import BDay
 
 

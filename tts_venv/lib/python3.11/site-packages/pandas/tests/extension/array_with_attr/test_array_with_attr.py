@@ -1,5 +1,4 @@
 import numpy as np
-
 import pandas as pd
 import pandas._testing as tm
 from pandas.tests.extension.array_with_attr import FloatAttrArray

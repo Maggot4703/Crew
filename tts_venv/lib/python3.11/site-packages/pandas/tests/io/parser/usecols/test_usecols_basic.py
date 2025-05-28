@@ -5,16 +5,10 @@ for all of the parsers defined in parsers.py
 from io import StringIO
 
 import numpy as np
-import pytest
-
-from pandas.errors import ParserError
-
-from pandas import (
-    DataFrame,
-    Index,
-    array,
-)
 import pandas._testing as tm
+import pytest
+from pandas import DataFrame, Index, array
+from pandas.errors import ParserError
 
 pytestmark = pytest.mark.filterwarnings(
     "ignore:Passing a BlockManager to DataFrame:DeprecationWarning"

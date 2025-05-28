@@ -286,6 +286,7 @@ theme_xml = """<?xml version="1.0"?>
 </a:theme>
 """
 
+
 def write_theme():
     """Write the theme xml."""
     return theme_xml

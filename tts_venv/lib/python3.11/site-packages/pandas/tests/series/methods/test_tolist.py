@@ -1,14 +1,6 @@
-import pytest
-
 import pandas.util._test_decorators as td
-
-from pandas import (
-    Interval,
-    Period,
-    Series,
-    Timedelta,
-    Timestamp,
-)
+import pytest
+from pandas import Interval, Period, Series, Timedelta, Timestamp
 
 
 @pytest.mark.parametrize(

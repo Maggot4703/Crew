@@ -1,14 +1,8 @@
+import pandas._testing as tm
 import pytest
-
+from pandas import DatetimeIndex, Timestamp, date_range
 from pandas._libs.tslibs import to_offset
 from pandas._libs.tslibs.offsets import INVALID_FREQ_ERR_MSG
-
-from pandas import (
-    DatetimeIndex,
-    Timestamp,
-    date_range,
-)
-import pandas._testing as tm
 
 
 class TestDatetimeIndexRound:

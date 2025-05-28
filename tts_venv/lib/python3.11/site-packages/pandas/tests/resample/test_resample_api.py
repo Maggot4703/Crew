@@ -1,20 +1,14 @@
-from datetime import datetime
 import re
+from datetime import datetime
 
 import numpy as np
-import pytest
-
-from pandas._libs import lib
-from pandas.errors import UnsupportedFunctionCall
-
 import pandas as pd
-from pandas import (
-    DataFrame,
-    NamedAgg,
-    Series,
-)
 import pandas._testing as tm
+import pytest
+from pandas import DataFrame, NamedAgg, Series
+from pandas._libs import lib
 from pandas.core.indexes.datetimes import date_range
+from pandas.errors import UnsupportedFunctionCall
 
 
 @pytest.fixture

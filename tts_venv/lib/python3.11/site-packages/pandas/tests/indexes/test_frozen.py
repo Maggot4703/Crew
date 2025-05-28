@@ -1,7 +1,6 @@
 import re
 
 import pytest
-
 from pandas.core.indexes.frozen import FrozenList
 
 

@@ -1,10 +1,9 @@
-from collections.abc import Generator
 import contextlib
-
-import pytest
+from collections.abc import Generator
 
 import pandas as pd
 import pandas._testing as tm
+import pytest
 from pandas.core import accessor
 
 

@@ -1,17 +1,9 @@
 import numpy as np
-import pytest
-
-from pandas.compat import PY311
-from pandas.errors import (
-    ChainedAssignmentError,
-    SettingWithCopyWarning,
-)
-
-from pandas import (
-    DataFrame,
-    option_context,
-)
 import pandas._testing as tm
+import pytest
+from pandas import DataFrame, option_context
+from pandas.compat import PY311
+from pandas.errors import ChainedAssignmentError, SettingWithCopyWarning
 
 
 def test_methods_iloc_warn(using_copy_on_write):

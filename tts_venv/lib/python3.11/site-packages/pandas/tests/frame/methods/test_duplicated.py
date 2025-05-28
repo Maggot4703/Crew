@@ -2,14 +2,9 @@ import re
 import sys
 
 import numpy as np
-import pytest
-
-from pandas import (
-    DataFrame,
-    Series,
-    date_range,
-)
 import pandas._testing as tm
+import pytest
+from pandas import DataFrame, Series, date_range
 
 
 @pytest.mark.parametrize("subset", ["a", ["a"], ["a", "B"]])

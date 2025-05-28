@@ -11,27 +11,20 @@ class Comment:
         self.height = height
         self.width = width
 
-
     @property
     def parent(self):
         return self._parent
 
-
     def __eq__(self, other):
-        return (
-            self.content == other.content
-            and self.author == other.author
-        )
+        return self.content == other.content and self.author == other.author
 
     def __repr__(self):
         return "Comment: {0} by {1}".format(self.content, self.author)
-
 
     def __copy__(self):
         """Create a detached copy of this comment."""
         clone = self.__class__(self.content, self.author, self.height, self.width)
         return clone
-
 
     def bind(self, cell):
         """
@@ -42,13 +35,11 @@ class Comment:
             raise AttributeError(fmt.format(cell.coordinate, cell.parent.title))
         self._parent = cell
 
-
     def unbind(self):
         """
         Unbind a comment from a cell
         """
         self._parent = None
-
 
     @property
     def text(self):

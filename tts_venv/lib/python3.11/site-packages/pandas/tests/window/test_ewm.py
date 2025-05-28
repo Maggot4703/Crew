@@ -1,13 +1,7 @@
 import numpy as np
-import pytest
-
-from pandas import (
-    DataFrame,
-    DatetimeIndex,
-    Series,
-    date_range,
-)
 import pandas._testing as tm
+import pytest
+from pandas import DataFrame, DatetimeIndex, Series, date_range
 
 
 def test_doc_string():

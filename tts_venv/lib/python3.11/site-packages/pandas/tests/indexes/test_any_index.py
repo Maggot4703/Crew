@@ -4,11 +4,9 @@ Tests that can be parametrized over _any_ Index object.
 import re
 
 import numpy as np
-import pytest
-
-from pandas.errors import InvalidIndexError
-
 import pandas._testing as tm
+import pytest
+from pandas.errors import InvalidIndexError
 
 
 def test_boolean_context_compat(index):

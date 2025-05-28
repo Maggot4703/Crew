@@ -1,14 +1,9 @@
-from io import (
-    BytesIO,
-    StringIO,
-)
-
-import pytest
-
-import pandas.util._test_decorators as td
+from io import BytesIO, StringIO
 
 import pandas as pd
 import pandas._testing as tm
+import pandas.util._test_decorators as td
+import pytest
 
 
 def test_compression_roundtrip(compression):

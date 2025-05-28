@@ -1,10 +1,8 @@
 import numpy as np
-import pytest
-
-from pandas.compat import IS64
-
 import pandas as pd
 import pandas._testing as tm
+import pytest
+from pandas.compat import IS64
 
 
 @pytest.mark.parametrize("ufunc", [np.abs, np.sign])

@@ -1,16 +1,10 @@
-from datetime import (
-    date,
-    datetime,
-)
 import re
-
-import pytest
-
-from pandas.compat import is_platform_windows
+from datetime import date, datetime
 
 import pandas as pd
 import pandas._testing as tm
-
+import pytest
+from pandas.compat import is_platform_windows
 from pandas.io.excel import ExcelWriter
 
 odf = pytest.importorskip("odf")
@@ -82,10 +76,7 @@ def test_cell_value_type(ext, value, cell_value_type, cell_value_attribute, cell
     # GH#54994 ODS: cell attributes should follow specification
     # http://docs.oasis-open.org/office/v1.2/os/OpenDocument-v1.2-os-part1.html#refTable13
     from odf.namespaces import OFFICENS
-    from odf.table import (
-        TableCell,
-        TableRow,
-    )
+    from odf.table import TableCell, TableRow
 
     table_cell_name = TableCell().qname
 

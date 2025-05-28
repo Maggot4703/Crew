@@ -4,16 +4,10 @@ ExcelFormatter is tested implicitly in pandas/tests/io/excel
 """
 import string
 
-import pytest
-
-from pandas.errors import CSSWarning
-
 import pandas._testing as tm
-
-from pandas.io.formats.excel import (
-    CssExcelCell,
-    CSSToExcelConverter,
-)
+import pytest
+from pandas.errors import CSSWarning
+from pandas.io.formats.excel import CssExcelCell, CSSToExcelConverter
 
 
 @pytest.mark.parametrize(

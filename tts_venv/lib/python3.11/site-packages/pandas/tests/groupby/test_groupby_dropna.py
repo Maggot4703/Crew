@@ -1,12 +1,9 @@
 import numpy as np
-import pytest
-
-from pandas.compat.pyarrow import pa_version_under10p1
-
-from pandas.core.dtypes.missing import na_value_for_dtype
-
 import pandas as pd
 import pandas._testing as tm
+import pytest
+from pandas.compat.pyarrow import pa_version_under10p1
+from pandas.core.dtypes.missing import na_value_for_dtype
 from pandas.tests.groupby import get_groupby_method_args
 
 

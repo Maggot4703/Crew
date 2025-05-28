@@ -1,11 +1,10 @@
-from functools import partial
 import re
+from functools import partial
 
 import numpy as np
-import pytest
-
 import pandas as pd
 import pandas._testing as tm
+import pytest
 from pandas.api.types import is_extension_array_dtype
 
 dtypes = [

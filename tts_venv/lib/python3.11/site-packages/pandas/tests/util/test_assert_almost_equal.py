@@ -1,15 +1,7 @@
 import numpy as np
-import pytest
-
-from pandas import (
-    NA,
-    DataFrame,
-    Index,
-    NaT,
-    Series,
-    Timestamp,
-)
 import pandas._testing as tm
+import pytest
+from pandas import NA, DataFrame, Index, NaT, Series, Timestamp
 
 
 def _assert_almost_equal_both(a, b, **kwargs):

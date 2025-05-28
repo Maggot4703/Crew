@@ -2,17 +2,10 @@ import codecs
 import locale
 import os
 
-import pytest
-
-from pandas._config.localization import (
-    can_set_locale,
-    get_locales,
-    set_locale,
-)
-
-from pandas.compat import ISMUSL
-
 import pandas as pd
+import pytest
+from pandas._config.localization import can_set_locale, get_locales, set_locale
+from pandas.compat import ISMUSL
 
 _all_locales = get_locales()
 _current_locale = locale.setlocale(locale.LC_ALL)  # getlocale() is wrong, see GH#46595

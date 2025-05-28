@@ -1,19 +1,13 @@
 from datetime import datetime
 
-from dateutil.tz import gettz
 import numpy as np
+import pandas._testing as tm
+import pandas.util._test_decorators as td
 import pytest
 import pytz
-
-from pandas._libs.tslibs import (
-    OutOfBoundsDatetime,
-    Timestamp,
-    conversion,
-)
+from dateutil.tz import gettz
+from pandas._libs.tslibs import OutOfBoundsDatetime, Timestamp, conversion
 from pandas._libs.tslibs.dtypes import NpyDatetimeUnit
-import pandas.util._test_decorators as td
-
-import pandas._testing as tm
 
 
 class TestTimestampReplace:

@@ -1,13 +1,7 @@
 import numpy as np
-import pytest
-
-from pandas import (
-    DataFrame,
-    IndexSlice,
-    MultiIndex,
-    date_range,
-)
 import pandas._testing as tm
+import pytest
+from pandas import DataFrame, IndexSlice, MultiIndex, date_range
 
 
 @pytest.fixture

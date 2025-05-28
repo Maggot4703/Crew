@@ -1,21 +1,11 @@
 from itertools import product
 
 import numpy as np
-import pytest
-
-from pandas._libs import (
-    hashtable,
-    index as libindex,
-)
-
-from pandas import (
-    NA,
-    DatetimeIndex,
-    Index,
-    MultiIndex,
-    Series,
-)
 import pandas._testing as tm
+import pytest
+from pandas import NA, DatetimeIndex, Index, MultiIndex, Series
+from pandas._libs import hashtable
+from pandas._libs import index as libindex
 
 
 @pytest.fixture

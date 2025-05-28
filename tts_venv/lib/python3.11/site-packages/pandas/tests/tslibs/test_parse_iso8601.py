@@ -1,10 +1,8 @@
 from datetime import datetime
 
 import pytest
-
-from pandas._libs import tslib
-
 from pandas import Timestamp
+from pandas._libs import tslib
 
 
 @pytest.mark.parametrize(

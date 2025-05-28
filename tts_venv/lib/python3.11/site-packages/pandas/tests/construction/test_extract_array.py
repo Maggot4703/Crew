@@ -1,5 +1,5 @@
-from pandas import Index
 import pandas._testing as tm
+from pandas import Index
 from pandas.core.construction import extract_array
 
 

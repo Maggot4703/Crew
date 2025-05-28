@@ -1,14 +1,8 @@
 import numpy as np
-import pytest
-
 import pandas as pd
-from pandas import (
-    Index,
-    MultiIndex,
-    date_range,
-    period_range,
-)
 import pandas._testing as tm
+import pytest
+from pandas import Index, MultiIndex, date_range, period_range
 
 
 def test_infer_objects(idx):

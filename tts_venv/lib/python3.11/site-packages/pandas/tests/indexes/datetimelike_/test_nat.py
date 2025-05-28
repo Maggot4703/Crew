@@ -1,13 +1,7 @@
 import numpy as np
-import pytest
-
-from pandas import (
-    DatetimeIndex,
-    NaT,
-    PeriodIndex,
-    TimedeltaIndex,
-)
 import pandas._testing as tm
+import pytest
+from pandas import DatetimeIndex, NaT, PeriodIndex, TimedeltaIndex
 
 
 class NATests:

@@ -1,15 +1,10 @@
 import numpy as np
-import pytest
-
-from pandas.core.dtypes.dtypes import ExtensionDtype
-
 import pandas as pd
-from pandas import (
-    DataFrame,
-    Timestamp,
-)
 import pandas._testing as tm
+import pytest
+from pandas import DataFrame, Timestamp
 from pandas.core.arrays import ExtensionArray
+from pandas.core.dtypes.dtypes import ExtensionDtype
 
 
 class DummyDtype(ExtensionDtype):

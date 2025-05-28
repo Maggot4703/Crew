@@ -1,12 +1,10 @@
 # NB: This is for the Timestamp.timestamp *method* specifically, not
 # the Timestamp class in general.
 
-from pytz import utc
-
-from pandas._libs.tslibs import Timestamp
-import pandas.util._test_decorators as td
-
 import pandas._testing as tm
+import pandas.util._test_decorators as td
+from pandas._libs.tslibs import Timestamp
+from pytz import utc
 
 
 class TestTimestampMethod:

@@ -1,19 +1,11 @@
 from textwrap import dedent
 
 import numpy as np
-import pytest
-
-from pandas.compat import is_platform_windows
-
 import pandas as pd
-from pandas import (
-    DataFrame,
-    Index,
-    Series,
-    TimedeltaIndex,
-    Timestamp,
-)
 import pandas._testing as tm
+import pytest
+from pandas import DataFrame, Index, Series, TimedeltaIndex, Timestamp
+from pandas.compat import is_platform_windows
 from pandas.core.indexes.datetimes import date_range
 
 

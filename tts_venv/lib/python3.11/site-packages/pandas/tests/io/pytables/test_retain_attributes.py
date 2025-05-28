@@ -1,18 +1,8 @@
 import pytest
-
-from pandas import (
-    DataFrame,
-    DatetimeIndex,
-    Series,
-    _testing as tm,
-    date_range,
-    errors,
-    read_hdf,
-)
-from pandas.tests.io.pytables.common import (
-    _maybe_remove,
-    ensure_clean_store,
-)
+from pandas import DataFrame, DatetimeIndex, Series
+from pandas import _testing as tm
+from pandas import date_range, errors, read_hdf
+from pandas.tests.io.pytables.common import _maybe_remove, ensure_clean_store
 
 pytestmark = pytest.mark.single_cpu
 

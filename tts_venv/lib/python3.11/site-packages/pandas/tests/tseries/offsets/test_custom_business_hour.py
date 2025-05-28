@@ -3,23 +3,14 @@ Tests for offsets.CustomBusinessHour
 """
 from __future__ import annotations
 
-from datetime import (
-    datetime,
-    time as dt_time,
-)
+from datetime import datetime
+from datetime import time as dt_time
 
 import numpy as np
 import pytest
-
 from pandas._libs.tslibs import Timestamp
-from pandas._libs.tslibs.offsets import (
-    BusinessHour,
-    CustomBusinessHour,
-    Nano,
-)
-
+from pandas._libs.tslibs.offsets import BusinessHour, CustomBusinessHour, Nano
 from pandas.tests.tseries.offsets.common import assert_offset_equal
-
 from pandas.tseries.holiday import USFederalHolidayCalendar
 
 holidays = ["2014-06-27", datetime(2014, 6, 30), np.datetime64("2014-07-02")]

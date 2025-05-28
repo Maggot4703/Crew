@@ -1,9 +1,7 @@
 import pytest
-
+from pandas import Timestamp
 from pandas._libs.tslibs.dtypes import NpyDatetimeUnit
 from pandas.errors import OutOfBoundsDatetime
-
-from pandas import Timestamp
 
 
 class TestTimestampAsUnit:

@@ -1,10 +1,5 @@
 import pytest
-
-from pandas import (
-    Interval,
-    Timedelta,
-    Timestamp,
-)
+from pandas import Interval, Timedelta, Timestamp
 
 
 class TestContains:

@@ -1,20 +1,22 @@
-import pytest
 import textwrap
 
-from . import util
+import pytest
 from numpy.testing import IS_PYPY
+
+from . import util
 
 
 @pytest.mark.slow
 class TestModuleFilterPublicEntities(util.F2PyTest):
     sources = [
         util.getpath(
-            "tests", "src", "modules", "gh26920",
-            "two_mods_with_one_public_routine.f90"
+            "tests", "src", "modules", "gh26920", "two_mods_with_one_public_routine.f90"
         )
     ]
     # we filter the only public function mod2
-    only = ["mod1_func1", ]
+    only = [
+        "mod1_func1",
+    ]
 
     def test_gh26920(self):
         # if it compiles and can be loaded, things are fine
@@ -25,11 +27,12 @@ class TestModuleFilterPublicEntities(util.F2PyTest):
 class TestModuleWithoutPublicEntities(util.F2PyTest):
     sources = [
         util.getpath(
-            "tests", "src", "modules", "gh26920",
-            "two_mods_with_no_public_entities.f90"
+            "tests", "src", "modules", "gh26920", "two_mods_with_no_public_entities.f90"
         )
     ]
-    only = ["mod1_func1", ]
+    only = [
+        "mod1_func1",
+    ]
 
     def test_gh26920(self):
         # if it compiles and can be loaded, things are fine

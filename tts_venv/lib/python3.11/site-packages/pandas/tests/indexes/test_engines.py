@@ -1,11 +1,9 @@
 import re
 
 import numpy as np
-import pytest
-
-from pandas._libs import index as libindex
-
 import pandas as pd
+import pytest
+from pandas._libs import index as libindex
 
 
 @pytest.fixture(

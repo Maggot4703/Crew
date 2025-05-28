@@ -1,11 +1,7 @@
 from textwrap import dedent
 
 import pytest
-
-from pandas import (
-    DataFrame,
-    IndexSlice,
-)
+from pandas import DataFrame, IndexSlice
 
 pytest.importorskip("jinja2")
 

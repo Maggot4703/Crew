@@ -1,12 +1,10 @@
 from itertools import permutations
 
 import numpy as np
+import pandas._testing as tm
 import pytest
-
 from pandas._libs.interval import IntervalTree
 from pandas.compat import IS64
-
-import pandas._testing as tm
 
 
 def skipif_32bit(param):

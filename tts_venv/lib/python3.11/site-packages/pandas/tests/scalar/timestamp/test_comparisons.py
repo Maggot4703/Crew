@@ -1,14 +1,10 @@
-from datetime import (
-    datetime,
-    timedelta,
-)
 import operator
+from datetime import datetime, timedelta
 
 import numpy as np
-import pytest
-
-from pandas import Timestamp
 import pandas._testing as tm
+import pytest
+from pandas import Timestamp
 
 
 class TestTimestampComparison:

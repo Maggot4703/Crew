@@ -1,11 +1,9 @@
 import numpy as np
-import pytest
-
-from pandas._libs import lib
-import pandas.util._test_decorators as td
-
 import pandas as pd
 import pandas._testing as tm
+import pandas.util._test_decorators as td
+import pytest
+from pandas._libs import lib
 
 
 def assert_block_lengths(x):

@@ -6,6 +6,7 @@ import re
 from pathlib import Path
 from typing import Dict, List
 
+
 def parse_git_errors(log_content: str) -> List[str]:
     """Parse Git error messages from log content."""
     error_patterns = [
@@ -13,33 +14,39 @@ def parse_git_errors(log_content: str) -> List[str]:
         r"Permission denied.*",
         r"Authentication failed.*",
         r"remote: Repository not found",
-        r"fatal: unable to access.*"
+        r"fatal: unable to access.*",
     ]
-    
+
     errors = []
     for pattern in error_patterns:
         matches = re.findall(pattern, log_content, re.IGNORECASE)
         errors.extend(matches)
-    
+
     return errors
+
 
 def generate_fix_commands(errors: List[str]) -> List[str]:
     """Generate fix commands based on detected errors."""
     commands = []
-    
+
     for error in errors:
         if "repository not found" in error.lower():
             commands.append("# Create repository on GitHub: https://github.com/new")
-            commands.append("git remote set-url origin https://github.com/Maggot4703/Crew.git")
-        
+            commands.append(
+                "git remote set-url origin https://github.com/Maggot4703/Crew.git"
+            )
+
         elif "authentication failed" in error.lower():
-            commands.append("# Use Personal Access Token: https://github.com/settings/tokens")
+            commands.append(
+                "# Use Personal Access Token: https://github.com/settings/tokens"
+            )
             commands.append("git config --global user.name 'Maggot4703'")
-        
+
         elif "permission denied" in error.lower():
             commands.append("# Check repository ownership and SSH keys")
-    
+
     return list(set(commands))  # Remove duplicates
+
 
 def create_fix_script() -> None:
     """Create an executable fix script."""
@@ -66,12 +73,13 @@ git push -u origin main
 
 echo "✅ Fix script completed"
 """
-    
+
     with open("fix_github.sh", "w") as f:
         f.write(script_content)
-    
+
     # Make executable
     import os
+
     os.chmod("fix_github.sh", 0o755)
-    
+
     print("📜 Created executable fix script: fix_github.sh")

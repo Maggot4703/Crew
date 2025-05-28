@@ -1,8 +1,8 @@
 # Copyright (c) 2010-2024 openpyxl
 
-from datetime import datetime
-from math import isnan, isinf
 import sys
+from datetime import datetime
+from math import isinf, isnan
 
 VER = sys.version_info
 

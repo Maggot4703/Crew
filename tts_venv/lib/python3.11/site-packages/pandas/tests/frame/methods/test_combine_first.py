@@ -1,19 +1,12 @@
 from datetime import datetime
 
 import numpy as np
+import pandas as pd
+import pandas._testing as tm
 import pytest
-
+from pandas import DataFrame, Index, MultiIndex, Series
 from pandas.core.dtypes.cast import find_common_type
 from pandas.core.dtypes.common import is_dtype_equal
-
-import pandas as pd
-from pandas import (
-    DataFrame,
-    Index,
-    MultiIndex,
-    Series,
-)
-import pandas._testing as tm
 
 
 class TestDataFrameCombineFirst:

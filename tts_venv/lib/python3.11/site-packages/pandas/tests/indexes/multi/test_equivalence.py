@@ -1,15 +1,9 @@
 import numpy as np
-import pytest
-
-from pandas.core.dtypes.common import is_any_real_numeric_dtype
-
 import pandas as pd
-from pandas import (
-    Index,
-    MultiIndex,
-    Series,
-)
 import pandas._testing as tm
+import pytest
+from pandas import Index, MultiIndex, Series
+from pandas.core.dtypes.common import is_any_real_numeric_dtype
 
 
 def test_equals(idx):

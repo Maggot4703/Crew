@@ -1,9 +1,5 @@
-from pandas import (
-    DataFrame,
-    DatetimeIndex,
-    date_range,
-)
 import pandas._testing as tm
+from pandas import DataFrame, DatetimeIndex, date_range
 
 
 def test_isocalendar_returns_correct_values_close_to_new_year_with_tz():

@@ -1,15 +1,9 @@
 import numpy as np
 import pytest
-
+from pandas import NA, DataFrame, Series
+from pandas import _testing as tm
+from pandas import option_context
 from pandas._libs import lib
-
-from pandas import (
-    NA,
-    DataFrame,
-    Series,
-    _testing as tm,
-    option_context,
-)
 
 
 @pytest.mark.filterwarnings("ignore:Falling back")

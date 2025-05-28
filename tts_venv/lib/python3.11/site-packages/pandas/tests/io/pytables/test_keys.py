@@ -1,17 +1,7 @@
 import numpy as np
 import pytest
-
-from pandas import (
-    DataFrame,
-    HDFStore,
-    Index,
-    Series,
-    date_range,
-)
-from pandas.tests.io.pytables.common import (
-    ensure_clean_store,
-    tables,
-)
+from pandas import DataFrame, HDFStore, Index, Series, date_range
+from pandas.tests.io.pytables.common import ensure_clean_store, tables
 
 pytestmark = pytest.mark.single_cpu
 

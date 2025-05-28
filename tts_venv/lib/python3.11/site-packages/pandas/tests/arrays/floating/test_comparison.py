@@ -1,13 +1,9 @@
 import numpy as np
-import pytest
-
 import pandas as pd
 import pandas._testing as tm
+import pytest
 from pandas.core.arrays import FloatingArray
-from pandas.tests.arrays.masked_shared import (
-    ComparisonOps,
-    NumericOps,
-)
+from pandas.tests.arrays.masked_shared import ComparisonOps, NumericOps
 
 
 class TestComparisonOps(NumericOps, ComparisonOps):

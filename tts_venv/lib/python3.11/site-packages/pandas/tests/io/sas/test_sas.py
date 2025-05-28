@@ -1,9 +1,8 @@
 from io import StringIO
 
-import pytest
-
-from pandas import read_sas
 import pandas._testing as tm
+import pytest
+from pandas import read_sas
 
 
 class TestSas:

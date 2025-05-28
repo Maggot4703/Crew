@@ -1,9 +1,5 @@
 import pytest
-
-from pandas.util._validators import (
-    validate_bool_kwarg,
-    validate_kwargs,
-)
+from pandas.util._validators import validate_bool_kwarg, validate_kwargs
 
 
 @pytest.fixture

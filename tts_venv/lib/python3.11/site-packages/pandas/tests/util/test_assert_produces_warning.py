@@ -3,14 +3,9 @@ Test module for testing ``pandas._testing.assert_produces_warning``.
 """
 import warnings
 
-import pytest
-
-from pandas.errors import (
-    DtypeWarning,
-    PerformanceWarning,
-)
-
 import pandas._testing as tm
+import pytest
+from pandas.errors import DtypeWarning, PerformanceWarning
 
 
 @pytest.fixture(

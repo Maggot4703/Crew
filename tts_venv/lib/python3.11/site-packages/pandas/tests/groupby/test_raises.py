@@ -6,15 +6,9 @@ import datetime
 import re
 
 import numpy as np
-import pytest
-
-from pandas import (
-    Categorical,
-    DataFrame,
-    Grouper,
-    Series,
-)
 import pandas._testing as tm
+import pytest
+from pandas import Categorical, DataFrame, Grouper, Series
 from pandas.tests.groupby import get_groupby_method_args
 
 

@@ -9,24 +9,13 @@ import time
 
 import dateutil
 import numpy as np
+import pandas._libs.json as ujson
+import pandas._testing as tm
 import pytest
 import pytz
-
-import pandas._libs.json as ujson
+from pandas import (DataFrame, DatetimeIndex, Index, NaT, PeriodIndex, Series,
+                    Timedelta, Timestamp, date_range)
 from pandas.compat import IS64
-
-from pandas import (
-    DataFrame,
-    DatetimeIndex,
-    Index,
-    NaT,
-    PeriodIndex,
-    Series,
-    Timedelta,
-    Timestamp,
-    date_range,
-)
-import pandas._testing as tm
 
 
 def _clean_dict(d):

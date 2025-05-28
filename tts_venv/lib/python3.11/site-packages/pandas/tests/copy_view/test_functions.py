@@ -1,14 +1,7 @@
 import numpy as np
-import pytest
-
-from pandas import (
-    DataFrame,
-    Index,
-    Series,
-    concat,
-    merge,
-)
 import pandas._testing as tm
+import pytest
+from pandas import DataFrame, Index, Series, concat, merge
 from pandas.tests.copy_view.util import get_array
 
 

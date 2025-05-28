@@ -1,5 +1,5 @@
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 def test_stem_remove():
@@ -27,7 +27,7 @@ def test_errorbar_remove():
     eb = ax.errorbar([1], [1], xerr=[2], yerr=2)
     eb.remove()
 
-    eb = ax.errorbar([1], [1], fmt='none')
+    eb = ax.errorbar([1], [1], fmt="none")
     eb.remove()
 
 

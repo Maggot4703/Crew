@@ -1,13 +1,8 @@
 # Arithmetic tests for TimedeltaIndex are generally about the result's `freq` attribute.
 # Other cases can be shared in tests.arithmetic.test_timedelta64
 import numpy as np
-
-from pandas import (
-    NaT,
-    Timedelta,
-    timedelta_range,
-)
 import pandas._testing as tm
+from pandas import NaT, Timedelta, timedelta_range
 
 
 class TestTimedeltaIndexArithmetic:

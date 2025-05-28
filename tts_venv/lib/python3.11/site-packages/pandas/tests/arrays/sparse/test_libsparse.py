@@ -1,18 +1,12 @@
 import operator
 
 import numpy as np
-import pytest
-
 import pandas._libs.sparse as splib
-import pandas.util._test_decorators as td
-
-from pandas import Series
 import pandas._testing as tm
-from pandas.core.arrays.sparse import (
-    BlockIndex,
-    IntIndex,
-    make_sparse_index,
-)
+import pandas.util._test_decorators as td
+import pytest
+from pandas import Series
+from pandas.core.arrays.sparse import BlockIndex, IntIndex, make_sparse_index
 
 
 @pytest.fixture

@@ -1,7 +1,6 @@
-import pytest
-
-from pandas import Index
 import pandas._testing as tm
+import pytest
+from pandas import Index
 
 
 def test_add_prefix_suffix(float_frame):

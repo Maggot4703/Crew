@@ -1,24 +1,13 @@
 import operator
 
 import numpy as np
-import pytest
-
-from pandas.errors import (
-    NumExprClobberingError,
-    UndefinedVariableError,
-)
-import pandas.util._test_decorators as td
-
 import pandas as pd
-from pandas import (
-    DataFrame,
-    Index,
-    MultiIndex,
-    Series,
-    date_range,
-)
 import pandas._testing as tm
+import pandas.util._test_decorators as td
+import pytest
+from pandas import DataFrame, Index, MultiIndex, Series, date_range
 from pandas.core.computation.check import NUMEXPR_INSTALLED
+from pandas.errors import NumExprClobberingError, UndefinedVariableError
 
 
 @pytest.fixture(params=["python", "pandas"], ids=lambda x: x)

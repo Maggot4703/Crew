@@ -4,10 +4,9 @@ specific classification into the other test modules.
 """
 from io import StringIO
 
-import pytest
-
-from pandas import DataFrame
 import pandas._testing as tm
+import pytest
+from pandas import DataFrame
 
 pytestmark = pytest.mark.filterwarnings(
     "ignore:Passing a BlockManager to DataFrame:DeprecationWarning"

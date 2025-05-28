@@ -1,11 +1,9 @@
 import sys
 import types
 
-import pytest
-
-import pandas.util._test_decorators as td
-
 import pandas
+import pandas.util._test_decorators as td
+import pytest
 
 
 @pytest.fixture

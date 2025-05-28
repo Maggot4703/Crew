@@ -1,19 +1,11 @@
-from datetime import (
-    datetime,
-    timezone,
-)
+from datetime import datetime, timezone
 
 import dateutil.parser
 import dateutil.tz
-from dateutil.tz import tzlocal
 import numpy as np
-
-from pandas import (
-    DatetimeIndex,
-    date_range,
-    to_datetime,
-)
 import pandas._testing as tm
+from dateutil.tz import tzlocal
+from pandas import DatetimeIndex, date_range, to_datetime
 from pandas.tests.indexes.datetimes.test_timezones import FixedOffset
 
 fixed_off = FixedOffset(-420, "-07:00")

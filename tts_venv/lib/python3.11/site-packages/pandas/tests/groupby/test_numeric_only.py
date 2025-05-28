@@ -1,19 +1,11 @@
 import re
 
 import numpy as np
-import pytest
-
-from pandas._libs import lib
-
 import pandas as pd
-from pandas import (
-    DataFrame,
-    Index,
-    Series,
-    Timestamp,
-    date_range,
-)
 import pandas._testing as tm
+import pytest
+from pandas import DataFrame, Index, Series, Timestamp, date_range
+from pandas._libs import lib
 from pandas.tests.groupby import get_groupby_method_args
 
 

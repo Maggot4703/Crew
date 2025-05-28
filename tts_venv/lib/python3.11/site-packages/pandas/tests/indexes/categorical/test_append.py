@@ -1,10 +1,6 @@
-import pytest
-
-from pandas import (
-    CategoricalIndex,
-    Index,
-)
 import pandas._testing as tm
+import pytest
+from pandas import CategoricalIndex, Index
 
 
 class TestAppend:

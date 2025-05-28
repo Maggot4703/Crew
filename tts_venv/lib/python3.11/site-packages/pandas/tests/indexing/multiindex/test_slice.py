@@ -1,22 +1,11 @@
-from datetime import (
-    datetime,
-    timedelta,
-)
+from datetime import datetime, timedelta
 
 import numpy as np
-import pytest
-
-from pandas.errors import UnsortedIndexError
-
 import pandas as pd
-from pandas import (
-    DataFrame,
-    Index,
-    MultiIndex,
-    Series,
-    Timestamp,
-)
 import pandas._testing as tm
+import pytest
+from pandas import DataFrame, Index, MultiIndex, Series, Timestamp
+from pandas.errors import UnsortedIndexError
 from pandas.tests.indexing.common import _mklbl
 
 

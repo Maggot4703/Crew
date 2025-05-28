@@ -1,12 +1,6 @@
-import pytest
-
-from pandas import (
-    DatetimeIndex,
-    Series,
-    Timestamp,
-    date_range,
-)
 import pandas._testing as tm
+import pytest
+from pandas import DatetimeIndex, Series, Timestamp, date_range
 
 pytestmark = pytest.mark.filterwarnings(
     "ignore:Setting a value on a view:FutureWarning"

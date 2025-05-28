@@ -1,5 +1,4 @@
 import pytest
-
 from pandas.core.frame import DataFrame
 
 

@@ -1,14 +1,9 @@
 from io import StringIO
 
 import numpy as np
-import pytest
-
-from pandas import (
-    DataFrame,
-    concat,
-    read_csv,
-)
 import pandas._testing as tm
+import pytest
+from pandas import DataFrame, concat, read_csv
 
 
 class TestInvalidConcat:

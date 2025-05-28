@@ -1,19 +1,11 @@
 import numpy as np
-import pytest
-
-import pandas._libs.index as libindex
-from pandas.errors import PerformanceWarning
-
 import pandas as pd
-from pandas import (
-    CategoricalDtype,
-    DataFrame,
-    Index,
-    MultiIndex,
-    Series,
-)
+import pandas._libs.index as libindex
 import pandas._testing as tm
+import pytest
+from pandas import CategoricalDtype, DataFrame, Index, MultiIndex, Series
 from pandas.core.arrays.boolean import BooleanDtype
+from pandas.errors import PerformanceWarning
 
 
 class TestMultiIndexBasic:

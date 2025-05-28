@@ -6,11 +6,11 @@
 from inspect import isgenerator
 
 from openpyxl.cell import Cell, WriteOnlyCell
-from openpyxl.workbook.child import _WorkbookChild
-from .worksheet import Worksheet
 from openpyxl.utils.exceptions import WorkbookAlreadySaved
+from openpyxl.workbook.child import _WorkbookChild
 
 from ._writer import WorksheetWriter
+from .worksheet import Worksheet
 
 
 class WriteOnlyWorksheet(_WorkbookChild):
@@ -53,7 +53,6 @@ class WriteOnlyWorksheet(_WorkbookChild):
     def closed(self):
         return self.__saved
 
-
     def _write_rows(self):
         """
         Send rows to the writer's stream
@@ -67,7 +66,7 @@ class WriteOnlyWorksheet(_WorkbookChild):
             row_idx = 1
             try:
                 while True:
-                    row = (yield)
+                    row = yield
                     row = self._values_to_row(row, row_idx)
                     self._writer.write_row(xf, row, row_idx)
                     row_idx += 1
@@ -76,12 +75,10 @@ class WriteOnlyWorksheet(_WorkbookChild):
 
         self._writer.xf.send(None)
 
-
     def _get_writer(self):
         if self._writer is None:
             self._writer = WorksheetWriter(self)
             self._writer.write_top()
-
 
     def close(self):
         if self.__saved:
@@ -99,16 +96,13 @@ class WriteOnlyWorksheet(_WorkbookChild):
         self._writer.close()
         self.__saved = True
 
-
     def append(self, row):
         """
         :param row: iterable containing values to append
         :type row: iterable
         """
 
-        if (not isgenerator(row) and
-            not isinstance(row, (list, tuple, range))
-            ):
+        if not isgenerator(row) and not isinstance(row, (list, tuple, range)):
             self._invalid_row(row)
 
         self._get_writer()
@@ -118,7 +112,6 @@ class WriteOnlyWorksheet(_WorkbookChild):
             next(self._rows)
 
         self._rows.send(row)
-
 
     def _values_to_row(self, values, row_idx):
         """
@@ -149,12 +142,14 @@ class WriteOnlyWorksheet(_WorkbookChild):
             if cell.has_style or cell.hyperlink:
                 cell = WriteOnlyCell(self)
 
-
     def _already_saved(self):
-        raise WorkbookAlreadySaved('Workbook has already been saved and cannot be modified or saved anymore.')
-
+        raise WorkbookAlreadySaved(
+            "Workbook has already been saved and cannot be modified or saved anymore."
+        )
 
     def _invalid_row(self, iterable):
-        raise TypeError('Value must be a list, tuple, range or a generator Supplied value is {0}'.format(
-            type(iterable))
-                        )
+        raise TypeError(
+            "Value must be a list, tuple, range or a generator Supplied value is {0}".format(
+                type(iterable)
+            )
+        )

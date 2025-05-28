@@ -1,14 +1,9 @@
 import numpy as np
-import pytest
-
-from pandas.errors import PerformanceWarning
-
 import pandas as pd
-from pandas import (
-    Index,
-    MultiIndex,
-)
 import pandas._testing as tm
+import pytest
+from pandas import Index, MultiIndex
+from pandas.errors import PerformanceWarning
 
 
 def test_drop(idx):

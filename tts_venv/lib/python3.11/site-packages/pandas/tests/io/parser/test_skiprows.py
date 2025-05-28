@@ -7,15 +7,10 @@ from datetime import datetime
 from io import StringIO
 
 import numpy as np
-import pytest
-
-from pandas.errors import EmptyDataError
-
-from pandas import (
-    DataFrame,
-    Index,
-)
 import pandas._testing as tm
+import pytest
+from pandas import DataFrame, Index
+from pandas.errors import EmptyDataError
 
 xfail_pyarrow = pytest.mark.usefixtures("pyarrow_xfail")
 pytestmark = pytest.mark.filterwarnings(

@@ -1,16 +1,10 @@
-from collections import ChainMap
 import inspect
+from collections import ChainMap
 
 import numpy as np
-import pytest
-
-from pandas import (
-    DataFrame,
-    Index,
-    MultiIndex,
-    merge,
-)
 import pandas._testing as tm
+import pytest
+from pandas import DataFrame, Index, MultiIndex, merge
 
 
 class TestRename:

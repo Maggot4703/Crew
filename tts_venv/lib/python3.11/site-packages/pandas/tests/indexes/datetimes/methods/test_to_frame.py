@@ -1,9 +1,5 @@
-from pandas import (
-    DataFrame,
-    Index,
-    date_range,
-)
 import pandas._testing as tm
+from pandas import DataFrame, Index, date_range
 
 
 class TestToFrame:

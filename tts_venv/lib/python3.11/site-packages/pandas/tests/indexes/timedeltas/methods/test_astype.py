@@ -1,17 +1,10 @@
 from datetime import timedelta
 
 import numpy as np
-import pytest
-
 import pandas as pd
-from pandas import (
-    Index,
-    NaT,
-    Timedelta,
-    TimedeltaIndex,
-    timedelta_range,
-)
 import pandas._testing as tm
+import pytest
+from pandas import Index, NaT, Timedelta, TimedeltaIndex, timedelta_range
 from pandas.core.arrays import TimedeltaArray
 
 

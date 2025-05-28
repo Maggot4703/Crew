@@ -1,12 +1,7 @@
 import numpy as np
-import pytest
-
-from pandas import (
-    Series,
-    Timestamp,
-    isna,
-)
 import pandas._testing as tm
+import pytest
+from pandas import Series, Timestamp, isna
 
 
 class TestSeriesArgsort:

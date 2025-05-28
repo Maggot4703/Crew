@@ -1,19 +1,11 @@
-from datetime import (
-    datetime,
-    timezone,
-)
+from datetime import datetime, timezone
 
 import numpy as np
+import pandas._testing as tm
 import pytest
-
+from pandas import NaT, Timestamp
 from pandas._libs.tslibs.dtypes import NpyDatetimeUnit
 from pandas._libs.tslibs.strptime import array_strptime
-
-from pandas import (
-    NaT,
-    Timestamp,
-)
-import pandas._testing as tm
 
 creso_infer = NpyDatetimeUnit.NPY_FR_GENERIC.value
 

@@ -1,19 +1,9 @@
 import re
 
-import pytest
-
-from pandas.compat.pyarrow import (
-    pa_version_under11p0,
-    pa_version_under13p0,
-)
-
-from pandas import (
-    ArrowDtype,
-    DataFrame,
-    Index,
-    Series,
-)
 import pandas._testing as tm
+import pytest
+from pandas import ArrowDtype, DataFrame, Index, Series
+from pandas.compat.pyarrow import pa_version_under11p0, pa_version_under13p0
 
 pa = pytest.importorskip("pyarrow")
 pc = pytest.importorskip("pyarrow.compute")

@@ -4,15 +4,10 @@ Tests for statistical reductions of 2nd moment or higher: var, skew, kurt, ...
 import inspect
 
 import numpy as np
-import pytest
-
 import pandas as pd
-from pandas import (
-    DataFrame,
-    Series,
-    date_range,
-)
 import pandas._testing as tm
+import pytest
+from pandas import DataFrame, Series, date_range
 
 
 class TestDatetimeLikeStatReductions:

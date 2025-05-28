@@ -1,16 +1,9 @@
 import numpy as np
-import pytest
-
-from pandas.errors import NumbaUtilError
-import pandas.util._test_decorators as td
-
-from pandas import (
-    DataFrame,
-    Series,
-    option_context,
-    to_datetime,
-)
 import pandas._testing as tm
+import pandas.util._test_decorators as td
+import pytest
+from pandas import DataFrame, Series, option_context, to_datetime
+from pandas.errors import NumbaUtilError
 
 pytestmark = pytest.mark.single_cpu
 

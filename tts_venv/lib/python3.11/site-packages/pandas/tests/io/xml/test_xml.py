@@ -1,39 +1,23 @@
 from __future__ import annotations
 
-from io import (
-    BytesIO,
-    StringIO,
-)
-from lzma import LZMAError
 import os
+from io import BytesIO, StringIO
+from lzma import LZMAError
 from tarfile import ReadError
 from urllib.error import HTTPError
 from xml.etree.ElementTree import ParseError
 from zipfile import BadZipFile
 
 import numpy as np
-import pytest
-
-from pandas.compat._optional import import_optional_dependency
-from pandas.errors import (
-    EmptyDataError,
-    ParserError,
-)
-import pandas.util._test_decorators as td
-
 import pandas as pd
-from pandas import (
-    NA,
-    DataFrame,
-    Series,
-)
 import pandas._testing as tm
-from pandas.core.arrays import (
-    ArrowStringArray,
-    StringArray,
-)
+import pandas.util._test_decorators as td
+import pytest
+from pandas import NA, DataFrame, Series
+from pandas.compat._optional import import_optional_dependency
+from pandas.core.arrays import ArrowStringArray, StringArray
 from pandas.core.arrays.string_arrow import ArrowStringArrayNumpySemantics
-
+from pandas.errors import EmptyDataError, ParserError
 from pandas.io.common import get_handle
 from pandas.io.xml import read_xml
 

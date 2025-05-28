@@ -2,8 +2,8 @@
 
 """Worksheet Properties"""
 
+from openpyxl.descriptors import Bool, String, Typed
 from openpyxl.descriptors.serialisable import Serialisable
-from openpyxl.descriptors import String, Bool, Typed
 from openpyxl.styles.colors import ColorDescriptor
 
 
@@ -16,13 +16,13 @@ class Outline(Serialisable):
     summaryRight = Bool(allow_none=True)
     showOutlineSymbols = Bool(allow_none=True)
 
-
-    def __init__(self,
-                 applyStyles=None,
-                 summaryBelow=None,
-                 summaryRight=None,
-                 showOutlineSymbols=None
-                 ):
+    def __init__(
+        self,
+        applyStyles=None,
+        summaryBelow=None,
+        summaryRight=None,
+        showOutlineSymbols=None,
+    ):
         self.applyStyles = applyStyles
         self.summaryBelow = summaryBelow
         self.summaryRight = summaryRight
@@ -58,24 +58,24 @@ class WorksheetProperties(Serialisable):
     outlinePr = Typed(expected_type=Outline, allow_none=True)
     pageSetUpPr = Typed(expected_type=PageSetupProperties, allow_none=True)
 
-    __elements__ = ('tabColor', 'outlinePr', 'pageSetUpPr')
+    __elements__ = ("tabColor", "outlinePr", "pageSetUpPr")
 
-
-    def __init__(self,
-                 codeName=None,
-                 enableFormatConditionsCalculation=None,
-                 filterMode=None,
-                 published=None,
-                 syncHorizontal=None,
-                 syncRef=None,
-                 syncVertical=None,
-                 transitionEvaluation=None,
-                 transitionEntry=None,
-                 tabColor=None,
-                 outlinePr=None,
-                 pageSetUpPr=None
-                 ):
-        """ Attributes """
+    def __init__(
+        self,
+        codeName=None,
+        enableFormatConditionsCalculation=None,
+        filterMode=None,
+        published=None,
+        syncHorizontal=None,
+        syncRef=None,
+        syncVertical=None,
+        transitionEvaluation=None,
+        transitionEntry=None,
+        tabColor=None,
+        outlinePr=None,
+        pageSetUpPr=None,
+    ):
+        """Attributes"""
         self.codeName = codeName
         self.enableFormatConditionsCalculation = enableFormatConditionsCalculation
         self.filterMode = filterMode

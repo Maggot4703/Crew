@@ -1,7 +1,6 @@
 import numpy as np
-
-from pandas import DataFrame
 import pandas._testing as tm
+from pandas import DataFrame
 
 
 def test_head_tail_generic(index, frame_or_series):

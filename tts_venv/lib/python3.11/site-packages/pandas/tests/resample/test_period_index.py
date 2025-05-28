@@ -1,33 +1,19 @@
-from datetime import datetime
 import warnings
+from datetime import datetime
 
 import dateutil
 import numpy as np
+import pandas as pd
+import pandas._testing as tm
 import pytest
 import pytz
-
-from pandas._libs.tslibs.ccalendar import (
-    DAYS,
-    MONTHS,
-)
+from pandas import DataFrame, Series, Timestamp
+from pandas._libs.tslibs.ccalendar import DAYS, MONTHS
 from pandas._libs.tslibs.period import IncompatibleFrequency
-from pandas.errors import InvalidIndexError
-
-import pandas as pd
-from pandas import (
-    DataFrame,
-    Series,
-    Timestamp,
-)
-import pandas._testing as tm
 from pandas.core.indexes.datetimes import date_range
-from pandas.core.indexes.period import (
-    Period,
-    PeriodIndex,
-    period_range,
-)
+from pandas.core.indexes.period import Period, PeriodIndex, period_range
 from pandas.core.resample import _get_period_range_edges
-
+from pandas.errors import InvalidIndexError
 from pandas.tseries import offsets
 
 pytestmark = pytest.mark.filterwarnings(

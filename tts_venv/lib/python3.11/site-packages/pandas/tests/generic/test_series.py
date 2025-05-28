@@ -1,15 +1,10 @@
 from operator import methodcaller
 
 import numpy as np
-import pytest
-
 import pandas as pd
-from pandas import (
-    MultiIndex,
-    Series,
-    date_range,
-)
 import pandas._testing as tm
+import pytest
+from pandas import MultiIndex, Series, date_range
 
 
 class TestSeries:

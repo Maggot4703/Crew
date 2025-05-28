@@ -1,16 +1,15 @@
 """ test orc compat """
 import datetime
-from decimal import Decimal
-from io import BytesIO
 import os
 import pathlib
+from decimal import Decimal
+from io import BytesIO
 
 import numpy as np
-import pytest
-
 import pandas as pd
-from pandas import read_orc
 import pandas._testing as tm
+import pytest
+from pandas import read_orc
 from pandas.core.arrays import StringArray
 
 pytest.importorskip("pyarrow.orc")

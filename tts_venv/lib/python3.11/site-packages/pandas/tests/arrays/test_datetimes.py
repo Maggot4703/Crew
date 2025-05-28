@@ -1,10 +1,11 @@
 """
 Tests for DatetimeArray
 """
+
 from __future__ import annotations
 
-from datetime import timedelta
 import operator
+from datetime import timedelta
 
 try:
     from zoneinfo import ZoneInfo
@@ -13,18 +14,12 @@ except ImportError:
     ZoneInfo = None  # type: ignore[misc, assignment]
 
 import numpy as np
-import pytest
-
-from pandas._libs.tslibs import tz_compare
-
-from pandas.core.dtypes.dtypes import DatetimeTZDtype
-
 import pandas as pd
 import pandas._testing as tm
-from pandas.core.arrays import (
-    DatetimeArray,
-    TimedeltaArray,
-)
+import pytest
+from pandas._libs.tslibs import tz_compare
+from pandas.core.arrays import DatetimeArray, TimedeltaArray
+from pandas.core.dtypes.dtypes import DatetimeTZDtype
 
 
 class TestNonNano:

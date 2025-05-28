@@ -1,11 +1,6 @@
 import numpy as np
-
-from pandas import (
-    DataFrame,
-    Index,
-    Series,
-)
 import pandas._testing as tm
+from pandas import DataFrame, Index, Series
 
 
 def test_corrwith_with_1_axis():

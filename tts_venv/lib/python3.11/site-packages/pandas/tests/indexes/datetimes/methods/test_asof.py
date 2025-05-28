@@ -1,11 +1,6 @@
 from datetime import timedelta
 
-from pandas import (
-    Index,
-    Timestamp,
-    date_range,
-    isna,
-)
+from pandas import Index, Timestamp, date_range, isna
 
 
 class TestAsOf:

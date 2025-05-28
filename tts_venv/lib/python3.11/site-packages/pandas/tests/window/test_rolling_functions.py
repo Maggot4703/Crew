@@ -1,20 +1,10 @@
 from datetime import datetime
 
 import numpy as np
-import pytest
-
-import pandas.util._test_decorators as td
-
-from pandas import (
-    DataFrame,
-    DatetimeIndex,
-    Series,
-    concat,
-    isna,
-    notna,
-)
 import pandas._testing as tm
-
+import pandas.util._test_decorators as td
+import pytest
+from pandas import DataFrame, DatetimeIndex, Series, concat, isna, notna
 from pandas.tseries import offsets
 
 

@@ -1,7 +1,6 @@
 import numpy as np
 import pytest
 import pytz
-
 from pandas._libs.tslibs.tzconversion import tz_localize_to_utc
 
 

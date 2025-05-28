@@ -23,7 +23,7 @@ content = """# Chat Summary - May 28, 2025
 All guides contain detailed examples and comprehensive information about their respective topics. The text-to-speech utilities provide a way to listen to any guide through a user-friendly interface with adjustable speed and volume controls.
 """
 
-with open('chat.txt', 'w') as f:
+with open("chat.txt", "w") as f:
     f.write(content)
 
 print("Chat summary saved to chat.txt")

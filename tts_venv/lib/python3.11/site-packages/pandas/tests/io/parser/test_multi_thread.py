@@ -7,11 +7,10 @@ from io import BytesIO
 from multiprocessing.pool import ThreadPool
 
 import numpy as np
-import pytest
-
 import pandas as pd
-from pandas import DataFrame
 import pandas._testing as tm
+import pytest
+from pandas import DataFrame
 from pandas.util.version import Version
 
 xfail_pyarrow = pytest.mark.usefixtures("pyarrow_xfail")

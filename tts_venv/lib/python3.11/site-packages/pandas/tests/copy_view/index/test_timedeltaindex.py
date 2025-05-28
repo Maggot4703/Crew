@@ -1,12 +1,6 @@
-import pytest
-
-from pandas import (
-    Series,
-    Timedelta,
-    TimedeltaIndex,
-    timedelta_range,
-)
 import pandas._testing as tm
+import pytest
+from pandas import Series, Timedelta, TimedeltaIndex, timedelta_range
 
 pytestmark = pytest.mark.filterwarnings(
     "ignore:Setting a value on a view:FutureWarning"

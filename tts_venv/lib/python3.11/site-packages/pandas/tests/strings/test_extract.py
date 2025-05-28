@@ -1,18 +1,11 @@
-from datetime import datetime
 import re
+from datetime import datetime
 
 import numpy as np
 import pytest
-
+from pandas import DataFrame, Index, MultiIndex, Series
+from pandas import _testing as tm
 from pandas.core.dtypes.dtypes import ArrowDtype
-
-from pandas import (
-    DataFrame,
-    Index,
-    MultiIndex,
-    Series,
-    _testing as tm,
-)
 
 
 def test_extract_expand_kwarg_wrong_type_raises(any_string_dtype):

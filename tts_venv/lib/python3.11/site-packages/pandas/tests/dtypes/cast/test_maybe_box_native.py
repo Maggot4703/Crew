@@ -2,15 +2,8 @@ from datetime import datetime
 
 import numpy as np
 import pytest
-
+from pandas import Interval, Period, Timedelta, Timestamp
 from pandas.core.dtypes.cast import maybe_box_native
-
-from pandas import (
-    Interval,
-    Period,
-    Timedelta,
-    Timestamp,
-)
 
 
 @pytest.mark.parametrize(

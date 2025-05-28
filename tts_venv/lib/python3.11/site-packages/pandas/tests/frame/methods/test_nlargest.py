@@ -5,10 +5,9 @@ but are implicitly also testing nsmallest_foo.
 from string import ascii_lowercase
 
 import numpy as np
-import pytest
-
 import pandas as pd
 import pandas._testing as tm
+import pytest
 from pandas.util.version import Version
 
 

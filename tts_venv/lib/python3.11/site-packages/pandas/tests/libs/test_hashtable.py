@@ -1,16 +1,14 @@
-from collections.abc import Generator
-from contextlib import contextmanager
 import re
 import struct
 import tracemalloc
+from collections.abc import Generator
+from contextlib import contextmanager
 
 import numpy as np
-import pytest
-
-from pandas._libs import hashtable as ht
-
 import pandas as pd
 import pandas._testing as tm
+import pytest
+from pandas._libs import hashtable as ht
 from pandas.core.algorithms import isin
 
 

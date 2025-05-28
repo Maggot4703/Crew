@@ -2,18 +2,15 @@
 Tests parsers ability to read and parse non-local files
 and hence require a network connection to be read.
 """
-from io import BytesIO
 import logging
 import re
+from io import BytesIO
 
 import numpy as np
-import pytest
-
-import pandas.util._test_decorators as td
-
-from pandas import DataFrame
 import pandas._testing as tm
-
+import pandas.util._test_decorators as td
+import pytest
+from pandas import DataFrame
 from pandas.io.feather_format import read_feather
 from pandas.io.parsers import read_csv
 

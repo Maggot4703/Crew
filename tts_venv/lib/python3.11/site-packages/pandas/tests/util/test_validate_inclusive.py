@@ -1,9 +1,7 @@
 import numpy as np
-import pytest
-
-from pandas.util._validators import validate_inclusive
-
 import pandas as pd
+import pytest
+from pandas.util._validators import validate_inclusive
 
 
 @pytest.mark.parametrize(

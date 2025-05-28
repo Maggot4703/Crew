@@ -1,21 +1,14 @@
-from datetime import datetime
 import re
+from datetime import datetime
 
 import numpy as np
-import pytest
-
-from pandas.errors import PerformanceWarning
-import pandas.util._test_decorators as td
-
 import pandas as pd
-from pandas import (
-    Series,
-    _testing as tm,
-)
-from pandas.tests.strings import (
-    _convert_na_value,
-    object_pyarrow_numpy,
-)
+import pandas.util._test_decorators as td
+import pytest
+from pandas import Series
+from pandas import _testing as tm
+from pandas.errors import PerformanceWarning
+from pandas.tests.strings import _convert_na_value, object_pyarrow_numpy
 
 # --------------------------------------------------------------------------------------
 # str.contains

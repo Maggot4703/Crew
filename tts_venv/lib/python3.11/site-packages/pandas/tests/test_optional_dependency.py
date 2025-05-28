@@ -1,14 +1,9 @@
 import sys
 import types
 
-import pytest
-
-from pandas.compat._optional import (
-    VERSIONS,
-    import_optional_dependency,
-)
-
 import pandas._testing as tm
+import pytest
+from pandas.compat._optional import VERSIONS, import_optional_dependency
 
 
 def test_import_optional():

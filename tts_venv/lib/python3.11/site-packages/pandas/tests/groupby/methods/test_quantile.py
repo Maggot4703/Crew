@@ -1,12 +1,8 @@
 import numpy as np
-import pytest
-
 import pandas as pd
-from pandas import (
-    DataFrame,
-    Index,
-)
 import pandas._testing as tm
+import pytest
+from pandas import DataFrame, Index
 
 
 @pytest.mark.parametrize(

@@ -1,7 +1,4 @@
-from pandas import (
-    DataFrame,
-    Timedelta,
-)
+from pandas import DataFrame, Timedelta
 
 
 def test_no_overflow_of_freq_and_time_in_dataframe():

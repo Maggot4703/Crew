@@ -13,16 +13,17 @@ License: MIT
 """
 
 import csv
+import fnmatch  # Add this import if not already present
 import json
 import logging
 import math
 import os
+import shutil  # Added import
 import subprocess
 import sys
 from pathlib import Path
-from typing import List, Tuple
+from typing import Any, Dict, List, Optional, Tuple  # Updated typing
 
-import fnmatch  # Add this import if not already present
 import ijson
 import pandas as pd
 import pyttsx3  # Added import for TTS
@@ -57,6 +58,27 @@ except Exception as e:
     tts_engine = None
 
 
+# region Text-to-Speech Utilities
+def speak(text: str, voice_id: str = None) -> None:
+    """
+    Uses pyttsx3 to speak the given text.
+    Logs errors if TTS fails, but does not raise an exception.
+    """
+    global tts_engine  # Ensure we are using the globally initialized engine
+    if tts_engine:
+        try:
+            if voice_id:
+                tts_engine.setProperty("voice", voice_id)
+            tts_engine.say(text)
+            tts_engine.runAndWait()
+        except Exception as e:
+            logger.error(f"TTS speak error: {e}", exc_info=False)
+    else:
+        logger.info(f"TTS disabled, would have said: '{text}'")
+
+
+# endregion
+
 # Conditional import - moved after logging setup
 try:
     from mcp_service import CustomEncoder, get_mcp_context_for_npcs
@@ -69,14 +91,6 @@ except ImportError:
     class CustomEncoder(json.JSONEncoder):
         pass
 
-
-# Setup basic logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
-logger = logging.getLogger(__name__)
 
 # region Configuration and Constants
 # Constants
@@ -95,6 +109,122 @@ DATA_DIR = Path("data")
 # File configurations
 IMAGE_FILES = ["Cars1.png", "Cars2.png", "Cars3.png", "Cars4.png", "Cars5.png"]
 GRID_SIZES = [(10, 10), (20, 20), (30, 30), (40, 40), (50, 50)]
+# endregion
+
+
+# region Backup Utilities
+def backup_project(project_dir: Path, backup_parent_dir: Path) -> bool:
+    """
+    Creates a timestamped backup of the project_dir to a subdirectory in backup_parent_dir,
+    excluding specified files and directories.
+
+    Args:
+        project_dir: The Path object of the directory to back up.
+        backup_parent_dir: The Path object of the parent directory where backups will be stored.
+
+    Returns:
+        True if backup was successful, False otherwise.
+    """
+    excluded_patterns = [
+        ".venv",
+        "tts_venv",  # Added to exclude the TTS virtual environment
+        "data",  # Added to exclude the data directory
+        ".git",
+        ".pytest_cache",
+        "__pycache__",
+        "*.log",  # General log files
+        "output.txt",
+        "push_log.txt",
+        "automated_fixes.txt",
+        "HELP.txt",
+        "project_summary.md",
+        "*.pyc",
+        "*.tmp",
+        "*.bak",
+        "*.swp",
+        "Thumbs.db",
+        ".DS_Store",
+        "node_modules",  # Common JS dependency folder
+        "build",  # Common build output folder
+        "dist",  # Common distribution folder
+        "*.egg-info",  # Python packaging metadata
+    ]
+
+    def ignore_func(directory, contents):
+        """
+        Custom ignore function for shutil.copytree.
+        It ignores files and directories matching the excluded_patterns.
+        """
+        ignored_names = []
+        for item in contents:
+            item_path = Path(directory) / item
+            # Check against each pattern for both files and directories
+            for pattern in excluded_patterns:
+                if fnmatch.fnmatch(
+                    item, pattern
+                ):  # Direct match for files/folders in current dir
+                    ignored_names.append(item)
+                    logger.debug(
+                        f"Ignoring '{item_path}' due to pattern '{pattern}' (direct match)"
+                    )
+                    break
+                # For directories, also check if any part of the path matches (e.g. excluding all .git folders)
+                # This is implicitly handled by copytree calling ignore_func for subdirectories.
+                # We primarily care about matching items *within* the current `contents` list.
+
+            # Additionally, ensure common hidden directories are explicitly checked if not caught by simple patterns
+            # This is somewhat redundant if patterns like ".*" are used but good for specific common ones.
+            if item.startswith(".") and item in [
+                ".venv",
+                ".git",
+                ".pytest_cache",
+            ]:  # Redundant with patterns but safe
+                if item not in ignored_names:
+                    ignored_names.append(item)
+                    logger.debug(
+                        f"Ignoring hidden directory '{item_path}' (explicit check)"
+                    )
+
+        # Log what's being processed vs ignored in the current directory
+        # logger.debug(f"In directory: {directory}")
+        # logger.debug(f"  Contents: {contents}")
+        # logger.debug(f"  Ignoring: {ignored_names}")
+        return set(
+            ignored_names
+        )  # shutil.copytree expects a set or list of names to ignore
+
+    try:
+        project_name = project_dir.name
+        timestamp = pd.Timestamp.now().strftime("%Y%m%d_%H%M%S")
+        backup_subdir_name = f"{project_name}_Backup_{timestamp}"
+        backup_target_dir = backup_parent_dir / backup_subdir_name
+
+        backup_parent_dir.mkdir(parents=True, exist_ok=True)
+
+        logger.info(f"Starting backup of '{project_dir}' to '{backup_target_dir}'...")
+        speak(f"Starting backup of project {project_name}.")
+
+        shutil.copytree(
+            project_dir, backup_target_dir, ignore=ignore_func, dirs_exist_ok=True
+        )
+
+        logger.info(f"Project backup completed successfully to '{backup_target_dir}'.")
+        speak(f"Project {project_name} backup completed successfully.")
+        return True
+
+    except FileNotFoundError as e:
+        logger.error(
+            f"Backup failed: Source directory '{project_dir}' not found. Error: {e}",
+            exc_info=True,
+        )
+        speak(f"Backup of project {project_name} failed. Source directory not found.")
+        return False
+    except Exception as e:
+        logger.error(f"Backup failed for '{project_dir}'. Error: {e}", exc_info=True)
+        speak(f"An error occurred during the backup of project {project_name}.")
+        return False
+
+
 # endregion
 
 
@@ -349,1251 +479,532 @@ def showAllColumns(columns: List[str]) -> None:  # Corrected type hint
 # endregion
 
 
-# region Main Processing Tasks
-# Image Processing
-def job1() -> None:
+# region Help File Generation
+def generate_help_file(output_path_str: str) -> bool:
     """
-    Processes images by overlaying grids and saving them.
-
-    Reads image filenames from `IMAGE_FILES`, applies a grid overlay
-    with specified `GRID_SIZES`, and saves the processed images to the `OUTPUT_DIR`.
-    """
-    output_dir = os.path.join(os.path.dirname(__file__), OUTPUT_DIR)
-    os.makedirs(output_dir, exist_ok=True)
-
-    # Use the imported constants
-    files = [os.path.join(INPUT_DIR, f) for f in IMAGE_FILES]
-    names = [f"Cars{i+1}.png" for i in range(len(IMAGE_FILES))]
-
-    # Process each image
-    for _, (input_image, output_name, grid_size) in enumerate(  # Replaced i with _
-        zip(files, names, GRID_SIZES)
-    ):
-        try:
-            output_path = os.path.join(output_dir, output_name)
-            grid_image = overlayGrid(
-                input_image, grid_color=DEFAULT_GRID_COLOR, grid_size=grid_size
-            )
-            grid_image.save(output_path)
-            print(f"Image with grid saved as {output_path}")
-        except Exception as e:
-            print(f"Error processing {input_image}: {e}")
-    print("\n=== Process images complete ===\n")
-    print("job1 complete.")
-
-
-# CSV
-def job2(filename: str = "data/npcs.csv") -> None:
-    """
-    Reads and analyzes a CSV file using pandas.
-
-    Performs basic data exploration including shape, columns, head,
-    and statistical summary. Also demonstrates position analysis,
-    data filtering, and grouped analysis if a "POSITION" column exists.
-    Finally, it generates and prints MCP context for the loaded data.
+    Generates a HELP.txt file with comprehensive advice on using Crew.py.
 
     Args:
-        filename: Path to the CSV file (default is "data/npcs.csv").
+        output_path_str: The string path for the output HELP.txt file.
+
+    Returns:
+        True if help file generation was successful, False otherwise.
     """
-    logger.info("\n--- Running CSV Analysis ---")
+    output_path = Path(output_path_str)
+    logger.info(f"Generating help file at '{output_path}'...")
+    speak("Generating help file.")
+
+    help_content = f"""
+# Crew.py Help Guide - {pd.Timestamp.now().strftime('%Y-%m-%d')}
+
+Thank you for using Crew.py! This guide provides an overview of its features and how to use them.
+
+## Core Functionalities:
+
+1.  **Project Backup (`backup_project`)**:
+    *   Creates a timestamped backup of the entire project directory.
+    *   Excludes common temporary files, virtual environments, and Git folders (see `excluded_patterns` in `Crew.py`).
+    *   Backups are stored in a sister directory named `PROJECTS_Crew_Backups` (or as configured).
+    *   Usage: This is typically run automatically at the start of the main script execution.
+
+2.  **Project Summary (`generate_project_summary`)**:
+    *   Generates a `project_summary.md` file in the project root.
+    *   This file includes:
+        *   Directory structure (excluding common temporary/build directories).
+        *   Total file and directory counts.
+        *   Breakdown of file types.
+        *   Approximate lines of Python code (excluding comments and blank lines).
+    *   Usage: Run automatically by the main script.
+
+3.  **Automated Fixes & Git Integration (`auto_fix_all_issues`)**:
+    *   **Code Formatting**: Runs `isort` (for import sorting) and `black` (for code style) on all Python files in the project.
+        *   Requires `isort` and `black` to be installed in your Python environment (`pip install isort black`).
+    *   **Git Commit & Push**: After formatting, it automatically:
+        *   Adds all changes (`git add .`).
+        *   Commits changes with a timestamped message (e.g., "Automated fixes and updates (YYYY-MM-DD HH:MM:SS)").
+        *   Pushes the commit to the `origin` remote (typically GitHub).
+        *   Requires Git to be installed and configured for the project (e.g., `git init`, `git remote add origin <your-repo-url>`).
+        *   Errors during Git operations are logged to `push_log.txt`.
+    *   Usage: Run automatically by the main script.
+
+4.  **Text-to-Speech (TTS) Notifications (`speak`)**:
+    *   Provides audible feedback for key operations (e.g., backup start/finish, errors).
+    *   Uses the `pyttsx3` library. Requires TTS engines to be installed on your system.
+        *   On Linux: `sudo apt-get install espeak festival` (or other TTS engines).
+        *   See `tts_requirements.txt` and `install_tts.sh` for setup help.
+    *   If TTS initialization fails, it logs a warning and continues silently.
+
+5.  **GUI Launch (`launch_gui_if_configured`)**:
+    *   Attempts to launch a `gui.py` script if it exists in the project directory.
+    *   The GUI is expected to be a separate Tkinter or PyQt application.
+    *   Usage: Run automatically at the end of the main script execution.
+
+6.  **Image Processing (`job1`, `markHorizontalLine`, `overlayGrid`)**:
+    *   `job1`: Example task that overlays grids on images specified in `IMAGE_FILES`.
+    *   These are more specific utilities and might need adaptation for your use case.
+
+7.  **Data Handling (`job2`, `job3`, `read_csv_pandas`, `read_excel`, etc.)**:
+    *   Example tasks for reading and performing basic analysis on CSV and Excel files.
+    *   Utilizes the `pandas` library.
+
+8.  **Logging**:
+    *   Comprehensive logging is implemented using Python's `logging` module.
+    *   Logs are by default sent to the console and also to `output.txt` in the project root when the script is run directly.
+    *   Log file `output.txt` is created by the main script to capture stdout/stderr.
+
+## Setup & Requirements:
+
+*   **Python 3.x**: Ensure you have a compatible Python version.
+*   **`requirements.txt`**: Install core dependencies: `pip install -r requirements.txt`
+    *   Key libraries: `pandas`, `Pillow` (for image processing), `tqdm`.
+*   **`tts_requirements.txt`**: For Text-to-Speech: `pip install -r tts_requirements.txt`
+    *   Key library: `pyttsx3`.
+    *   System-level TTS engines might also be needed (see TTS section above).
+*   **Linters/Formatters**: For `auto_fix_all_issues`: `pip install isort black`.
+*   **Git**: For `auto_fix_all_issues`: Ensure Git is installed and your project is a Git repository with a remote configured.
+
+## Running Crew.py:
+
+    python3 Crew.py
+
+The script will perform its main sequence: backup, summary, auto-fixes, GUI launch, etc.
+
+## Customization:
+
+*   **Backup Exclusions**: Modify `excluded_patterns` in the `backup_project` function in `Crew.py`.
+*   **Image Processing**: Adjust `IMAGE_FILES`, `GRID_SIZES`, etc., in the "Configuration and Constants" section of `Crew.py`.
+*   **Data Files**: Update paths in `job2`, `job3`, etc., if you use these data processing tasks.
+*   **Main Sequence**: Modify the `if __name__ == "__main__":` block in `Crew.py` to change the order of operations or disable certain features.
+
+## Troubleshooting:
+
+*   **TTS Issues**:
+    *   Check `tts_requirements.txt` and `install_tts.sh`.
+    *   Ensure system TTS engines are installed (e.g., `espeak` on Linux).
+    *   Look for error messages in the console log related to `pyttsx3.init()`.
+    *   The script attempts to find an English voice; if not found, it uses the default.
+*   **Git Push Failures**:
+    *   Check `push_log.txt` for detailed error messages from Git.
+    *   Ensure your Git remote (`origin`) is correctly configured.
+    *   Ensure you have an internet connection and permissions to push to the repository.
+*   **Linter/Formatter Issues**:
+    *   Make sure `isort` and `black` are installed in the environment where `Crew.py` is run.
+    *   Check console logs for errors from these tools.
+*   **`ModuleNotFoundError`**: Ensure all dependencies from `requirements.txt` (and `tts_requirements.txt` if using TTS) are installed in your active Python environment.
+*   **File Paths**: The script uses `pathlib.Path` for robust path handling. Most paths are relative to the script's location.
+
+This help file is automatically generated. For the most up-to-date information, please refer to the source code and comments within `Crew.py`.
+"""
     try:
-        # Load the CSV file into a pandas DataFrame
-        data_pandas_df = pd.read_csv(filename)
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(help_content)
+        logger.info(f"Help file '{output_path}' generated successfully.")
+        speak("Help file generated successfully.")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to generate help file. Error: {e}", exc_info=True)
+        speak("Failed to generate help file.")
+        return False
 
-        # Display basic information using logger
-        logger.info("\n=== Data Overview ===")
-        logger.info(f"Shape: {data_pandas_df.shape}")
-        logger.info(f"Columns: {data_pandas_df.columns.tolist()}")
-        logger.info("\n=== First 5 rows ===")
-        logger.info(f"\n{data_pandas_df.head().to_string()}")
-        logger.info("\n=== Numerical Statistics ===")
-        logger.info(f"\n{data_pandas_df.describe().to_string()}")
-        # logger.info(data_pandas_df.to_string()) # Log entire dataframe if needed, can be verbose
 
-        if "ROLE" in data_pandas_df.columns:
-            logger.info("\n=== Role Analysis ===")
-            role_counts = data_pandas_df["ROLE"].value_counts()
-            logger.info("Role distribution:")
-            logger.info(f"\n{role_counts.to_string()}")
+# endregion
 
-            # Data filtering example
-            logger.info("\n=== Filtered Data ===")
-            filtered_data = data_pandas_df[
-                data_pandas_df["ROLE"].str.contains("Captain", na=False)
+
+# region Project Analysis Utilities
+def generate_project_summary(project_dir: Path, output_file: Path) -> bool:
+    """
+    Generates a Markdown summary of the project structure, file types, and basic stats.
+
+    Args:
+        project_dir: The Path object of the project directory.
+        output_file: The Path object for the output Markdown file.
+
+    Returns:
+        True if summary generation was successful, False otherwise.
+    """
+    logger.info(f"Generating project summary for '{project_dir}' to '{output_file}'...")
+    speak("Generating project summary.")
+    try:
+        summary_content = [f"# Project Summary for {project_dir.name}\\n\\n"]
+        summary_content.append(
+            f"Generated on: {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}\\n\\n"
+        )
+        summary_content.append("## Directory Structure\\n\\n")
+
+        file_stats: Dict[str, Any] = {
+            "total_files": 0,
+            "total_dirs": 0,
+            "file_types": {},
+        }
+        # More comprehensive exclusion list
+        excluded_dirs = {
+            ".git",
+            ".venv",
+            "__pycache__",
+            "node_modules",
+            "build",
+            "dist",
+            "output",
+            "input",
+            "data",  # Common data/output folders for this project
+            "tests",
+            "docs",
+            ".vscode",
+            ".idea",
+            "site",
+            "htmlcov",
+            "*.egg-info",
+            "temp",
+            "tmp",
+            "logs",
+            "backups",  # General temporary/log/backup folders
+        }
+        excluded_files = {
+            ".DS_Store",
+            "Thumbs.db",
+            "desktop.ini",
+            "*.log",
+            "*.tmp",
+            "*.bak",
+            "*.swp",  # General temp/backup files
+            "output.txt",
+            "project_summary.md",
+            "HELP.txt",
+            "push_log.txt",
+            "automated_fixes.txt",  # Files generated by this script
+        }
+
+        # Use project_dir.glob for specific exclusions if needed, os.walk is generally fine
+        paths_to_log = []
+        for root_str, dirs, files in os.walk(project_dir, topdown=True):
+            root = Path(root_str)
+            # Filter directories
+            dirs[:] = [
+                d for d in dirs if d not in excluded_dirs and not d.startswith(".")
             ]
-            logger.info("Captains in dataset:")
-            columns_to_display = ["ROLE"]
-            if "TAG" in data_pandas_df.columns:
-                columns_to_display.append("TAG")
 
-            if not filtered_data.empty:
-                logger.info(f"\n{filtered_data[columns_to_display].to_string()}")
-            else:
-                logger.info("No Captains found matching criteria.")
+            level = len(root.relative_to(project_dir).parts)
+            indent = "  " * level
 
-            # Group by operations
-            logger.info("\n=== Grouped Analysis ===")
-            grouped_data = data_pandas_df.groupby("ROLE").size()
-            logger.info("Counts by role:")
-            logger.info(f"\n{grouped_data.to_string()}")
-            role_percentage = (grouped_data / grouped_data.sum()) * 100
-            logger.info("\n=== Role Percentage ===")
-            logger.info(f"\n{role_percentage.to_string()}")
-        else:
-            logger.warning(
-                "\n=== 'ROLE' column not found in CSV. Skipping related analysis. ==="
+            if root != project_dir:
+                paths_to_log.append(f"{indent}- {root.name}/\\n")
+
+            file_stats["total_dirs"] += 1
+
+            sub_indent = "  " * (level + 1)
+            for f_name in files:
+                # Check against excluded files patterns
+                if any(
+                    fnmatch.fnmatch(f_name, pattern) for pattern in excluded_files
+                ) or f_name.startswith("."):
+                    continue
+
+                file_stats["total_files"] += 1
+                file_ext = (
+                    Path(f_name).suffix.lower()
+                    if Path(f_name).suffix
+                    else "no_extension"
+                )
+                file_stats["file_types"][file_ext] = (
+                    file_stats["file_types"].get(file_ext, 0) + 1
+                )
+
+                paths_to_log.append(f"{sub_indent}- {f_name}\\n")
+
+        summary_content.extend(paths_to_log)
+
+        summary_content.append("\\n## File Statistics\\n\\n")
+        summary_content.append(
+            f"- Total Directories (scanned): {file_stats['total_dirs'] -1 }\\n"
+        )  # -1 for project_dir itself
+        summary_content.append(
+            f"- Total Files (scanned): {file_stats['total_files']}\\n"
+        )
+        summary_content.append("- File Types:\\n")
+        for ext, count in sorted(file_stats["file_types"].items()):
+            summary_content.append(f"  - {ext}: {count}\\n")
+
+        # Basic Python LoC count
+        py_files = [
+            p
+            for p in project_dir.rglob("*.py")
+            if not any(excluded_part in p.parts for excluded_part in excluded_dirs)
+        ]
+        total_loc = 0
+        if py_files:
+            summary_content.append("\\n## Python Code Statistics (Approximate)\\n\\n")
+            for py_file in py_files:
+                try:
+                    with open(py_file, "r", encoding="utf-8", errors="ignore") as pf:
+                        lines = sum(
+                            1
+                            for line in pf
+                            if line.strip() and not line.strip().startswith("#")
+                        )
+                        total_loc += lines
+                except Exception:
+                    pass
+            summary_content.append(
+                f"- Approximate Lines of Python Code (excluding comments/blanks): {total_loc}\\n"
             )
 
-        # Generate and print MCP context
-        logger.info("\n=== MCP Context for NPCs ===")
-        mcp_context = get_mcp_context_for_npcs(data_pandas_df)
-        # Still print JSON to console for direct viewing, but also log it for record
-        mcp_json_output = json.dumps(mcp_context, indent=4, cls=CustomEncoder)
-        print(
-            mcp_json_output
-        )  # Keep direct print for this specific output as it's a primary artifact
-        logger.info(f"MCP JSON Output:\n{mcp_json_output}")
+        with open(output_file, "w", encoding="utf-8") as f:
+            f.writelines(summary_content)
 
-        logger.info("\n=== Read CSV file complete ===")
-        logger.info("\njob2 CSV complete.")
-        logger.info("\n----------------------------------------")
-
-    except FileNotFoundError:
-        logger.error(f"Error: The file {filename} was not found.")
-    except pd.errors.EmptyDataError:
-        logger.error(f"Error: The CSV file {filename} is empty.")
+        logger.info(f"Project summary saved to '{output_file}'.")
+        speak("Project summary generated successfully.")
+        return True
     except Exception as e:
-        logger.error(f"Error in CSV Analysis for {filename}: {e}")
+        logger.error(f"Failed to generate project summary. Error: {e}", exc_info=True)
+        speak("Failed to generate project summary.")
+        return False
 
 
-# XLS
-def job3(filename: str = "data/npcs.xls") -> None:  # Added return type hint
+# endregion
+
+
+# region Git and Linting Utilities
+def fix_lint_errors(project_dir: Path) -> bool:
     """
-    Reads and displays contents from an Excel file.
-
-    Specifically looks for and analyzes an "npcs" column if present.
+    Runs isort and black to format Python code in the project directory.
+    SAFE VERSION: Only processes main Python files with timeouts and exclusions.
 
     Args:
-        filename: Path to the Excel file (default is "data/npcs.xls").
+        project_dir: The Path object of the project directory.
+
+    Returns:
+        True if linters ran successfully, False on error.
     """
-    logger.info(f"--- Running Excel Analysis for {filename} ---")
-    # Excel file reading
-    excel_file = filename
+    logger.info(f"Running linters (isort, black) on '{project_dir}' (safe mode)...")
+    speak("Running code formatters in safe mode.")
     try:
-        df = read_excel(excel_file, sheet_name=0)  # Specify the sheet name or index
-        if df is not None and not df.empty:
-            logger.info("\nExcel Data:")
-            logger.info(f"\n{df.head().to_string()}")
-            logger.info(f"\nColumns: {df.columns.tolist()}")
-            if "npcs" in df.columns:
-                logger.info("\n=== npcs Column Analysis ===")
-                logger.info(f"Value Counts:\n{df['npcs'].value_counts().to_string()}")
-                logger.info(f"\nUnique Values: {df['npcs'].unique().tolist()}")
-            else:
-                logger.warning("'npcs' column not found in the Excel file.")
-        elif df is not None and df.empty:
-            logger.info("Excel file is empty.")
+        abs_project_dir = project_dir.resolve()
+
+        # Define specific Python files to format (avoid huge directories)
+        main_python_files = []
+        for py_file in abs_project_dir.glob("*.py"):
+            # Skip test files and generated files
+            if not py_file.name.startswith(("test_", "output.txt", "__")):
+                main_python_files.append(str(py_file))
+
+        if not main_python_files:
+            logger.info("No main Python files found to format.")
+            return True
+
+        logger.info(
+            f"Formatting {len(main_python_files)} Python files: {[Path(f).name for f in main_python_files]}"
+        )
+
+        isort_path = shutil.which("isort")
+        black_path = shutil.which("black")
+
+        # Run isort with timeout and specific files
+        if not isort_path:
+            logger.warning("isort command not found. Skipping isort.")
         else:
-            # read_excel already logs FileNotFoundError
-            pass  # Error already logged by read_excel or it returned None
-
-    except Exception as e:  # Catch other potential errors during analysis
-        logger.error(f"Error during Excel file analysis of '{excel_file}': {e}")
-    logger.info("\n=== Excel file reading complete ===")
-    logger.info("job3 XLS complete.")
-
-
-# show column analysis
-def job4(filename: str = "data/npcs.csv") -> None:  # Added return type hint
-    """
-    Processes and analyzes data from a given file (CSV or Excel).
-
-    Reads the file and then calls `analyze_data` to perform basic analysis.
-
-    Args:
-        filename: Path to the data file (default is "data/npcs.csv").
-    """
-    try:
-        # Read data files
-        print(filename)
-        df = read_structured_file(filename)  # Read file once
-        # Analyze data
-        analyze_data(df)  # Analyze once
-        # excel_df = read_file(filename) # Removed redundant read
-        # analyze_data(excel_df) # Removed redundant analysis
-    except Exception as e:
-        print(f"Error in job4: {e}")
-    print("\n=== NPC Analysis complete ===\n")  # Corrected f-string
-    print("job4 show columns complete.")
-    print("\n=== CSV file analysis complete ===\n")
-
-
-# save csv columns
-def job5(filename: str = "data/npcs.csv") -> None:  # Added return type hint
-    """
-    Displays and saves CSV data, creating separate CSVs for unique values in each column.
-
-    Logs information about the "NPC", "ROLE", and "PRIMUS" columns.
-    Then, for each column in the input CSV, it logs unique values and writes
-    these unique values to a new CSV file named 'data/<column_name>.csv'.
-
-    Args:
-        filename: Path to the input CSV file (default is "data/npcs.csv").
-    """
-    data_pandas = pd.read_csv(filename)
-    logger.info("\n=== SkyRig Cast ===\n")
-    logger.info(data_pandas[["NPC", "ROLE"]])
-    logger.info("\n=== <NPC> <ROLE> <PRIMUS> ===")
-    logger.info(data_pandas[["NPC", "ROLE", "PRIMUS"]])
-
-    cols = data_pandas.columns.tolist()
-    for col in cols:
-        logger.info(f"{data_pandas[col].unique()}")
-        fname = f"data/{col}.csv"
-        # The above code is opening a file named `fname` in write mode and
-        # assigning it to the variable `f`. This allows the program to write
-        # data to the file. The `with` statement is used to ensure that the
-        # file is properly closed after the block of code is executed, even
-        # if an error occurs.
-
-        with open(fname, "w") as f:
-            name = col
-            name = name.upper()
-
-            f.write(f"{name}\n")
-            for row in data_pandas.index:
-                logger.info(f"{data_pandas.at[row, col]}")
-                f.write(f"{data_pandas.at[row, col]}\n")
-            logger.info("")  # Removed whitespace before : (was f"")
-            # print(f"File {fname} created successfully.")
-    print("\n=== SkyRig Cast Complete ===\n")
-    print("job5 save csv complete.")  # Changed from job1 to job5
-
-
-# show cols
-def job6(filename: str = "data/npcs.csv") -> None:  # Added return type hint
-    """
-    Reads a CSV file and prints its column names.
-
-    Args:
-        filename: Path to the CSV file (default is "data/npcs.csv").
-    """
-    data_pandas = pd.read_csv(filename)
-    cols = data_pandas.columns.tolist()
-    print(cols)
-    print("\n=== SkyRig Roles Complete ===\n")
-    print("job6 complete.")  # Changed from job1 to job5
-
-
-# save
-def job7(filename: str = "data/npcs.csv") -> None:  # Added return type hint
-    """
-    Placeholder job function. Currently only prints completion messages.
-
-    Args:
-        filename: Path to a CSV file (default is "data/npcs.csv"), though not used.
-    """
-    print("\n=== SkyRig Complete ===\n")
-    print("job7 complete.")  # Changed from job1 to job5
-
-
-# save
-def job8(filename: str = "data/npcs.csv") -> None:  # Added return type hint
-    """
-    Displays NPC groups and splits the CSV into groups.
-
-    Calls `display_npc_groups` and `split_csv_groups` using the provided filename.
-
-    Args:
-        filename: Path to the CSV file (default is "data/npcs.csv").
-    """
-    display_npc_groups(filename)
-    split_csv_groups(filename)
-    print("job8 complete.")
-
-
-# close
-def Ending(filename: str = "data/npcs.csv") -> None:  # Added return type hint
-    """
-    Prints a series of completion messages.
-
-    Args:
-        filename: Path to a CSV file (default is "data/npcs.csv"), though not used.
-    """
-    print("\n=== Role Analysis Complete ===")
-    print("\n=== CSV File Analysis Complete ===")
-    print("\n=== Excel File Analysis Complete ===")
-    print("\n=== Data Analysis Complete ===")
-    print("\n=== All jobs have been commented out ===")
-
-
-# endregion
-
-
-# region General Utilities
-def spacer() -> None:
-    """
-    Prints a separator line to the console for better readability of output.
-    """
-    print("\n" + "-" * 40 + "\n")
-
-
-def analyze_data(df: pd.DataFrame) -> None:  # Added return type hint
-    """
-    Performs and prints a basic analysis of a pandas DataFrame.
-
-    If the DataFrame is None, the function returns early.
-    Otherwise, it prints the shape, first 5 rows, column names, and data types.
-
-    Args:
-        df: The pandas DataFrame to analyze.
-    """
-    if df is None:
-        return
-
-    print("\nData Overview:")
-    print("-" * 40)
-    print(f"Shape: {df.shape}")
-    print("\nFirst 5 rows:")
-    print(df.head())
-    print("\nColumns:", df.columns.tolist())
-    print("\nData Types:")
-    print(df.dtypes)
-
-
-def display_ascii_characters() -> None:  # Added return type hint
-    """
-    Displays ASCII characters and their corresponding integer values (0-255).
-    """
-    for i in range(256):
-        ascii_char = chr(i)
-        # if 32 >= i <= 126:
-        print(f"{i}: {ascii_char}")
-
-
-# Call the function to display the ASCII characters
-# display_ascii_characters()
-
-# endregion
-
-
-# region Geometric and Color Calculations
-def hex_to_rgb(hex_color: str) -> tuple:
-    """
-    Converts a hex color string to an RGB tuple.
-
-    Args:
-        hex_color: Hex color string (e.g., '#FF5733').
-                   The '#' prefix is optional.
-
-    Returns:
-        tuple: RGB values as a tuple (R, G, B).
-    """
-    hex_color = hex_color.lstrip("#")
-    return tuple(int(hex_color[i : i + 2], 16) for i in (0, 2, 4))
-
-
-def rgb_to_hex(rgb: tuple) -> str:
-    """
-    Converts an RGB tuple to a hex color string.
-
-    Args:
-        rgb: Tuple of RGB values (R, G, B), where R, G, B are integers.
-
-    Returns:
-        str: Hex color string (e.g., '#FF5733').
-    """
-    return "#" + "".join(f"{int(c):02X}" for c in rgb)
-
-
-# TODO: Add more functions for hex calculations
-
-
-def calculate_hexagon_points(*args, **kwargs) -> List[Tuple[int, int]]:
-    """
-    Calculates the 6 vertex points of a regular hexagon.
-
-    Can be called with:
-    1. calculate_hexagon_points(center, radius) - legacy mode
-    2. calculate_hexagon_points(height, center_x=0, center_y=0) - new mode
-
-    Args:
-        *args: Variable arguments to support both calling styles
-        **kwargs: Keyword arguments for new style
-
-    Returns:
-        A list of 6 (x, y) tuples representing the vertices of the hexagon.
-        Returns an empty list if the height/radius is not positive.
-    """
-    # Handle legacy call style: calculate_hexagon_points(center, radius)
-    if len(args) == 2 and isinstance(args[0], tuple):
-        center, radius = args
-        center_x, center_y = center
-        height = radius * 2  # Convert radius to height
-    # Handle new call style: calculate_hexagon_points(height, center_x=0, center_y=0)
-    elif len(args) >= 1:
-        height = args[0]
-        center_x = args[1] if len(args) > 1 else kwargs.get("center_x", 0)
-        center_y = args[2] if len(args) > 2 else kwargs.get("center_y", 0)
-    else:
-        return []
-
-    if height <= 0:
-        return []
-
-    # Side length 's' of the hexagon.
-    # For a hexagon with height H (distance between parallel sides), s = H / sqrt(3)
-    s = height / math.sqrt(3)
-
-    points = [
-        (center_x + s / 2, center_y + height / 2),  # Top-right
-        (center_x - s / 2, center_y + height / 2),  # Top-left
-        (center_x - s, center_y),  # Middle-left
-        (center_x - s / 2, center_y - height / 2),  # Bottom-left
-        (center_x + s / 2, center_y - height / 2),  # Bottom-right
-        (center_x + s, center_y),  # Middle-right
-    ]
-
-    # Round coordinates to the nearest integer
-    int_points = [(round(p[0]), round(p[1])) for p in points]
-    return int_points
-
-
-# TODO: Calculate point positions of 6 points of a hexagon by supplying the height only as integer.  Return int values for point coordinates only.
-
-
-# endregion
-
-
-# region Advanced Data Processing
-def split_csv_groups(filename: str = "data/npcs.csv") -> dict:
-    """
-    Splits a CSV file into multiple DataFrames based on double blank line separators.
-
-    Each group of rows separated by two consecutive blank lines in the CSV
-    is treated as a separate DataFrame. Handles cases where data rows might
-    have different column counts than the header by padding or truncating.
-
-    Args:
-        filename: Path to the CSV file (default is "data/npcs.csv").
-
-    Returns:
-        A dictionary where keys are group indices (0-based) and values are
-        pandas DataFrames representing each group. Returns an empty dictionary
-        if an error occurs or no groups are found.
-    """
-    groups = {}
-    current_group = []
-    group_index = 0
-    blank_line_count = 0
-
-    try:
-        with open(filename, "r") as file:
-            header = file.readline().strip().split(",")
-            header_count = len(header)
-
-            for line in file:
-                if not line.strip():  # Found a blank line
-                    blank_line_count += 1
-                    if blank_line_count == 2:  # Two consecutive blank lines
-                        if current_group:  # If we have rows in current group
-                            # Ensure all rows have the same number of columns as header
-                            normalized_group = []
-                            for row in current_group:
-                                # Pad or truncate row to match header length
-                                if len(row) < header_count:
-                                    row.extend([""] * (header_count - len(row)))
-                                elif len(row) > header_count:
-                                    row = row[:header_count]
-                                normalized_group.append(row)
-
-                            df = pd.DataFrame(normalized_group, columns=header)
-                            df = df.dropna(how="all")  # Remove completely empty rows
-                            groups[group_index] = df
-                            group_index += 1
-                            current_group = []
-                        blank_line_count = 0
+            try:
+                isort_result = subprocess.run(
+                    [isort_path] + main_python_files,
+                    cwd=abs_project_dir,
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                    timeout=30,  # 30 second timeout
+                )
+                if isort_result.returncode != 0:
+                    logger.warning(
+                        f"isort issues:\nSTDOUT:\n{isort_result.stdout}\nSTDERR:\n{isort_result.stderr}"
+                    )
                 else:
-                    blank_line_count = 0
-                    row = line.strip().split(",")
-                    if any(cell.strip() for cell in row):  # Skip empty rows
-                        current_group.append(row)
+                    logger.info(f"isort completed.\n{isort_result.stdout}")
+            except subprocess.TimeoutExpired:
+                logger.error("isort timed out after 30 seconds. Skipping.")
+                speak("isort timed out, skipping.")
 
-            # Don't forget the last group
-            if current_group:
-                # Apply same normalization to last group
-                normalized_group = []
-                for row in current_group:
-                    if len(row) < header_count:
-                        row.extend([""] * (header_count - len(row)))
-                    elif len(row) > header_count:
-                        row = row[:header_count]
-                    normalized_group.append(row)
-
-                df = pd.DataFrame(normalized_group, columns=header)
-                df = df.dropna(how="all")
-                groups[group_index] = df
-        # print(current_group) # Removed debug print
-        return groups
-    except Exception as e:
-        logger.error(f"Error splitting CSV into groups: {e}")
-        return {}
-
-
-def display_npc_groups(
-    filename: str = "data/npcs.csv",
-) -> None:  # Added return type hint
-    """
-    Displays NPC groups from a CSV file.
-
-    Uses `split_csv_groups` to get the groups and then prints selected columns
-    ("NPC", "ROLE", "COMPANY") for each group.
-
-    Args:
-        filename: Path to the CSV file (default is "data/npcs.csv").
-    """
-    groups = split_csv_groups(filename)
-
-    if not groups:
-        print("No groups found in the CSV file.")
-        return
-
-    for idx, group_df in groups.items():
-        print(f"\n=== Group {idx + 1} ===")
-        print(group_df[["NPC", "ROLE", "COMPANY"]].to_string(index=False))
-        print("\n" + "-" * 40)
-
-
-# endregion
-
-
-# region JSON
-def load_large_json_file(file_path: str) -> None:  # Added type hint and return type
-    """
-    Loads and prints objects from a large JSON file using ijson.
-
-    This function is suitable for JSON files that are too large to be loaded
-    into memory at once. It iterates through the items at the top level
-    of the JSON structure.
-
-    Args:
-        file_path: The path to the JSON file.
-    """
-    try:
-        with open(file_path, "r") as file:
-            objects = ijson.items(file, "item")
-            for obj in objects:
-                print(obj)
-    except FileNotFoundError:
-        print(f"Error: The file {file_path} does not exist.")
-    except ijson.JSONError:
-        print(f"Error: The file {file_path} is not a valid JSON file.")
-    except Exception as e:
-        print(f"An unexpected error occurred: {e}")
-
-
-# Example usage
-# file_path = 'large_data.json'
-# load_large_json_file(file_path)
-
-# endregion
-
-
-# region Text-to-Speech Utilities
-def speak(text: str, voice_id: str = None) -> None:
-    """
-    Converts text to speech using the global pyttsx3 engine.
-
-    Args:
-        text: The text to be spoken.
-        voice_id: Optional voice ID to use. If None, uses the globally configured voice.
-    """
-    if not tts_engine:
-        logger.error("TTS engine not initialized. Cannot speak.")
-        return
-
-    try:
-        if voice_id:  # Allow overriding the voice for a specific call
-            current_voice = tts_engine.getProperty("voice")
-            tts_engine.setProperty("voice", voice_id)
-            logger.info(f"Temporarily using voice: {voice_id}")
-            tts_engine.say(text)
-            tts_engine.runAndWait()
-            tts_engine.setProperty("voice", current_voice)  # Reset to global/default
-            logger.info(f"Reset TTS voice to: {current_voice}")
+        # Run black with timeout, specific files, and fast mode
+        if not black_path:
+            logger.warning("black command not found. Skipping black.")
         else:
-            tts_engine.say(text)
-            tts_engine.runAndWait()
+            try:
+                # Use --fast to skip AST safety checks (much faster)
+                black_result = subprocess.run(
+                    [black_path, "--fast"] + main_python_files,
+                    cwd=abs_project_dir,
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                    timeout=60,  # 60 second timeout
+                )
+                if black_result.returncode != 0:
+                    logger.error(
+                        f"black encountered an error:\nSTDOUT:\n{black_result.stdout}\nSTDERR:\n{black_result.stderr}"
+                    )
+                else:
+                    logger.info(f"black completed.\n{black_result.stdout}")
+            except subprocess.TimeoutExpired:
+                logger.error("black timed out after 60 seconds. Skipping.")
+                speak("black timed out, skipping.")
 
-        logger.info(f'Spoke: "{text}"')
+        logger.info("Linters (isort, black) finished safely.")
+        speak("Code formatting complete.")
+        return True
     except Exception as e:
-        logger.error(f"Error in speak function: {e}")
+        logger.error(f"Error running linters: {e}", exc_info=True)
+        speak("An error occurred while running code formatters.")
+        return False
+
+
+def push_to_github(project_dir: Path, commit_message: str) -> bool:
+    """
+    Adds all changes, commits them, and pushes to the remote GitHub repository.
+    Logs errors to push_log.txt.
+
+    Args:
+        project_dir: The Path object of the project directory (git repository).
+        commit_message: The commit message.
+
+    Returns:
+        True if all git operations were successful, False otherwise.
+    """
+    logger.info(f"Attempting to push changes to GitHub for '{project_dir}'...")
+    speak("Attempting to push changes to GitHub.")
+
+    abs_project_dir = project_dir.resolve()
+    push_log_file = project_dir / "push_log.txt"
+    git_path = shutil.which("git")
+
+    if not git_path:
+        err_msg = "Git command not found. Ensure Git is installed and in PATH."
+        logger.error(err_msg)
+        with open(push_log_file, "a", encoding="utf-8") as log_f:
+            log_f.write(f"{pd.Timestamp.now()}: {err_msg}\\n")
+        speak("Git command not found. Please check installation.")
+        return False
+
+    try:
+        add_result = subprocess.run(
+            [git_path, "add", "."],
+            cwd=abs_project_dir,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=60,
+        )
+        if add_result.returncode != 0:
+            err_msg = f"git add failed:\nSTDOUT:\n{add_result.stdout}\nSTDERR:\n{add_result.stderr}"
+            logger.error(err_msg)
+            with open(push_log_file, "a", encoding="utf-8") as log_f:
+                log_f.write(f"{pd.Timestamp.now()}: {err_msg}\\n")
+            speak("Git add command failed.")
+            return False
+        logger.info("git add . successful.")
+
+        commit_result = subprocess.run(
+            [git_path, "commit", "-m", commit_message],
+            cwd=abs_project_dir,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=60,
+        )
+        if commit_result.returncode != 0 and not (
+            "nothing to commit" in commit_result.stdout.lower()
+            or "nothing to commit" in commit_result.stderr.lower()
+        ):
+            err_msg = f"git commit failed:\nSTDOUT:\n{commit_result.stdout}\nSTDERR:\n{commit_result.stderr}"
+            logger.error(err_msg)
+            with open(push_log_file, "a", encoding="utf-8") as log_f:
+                log_f.write(f"{pd.Timestamp.now()}: {err_msg}\\n")
+            speak("Git commit command failed.")
+            return False
+        elif (
+            "nothing to commit" in commit_result.stdout.lower()
+            or "nothing to commit" in commit_result.stderr.lower()
+        ):
+            logger.info("Nothing to commit.")
+            speak("Nothing to commit to GitHub.")
+            return True
+        logger.info(f"git commit successful: {commit_message}")
+
+        current_branch_result = subprocess.run(
+            [git_path, "rev-parse", "--abbrev-ref", "HEAD"],
+            cwd=abs_project_dir,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=30,
+        )
+        current_branch = (
+            current_branch_result.stdout.strip()
+            if current_branch_result.returncode == 0
+            and current_branch_result.stdout.strip()
+            else "main"
+        )
+
+        push_result = subprocess.run(
+            [git_path, "push", "origin", current_branch],
+            cwd=abs_project_dir,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=120,
+        )
+        if push_result.returncode != 0:
+            err_msg = f"git push failed:\nSTDOUT:\n{push_result.stdout}\nSTDERR:\n{push_result.stderr}"
+            logger.error(err_msg)
+            with open(push_log_file, "a", encoding="utf-8") as log_f:
+                log_f.write(f"{pd.Timestamp.now()}: {err_msg}\\n")
+            speak("Git push command failed. Check push log for details.")
+            return False
+
+        logger.info(
+            f"Successfully pushed to origin/{current_branch}.\n{push_result.stdout}"
+        )
+        speak("Changes successfully pushed to GitHub.")
+        return True
+
+    except subprocess.TimeoutExpired as e:
+        err_msg = f"Git operation timed out: {e}"
+        logger.error(err_msg, exc_info=True)
+        with open(push_log_file, "a", encoding="utf-8") as log_f:
+            log_f.write(f"{pd.Timestamp.now()}: {err_msg}\\n")
+        speak("A Git operation timed out.")
+        return False
+    except Exception as e:
+        err_msg = f"Error during Git operations: {e}"
+        logger.error(err_msg, exc_info=True)
+        with open(push_log_file, "a", encoding="utf-8") as log_f:
+            log_f.write(f"{pd.Timestamp.now()}: {err_msg}\\n")
+        speak("An error occurred during Git operations. Check push log for details.")
+        return False
+
+
+def auto_fix_all_issues(project_dir: Path) -> None:
+    """
+    Runs linters/formatters and then commits and pushes changes to GitHub.
+    """
+    logger.info("Starting auto-fix all issues process...")
+    speak("Starting automated fixes and GitHub push.")
+
+    if fix_lint_errors(project_dir):
+        logger.info("Linting completed. Proceeding to Git operations.")
+        timestamp = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
+        commit_message = f"Automated fixes and updates ({timestamp})"
+        if not push_to_github(project_dir, commit_message):
+            logger.error("Auto-fix process: GitHub push failed.")
+            # speak("Automated GitHub push failed.") # push_to_github already speaks
+        else:
+            logger.info("Auto-fix process: GitHub push successful.")
+            # speak("Automated fixes and GitHub push completed successfully.") # push_to_github already speaks
+    else:
+        logger.error("Auto-fix process: Linting failed. Skipping Git operations.")
+        speak("Automated code formatting failed. Skipping GitHub push.")
 
 
 # endregion
 
 
 # region Main Execution
-def start_gui() -> None:
-    """
-    Starts the GUI application by running 'gui.py' as a subprocess.
-
-    Prints the output and errors (if any) from the subprocess.
-    """
-    # Define the command to be executed
-    command = ["python", "gui.py", "/home/me/BACKUP/PROJECTS/Crew/Crew.py"]
-    # Execute the command
-    try:
-        result = subprocess.run(command, check=True, capture_output=True, text=True)
-        # Print the output
-        print("Output:", result.stdout)
-        print("Error (if any):", result.stderr)
-    except subprocess.CalledProcessError as e:
-        print(f"Command failed with return code {e.returncode}")
-        print("Error output:", e.stderr)
-
-
-def fix_lint_errors() -> bool:
-    """Fix common linting errors automatically."""
-    try:
-        project_dir = Path(__file__).parent
-
-        # Run isort to fix import order
-        result = subprocess.run(
-            ["python", "-m", "isort", "."],
-            capture_output=True,
-            text=True,
-            cwd=project_dir,
-        )
-
-        if result.returncode == 0:
-            logger.info("Import order fixed with isort")
-        else:
-            logger.warning(f"isort failed: {result.stderr}")
-
-        return True
-
-    except Exception as e:
-        logger.error(f"Error fixing lint errors: {e}")
-        return False
-
-
-def get_version() -> str:
-    """Return the current version of the application."""
-    return "1.0.2"
-
-
-def get_project_info() -> dict:
-    """Return project information."""
-    return {
-        "name": "NPCs Data Processing Tool",
-        "version": get_version(),
-        "author": "Mark Ferguson",
-        "description": "Image processing, data analysis, and file manipulation tool",
-        "repository": "https://github.com/Maggot4703/Crew",
-    }
-
-
-def fix_git_unstaged_files() -> bool:
-    """Fix unstaged files by staging and committing them."""
-    try:
-        project_dir = Path(__file__).parent
-
-        # Check for unstaged files
-        result = subprocess.run(
-            ["git", "status", "--porcelain"],
-            capture_output=True,
-            text=True,
-            cwd=project_dir,
-        )
-
-        if result.returncode != 0:
-            logger.warning("Git not available or not a Git repository")
-            return False
-
-        unstaged_files = [
-            line
-            for line in result.stdout.strip().split("\n")
-            if line and (line.startswith(" M") or line.startswith("??"))
-        ]
-
-        if not unstaged_files:
-            logger.info("No unstaged files found")
-            return True
-
-        logger.info(f"Found {len(unstaged_files)} unstaged files")
-
-        # Stage all files
-        result = subprocess.run(
-            ["git", "add", "."],
-            capture_output=True,
-            text=True,
-            cwd=project_dir,
-        )
-
-        if result.returncode != 0:
-            logger.error(f"Failed to stage files: {result.stderr}")
-            return False
-
-        # Commit with descriptive message
-        commit_message = (
-            f"Fix unstaged files and update to v{get_version()}\n\n"
-            "- Fixed import order (E402 error)\n"
-            "- Improved Git handling\n"
-            "- Enhanced error handling"
-        )
-
-        result = subprocess.run(
-            ["git", "commit", "-m", commit_message],
-            capture_output=True,
-            text=True,
-            cwd=project_dir,
-        )
-
-        if result.returncode == 0:
-            logger.info("Successfully staged and committed unstaged files")
-            return True
-        else:
-            logger.error(f"Failed to commit: {result.stderr}")
-            return False
-    except Exception as e:
-        logger.error(f"Error fixing unstaged files: {e}")
-        return False
-
-
-def check_git_status() -> bool:
-    """Check and display current Git status. Returns True if there are unstaged files."""
-    try:
-        project_dir = Path(__file__).parent
-        result = subprocess.run(
-            ["git", "status", "--porcelain"],
-            capture_output=True,
-            text=True,
-            cwd=project_dir,
-        )
-        if result.returncode == 0:
-            if result.stdout.strip():
-                logger.warning("Git status: Unstaged changes detected")
-                logger.info(f"Unstaged files:\n{result.stdout}")
-                return True  # Has unstaged files
-            else:
-                logger.info("Git status: Working directory clean")
-                return False  # No unstaged files
-        else:
-            logger.warning("Git not initialized or not a Git repository")
-            return False
-    except Exception as e:
-        logger.warning(f"Could not check Git status: {e}")
-        return False
-
-
-def setup_git_repository() -> None:
-    """Initialize Git repository and set up remote if needed."""
-    try:
-        project_dir = Path(__file__).parent
-
-        # Initialize git if not already done
-        result = subprocess.run(
-            ["git", "rev-parse", "--git-dir"],
-            capture_output=True,
-            text=True,
-            cwd=project_dir,
-        )
-        if result.returncode != 0:
-            logger.info("Initializing Git repository...")
-            subprocess.run(["git", "init"], cwd=project_dir)
-            subprocess.run(["git", "branch", "-M", "main"], cwd=project_dir)
-
-        # Check if remote exists
-        result = subprocess.run(
-            ["git", "remote", "get-url", "origin"],
-            capture_output=True,
-            text=True,
-            cwd=project_dir,
-        )
-        if result.returncode != 0:
-            logger.info("Setting up remote repository...")
-            repo_url = get_project_info()["repository"]
-            subprocess.run(
-                ["git", "remote", "add", "origin", f"{repo_url}.git"], cwd=project_dir
-            )
-
-    except Exception as e:
-        logger.error(f"Error setting up Git repository: {e}")
-
-
-def check_unstaged_files() -> bool:
-    """Check for unstaged files and return True if any are found."""
-    try:
-        project_dir = Path(__file__).parent
-        result = subprocess.run(
-            ["git", "status", "--porcelain"],
-            capture_output=True,
-            text=True,
-            cwd=project_dir,
-        )
-
-        if result.returncode != 0:
-            logger.warning("Git not available")
-            return False
-
-        unstaged_lines = result.stdout.strip().split("\n")
-        unstaged_files = [
-            line
-            for line in unstaged_lines
-            if line
-            and (
-                line.startswith(" M") or line.startswith("??") or line.startswith("M ")
-            )
-        ]
-
-        if unstaged_files:
-            logger.warning(f"Found {len(unstaged_files)} unstaged files:")
-            for file_line in unstaged_files:
-                logger.warning(f"  {file_line}")
-            return True
-        else:
-            logger.info("No unstaged files found")
-            return False
-
-    except Exception as e:
-        logger.error(f"Error checking unstaged files: {e}")
-        return False
-
-
-def auto_stage_and_commit() -> bool:
-    """Automatically stage and commit unstaged files."""
-    try:
-        project_dir = Path(__file__).parent
-
-        # Stage all files
-        result = subprocess.run(
-            ["git", "add", "."],
-            capture_output=True,
-            text=True,
-            cwd=project_dir,
-        )
-
-        if result.returncode != 0:
-            logger.error(f"Failed to stage files: {result.stderr}")
-            return False
-
-        # Commit with automated message
-        commit_message = f"Auto-commit: Fix linting and unstaged files v{get_version()}"
-        result = subprocess.run(
-            ["git", "commit", "-m", commit_message],
-            capture_output=True,
-            text=True,
-            cwd=project_dir,
-        )
-
-        if result.returncode == 0:
-            logger.info("Successfully committed unstaged files")
-            return True
-        else:
-            logger.warning("No changes to commit or commit failed")
-            return False
-
-    except Exception as e:
-        logger.error(f"Error auto-committing: {e}")
-        return False
-
-
-def diagnose_git_issues() -> dict:
-    """Diagnose common Git issues that prevent pushing."""
-    issues = {
-        "git_initialized": False,
-        "remote_configured": False,
-        "branch_exists": False,
-        "authentication_ready": False,
-        "upstream_set": False,
-        "conflicts": False,
-    }
-
-    try:
-        project_dir = Path(__file__).parent
-
-        # Check if Git is initialized
-        result = subprocess.run(
-            ["git", "rev-parse", "--git-dir"],
-            capture_output=True,
-            text=True,
-            cwd=project_dir,
-        )
-        issues["git_initialized"] = result.returncode == 0
-
-        # Check if remote is configured
-        result = subprocess.run(
-            ["git", "remote", "-v"],
-            capture_output=True,
-            text=True,
-            cwd=project_dir,
-        )
-        issues["remote_configured"] = "origin" in result.stdout
-
-        # Check current branch
-        result = subprocess.run(
-            ["git", "branch", "--show-current"],
-            capture_output=True,
-            text=True,
-            cwd=project_dir,
-        )
-        issues["branch_exists"] = result.returncode == 0 and result.stdout.strip()
-
-        logger.info("Git diagnostics completed")
-        return issues
-
-    except Exception as e:
-        logger.error(f"Error diagnosing Git issues: {e}")
-        return issues
-
-
-def fix_git_setup() -> bool:
-    """Fix common Git setup issues."""
-    try:
-        project_dir = Path(__file__).parent
-
-        # Initialize Git if needed
-        if not diagnose_git_issues()["git_initialized"]:
-            subprocess.run(["git", "init"], cwd=project_dir)
-            logger.info("Initialized Git repository")
-
-        # Set up remote if missing
-        issues = diagnose_git_issues()
-        if not issues["remote_configured"]:
-            repo_url = get_project_info()["repository"]
-            subprocess.run(
-                ["git", "remote", "add", "origin", f"{repo_url}.git"], cwd=project_dir
-            )
-            logger.info(f"Added remote origin: {repo_url}")
-
-        return True
-
-    except Exception as e:
-        logger.error(f"Error fixing Git setup: {e}")
-        return False
-
-
-def setup_github_push() -> bool:
-    """Set up GitHub push with comprehensive error handling."""
-    try:
-        project_dir = Path(__file__).parent
-
-        # Check if repository exists on GitHub
-        repo_url = "https://github.com/Maggot4703/Crew"
-        logger.info(f"Setting up push to: {repo_url}")
-
-        # Configure Git user if not set
-        result = subprocess.run(
-            ["git", "config", "user.name"],
-            capture_output=True,
-            text=True,
-            cwd=project_dir,
-        )
-        if result.returncode != 0:
-            subprocess.run(
-                ["git", "config", "user.name", "Maggot4703"], cwd=project_dir
-            )
-
-        result = subprocess.run(
-            ["git", "config", "user.email"],
-            capture_output=True,
-            text=True,
-            cwd=project_dir,
-        )
-        if result.returncode != 0:
-            subprocess.run(
-                ["git", "config", "user.email", "mark@example.com"], cwd=project_dir
-            )
-
-        # Set remote URL with correct username
-        subprocess.run(
-            ["git", "remote", "set-url", "origin", f"{repo_url}.git"], cwd=project_dir
-        )
-
-        return True
-
-    except Exception as e:
-        logger.error(f"Error setting up GitHub push: {e}")
-        return False
-
-
-def push_to_github() -> bool:
-    """Push to GitHub with multiple strategies."""
-    try:
-        project_dir = Path(__file__).parent
-
-        # Strategy 1: Normal push
-        result = subprocess.run(
-            ["git", "push", "-u", "origin", "main"],
-            capture_output=True,
-            text=True,
-            cwd=project_dir,
-        )
-
-        if result.returncode == 0:
-            logger.info("✅ Successfully pushed to GitHub")
-            return True
-
-        # Strategy 2: Force push if normal push fails
-        logger.warning("Normal push failed, trying force push...")
-        result = subprocess.run(
-            ["git", "push", "-u", "origin", "main", "--force"],
-            capture_output=True,
-            text=True,
-            cwd=project_dir,
-        )
-
-        if result.returncode == 0:
-            logger.info("✅ Force push successful")
-            return True
-
-        # Log the error for troubleshooting
-        logger.error(f"❌ Push failed: {result.stderr}")
-
-        # Print helpful troubleshooting info
-        print("\n🔧 Troubleshooting GitHub Push Issues:")
-        print("1. Ensure repository exists on GitHub")
-        print("2. Check your GitHub credentials/token")
-        print("3. Try creating repository manually on GitHub")
-        print("4. Run: git remote -v (to check remote URL)")
-
-        return False
-
-    except Exception as e:
-        logger.error(f"Error pushing to GitHub: {e}")
-        return False
-
-
-def detect_github_issues() -> dict:
-    """Detect specific GitHub push issues and return diagnostic info."""
-    issues = {}
-    try:
-        project_dir = Path(__file__).parent
-
-        # Test Git installation
-        result = subprocess.run(["git", "--version"], capture_output=True, text=True)
-        issues["git_installed"] = result.returncode == 0
-
-        # Test repository initialization
-        result = subprocess.run(
-            ["git", "rev-parse", "--git-dir"],
-            capture_output=True,
-            text=True,
-            cwd=project_dir,
-        )
-        issues["repo_initialized"] = result.returncode == 0
-
-        # Test remote configuration
-        result = subprocess.run(
-            ["git", "remote", "get-url", "origin"],
-            capture_output=True,
-            text=True,
-            cwd=project_dir,
-        )
-        issues["remote_configured"] = result.returncode == 0
-        issues["remote_url"] = (
-            result.stdout.strip() if result.returncode == 0 else "Not set"
-        )
-
-        # Test authentication (dry run)
-        result = subprocess.run(
-            ["git", "ls-remote", "origin"],
-            capture_output=True,
-            text=True,
-            cwd=project_dir,
-        )
-        issues["auth_working"] = result.returncode == 0
-        issues["auth_error"] = result.stderr if result.returncode != 0 else ""
-
-        # Check for uncommitted changes
-        result = subprocess.run(
-            ["git", "status", "--porcelain"],
-            capture_output=True,
-            text=True,
-            cwd=project_dir,
-        )
-        issues["has_uncommitted"] = len(result.stdout.strip()) > 0
-
-        # Check current branch
-        result = subprocess.run(
-            ["git", "branch", "--show-current"],
-            capture_output=True,
-            text=True,
-            cwd=project_dir,
-        )
-        issues["current_branch"] = (
-            result.stdout.strip() if result.returncode == 0 else "unknown"
-        )
-
-        return issues
-
-    except Exception as e:
-        logger.error(f"Error detecting GitHub issues: {e}")
-        issues["error"] = str(e)
-        return issues
-
-
-def generate_help_file(issues: dict) -> None:
-    """Generate a help file with specific solutions based on detected issues."""
-    help_content = f"""# GitHub Push Issues - Diagnostic Report
-Generated: {pd.Timestamp.now()}
-
-## Detected Issues and Solutions
-
-"""
-
-    if not issues.get("git_installed", True):
-        help_content += """### ❌ Git Not Installed
-**Problem**: Git is not installed or not in PATH
-**Solution**:
-```bash
-# Ubuntu/Debian:
-sudo apt update && sudo apt install git
-
-# macOS:
-brew install git
-
-# Windows: Download from https://git-scm.com/
-```
-
-"""
-
-    if not issues.get("repo_initialized", True):
-        help_content += """### ❌ Repository Not Initialized
-**Problem**: Git repository not initialized
-**Solution**:
-```bash
-cd /home/me/BACKUP/PROJECTS/Crew
-git init
-git add .
-git commit -m "Initial commit"
-```
-
-"""
-
-    if not issues.get("remote_configured", True):
-        help_content += """### ❌ Remote Repository Not Configured
-**Problem**: No remote repository configured
-**Solution**:
-```bash
-# Replace YOUR_USERNAME with your GitHub username
-git remote add origin https://github.com/YOUR_USERNAME/Crew.git
-
-# Or if remote exists but wrong URL:
-git remote set-url origin https://github.com/YOUR_USERNAME/Crew.git
-```
-
-"""
-
-    if not issues.get("auth_working", True):
-        auth_error = issues.get("auth_error", "")
-        help_content += f"""### ❌ Authentication Failed
-**Problem**: Cannot authenticate with GitHub
-**Error**: {auth_error}
-
-**Solutions**:
-
-1. **Use Personal Access Token**:
-   - Go to GitHub Settings > Developer settings > Personal access tokens
-   - Generate new token with 'repo' permissions
-   - Use token as password when prompted
-
-2. **Configure Git credentials**:
-```bash
-git config --global user.name "Your Name"
-git config --global user.email "your.email@example.com"
-```
-
-3. **Use SSH instead of HTTPS**:
-```bash
-git remote set-url origin git@github.com:YOUR_USERNAME/Crew.git
-```
-
-"""
-
-    if issues.get("has_uncommitted", False):
-        help_content += """### ⚠️ Uncommitted Changes
-**Problem**: You have uncommitted changes
-**Solution**:
-```bash
-git add .
-git commit -m "Commit message describing changes"
-```
-
-"""
-
-    # Add general troubleshooting
-    help_content += f"""
-## Current Configuration
-- Remote URL: {issues.get('remote_url', 'Not set')}
-- Current Branch: {issues.get('current_branch', 'unknown')}
-- Git Installed: {issues.get('git_installed', 'unknown')}
-- Repository Initialized: {issues.get('repo_initialized', 'unknown')}
-- Remote Configured: {issues.get('remote_configured', 'unknown')}
-- Authentication Working: {issues.get('auth_working', 'unknown')}
-
-## Step-by-Step Push Process
-
-1. **Initialize repository** (if needed):
-```bash
-git init
-```
-
-2. **Add remote** (replace with your GitHub URL):
-```bash
-git remote add origin https://github.com/YOUR_USERNAME/Crew.git
-```
-
-3. **Stage and commit changes**:
-```bash
-git add .
-git commit -m "Initial commit"
-```
-
-4. **Set main branch**:
-```bash
-git branch -M main
-```
-
-5. **Push to GitHub**:
-```bash
-git push -u origin main
-```
-
-## If All Else Fails
-
-1. **Create repository on GitHub manually**
-2. **Use force push** (⚠️ USE WITH CAUTION):
-```bash
-git push -u origin main --force
-```
-
-3. **Start fresh**:
-```bash
-rm -rf .git
-git init
-git add .
-git commit -m "Fresh start"
-git remote add origin https://github.com/YOUR_USERNAME/Crew.git
-git branch -M main
-git push -u origin main
-```
-
-## Get Help
-- GitHub Documentation: https://docs.github.com/en/get-started/using-git
-- Git Documentation: https://git-scm.com/doc
-"""
-
-    # Save to file
-    help_file = Path("github_issues_help.txt")
-    with open(help_file, "w") as f:
-        f.write(help_content)
-
-    logger.info(f"Help file saved to: {help_file.absolute()}")
-    print(f"📄 Detailed help saved to: {help_file.absolute()}")
-
-
 def main() -> int:
     """
     Main function to run the data processing script.
@@ -1624,12 +1035,12 @@ def main() -> int:
         speak("Crew system initialization sequence started.")
 
         # Set up Git repository
-        setup_git_repository()
+        # setup_git_repository() # Removed as it's not defined
 
         # Check for unstaged files and handle them automatically
-        if check_git_status():
-            logger.info("Auto-fixing unstaged files...")
-            fix_git_unstaged_files()
+        # if check_git_status(): # Commented out as it's not defined
+        #     logger.info("Auto-fixing unstaged files...")
+        #     fix_git_unstaged_files() # Commented out as it's not defined
 
         # Ensure required directories exist
         for directory in [INPUT_DIR, OUTPUT_DIR, DATA_DIR]:
@@ -1669,459 +1080,127 @@ def main() -> int:
     finally:
         # Remove the file handler to clean up
         root_logger.removeHandler(file_handler)
-        file_handler.close()
-
-    print("DONE")
-
-
-def auto_fix_all_issues() -> bool:
-    """Automatically detect and fix common project issues."""
-    try:
-        logger.info("🔧 Auto-fixing all detected issues...")
-
-        # Fix import issues
-        fix_lint_errors()
-
-        # Fix Git setup
-        setup_git_repository()
-
-        # Fix GitHub configuration
-        setup_github_push()
-
-        # Stage and commit changes
-        if check_git_status():
-            auto_stage_and_commit()  # Renamed from stage_and_commit_files
-
-        # Attempt push to GitHub
-        push_to_github()
-
-        logger.info("✅ Auto-fix completed")
-        return True
-
-    except Exception as e:
-        logger.error(f"Error in auto-fix: {e}")
-        return False
-
-
-def generate_project_summary() -> None:
-    """Generate a comprehensive project summary."""
-    summary_content = f"""# NPCs Data Processing Tool - Project Summary
-Generated: {pd.Timestamp.now()}
-
-## Project Information
-- Name: {get_project_info()['name']}
-- Version: {get_version()}
-- Author: {get_project_info()['author']}
-- Repository: {get_project_info()['repository']}
-
-## Features
-- Image processing with grid overlays
-- CSV/Excel data analysis
-- Geometric calculations (hexagon points, color conversion)
-- Advanced data processing and grouping
-- Git integration and automatic commits
-- GitHub push automation
-
-## Recent Updates
-- Fixed GitHub username to Maggot4703
-- Added automatic issue detection and fixing
-- Enhanced Git and GitHub integration
-- Improved error handling and logging
-
-## Usage
-```bash
-python Crew.py
-```
-
-## Dependencies
-- pandas
-- Pillow (PIL)
-- ijson
-
-## File Structure
-- Crew.py: Main application
-- input/: Input images
-- output/: Processed images
-- data/: CSV/Excel data files
-- tests/: Unit tests
-"""
-
-    with open("project_summary.md", "w") as f:
-        f.write(summary_content)
-
-    logger.info("📄 Project summary generated: project_summary.md")
-
-
-def backup_project(project_dir: Path = None, backup_base_dir: Path = None) -> bool:
-    """Create a backup of the project with a progress bar."""
-    try:
-        import shutil
-        import datetime
-
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        backup_name = f"Crew_backup_{timestamp}"
-        backup_root_dir = Path.home() / "BACKUP" / "PROJECTS_Crew_Backups"
-        backup_path = backup_root_dir / backup_name
-
-        backup_path.mkdir(parents=True, exist_ok=True)
-
-        project_dir = Path(__file__).parent
-
-        excluded_dirs = {
-            ".git",
-            "__pycache__",
-            "tts_venv",
-            backup_root_dir.name,
-        }  # Add backup_root_dir.name
-        excluded_files = {".DS_Store"}
-
-        logger.info(f"Starting backup of {project_dir} to {backup_path}")
-        logger.info(f"Excluding directories: {excluded_dirs}")
-        logger.info(f"Excluding files: {excluded_files}")
-        speak(f"Starting project backup to {backup_name}.")
-
-        # Prepare a list of items to iterate over, excluding specified dirs and files
-        items_to_copy = []
-        for item in project_dir.iterdir():
-            if item.name in excluded_dirs:
-                logger.info(f"Skipping excluded directory: {item.name}")
-                continue
-            if item.name in excluded_files:
-                logger.info(f"Skipping excluded file: {item.name}")
-                continue
-            # Ensure we are not trying to back up the backup destination itself if it's a subfolder
-            if item.resolve() == backup_root_dir.resolve():
-                logger.info(f"Skipping backup destination directory: {item.name}")
-                continue
-            items_to_copy.append(item)
-
-        # Use tqdm for progress bar
-        for item in tqdm(items_to_copy, desc="Backing up project", unit="item"):
-            destination_item = backup_path / item.name
-            try:
-                if item.is_dir():
-                    # Use logged_copy2 for copy_function
-                    shutil.copytree(
-                        item,
-                        destination_item,
-                        dirs_exist_ok=True,
-                        ignore=ignore_func,
-                        copy_function=logged_copy2,
-                    )
-                elif item.is_file():
-                    if not is_excluded(
-                        item, excluded_files_patterns
-                    ):  # Check if file is excluded
-                        # Ensure parent directory exists
-                        destination_item.parent.mkdir(parents=True, exist_ok=True)
-                        logged_copy2(
-                            item, destination_item
-                        )  # Use logged_copy2 for individual files
-            except KeyboardInterrupt:
-                logger.error(f"KEYBOARD_INTERRUPT during copy of: {src}")
-                speak(f"Backup interrupted while copying {Path(src).name}")
-                raise
-            except Exception as e:
-                logger.error(f"Error copying {item.name}: {e}")
-
-        logger.info(f"📦 Project backed up to: {backup_path}")
-        speak("Project backup completed successfully.")
-        return True
-
-    except Exception as e:
-        logger.error(f"Error creating backup: {e}", exc_info=True)
-        speak("Project backup failed.")
-        return False
-
-
-def logged_copy2(src, dst, *, follow_symlinks=True):
-    """Wrapper for shutil.copy2 that logs the file being copied."""
-    logger.info(f"COPYING_FILE: {src} -> {dst}")
-    try:
-        # Ensure destination directory exists
-        Path(dst).parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(src, dst, follow_symlinks=follow_symlinks)
-    except KeyboardInterrupt:
-        logger.error(f"KEYBOARD_INTERRUPT during copy of: {src}")
-        speak(f"Backup interrupted while copying {Path(src).name}")
-        raise
-    except Exception as e:
-        logger.error(f"ERROR copying file {src}: {e}")
-        # speak(f"Error copying file {Path(src).name}") # Optional: too noisy if many small errors
-        raise  # Re-raise to be handled by backup_project's main try-except
-
-
-def try_push_project() -> bool:
-    """Comprehensive project push attempt with detailed logging."""
-    try:
-        project_dir = Path(__file__).parent
-
-        print("🚀 Attempting to push project to GitHub...")
-        print("=" * 50)
-
-        # Step 1: Check and fix repository setup
-        print("1. Checking repository setup...")
-        issues = detect_github_issues()
-
-        if not issues.get("repo_initialized", False):
-            print("   Initializing Git repository...")
-            subprocess.run(["git", "init"], cwd=project_dir)
-
-        # Step 2: Fix remote URL
-        print("2. Setting correct remote URL...")
-        correct_url = "https://github.com/Maggot4703/Crew.git"
-        subprocess.run(
-            ["git", "remote", "set-url", "origin", correct_url],
-            cwd=project_dir,
-            stderr=subprocess.DEVNULL,
-        )
-        subprocess.run(
-            ["git", "remote", "add", "origin", correct_url],
-            cwd=project_dir,
-            stderr=subprocess.DEVNULL,
-        )
-
-        # Step 3: Stage and commit changes
-        print("3. Staging and committing changes...")
-        result = subprocess.run(
-            ["git", "add", "."], capture_output=True, text=True, cwd=project_dir
-        )
-
-        result = subprocess.run(
-            [
-                "git",
-                "commit",
-                "-m",
-                "Push NPCs Data Processing Tool to GitHub\n\n- Complete project with image processing, data analysis, and Git integration\n- Fixed repository URL for Maggot4703 account\n- Added comprehensive push functionality",
-            ],
-            capture_output=True,
-            text=True,
-            cwd=project_dir,
-        )
-
-        # Step 4: Set main branch
-        print("4. Setting main branch...")
-        subprocess.run(["git", "branch", "-M", "main"], cwd=project_dir)
-
-        # Step 5: Attempt push
-        print("5. Pushing to GitHub...")
-        result = subprocess.run(
-            ["git", "push", "-u", "origin", "main"],
-            capture_output=True,
-            text=True,
-            cwd=project_dir,
-        )
-
-        if result.returncode == 0:
-            print("✅ SUCCESS: Project pushed to GitHub!")
-            print(f"🌐 View at: https://github.com/Maggot4703/Crew")
-            return True
-        else:
-            print("❌ Push failed. Trying force push...")
-            result = subprocess.run(
-                ["git", "push", "-u", "origin", "main", "--force"],
-                capture_output=True,
-                text=True,
-                cwd=project_dir,
-            )
-
-            if result.returncode == 0:
-                print("✅ SUCCESS: Force push completed!")
-                return True
-            else:
-                print(f"❌ FAILED: {result.stderr}")
-                return False
-
-    except Exception as e:
-        logger.error(f"Error pushing project: {e}")
-        return False
-
-
-def create_push_log(success: bool, error_msg: str = "") -> None:
-    """Create a detailed push log."""
-    log_content = f"""# GitHub Push Log
-Timestamp: {pd.Timestamp.now()}
-Status: {'SUCCESS' if success else 'FAILED'}
-Repository: https://github.com/Maggot4703/Crew
-
-## Push Details
-- Project: NPCs Data Processing Tool v{get_version()}
-- Branch: main
-- Remote: origin (https://github.com/Maggot4703/Crew.git)
-
-{'## Success Details' if success else '## Error Details'}
-{f'Push completed successfully to GitHub!' if success else f'Error: {error_msg}'}
-
-## Next Steps
-{'- Project is now live on GitHub' if success else '- Check GitHub repository exists'}
-{'- Clone with: git clone https://github.com/Maggot4703/Crew.git' if success else '- Verify authentication credentials'}
-{'- Share the repository link' if success else '- Try manual push commands'}
-"""
-
-    with open("push_log.txt", "w") as f:
-        f.write(log_content)
-
-    print(f"📄 Push log saved to: push_log.txt")
-
-
-def read_and_analyze_logs() -> dict:
-    """Read existing logs and analyze common issues."""
-    log_analysis = {
-        "git_errors": [],
-        "auth_errors": [],
-        "repo_errors": [],
-        "suggestions": [],
-    }
-
-    try:
-        # Read push log if exists
-        push_log_path = Path("push_log.txt")
-        if push_log_path.exists():
-            with open(push_log_path, "r") as f:
-                content = f.read()
-
-                if "repository not found" in content.lower():
-                    log_analysis["repo_errors"].append(
-                        "Repository doesn't exist on GitHub"
-                    )
-                    log_analysis["suggestions"].append(
-                        "Create repository 'Crew' on GitHub under Maggot4703 account"
-                    )
-
-                if "authentication failed" in content.lower():
-                    log_analysis["auth_errors"].append("GitHub authentication failed")
-                    log_analysis["suggestions"].append(
-                        "Use Personal Access Token instead of password"
-                    )
-
-                if "permission denied" in content.lower():
-                    log_analysis["auth_errors"].append("Permission denied")
-                    log_analysis["suggestions"].append(
-                        "Check repository ownership and access rights"
-                    )
-
-        # Read Git output from previous attempts
-        project_dir = Path(__file__).parent
-        result = subprocess.run(
-            ["git", "remote", "-v"], capture_output=True, text=True, cwd=project_dir
-        )
-
-        if "markferguson" in result.stdout:
-            log_analysis["repo_errors"].append("Wrong GitHub username in remote URL")
-            log_analysis["suggestions"].append("Fix remote URL to use Maggot4703")
-
-        logger.info(
-            f"Log analysis complete: {len(log_analysis['suggestions'])} issues found"
-        )
-        return log_analysis
-
-    except Exception as e:
-        logger.error(f"Error reading logs: {e}")
-        return log_analysis
-
-
-def apply_automated_fixes(log_analysis: dict) -> bool:
-    """Apply automated fixes based on log analysis."""
-    try:
-        project_dir = Path(__file__).parent
-        fixes_applied = []
-
-        # Fix remote URL if wrong username detected
-        if any(
-            "Wrong GitHub username" in error for error in log_analysis["repo_errors"]
-        ):
-            subprocess.run(
-                [
-                    "git",
-                    "remote",
-                    "set-url",
-                    "origin",
-                    "https://github.com/Maggot4703/Crew.git",
-                ],
-                cwd=project_dir,
-            )
-            fixes_applied.append("Fixed remote URL to Maggot4703")
-
-        # Ensure Git user is set correctly
-        subprocess.run(["git", "config", "user.name", "Maggot4703"], cwd=project_dir)
-        subprocess.run(
-            ["git", "config", "user.email", "maggot4703@example.com"], cwd=project_dir
-        )
-        fixes_applied.append("Set Git user configuration")
-
-        # Create fix summary
-        if fixes_applied:
-            fix_summary = f"""# Automated Fixes Applied
-Timestamp: {pd.Timestamp.now()}
-
-Fixes Applied:
-{chr(10).join(f'- {fix}' for fix in fixes_applied)}
-
-Issues Found in Logs:
-{chr(10).join(f'- {error}' for error in log_analysis["repo_errors"] + log_analysis["auth_errors"])}
-
-Suggestions:
-{chr(10).join(f'- {suggestion}' for suggestion in log_analysis["suggestions"])}
-"""
-
-            with open("automated_fixes.txt", "w") as f:
-                f.write(fix_summary)
-
-            logger.info(f"Applied {len(fixes_applied)} automated fixes")
-            return True
-
-        return False
-
-    except Exception as e:
-        logger.error(f"Error applying fixes: {e}")
-        return False
+        file_handler.close()  # Ensure file handler is closed
 
 
 if __name__ == "__main__":
-    # Initialize logging
-    # ... (rest of the main block, ensure logging is initialized if not already)
+    current_script_path = Path(__file__).resolve()
+    project_root = current_script_path.parent
+    log_file_path = project_root / "output.txt"
 
-    # Attempt to run the backup process first
+    # Configure logging for the main execution
+    root_logger = logging.getLogger()  # Get the root logger
+
+    # Clear any handlers already configured by the top-level basicConfig if this script is run directly
+    # This ensures that we don't get duplicate messages if basicConfig was already called.
+    if root_logger.hasHandlers():
+        for handler in root_logger.handlers[:]:
+            root_logger.removeHandler(handler)
+            handler.close()
+
+    # Add new handlers for file and console
+    # File handler for output.txt
     try:
-        logger.info("Attempting to create a backup of the project...")
-        speak("Attempting to create a backup of the project.")
-        if not backup_project():
-            logger.error("Project backup failed. Aborting further operations.")
-            speak("Project backup failed. Aborting further operations.")
-            # sys.exit(1) # Consider exiting if backup is critical
+        file_handler = logging.FileHandler(log_file_path, mode="w", encoding="utf-8")
+        file_formatter = logging.Formatter(
+            "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+        )
+        file_handler.setFormatter(file_formatter)
+        file_handler.setLevel(logging.DEBUG)  # Capture debug messages in file
+        root_logger.addHandler(file_handler)
+    except Exception as e:
+        print(
+            f"Critical Error: Could not set up file logger for {log_file_path}. Error: {e}"
+        )
+
+    # Console handler
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+    console_handler.setFormatter(console_formatter)
+    console_handler.setLevel(logging.INFO)  # Show INFO and above on console
+    root_logger.addHandler(console_handler)
+
+    root_logger.setLevel(logging.DEBUG)  # Set root logger to lowest level of handlers
+
+    logger.info("Crew.py script started. Logging to console and output.txt")
+    speak("Crew script initialized.")
+
+    project_dir = project_root
+    backup_parent_dir = project_dir.parent / f"{project_dir.name}_Backups"
+
+    logger.info("--- Task: Project Backup ---")
+    if backup_project(project_dir, backup_parent_dir):
+        logger.info("Project backup task completed successfully.")
+    else:
+        logger.error("Project backup task failed.")
+
+    logger.info("--- Task: Generate Project Summary ---")
+    summary_file = project_dir / "project_summary.md"
+    if generate_project_summary(project_dir, summary_file):
+        logger.info("Project summary generation completed successfully.")
+    else:
+        logger.error("Project summary generation failed.")
+
+    logger.info("--- Task: Generate Help File ---")
+    help_file_path = project_dir / "HELP.txt"
+    if generate_help_file(str(help_file_path)):
+        logger.info("Help file generation completed successfully.")
+    else:
+        logger.error("Help file generation failed.")
+
+    logger.info("--- Task: Auto Fix All Issues ---")
+    # SAFETY: Set to False to skip potentially slow linting operations
+    ENABLE_LINTING = True  # Change to False to skip linting entirely
+
+    if ENABLE_LINTING:
+        if (project_dir / ".git").is_dir():
+            auto_fix_all_issues(project_dir)
+            logger.info("Auto-fix and Git push task processed.")
         else:
-            logger.info("Project backup completed. Proceeding with other operations.")
-            speak("Project backup completed. Proceeding with other operations.")
-    except Exception as e:
-        logger.error(f"Error during backup process: {e}")
-        speak("Error during backup process. Proceeding with other operations.")
+            logger.warning(
+                f"'{project_dir}' is not a Git repository. Skipping Git operations in auto_fix_all_issues."
+            )
+            speak("Project is not a Git repository. Skipping automated Git push.")
+            logger.info("Attempting to run local linters/formatters...")
+            if fix_lint_errors(project_dir):
+                logger.info("Local linting/formatting completed.")
+            else:
+                logger.error("Local linting/formatting failed.")
+    else:
+        logger.info("Linting disabled for safety. Skipping auto-fix operations.")
+        speak("Skipping code formatting for safety.")
 
-    # Generate project summary
-    try:
-        logger.info("Generating project summary...")
-        generate_project_summary()
-    except Exception as e:
-        logger.error(f"Error generating project summary: {e}")
+    # Optional: Run original job tasks
+    # logger.info("--- Task: Running Original Jobs (job1, job2, etc.) ---")
+    # try:
+    #     job1()
+    #     job2()
+    #     # job3(), job4(), job5() - ensure they are robust or handle errors
+    #     logger.info("Original jobs completed.")
+    # except Exception as e:
+    #     logger.error(f"Error during original job execution: {e}", exc_info=True)
+    #     speak("An error occurred while running scheduled jobs.")
 
-    # Attempt to fix all issues
-    try:
-        logger.info("Attempting to fix all project issues...")
-        if auto_fix_all_issues():
-            logger.info("All detected issues fixed.")
-        else:
-            logger.warning("Some issues could not be fixed automatically.")
-    except Exception as e:
-        logger.error(f"Error in auto-fix process: {e}")
+    logger.info("--- Task: Launch GUI ---")
+    gui_script_path = project_dir / "gui.py"
+    if gui_script_path.is_file():
+        logger.info(f"Attempting to launch GUI: {gui_script_path}")
+        speak("Attempting to launch the graphical user interface.")
+        try:
+            subprocess.Popen(
+                [sys.executable, str(gui_script_path)],
+                cwd=project_dir,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                start_new_session=True,
+            )
+            logger.info("GUI launch command issued.")
+        except Exception as e:
+            logger.error(f"Failed to launch GUI: {e}", exc_info=True)
+            speak("Failed to launch the graphical user interface.")
+    else:
+        logger.info("gui.py not found, skipping GUI launch.")
 
-    # Start the GUI
-    try:
-        logger.info("Attempting to start the GUI...")
-        speak("Attempting to start the GUI.")
-        start_gui()
-        logger.info("GUI started (or at least the attempt was made).")
-    except Exception as e:
-        logger.error(f"Failed to start the GUI: {e}")
-        speak("Failed to start the GUI.")
-
-    logger.info("Crew script main execution finished.")
-    speak("Crew script main execution finished.")
+    logger.info("Crew.py script finished.")
+    speak("Crew script execution complete.")

@@ -1,8 +1,7 @@
-import pytest
-
 import pandas as pd
-from pandas import DataFrame
 import pandas._testing as tm
+import pytest
+from pandas import DataFrame
 
 
 @pytest.fixture(params=[True, False])

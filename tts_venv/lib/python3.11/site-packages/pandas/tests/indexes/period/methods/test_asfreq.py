@@ -1,14 +1,8 @@
 import re
 
-import pytest
-
-from pandas import (
-    PeriodIndex,
-    Series,
-    period_range,
-)
 import pandas._testing as tm
-
+import pytest
+from pandas import PeriodIndex, Series, period_range
 from pandas.tseries import offsets
 
 

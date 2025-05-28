@@ -2,36 +2,19 @@ from datetime import datetime
 from functools import partial
 
 import numpy as np
+import pandas as pd
+import pandas._testing as tm
+import pandas.util._test_decorators as td
 import pytest
 import pytz
-
+from pandas import DataFrame, Index, Series, Timedelta, Timestamp, isna, notna
 from pandas._libs import lib
 from pandas._typing import DatetimeNaTType
 from pandas.compat import is_platform_windows
-import pandas.util._test_decorators as td
-
-import pandas as pd
-from pandas import (
-    DataFrame,
-    Index,
-    Series,
-    Timedelta,
-    Timestamp,
-    isna,
-    notna,
-)
-import pandas._testing as tm
 from pandas.core.groupby.grouper import Grouper
 from pandas.core.indexes.datetimes import date_range
-from pandas.core.indexes.period import (
-    Period,
-    period_range,
-)
-from pandas.core.resample import (
-    DatetimeIndex,
-    _get_timestamp_range_edges,
-)
-
+from pandas.core.indexes.period import Period, period_range
+from pandas.core.resample import DatetimeIndex, _get_timestamp_range_edges
 from pandas.tseries import offsets
 from pandas.tseries.offsets import Minute
 

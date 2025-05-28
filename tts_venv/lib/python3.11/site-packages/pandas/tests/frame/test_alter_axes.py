@@ -1,9 +1,8 @@
 from datetime import datetime
 
-import pytz
-
-from pandas import DataFrame
 import pandas._testing as tm
+import pytz
+from pandas import DataFrame
 
 
 class TestDataFrameAlterAxes:

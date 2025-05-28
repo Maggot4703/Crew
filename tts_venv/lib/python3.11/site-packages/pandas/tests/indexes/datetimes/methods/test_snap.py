@@ -1,10 +1,6 @@
-import pytest
-
-from pandas import (
-    DatetimeIndex,
-    date_range,
-)
 import pandas._testing as tm
+import pytest
+from pandas import DatetimeIndex, date_range
 
 
 @pytest.mark.parametrize("tz", [None, "Asia/Shanghai", "Europe/Berlin"])

@@ -2,16 +2,10 @@
 Note: includes tests for `last`
 """
 import numpy as np
-import pytest
-
 import pandas as pd
-from pandas import (
-    DataFrame,
-    Index,
-    bdate_range,
-    date_range,
-)
 import pandas._testing as tm
+import pytest
+from pandas import DataFrame, Index, bdate_range, date_range
 
 deprecated_msg = "first is deprecated"
 last_deprecated_msg = "last is deprecated"

@@ -1,10 +1,8 @@
 from types import SimpleNamespace
 
-import pytest
-
-from pandas.core.dtypes.common import is_float
-
 import pandas._testing as tm
+import pytest
+from pandas.core.dtypes.common import is_float
 
 
 def test_assert_attr_equal(nulls_fixture):

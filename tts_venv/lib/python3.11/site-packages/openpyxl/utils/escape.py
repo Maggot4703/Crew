@@ -28,7 +28,6 @@ def unescape(value):
     Convert escaped strings to ASCIII: _x000a_ == \n
     """
 
-
     ESCAPED_REGEX = re.compile("_x([0-9A-Fa-f]{4})_")
 
     def _sub(match):

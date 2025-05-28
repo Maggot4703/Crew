@@ -1,7 +1,6 @@
-import pytest
-
-from pandas import interval_range
 import pandas._testing as tm
+import pytest
+from pandas import interval_range
 
 
 @pytest.mark.parametrize(

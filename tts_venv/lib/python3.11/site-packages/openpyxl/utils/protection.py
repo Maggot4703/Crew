@@ -1,7 +1,7 @@
 # Copyright (c) 2010-2024 openpyxl
 
 
-def hash_password(plaintext_password=''):
+def hash_password(plaintext_password=""):
     """
     Create a password hash from a given string for protecting a worksheet
     only. This will not work for encrypting a workbook.
@@ -15,8 +15,8 @@ def hash_password(plaintext_password=''):
     for idx, char in enumerate(plaintext_password, 1):
         value = ord(char) << idx
         rotated_bits = value >> 15
-        value &= 0x7fff
-        password ^= (value | rotated_bits)
+        value &= 0x7FFF
+        password ^= value | rotated_bits
     password ^= len(plaintext_password)
     password ^= 0xCE4B
     return str(hex(password)).upper()[2:]

@@ -1,15 +1,9 @@
 import numpy as np
-import pytest
-
-import pandas.util._test_decorators as td
-
 import pandas as pd
-from pandas import (
-    DataFrame,
-    Series,
-    date_range,
-)
 import pandas._testing as tm
+import pandas.util._test_decorators as td
+import pytest
+from pandas import DataFrame, Series, date_range
 
 
 class TestDataFrameUpdate:

@@ -2,29 +2,18 @@
 Tests that work on both the Python and C engines but do not have a
 specific classification into the other test modules.
 """
-from io import (
-    BytesIO,
-    StringIO,
-)
 import os
 import platform
-from urllib.error import URLError
 import uuid
+from io import BytesIO, StringIO
+from urllib.error import URLError
 
 import numpy as np
-import pytest
-
-from pandas.errors import (
-    EmptyDataError,
-    ParserError,
-)
-import pandas.util._test_decorators as td
-
-from pandas import (
-    DataFrame,
-    Index,
-)
 import pandas._testing as tm
+import pandas.util._test_decorators as td
+import pytest
+from pandas import DataFrame, Index
+from pandas.errors import EmptyDataError, ParserError
 
 pytestmark = pytest.mark.filterwarnings(
     "ignore:Passing a BlockManager to DataFrame:DeprecationWarning"

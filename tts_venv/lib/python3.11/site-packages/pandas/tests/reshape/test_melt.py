@@ -1,18 +1,10 @@
 import re
 
 import numpy as np
-import pytest
-
 import pandas as pd
-from pandas import (
-    DataFrame,
-    Index,
-    date_range,
-    lreshape,
-    melt,
-    wide_to_long,
-)
 import pandas._testing as tm
+import pytest
+from pandas import DataFrame, Index, date_range, lreshape, melt, wide_to_long
 
 
 @pytest.fixture

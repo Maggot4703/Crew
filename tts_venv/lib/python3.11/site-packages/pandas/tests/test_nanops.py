@@ -1,19 +1,13 @@
 from functools import partial
 
 import numpy as np
-import pytest
-
-import pandas.util._test_decorators as td
-
-from pandas.core.dtypes.common import is_integer_dtype
-
 import pandas as pd
-from pandas import (
-    Series,
-    isna,
-)
 import pandas._testing as tm
+import pandas.util._test_decorators as td
+import pytest
+from pandas import Series, isna
 from pandas.core import nanops
+from pandas.core.dtypes.common import is_integer_dtype
 
 use_bn = nanops._USE_BOTTLENECK
 

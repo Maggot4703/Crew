@@ -1,20 +1,10 @@
 import datetime
 
 import numpy as np
-import pytest
-
-from pandas.compat import (
-    IS64,
-    is_platform_windows,
-)
-
-from pandas import (
-    Categorical,
-    DataFrame,
-    Series,
-    date_range,
-)
 import pandas._testing as tm
+import pytest
+from pandas import Categorical, DataFrame, Series, date_range
+from pandas.compat import IS64, is_platform_windows
 
 
 class TestIteration:

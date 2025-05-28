@@ -4,6 +4,7 @@
 Read a chart
 """
 
+
 def read_chart(chartspace):
     cs = chartspace
     plot = cs.chart.plotArea

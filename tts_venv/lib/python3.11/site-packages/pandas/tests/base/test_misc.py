@@ -1,23 +1,13 @@
 import sys
 
 import numpy as np
-import pytest
-
-from pandas._config import using_pyarrow_string_dtype
-
-from pandas.compat import PYPY
-
-from pandas.core.dtypes.common import (
-    is_dtype_equal,
-    is_object_dtype,
-)
-
 import pandas as pd
-from pandas import (
-    Index,
-    Series,
-)
 import pandas._testing as tm
+import pytest
+from pandas import Index, Series
+from pandas._config import using_pyarrow_string_dtype
+from pandas.compat import PYPY
+from pandas.core.dtypes.common import is_dtype_equal, is_object_dtype
 
 
 def test_isnull_notnull_docstrings():

@@ -1,23 +1,13 @@
 from __future__ import annotations
 
-from io import (
-    BytesIO,
-    StringIO,
-)
 import os
+from io import BytesIO, StringIO
 
 import numpy as np
-import pytest
-
-import pandas.util._test_decorators as td
-
-from pandas import (
-    NA,
-    DataFrame,
-    Index,
-)
 import pandas._testing as tm
-
+import pandas.util._test_decorators as td
+import pytest
+from pandas import NA, DataFrame, Index
 from pandas.io.common import get_handle
 from pandas.io.xml import read_xml
 

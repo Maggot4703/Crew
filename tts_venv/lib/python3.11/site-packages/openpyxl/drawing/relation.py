@@ -1,9 +1,8 @@
 # Copyright (c) 2010-2024 openpyxl
 
-from openpyxl.xml.constants import CHART_NS
-
-from openpyxl.descriptors.serialisable import Serialisable
 from openpyxl.descriptors.excel import Relation
+from openpyxl.descriptors.serialisable import Serialisable
+from openpyxl.xml.constants import CHART_NS
 
 
 class ChartRelation(Serialisable):

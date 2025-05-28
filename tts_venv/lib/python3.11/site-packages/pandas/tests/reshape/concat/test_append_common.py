@@ -1,14 +1,8 @@
 import numpy as np
-import pytest
-
 import pandas as pd
-from pandas import (
-    Categorical,
-    DataFrame,
-    Index,
-    Series,
-)
 import pandas._testing as tm
+import pytest
+from pandas import Categorical, DataFrame, Index, Series
 
 
 @pytest.fixture(

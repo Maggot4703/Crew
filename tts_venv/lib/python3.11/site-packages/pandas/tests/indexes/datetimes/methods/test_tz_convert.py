@@ -1,22 +1,13 @@
 from datetime import datetime
 
 import dateutil.tz
-from dateutil.tz import gettz
 import numpy as np
+import pandas._testing as tm
 import pytest
 import pytz
-
+from dateutil.tz import gettz
+from pandas import DatetimeIndex, Index, NaT, Timestamp, date_range, offsets
 from pandas._libs.tslibs import timezones
-
-from pandas import (
-    DatetimeIndex,
-    Index,
-    NaT,
-    Timestamp,
-    date_range,
-    offsets,
-)
-import pandas._testing as tm
 
 
 class TestTZConvert:

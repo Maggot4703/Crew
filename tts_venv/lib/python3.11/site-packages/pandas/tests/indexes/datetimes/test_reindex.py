@@ -1,12 +1,8 @@
 from datetime import timedelta
 
 import numpy as np
-
-from pandas import (
-    DatetimeIndex,
-    date_range,
-)
 import pandas._testing as tm
+from pandas import DatetimeIndex, date_range
 
 
 class TestDatetimeIndexReindex:

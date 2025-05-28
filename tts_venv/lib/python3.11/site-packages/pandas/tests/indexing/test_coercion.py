@@ -1,24 +1,15 @@
 from __future__ import annotations
 
-from datetime import (
-    datetime,
-    timedelta,
-)
 import itertools
+from datetime import datetime, timedelta
 
 import numpy as np
-import pytest
-
-from pandas._config import using_pyarrow_string_dtype
-
-from pandas.compat import (
-    IS64,
-    is_platform_windows,
-)
-from pandas.compat.numpy import np_version_gt2
-
 import pandas as pd
 import pandas._testing as tm
+import pytest
+from pandas._config import using_pyarrow_string_dtype
+from pandas.compat import IS64, is_platform_windows
+from pandas.compat.numpy import np_version_gt2
 
 ###############################################################
 # Index / Series common tests which may trigger dtype coercions

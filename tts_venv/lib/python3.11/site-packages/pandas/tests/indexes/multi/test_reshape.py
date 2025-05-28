@@ -1,15 +1,11 @@
 from datetime import datetime
 
 import numpy as np
+import pandas as pd
+import pandas._testing as tm
 import pytest
 import pytz
-
-import pandas as pd
-from pandas import (
-    Index,
-    MultiIndex,
-)
-import pandas._testing as tm
+from pandas import Index, MultiIndex
 
 
 def test_insert(idx):

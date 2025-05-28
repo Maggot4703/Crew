@@ -1,20 +1,14 @@
 import contextlib
-from pathlib import Path
 import re
+from pathlib import Path
 
 import numpy as np
-import pytest
-
-from pandas.compat import is_platform_windows
-
 import pandas as pd
-from pandas import DataFrame
 import pandas._testing as tm
-
-from pandas.io.excel import (
-    ExcelWriter,
-    _OpenpyxlWriter,
-)
+import pytest
+from pandas import DataFrame
+from pandas.compat import is_platform_windows
+from pandas.io.excel import ExcelWriter, _OpenpyxlWriter
 from pandas.io.excel._openpyxl import OpenpyxlReader
 
 openpyxl = pytest.importorskip("openpyxl")

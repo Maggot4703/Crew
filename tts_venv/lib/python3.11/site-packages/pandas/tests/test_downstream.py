@@ -6,23 +6,13 @@ import subprocess
 import sys
 
 import numpy as np
-import pytest
-
-from pandas.errors import IntCastingNaNError
-import pandas.util._test_decorators as td
-
 import pandas as pd
-from pandas import (
-    DataFrame,
-    DatetimeIndex,
-    Series,
-    TimedeltaIndex,
-)
 import pandas._testing as tm
-from pandas.core.arrays import (
-    DatetimeArray,
-    TimedeltaArray,
-)
+import pandas.util._test_decorators as td
+import pytest
+from pandas import DataFrame, DatetimeIndex, Series, TimedeltaIndex
+from pandas.core.arrays import DatetimeArray, TimedeltaArray
+from pandas.errors import IntCastingNaNError
 
 
 @pytest.fixture
@@ -142,10 +132,7 @@ def test_statsmodels():
 
 def test_scikit_learn():
     pytest.importorskip("sklearn")
-    from sklearn import (
-        datasets,
-        svm,
-    )
+    from sklearn import datasets, svm
 
     digits = datasets.load_digits()
     clf = svm.SVC(gamma=0.001, C=100.0)

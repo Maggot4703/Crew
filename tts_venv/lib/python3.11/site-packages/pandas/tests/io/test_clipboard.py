@@ -1,32 +1,13 @@
 from textwrap import dedent
 
 import numpy as np
-import pytest
-
-from pandas.errors import (
-    PyperclipException,
-    PyperclipWindowsException,
-)
-
 import pandas as pd
-from pandas import (
-    NA,
-    DataFrame,
-    Series,
-    get_option,
-    read_clipboard,
-)
 import pandas._testing as tm
-from pandas.core.arrays import (
-    ArrowStringArray,
-    StringArray,
-)
-
-from pandas.io.clipboard import (
-    CheckedCall,
-    _stringifyText,
-    init_qt_clipboard,
-)
+import pytest
+from pandas import NA, DataFrame, Series, get_option, read_clipboard
+from pandas.core.arrays import ArrowStringArray, StringArray
+from pandas.errors import PyperclipException, PyperclipWindowsException
+from pandas.io.clipboard import CheckedCall, _stringifyText, init_qt_clipboard
 
 
 def build_kwargs(sep, excel):

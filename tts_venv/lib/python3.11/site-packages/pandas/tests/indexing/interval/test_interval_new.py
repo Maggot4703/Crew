@@ -1,15 +1,9 @@
 import re
 
 import numpy as np
-import pytest
-
-from pandas import (
-    Index,
-    Interval,
-    IntervalIndex,
-    Series,
-)
 import pandas._testing as tm
+import pytest
+from pandas import Index, Interval, IntervalIndex, Series
 
 
 class TestIntervalIndex:

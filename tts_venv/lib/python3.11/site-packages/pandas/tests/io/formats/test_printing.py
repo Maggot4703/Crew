@@ -3,7 +3,6 @@
 import string
 
 import pandas._config.config as cf
-
 from pandas.io.formats import printing
 
 

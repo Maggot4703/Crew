@@ -1,14 +1,9 @@
 import numpy as np
-import pytest
-
-from pandas.core.dtypes.common import ensure_platform_int
-
 import pandas as pd
-from pandas import (
-    Index,
-    RangeIndex,
-)
 import pandas._testing as tm
+import pytest
+from pandas import Index, RangeIndex
+from pandas.core.dtypes.common import ensure_platform_int
 
 
 class TestRangeIndex:

@@ -1,11 +1,6 @@
 import numpy as np
-
 import pandas._config.config as cf
-
-from pandas import (
-    DataFrame,
-    MultiIndex,
-)
+from pandas import DataFrame, MultiIndex
 
 
 class TestTableSchemaRepr:

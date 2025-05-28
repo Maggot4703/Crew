@@ -1,16 +1,9 @@
-from dateutil.tz import tzlocal
 import numpy as np
-import pytest
-
-import pandas.util._test_decorators as td
-
-from pandas import (
-    DatetimeIndex,
-    NaT,
-    Timestamp,
-    date_range,
-)
 import pandas._testing as tm
+import pandas.util._test_decorators as td
+import pytest
+from dateutil.tz import tzlocal
+from pandas import DatetimeIndex, NaT, Timestamp, date_range
 
 
 class TestNormalize:

@@ -5,10 +5,9 @@ for all of the parsers defined in parsers.py
 from io import StringIO
 
 import numpy as np
-import pytest
-
-from pandas import DataFrame
 import pandas._testing as tm
+import pytest
+from pandas import DataFrame
 
 
 @pytest.mark.parametrize("na_values", [None, ["NaN"]])

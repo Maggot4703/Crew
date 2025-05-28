@@ -1,14 +1,7 @@
 import numpy as np
-import pytest
-
-from pandas import (
-    DataFrame,
-    Series,
-    Timedelta,
-    concat,
-    date_range,
-)
 import pandas._testing as tm
+import pytest
+from pandas import DataFrame, Series, Timedelta, concat, date_range
 from pandas.api.indexers import BaseIndexer
 
 

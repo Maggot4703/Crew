@@ -1,10 +1,6 @@
 import numpy as np
 import pytest
-
-from pandas._libs.tslibs import (
-    Period,
-    to_offset,
-)
+from pandas._libs.tslibs import Period, to_offset
 
 
 @pytest.mark.parametrize(

@@ -1,6 +1,7 @@
 # Metaclass for mixing slots and descriptors
 # From "Programming in Python 3" by Mark Summerfield Ch.8 p. 383
 
+
 class AutoSlotProperties(type):
 
     def __new__(mcl, classname, bases, dictionary):
@@ -10,9 +11,8 @@ class AutoSlotProperties(type):
             slots.append("__" + name)
             getter = dictionary.pop(getter_name)
             setter = dictionary.get(setter_name, None)
-            if (setter is not None
-                and isinstance(setter, collections.Callable)):
+            if setter is not None and isinstance(setter, collections.Callable):
                 del dictionary[setter_name]
-            dictionary[name] = property(getter. setter)
+            dictionary[name] = property(getter.setter)
             dictionary["__slots__"] = tuple(slots)
             return super().__new__(mcl, classname, bases, dictionary)

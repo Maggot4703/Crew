@@ -5,7 +5,7 @@ print("Testing female voice...")
 engine = pyttsx3.init()
 
 # Get voice properties
-voices = engine.getProperty('voices')
+voices = engine.getProperty("voices")
 
 # Find an English voice
 english_voice = None
@@ -18,10 +18,10 @@ for voice in voices:
 if english_voice:
     # Configure for female voice using espeak variant
     # In espeak, adding '+f3' to the voice ID makes it female
-    fem_voice = english_voice.id + '+f3'
-    engine.setProperty('voice', fem_voice)
+    fem_voice = english_voice.id + "+f3"
+    engine.setProperty("voice", fem_voice)
     print(f"Set female voice: {fem_voice}")
-    
+
     # Test the voice
     engine.say("This is a test of the female voice in text to speech.")
     print("Running engine...")

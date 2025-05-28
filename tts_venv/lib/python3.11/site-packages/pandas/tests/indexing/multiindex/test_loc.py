@@ -1,19 +1,9 @@
 import numpy as np
-import pytest
-
-from pandas.errors import (
-    IndexingError,
-    PerformanceWarning,
-)
-
 import pandas as pd
-from pandas import (
-    DataFrame,
-    Index,
-    MultiIndex,
-    Series,
-)
 import pandas._testing as tm
+import pytest
+from pandas import DataFrame, Index, MultiIndex, Series
+from pandas.errors import IndexingError, PerformanceWarning
 
 
 @pytest.fixture

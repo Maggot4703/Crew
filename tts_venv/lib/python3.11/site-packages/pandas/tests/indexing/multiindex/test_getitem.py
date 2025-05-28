@@ -1,13 +1,7 @@
 import numpy as np
-import pytest
-
-from pandas import (
-    DataFrame,
-    Index,
-    MultiIndex,
-    Series,
-)
 import pandas._testing as tm
+import pytest
+from pandas import DataFrame, Index, MultiIndex, Series
 from pandas.core.indexing import IndexingError
 
 # ----------------------------------------------------------------------------

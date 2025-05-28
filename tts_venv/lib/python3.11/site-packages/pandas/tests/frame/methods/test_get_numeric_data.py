@@ -1,14 +1,7 @@
 import numpy as np
-
 import pandas as pd
-from pandas import (
-    Categorical,
-    DataFrame,
-    Index,
-    Series,
-    Timestamp,
-)
 import pandas._testing as tm
+from pandas import Categorical, DataFrame, Index, Series, Timestamp
 from pandas.core.arrays import IntervalArray
 
 

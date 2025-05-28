@@ -1,12 +1,8 @@
-from io import (
-    BytesIO,
-    StringIO,
-)
-
-import pytest
+from io import BytesIO, StringIO
 
 import pandas as pd
 import pandas._testing as tm
+import pytest
 
 pytest.importorskip("tabulate")
 

@@ -2,10 +2,8 @@ from datetime import datetime
 from itertools import permutations
 
 import numpy as np
-
-from pandas._libs import algos as libalgos
-
 import pandas._testing as tm
+from pandas._libs import algos as libalgos
 
 
 def test_ensure_platform_int():

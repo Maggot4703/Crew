@@ -2,10 +2,9 @@
 import operator
 
 import numpy as np
-import pytest
-
 import pandas as pd
 import pandas._testing as tm
+import pytest
 
 not_implemented = pytest.mark.xfail(reason="Not implemented.")
 

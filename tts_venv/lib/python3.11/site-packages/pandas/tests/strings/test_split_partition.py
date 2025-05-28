@@ -1,21 +1,12 @@
-from datetime import datetime
 import re
+from datetime import datetime
 
 import numpy as np
-import pytest
-
 import pandas as pd
-from pandas import (
-    DataFrame,
-    Index,
-    MultiIndex,
-    Series,
-    _testing as tm,
-)
-from pandas.tests.strings import (
-    _convert_na_value,
-    object_pyarrow_numpy,
-)
+import pytest
+from pandas import DataFrame, Index, MultiIndex, Series
+from pandas import _testing as tm
+from pandas.tests.strings import _convert_na_value, object_pyarrow_numpy
 
 
 @pytest.mark.parametrize("method", ["split", "rsplit"])

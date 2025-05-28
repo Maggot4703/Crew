@@ -1,13 +1,11 @@
-from datetime import time
 import locale
+from datetime import time
 
 import numpy as np
-import pytest
-
-from pandas.compat import PY311
-
-from pandas import Series
 import pandas._testing as tm
+import pytest
+from pandas import Series
+from pandas.compat import PY311
 from pandas.core.tools.times import to_time
 
 # The tests marked with this are locale-dependent.

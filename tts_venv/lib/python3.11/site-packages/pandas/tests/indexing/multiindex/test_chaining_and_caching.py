@@ -1,16 +1,10 @@
 import numpy as np
+import pandas._testing as tm
+import pandas.util._test_decorators as td
 import pytest
-
+from pandas import DataFrame, MultiIndex, Series
 from pandas._libs import index as libindex
 from pandas.errors import SettingWithCopyError
-import pandas.util._test_decorators as td
-
-from pandas import (
-    DataFrame,
-    MultiIndex,
-    Series,
-)
-import pandas._testing as tm
 
 
 def test_detect_chained_assignment(using_copy_on_write, warn_copy_on_write):

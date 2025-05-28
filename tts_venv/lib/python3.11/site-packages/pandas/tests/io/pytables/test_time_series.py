@@ -2,15 +2,9 @@ import datetime
 
 import numpy as np
 import pytest
-
-from pandas import (
-    DataFrame,
-    DatetimeIndex,
-    Series,
-    _testing as tm,
-    date_range,
-    period_range,
-)
+from pandas import DataFrame, DatetimeIndex, Series
+from pandas import _testing as tm
+from pandas import date_range, period_range
 from pandas.tests.io.pytables.common import ensure_clean_store
 
 pytestmark = pytest.mark.single_cpu

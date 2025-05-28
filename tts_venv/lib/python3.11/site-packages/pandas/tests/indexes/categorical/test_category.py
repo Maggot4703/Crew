@@ -1,21 +1,12 @@
 import numpy as np
+import pandas as pd
+import pandas._testing as tm
 import pytest
-
+from pandas import Categorical, CategoricalDtype
 from pandas._config import using_pyarrow_string_dtype
-
 from pandas._libs import index as libindex
 from pandas._libs.arrays import NDArrayBacked
-
-import pandas as pd
-from pandas import (
-    Categorical,
-    CategoricalDtype,
-)
-import pandas._testing as tm
-from pandas.core.indexes.api import (
-    CategoricalIndex,
-    Index,
-)
+from pandas.core.indexes.api import CategoricalIndex, Index
 
 
 class TestCategoricalIndex:

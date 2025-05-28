@@ -1,20 +1,10 @@
-from copy import (
-    copy,
-    deepcopy,
-)
+from copy import copy, deepcopy
 
 import numpy as np
-import pytest
-
-from pandas.core.dtypes.common import is_scalar
-
-from pandas import (
-    DataFrame,
-    Index,
-    Series,
-    date_range,
-)
 import pandas._testing as tm
+import pytest
+from pandas import DataFrame, Index, Series, date_range
+from pandas.core.dtypes.common import is_scalar
 
 # ----------------------------------------------------------------------
 # Generic types test cases

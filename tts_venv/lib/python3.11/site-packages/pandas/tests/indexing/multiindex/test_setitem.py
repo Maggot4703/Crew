@@ -1,19 +1,10 @@
 import numpy as np
-import pytest
-
-from pandas.errors import SettingWithCopyError
-import pandas.util._test_decorators as td
-
 import pandas as pd
-from pandas import (
-    DataFrame,
-    MultiIndex,
-    Series,
-    date_range,
-    isna,
-    notna,
-)
 import pandas._testing as tm
+import pandas.util._test_decorators as td
+import pytest
+from pandas import DataFrame, MultiIndex, Series, date_range, isna, notna
+from pandas.errors import SettingWithCopyError
 
 
 def assert_equal(a, b):

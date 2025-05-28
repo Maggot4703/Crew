@@ -1,15 +1,10 @@
 import numpy as np
-import pytest
-
-from pandas._libs import (
-    Timedelta,
-    lib,
-    writers as libwriters,
-)
-from pandas.compat import IS64
-
-from pandas import Index
 import pandas._testing as tm
+import pytest
+from pandas import Index
+from pandas._libs import Timedelta, lib
+from pandas._libs import writers as libwriters
+from pandas.compat import IS64
 
 
 class TestMisc:

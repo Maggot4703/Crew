@@ -1,8 +1,4 @@
-from pandas import (
-    Index,
-    NaT,
-    date_range,
-)
+from pandas import Index, NaT, date_range
 
 
 def test_is_monotonic_with_nat():

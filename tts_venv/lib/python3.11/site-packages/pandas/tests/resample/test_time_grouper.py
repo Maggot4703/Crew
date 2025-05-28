@@ -2,16 +2,10 @@ from datetime import datetime
 from operator import methodcaller
 
 import numpy as np
-import pytest
-
 import pandas as pd
-from pandas import (
-    DataFrame,
-    Index,
-    Series,
-    Timestamp,
-)
 import pandas._testing as tm
+import pytest
+from pandas import DataFrame, Index, Series, Timestamp
 from pandas.core.groupby.grouper import Grouper
 from pandas.core.indexes.datetimes import date_range
 

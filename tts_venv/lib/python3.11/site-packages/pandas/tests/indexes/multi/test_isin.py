@@ -1,8 +1,7 @@
 import numpy as np
-import pytest
-
-from pandas import MultiIndex
 import pandas._testing as tm
+import pytest
+from pandas import MultiIndex
 
 
 def test_isin_nan():

@@ -1,11 +1,8 @@
 import numpy as np
-import pytest
-
-from pandas.errors import DtypeWarning
-
 import pandas._testing as tm
+import pytest
 from pandas.core.arrays import ArrowExtensionArray
-
+from pandas.errors import DtypeWarning
 from pandas.io.parsers.c_parser_wrapper import _concatenate_chunks
 
 

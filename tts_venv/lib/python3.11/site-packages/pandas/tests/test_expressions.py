@@ -2,15 +2,10 @@ import operator
 import re
 
 import numpy as np
-import pytest
-
-from pandas import option_context
 import pandas._testing as tm
-from pandas.core.api import (
-    DataFrame,
-    Index,
-    Series,
-)
+import pytest
+from pandas import option_context
+from pandas.core.api import DataFrame, Index, Series
 from pandas.core.computation import expressions as expr
 
 

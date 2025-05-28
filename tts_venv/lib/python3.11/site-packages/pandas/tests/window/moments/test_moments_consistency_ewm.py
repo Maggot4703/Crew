@@ -1,12 +1,7 @@
 import numpy as np
-import pytest
-
-from pandas import (
-    DataFrame,
-    Series,
-    concat,
-)
 import pandas._testing as tm
+import pytest
+from pandas import DataFrame, Series, concat
 
 
 def create_mock_weights(obj, com, adjust, ignore_na):

@@ -1,16 +1,8 @@
 import numpy as np
-import pytest
-
 import pandas as pd
-from pandas import (
-    DataFrame,
-    Index,
-    MultiIndex,
-    Series,
-    Timestamp,
-    isna,
-)
 import pandas._testing as tm
+import pytest
+from pandas import DataFrame, Index, MultiIndex, Series, Timestamp, isna
 
 
 def test_first_last_nth(df):

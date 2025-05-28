@@ -15,14 +15,12 @@ be added to the array-specific tests in `pandas/tests/arrays/`.
 """
 
 import numpy as np
-import pytest
-
-from pandas.errors import PerformanceWarning
-
 import pandas as pd
-from pandas import SparseDtype
 import pandas._testing as tm
+import pytest
+from pandas import SparseDtype
 from pandas.arrays import SparseArray
+from pandas.errors import PerformanceWarning
 from pandas.tests.extension import base
 
 

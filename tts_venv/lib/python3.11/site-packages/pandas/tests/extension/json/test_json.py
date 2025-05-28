@@ -3,16 +3,11 @@ import operator
 import sys
 
 import numpy as np
-import pytest
-
 import pandas as pd
 import pandas._testing as tm
+import pytest
 from pandas.tests.extension import base
-from pandas.tests.extension.json.array import (
-    JSONArray,
-    JSONDtype,
-    make_data,
-)
+from pandas.tests.extension.json.array import JSONArray, JSONDtype, make_data
 
 # We intentionally don't run base.BaseSetitemTests because pandas'
 # internals has trouble setting sequences of values into scalar positions.

@@ -1,15 +1,10 @@
 import decimal
 
 import numpy as np
-import pytest
-
-from pandas.core.dtypes.cast import maybe_downcast_to_dtype
-
-from pandas import (
-    Series,
-    Timedelta,
-)
 import pandas._testing as tm
+import pytest
+from pandas import Series, Timedelta
+from pandas.core.dtypes.cast import maybe_downcast_to_dtype
 
 
 @pytest.mark.parametrize(

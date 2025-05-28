@@ -1,12 +1,10 @@
 import functools
 
 import numpy as np
-import pytest
-
-from pandas.compat import is_platform_windows
-
 import pandas as pd
 import pandas._testing as tm
+import pytest
+from pandas.compat import is_platform_windows
 
 pytest.importorskip("odf")
 

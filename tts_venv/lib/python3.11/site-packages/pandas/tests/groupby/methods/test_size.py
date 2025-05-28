@@ -1,17 +1,9 @@
 import numpy as np
-import pytest
-
-import pandas.util._test_decorators as td
-
-from pandas.core.dtypes.common import is_integer_dtype
-
-from pandas import (
-    DataFrame,
-    Index,
-    PeriodIndex,
-    Series,
-)
 import pandas._testing as tm
+import pandas.util._test_decorators as td
+import pytest
+from pandas import DataFrame, Index, PeriodIndex, Series
+from pandas.core.dtypes.common import is_integer_dtype
 
 
 @pytest.mark.parametrize("by", ["A", "B", ["A", "B"]])

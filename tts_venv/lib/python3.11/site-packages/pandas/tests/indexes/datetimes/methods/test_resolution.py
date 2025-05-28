@@ -1,9 +1,7 @@
-from dateutil.tz import tzlocal
 import pytest
-
-from pandas.compat import IS64
-
+from dateutil.tz import tzlocal
 from pandas import date_range
+from pandas.compat import IS64
 
 
 @pytest.mark.parametrize(

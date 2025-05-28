@@ -2,12 +2,8 @@
 Tests involving custom Index subclasses
 """
 import numpy as np
-
-from pandas import (
-    DataFrame,
-    Index,
-)
 import pandas._testing as tm
+from pandas import DataFrame, Index
 
 
 class CustomIndex(Index):

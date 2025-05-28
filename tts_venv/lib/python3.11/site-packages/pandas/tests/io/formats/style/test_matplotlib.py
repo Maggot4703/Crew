@@ -2,18 +2,12 @@ import gc
 
 import numpy as np
 import pytest
-
-from pandas import (
-    DataFrame,
-    IndexSlice,
-    Series,
-)
+from pandas import DataFrame, IndexSlice, Series
 
 pytest.importorskip("matplotlib")
 pytest.importorskip("jinja2")
 
 import matplotlib as mpl
-
 from pandas.io.formats.style import Styler
 
 

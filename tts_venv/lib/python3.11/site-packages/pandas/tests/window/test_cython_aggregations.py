@@ -1,13 +1,11 @@
-from functools import partial
 import sys
+from functools import partial
 
 import numpy as np
-import pytest
-
 import pandas._libs.window.aggregations as window_aggregations
-
-from pandas import Series
 import pandas._testing as tm
+import pytest
+from pandas import Series
 
 
 def _get_rolling_aggregations():

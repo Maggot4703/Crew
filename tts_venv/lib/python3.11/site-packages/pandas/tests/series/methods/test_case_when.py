@@ -1,13 +1,9 @@
 import numpy as np
-import pytest
-
-from pandas import (
-    DataFrame,
-    Series,
-    array as pd_array,
-    date_range,
-)
 import pandas._testing as tm
+import pytest
+from pandas import DataFrame, Series
+from pandas import array as pd_array
+from pandas import date_range
 
 
 @pytest.fixture

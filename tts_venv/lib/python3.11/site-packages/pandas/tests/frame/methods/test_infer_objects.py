@@ -1,7 +1,7 @@
 from datetime import datetime
 
-from pandas import DataFrame
 import pandas._testing as tm
+from pandas import DataFrame
 
 
 class TestInferObjects:

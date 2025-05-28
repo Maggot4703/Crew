@@ -1,28 +1,12 @@
 import numpy as np
-import pytest
-
-from pandas._libs.tslibs import Timestamp
-
 import pandas as pd
-from pandas import (
-    DataFrame,
-    HDFStore,
-    Index,
-    MultiIndex,
-    Series,
-    _testing as tm,
-    bdate_range,
-    concat,
-    date_range,
-    isna,
-    read_hdf,
-)
-from pandas.tests.io.pytables.common import (
-    _maybe_remove,
-    ensure_clean_store,
-)
-
+import pytest
+from pandas import DataFrame, HDFStore, Index, MultiIndex, Series
+from pandas import _testing as tm
+from pandas import bdate_range, concat, date_range, isna, read_hdf
+from pandas._libs.tslibs import Timestamp
 from pandas.io.pytables import Term
+from pandas.tests.io.pytables.common import _maybe_remove, ensure_clean_store
 
 pytestmark = pytest.mark.single_cpu
 

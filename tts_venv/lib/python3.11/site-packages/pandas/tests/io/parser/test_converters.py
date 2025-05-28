@@ -4,16 +4,12 @@ for all of the parsers defined in parsers.py
 """
 from io import StringIO
 
-from dateutil.parser import parse
 import numpy as np
-import pytest
-
 import pandas as pd
-from pandas import (
-    DataFrame,
-    Index,
-)
 import pandas._testing as tm
+import pytest
+from dateutil.parser import parse
+from pandas import DataFrame, Index
 
 
 def test_converters_type_must_be_dict(all_parsers):

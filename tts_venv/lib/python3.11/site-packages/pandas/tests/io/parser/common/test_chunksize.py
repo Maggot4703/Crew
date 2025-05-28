@@ -5,16 +5,11 @@ specific classification into the other test modules.
 from io import StringIO
 
 import numpy as np
+import pandas._testing as tm
 import pytest
-
+from pandas import DataFrame, concat
 from pandas._libs import parsers as libparsers
 from pandas.errors import DtypeWarning
-
-from pandas import (
-    DataFrame,
-    concat,
-)
-import pandas._testing as tm
 
 pytestmark = pytest.mark.filterwarnings(
     "ignore:Passing a BlockManager to DataFrame:DeprecationWarning"

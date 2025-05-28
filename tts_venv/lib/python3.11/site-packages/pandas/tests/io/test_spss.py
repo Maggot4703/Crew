@@ -2,10 +2,9 @@ import datetime
 from pathlib import Path
 
 import numpy as np
-import pytest
-
 import pandas as pd
 import pandas._testing as tm
+import pytest
 from pandas.util.version import Version
 
 pyreadstat = pytest.importorskip("pyreadstat")

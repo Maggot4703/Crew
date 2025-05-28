@@ -1,7 +1,6 @@
 from io import BytesIO
 
 import pytest
-
 from pandas import read_csv
 
 

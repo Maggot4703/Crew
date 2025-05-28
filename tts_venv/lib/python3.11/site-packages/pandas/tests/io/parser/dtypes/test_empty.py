@@ -5,17 +5,9 @@ for all of the parsers defined in parsers.py
 from io import StringIO
 
 import numpy as np
-import pytest
-
-from pandas import (
-    Categorical,
-    DataFrame,
-    Index,
-    MultiIndex,
-    Series,
-    concat,
-)
 import pandas._testing as tm
+import pytest
+from pandas import Categorical, DataFrame, Index, MultiIndex, Series, concat
 
 skip_pyarrow = pytest.mark.usefixtures("pyarrow_skip")
 

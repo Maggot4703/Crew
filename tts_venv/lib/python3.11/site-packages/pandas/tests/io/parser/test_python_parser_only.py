@@ -7,27 +7,14 @@ arguments when parsing.
 from __future__ import annotations
 
 import csv
-from io import (
-    BytesIO,
-    StringIO,
-    TextIOWrapper,
-)
+from io import BytesIO, StringIO, TextIOWrapper
 from typing import TYPE_CHECKING
 
 import numpy as np
-import pytest
-
-from pandas.errors import (
-    ParserError,
-    ParserWarning,
-)
-
-from pandas import (
-    DataFrame,
-    Index,
-    MultiIndex,
-)
 import pandas._testing as tm
+import pytest
+from pandas import DataFrame, Index, MultiIndex
+from pandas.errors import ParserError, ParserWarning
 
 if TYPE_CHECKING:
     from collections.abc import Iterator

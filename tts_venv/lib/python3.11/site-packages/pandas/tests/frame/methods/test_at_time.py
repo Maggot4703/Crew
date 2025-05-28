@@ -1,16 +1,11 @@
 from datetime import time
 
 import numpy as np
+import pandas._testing as tm
 import pytest
 import pytz
-
+from pandas import DataFrame, date_range
 from pandas._libs.tslibs import timezones
-
-from pandas import (
-    DataFrame,
-    date_range,
-)
-import pandas._testing as tm
 
 
 class TestAtTime:

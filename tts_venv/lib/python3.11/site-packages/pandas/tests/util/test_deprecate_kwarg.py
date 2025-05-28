@@ -1,8 +1,6 @@
-import pytest
-
-from pandas.util._decorators import deprecate_kwarg
-
 import pandas._testing as tm
+import pytest
+from pandas.util._decorators import deprecate_kwarg
 
 
 @deprecate_kwarg("old", "new")

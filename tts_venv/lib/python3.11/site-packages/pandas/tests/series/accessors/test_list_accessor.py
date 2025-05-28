@@ -1,12 +1,8 @@
 import re
 
-import pytest
-
-from pandas import (
-    ArrowDtype,
-    Series,
-)
 import pandas._testing as tm
+import pytest
+from pandas import ArrowDtype, Series
 
 pa = pytest.importorskip("pyarrow")
 

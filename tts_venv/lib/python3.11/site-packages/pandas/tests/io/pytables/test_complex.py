@@ -1,15 +1,10 @@
 import numpy as np
-import pytest
-
 import pandas as pd
-from pandas import (
-    DataFrame,
-    Series,
-)
 import pandas._testing as tm
-from pandas.tests.io.pytables.common import ensure_clean_store
-
+import pytest
+from pandas import DataFrame, Series
 from pandas.io.pytables import read_hdf
+from pandas.tests.io.pytables.common import ensure_clean_store
 
 
 def test_complex_fixed(tmp_path, setup_path):

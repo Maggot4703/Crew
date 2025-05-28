@@ -1,14 +1,9 @@
 from datetime import datetime
 
 import numpy as np
-import pytest
-
-from pandas import (
-    DataFrame,
-    Index,
-    Series,
-)
 import pandas._testing as tm
+import pytest
+from pandas import DataFrame, Index, Series
 from pandas.tests.groupby import get_groupby_method_args
 
 pytestmark = pytest.mark.filterwarnings(

@@ -1,39 +1,24 @@
 from __future__ import annotations
 
-from datetime import (
-    datetime,
-    time,
-)
-from functools import partial
-from io import BytesIO
 import os
-from pathlib import Path
 import platform
 import re
+from datetime import datetime, time
+from functools import partial
+from io import BytesIO
+from pathlib import Path
 from urllib.error import URLError
 from zipfile import BadZipFile
 
 import numpy as np
-import pytest
-
-from pandas._config import using_pyarrow_string_dtype
-
-from pandas.compat import is_platform_windows
-import pandas.util._test_decorators as td
-
 import pandas as pd
-from pandas import (
-    DataFrame,
-    Index,
-    MultiIndex,
-    Series,
-    read_csv,
-)
 import pandas._testing as tm
-from pandas.core.arrays import (
-    ArrowStringArray,
-    StringArray,
-)
+import pandas.util._test_decorators as td
+import pytest
+from pandas import DataFrame, Index, MultiIndex, Series, read_csv
+from pandas._config import using_pyarrow_string_dtype
+from pandas.compat import is_platform_windows
+from pandas.core.arrays import ArrowStringArray, StringArray
 
 if is_platform_windows():
     pytestmark = pytest.mark.single_cpu
@@ -621,7 +606,6 @@ class TestReaders:
             )
         if dtype_backend == "pyarrow":
             import pyarrow as pa
-
             from pandas.arrays import ArrowExtensionArray
 
             expected = DataFrame(

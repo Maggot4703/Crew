@@ -1,23 +1,13 @@
-from datetime import (
-    time,
-    timedelta,
-)
+from datetime import time, timedelta
 
 import numpy as np
-import pytest
-
-from pandas.compat import IS64
-from pandas.errors import OutOfBoundsTimedelta
-
 import pandas as pd
-from pandas import (
-    Series,
-    TimedeltaIndex,
-    isna,
-    to_timedelta,
-)
 import pandas._testing as tm
+import pytest
+from pandas import Series, TimedeltaIndex, isna, to_timedelta
+from pandas.compat import IS64
 from pandas.core.arrays import TimedeltaArray
+from pandas.errors import OutOfBoundsTimedelta
 
 
 class TestTimedeltas:

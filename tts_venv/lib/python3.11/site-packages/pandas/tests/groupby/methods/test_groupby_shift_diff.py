@@ -1,15 +1,7 @@
 import numpy as np
-import pytest
-
-from pandas import (
-    DataFrame,
-    NaT,
-    Series,
-    Timedelta,
-    Timestamp,
-    date_range,
-)
 import pandas._testing as tm
+import pytest
+from pandas import DataFrame, NaT, Series, Timedelta, Timestamp, date_range
 
 
 def test_group_shift_with_null_key():

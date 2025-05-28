@@ -1,6 +1,7 @@
-import pytest
 import warnings
+
 import numpy as np
+import pytest
 
 
 @pytest.mark.filterwarnings("error")
@@ -33,13 +34,12 @@ def test_getattr_warning():
 
 def test_array_called():
     class Wrapper:
-        val = '0' * 100
+        val = "0" * 100
 
         def __array__(self, dtype=None, copy=None):
             return np.array([self.val], dtype=dtype, copy=copy)
 
-
     wrapped = Wrapper()
     arr = np.array(wrapped, dtype=str)
-    assert arr.dtype == 'U100'
+    assert arr.dtype == "U100"
     assert arr[0] == Wrapper.val

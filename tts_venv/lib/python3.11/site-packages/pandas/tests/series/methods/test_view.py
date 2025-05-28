@@ -1,13 +1,7 @@
 import numpy as np
-import pytest
-
-from pandas import (
-    Index,
-    Series,
-    array,
-    date_range,
-)
 import pandas._testing as tm
+import pytest
+from pandas import Index, Series, array, date_range
 
 pytestmark = pytest.mark.filterwarnings(
     "ignore:Series.view is deprecated and will be removed in a future version.:FutureWarning"  # noqa: E501

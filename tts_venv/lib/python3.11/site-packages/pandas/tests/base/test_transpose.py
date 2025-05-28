@@ -1,11 +1,7 @@
 import numpy as np
-import pytest
-
-from pandas import (
-    CategoricalDtype,
-    DataFrame,
-)
 import pandas._testing as tm
+import pytest
+from pandas import CategoricalDtype, DataFrame
 
 
 def test_transpose(index_or_series_obj):

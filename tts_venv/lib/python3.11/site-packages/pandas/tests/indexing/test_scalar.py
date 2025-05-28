@@ -1,21 +1,11 @@
 """ test scalar indexing, including at and iat """
-from datetime import (
-    datetime,
-    timedelta,
-)
 import itertools
+from datetime import datetime, timedelta
 
 import numpy as np
-import pytest
-
-from pandas import (
-    DataFrame,
-    Series,
-    Timedelta,
-    Timestamp,
-    date_range,
-)
 import pandas._testing as tm
+import pytest
+from pandas import DataFrame, Series, Timedelta, Timestamp, date_range
 
 
 def generate_indices(f, values=False):

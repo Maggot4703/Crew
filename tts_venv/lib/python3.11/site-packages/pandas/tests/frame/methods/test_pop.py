@@ -1,11 +1,6 @@
 import numpy as np
-
-from pandas import (
-    DataFrame,
-    MultiIndex,
-    Series,
-)
 import pandas._testing as tm
+from pandas import DataFrame, MultiIndex, Series
 
 
 class TestDataFramePop:

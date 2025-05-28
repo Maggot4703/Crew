@@ -1,7 +1,8 @@
 import pytest
-from . import util
 from numpy.f2py import crackfortran
 from numpy.testing import IS_WASM
+
+from . import util
 
 
 @pytest.mark.skipif(IS_WASM, reason="Cannot start subprocess")
@@ -16,8 +17,7 @@ class TestAbstractInterface(util.F2PyTest):
 
     def test_parse_abstract_interface(self):
         # Test gh18403
-        fpath = util.getpath("tests", "src", "abstract_interface",
-                             "gh18403_mod.f90")
+        fpath = util.getpath("tests", "src", "abstract_interface", "gh18403_mod.f90")
         mod = crackfortran.crackfortran([str(fpath)])
         assert len(mod) == 1
         assert len(mod[0]["body"]) == 1

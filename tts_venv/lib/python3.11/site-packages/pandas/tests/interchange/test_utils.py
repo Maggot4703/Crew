@@ -1,7 +1,6 @@
 import numpy as np
-import pytest
-
 import pandas as pd
+import pytest
 from pandas.core.interchange.utils import dtype_to_arrow_c_fmt
 
 # TODO: use ArrowSchema to get reference C-string.

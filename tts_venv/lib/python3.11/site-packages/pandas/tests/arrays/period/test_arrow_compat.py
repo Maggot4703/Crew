@@ -1,15 +1,9 @@
-import pytest
-
-from pandas.compat.pyarrow import pa_version_under10p1
-
-from pandas.core.dtypes.dtypes import PeriodDtype
-
 import pandas as pd
 import pandas._testing as tm
-from pandas.core.arrays import (
-    PeriodArray,
-    period_array,
-)
+import pytest
+from pandas.compat.pyarrow import pa_version_under10p1
+from pandas.core.arrays import PeriodArray, period_array
+from pandas.core.dtypes.dtypes import PeriodDtype
 
 pytestmark = pytest.mark.filterwarnings(
     "ignore:Passing a BlockManager to DataFrame:DeprecationWarning"

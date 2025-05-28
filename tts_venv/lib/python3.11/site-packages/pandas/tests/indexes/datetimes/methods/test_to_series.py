@@ -1,10 +1,6 @@
 import numpy as np
-
-from pandas import (
-    DatetimeIndex,
-    Series,
-)
 import pandas._testing as tm
+from pandas import DatetimeIndex, Series
 
 
 class TestToSeries:

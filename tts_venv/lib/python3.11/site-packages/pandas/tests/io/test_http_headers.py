@@ -1,16 +1,14 @@
 """
 Tests for the pandas custom headers in http(s) requests
 """
-from functools import partial
 import gzip
+from functools import partial
 from io import BytesIO
-
-import pytest
-
-import pandas.util._test_decorators as td
 
 import pandas as pd
 import pandas._testing as tm
+import pandas.util._test_decorators as td
+import pytest
 
 pytestmark = [
     pytest.mark.single_cpu,

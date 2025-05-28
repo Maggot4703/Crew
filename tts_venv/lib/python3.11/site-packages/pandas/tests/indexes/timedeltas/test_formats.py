@@ -1,10 +1,6 @@
-import pytest
-
 import pandas as pd
-from pandas import (
-    Series,
-    TimedeltaIndex,
-)
+import pytest
+from pandas import Series, TimedeltaIndex
 
 
 class TestTimedeltaIndexRendering:

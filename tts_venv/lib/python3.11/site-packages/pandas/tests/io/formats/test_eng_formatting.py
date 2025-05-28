@@ -1,12 +1,6 @@
 import numpy as np
 import pytest
-
-from pandas import (
-    DataFrame,
-    reset_option,
-    set_eng_float_format,
-)
-
+from pandas import DataFrame, reset_option, set_eng_float_format
 from pandas.io.formats.format import EngFormatter
 
 

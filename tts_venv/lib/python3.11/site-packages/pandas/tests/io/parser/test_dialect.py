@@ -6,12 +6,10 @@ for all of the parsers defined in parsers.py
 import csv
 from io import StringIO
 
-import pytest
-
-from pandas.errors import ParserWarning
-
-from pandas import DataFrame
 import pandas._testing as tm
+import pytest
+from pandas import DataFrame
+from pandas.errors import ParserWarning
 
 pytestmark = pytest.mark.filterwarnings(
     "ignore:Passing a BlockManager to DataFrame:DeprecationWarning"

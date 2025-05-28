@@ -1,11 +1,10 @@
 import string
 
 import numpy as np
-import pytest
-
 import pandas as pd
-from pandas import SparseDtype
 import pandas._testing as tm
+import pytest
+from pandas import SparseDtype
 from pandas.core.arrays.sparse import SparseArray
 
 
