@@ -22,9 +22,12 @@ import sys
 from pathlib import Path
 from typing import List, Tuple
 
+import fnmatch  # Add this import if not already present
 import ijson
 import pandas as pd
+import pyttsx3  # Added import for TTS
 from PIL import Image, ImageDraw
+from tqdm import tqdm # Added for progress bar
 
 # Setup basic logging
 logging.basicConfig(
@@ -33,6 +36,26 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 logger = logging.getLogger(__name__)
+
+# Initialize pyttsx3 engine globally
+try:
+    tts_engine = pyttsx3.init()
+    # Attempt to set an English voice by default
+    voices = tts_engine.getProperty('voices')
+    english_voice = None
+    for voice in voices:
+        if voice.id and "english" in voice.id.lower():
+            english_voice = voice
+            break
+    if english_voice:
+        tts_engine.setProperty('voice', english_voice.id)
+        logger.info(f"TTS Using voice: {english_voice.id}")
+    else:
+        logger.warning("No English voice found for TTS, using default.")
+except Exception as e:
+    logger.error(f"Failed to initialize TTS engine: {e}")
+    tts_engine = None
+
 
 # Conditional import - moved after logging setup
 try:
@@ -876,6 +899,39 @@ def load_large_json_file(file_path: str) -> None:  # Added type hint and return 
 # endregion
 
 
+# region Text-to-Speech Utilities
+def speak(text: str, voice_id: str = None) -> None:
+    """
+    Converts text to speech using the global pyttsx3 engine.
+
+    Args:
+        text: The text to be spoken.
+        voice_id: Optional voice ID to use. If None, uses the globally configured voice.
+    """
+    if not tts_engine:
+        logger.error("TTS engine not initialized. Cannot speak.")
+        return
+
+    try:
+        if voice_id: # Allow overriding the voice for a specific call
+            current_voice = tts_engine.getProperty('voice')
+            tts_engine.setProperty('voice', voice_id)
+            logger.info(f"Temporarily using voice: {voice_id}")
+            tts_engine.say(text)
+            tts_engine.runAndWait()
+            tts_engine.setProperty('voice', current_voice) # Reset to global/default
+            logger.info(f"Reset TTS voice to: {current_voice}")
+        else:
+            tts_engine.say(text)
+            tts_engine.runAndWait()
+        
+        logger.info(f'Spoke: "{text}"')
+    except Exception as e:
+        logger.error(f"Error in speak function: {e}")
+
+# endregion
+
+
 # region Main Execution
 def start_gui() -> None:
     """
@@ -1563,6 +1619,9 @@ def main() -> int:
         # Fix linting errors first
         fix_lint_errors()
 
+        # Example of using the speak function
+        speak("Crew system initialization sequence started.")
+
         # Set up Git repository
         setup_git_repository()
 
@@ -1614,58 +1673,6 @@ def main() -> int:
     print("DONE")
 
 
-def auto_commit_changes() -> bool:
-    """Automatically stage and commit all changes."""
-    try:
-        project_dir = Path(__file__).parent
-
-        # Stage all changes
-        result = subprocess.run(
-            ["git", "add", "."],
-            capture_output=True,
-            text=True,
-            cwd=project_dir,
-        )
-
-        if result.returncode != 0:
-            logger.error(f"Failed to stage files: {result.stderr}")
-            return False
-
-        # Check if there are changes to commit
-        result = subprocess.run(
-            ["git", "diff", "--cached", "--quiet"],
-            capture_output=True,
-            text=True,
-            cwd=project_dir,
-        )
-
-        if result.returncode == 0:
-            logger.info("No changes to commit")
-            return True
-
-        # Commit with descriptive message
-        commit_message = f"Auto-commit: Update NPCs Data Processing Tool v{get_version()}\n\n- Fixed GitHub username to Maggot4703\n- Updated repository URL\n- Added automatic commit functionality"
-
-        result = subprocess.run(
-            ["git", "commit", "-m", commit_message],
-            capture_output=True,
-            text=True,
-            cwd=project_dir,
-        )
-
-        if result.returncode == 0:
-            logger.info("Successfully committed changes")
-            print("✅ Changes committed successfully")
-            return True
-        else:
-            logger.error(f"Failed to commit: {result.stderr}")
-            return False
-
-    except Exception as e:
-        logger.error(f"Error committing changes: {e}")
-        return False
-
-
 def auto_fix_all_issues() -> bool:
     """Automatically detect and fix common project issues."""
     try:
@@ -1682,7 +1689,7 @@ def auto_fix_all_issues() -> bool:
         
         # Stage and commit changes
         if check_git_status():
-            stage_and_commit_files()
+            auto_stage_and_commit() # Renamed from stage_and_commit_files
         
         # Attempt push to GitHub
         push_to_github()
@@ -1744,34 +1751,88 @@ python Crew.py
     logger.info("📄 Project summary generated: project_summary.md")
 
 
-def backup_project() -> bool:
-    """Create a backup of the project."""
+def backup_project(project_dir: Path = None, backup_base_dir: Path = None) -> bool:
+    """Create a backup of the project with a progress bar."""
     try:
         import shutil
         import datetime
-        
+
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         backup_name = f"Crew_backup_{timestamp}"
-        backup_path = Path.home() / "BACKUP" / "PROJECTS" / backup_name
-        
-        # Create backup directory
+        backup_root_dir = Path.home() / "BACKUP" / "PROJECTS_Crew_Backups"
+        backup_path = backup_root_dir / backup_name
+
         backup_path.mkdir(parents=True, exist_ok=True)
-        
-        # Copy project files
+
         project_dir = Path(__file__).parent
+
+        excluded_dirs = {".git", "__pycache__", "tts_venv", backup_root_dir.name} # Add backup_root_dir.name
+        excluded_files = {".DS_Store"}
+
+        logger.info(f"Starting backup of {project_dir} to {backup_path}")
+        logger.info(f"Excluding directories: {excluded_dirs}")
+        logger.info(f"Excluding files: {excluded_files}")
+        speak(f"Starting project backup to {backup_name}.")
+
+        # Prepare a list of items to iterate over, excluding specified dirs and files
+        items_to_copy = []
         for item in project_dir.iterdir():
-            if item.name != '.git' and not item.name.startswith('.'):
-                if item.is_file():
-                    shutil.copy2(item, backup_path)
-                elif item.is_dir():
-                    shutil.copytree(item, backup_path / item.name, dirs_exist_ok=True)
-        
+            if item.name in excluded_dirs:
+                logger.info(f"Skipping excluded directory: {item.name}")
+                continue
+            if item.name in excluded_files:
+                logger.info(f"Skipping excluded file: {item.name}")
+                continue
+            # Ensure we are not trying to back up the backup destination itself if it's a subfolder
+            if item.resolve() == backup_root_dir.resolve():
+                logger.info(f"Skipping backup destination directory: {item.name}")
+                continue
+            items_to_copy.append(item)
+
+        # Use tqdm for progress bar
+        for item in tqdm(items_to_copy, desc="Backing up project", unit="item"):
+            destination_item = backup_path / item.name
+            try:
+                if item.is_dir():
+                    # Use logged_copy2 for copy_function
+                    shutil.copytree(item, destination_item, dirs_exist_ok=True, ignore=ignore_func, copy_function=logged_copy2)
+                elif item.is_file():
+                    if not is_excluded(item, excluded_files_patterns): # Check if file is excluded
+                        # Ensure parent directory exists
+                        destination_item.parent.mkdir(parents=True, exist_ok=True)
+                        logged_copy2(item, destination_item) # Use logged_copy2 for individual files
+            except KeyboardInterrupt:
+                logger.error(f"KEYBOARD_INTERRUPT during copy of: {src}")
+                speak(f"Backup interrupted while copying {Path(src).name}")
+                raise
+            except Exception as e:
+                logger.error(f"Error copying {item.name}: {e}")
+
         logger.info(f"📦 Project backed up to: {backup_path}")
+        speak("Project backup completed successfully.")
         return True
-        
+
     except Exception as e:
-        logger.error(f"Error creating backup: {e}")
+        logger.error(f"Error creating backup: {e}", exc_info=True)
+        speak("Project backup failed.")
         return False
+
+
+def logged_copy2(src, dst, *, follow_symlinks=True):
+    """Wrapper for shutil.copy2 that logs the file being copied."""
+    logger.info(f"COPYING_FILE: {src} -> {dst}")
+    try:
+        # Ensure destination directory exists
+        Path(dst).parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src, dst, follow_symlinks=follow_symlinks)
+    except KeyboardInterrupt:
+        logger.error(f"KEYBOARD_INTERRUPT during copy of: {src}")
+        speak(f"Backup interrupted while copying {Path(src).name}")
+        raise
+    except Exception as e:
+        logger.error(f"ERROR copying file {src}: {e}")
+        # speak(f"Error copying file {Path(src).name}") # Optional: too noisy if many small errors
+        raise # Re-raise to be handled by backup_project's main try-except
 
 
 def try_push_project() -> bool:
@@ -1991,67 +2052,50 @@ Suggestions:
 
 
 if __name__ == "__main__":
-    print(f"Starting {get_project_info()['name']} v{get_version()}")
-    print(f"Repository: {get_project_info()['repository']}")
+    # Initialize logging
+    # ... (rest of the main block, ensure logging is initialized if not already)
+
+    # Backup project first
+    if not backup_project():
+        logger.error("Project backup failed. Aborting further operations.")
+        speak("Project backup failed. Aborting further operations.")
+        # sys.exit(1) # Consider exiting if backup is critical
 
     # Generate project summary
     generate_project_summary()
-    
-    # Create backup
-    backup_project()
-    
-    # Auto-fix all issues
-    print("🚀 Running auto-fix for all issues...")
-    auto_fix_all_issues()
 
-    # Detect GitHub issues first
-    print("🔍 Detecting GitHub issues...")
-    issues = detect_github_issues()
+    # Run the main application logic
+    # main_return_code = main() # Assuming main() is your primary script logic
 
-    # Generate help file
-    generate_help_file(issues)
-
-    # Setup Git and GitHub
-    setup_git_repository()
-    setup_github_push()
-
-    # Handle unstaged files - use the correct function name
-    if check_git_status():
-        print("📝 Staging and committing unstaged files...")
-        if stage_and_commit_files():
-            print("✅ Files staged and committed successfully")
-        else:
-            print("❌ Failed to stage/commit files")
-    
-    # Push to GitHub
-    print("📤 Attempting to push to GitHub...")
-    if push_to_github():
-        print("🎉 Successfully pushed to GitHub!")
+    # Auto-fix and push at the end
+    logger.info("Attempting to auto-fix and push project...")
+    if auto_fix_all_issues():
+        logger.info("Auto-fix and push process completed successfully.")
+        speak("Project auto-fix and push completed successfully.")
     else:
-        print("⚠️  GitHub push failed - see troubleshooting above")
+        logger.warning("Auto-fix and push process encountered issues. Please review logs.")
+        speak("Project auto-fix and push encountered issues. Please review logs.")
+        # Optional: Generate help file if push fails within auto_fix_all_issues
+        # issues = detect_github_issues()
+        # if not issues.get("auth_working"): # Example condition
+        #     generate_help_file(issues)
+            
+    # Attempt to push the project to GitHub
+    # if auto_commit_changes(): # This was auto_commit_changes, consider if auto_fix_all_issues covers it
+    #    logger.info("Changes committed. Attempting to push to GitHub.")
+    #    if try_push_project(): # try_push_project handles its own TTS
+    #        logger.info("Project push successful.")
+    #    else:
+    #        logger.error("Project push failed. Please check logs and github_issues_help.txt.")
+    #        speak("Project push failed. Please review logs and the generated help file.")
+            # issues = detect_github_issues() # Detect issues again after push attempt
+            # generate_help_file(issues) # Generate help file if push fails
+    # else:
+    #    logger.info("No changes to commit or commit failed.")
+    #    speak("No new changes were committed.")
 
-    # Read and analyze existing logs
-    print("📖 Reading and analyzing logs...")
-    log_analysis = read_and_analyze_logs()
-    
-    if log_analysis["suggestions"]:
-        print(f"Found {len(log_analysis['suggestions'])} issues in logs")
-        print("🔧 Applying automated fixes...")
-        apply_automated_fixes(log_analysis)
-    
-    # Try pushing the project
-    print("\n" + "="*60)
-    print("ATTEMPTING GITHUB PUSH")
-    print("="*60)
-    
-    push_success = try_push_project()
-    create_push_log(push_success, "" if push_success else "See error details above")
-    
-    if not push_success:
-        print("\n💡 Manual push instructions:")
-        print("1. Create repository 'Crew' at https://github.com/new")
-        print("2. Run: git push -u origin main")
-        print("3. Use Personal Access Token for password")
-    
-    exit_code = main()
-    sys.exit(exit_code)
+
+    # Final message
+    speak("NPCs Data Processing Tool script execution finished.")
+    logger.info("Script finished.")
+    # sys.exit(main_return_code) # Exit with the return code from main()

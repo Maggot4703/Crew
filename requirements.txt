@@ -24,3 +24,4 @@ pytest>=7.0.0
 black>=22.0.0
 flake8>=5.0.0
 pre-commit>=2.20.0
+tqdm>=4.60.0 # For progress bars
