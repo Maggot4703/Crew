@@ -27,7 +27,7 @@ import ijson
 import pandas as pd
 import pyttsx3  # Added import for TTS
 from PIL import Image, ImageDraw
-from tqdm import tqdm # Added for progress bar
+from tqdm import tqdm  # Added for progress bar
 
 # Setup basic logging
 logging.basicConfig(
@@ -41,14 +41,14 @@ logger = logging.getLogger(__name__)
 try:
     tts_engine = pyttsx3.init()
     # Attempt to set an English voice by default
-    voices = tts_engine.getProperty('voices')
+    voices = tts_engine.getProperty("voices")
     english_voice = None
     for voice in voices:
         if voice.id and "english" in voice.id.lower():
             english_voice = voice
             break
     if english_voice:
-        tts_engine.setProperty('voice', english_voice.id)
+        tts_engine.setProperty("voice", english_voice.id)
         logger.info(f"TTS Using voice: {english_voice.id}")
     else:
         logger.warning("No English voice found for TTS, using default.")
@@ -913,21 +913,22 @@ def speak(text: str, voice_id: str = None) -> None:
         return
 
     try:
-        if voice_id: # Allow overriding the voice for a specific call
-            current_voice = tts_engine.getProperty('voice')
-            tts_engine.setProperty('voice', voice_id)
+        if voice_id:  # Allow overriding the voice for a specific call
+            current_voice = tts_engine.getProperty("voice")
+            tts_engine.setProperty("voice", voice_id)
             logger.info(f"Temporarily using voice: {voice_id}")
             tts_engine.say(text)
             tts_engine.runAndWait()
-            tts_engine.setProperty('voice', current_voice) # Reset to global/default
+            tts_engine.setProperty("voice", current_voice)  # Reset to global/default
             logger.info(f"Reset TTS voice to: {current_voice}")
         else:
             tts_engine.say(text)
             tts_engine.runAndWait()
-        
+
         logger.info(f'Spoke: "{text}"')
     except Exception as e:
         logger.error(f"Error in speak function: {e}")
+
 
 # endregion
 
@@ -1677,26 +1678,26 @@ def auto_fix_all_issues() -> bool:
     """Automatically detect and fix common project issues."""
     try:
         logger.info("🔧 Auto-fixing all detected issues...")
-        
+
         # Fix import issues
         fix_lint_errors()
-        
+
         # Fix Git setup
         setup_git_repository()
-        
+
         # Fix GitHub configuration
         setup_github_push()
-        
+
         # Stage and commit changes
         if check_git_status():
-            auto_stage_and_commit() # Renamed from stage_and_commit_files
-        
+            auto_stage_and_commit()  # Renamed from stage_and_commit_files
+
         # Attempt push to GitHub
         push_to_github()
-        
+
         logger.info("✅ Auto-fix completed")
         return True
-        
+
     except Exception as e:
         logger.error(f"Error in auto-fix: {e}")
         return False
@@ -1744,10 +1745,10 @@ python Crew.py
 - data/: CSV/Excel data files
 - tests/: Unit tests
 """
-    
+
     with open("project_summary.md", "w") as f:
         f.write(summary_content)
-    
+
     logger.info("📄 Project summary generated: project_summary.md")
 
 
@@ -1766,7 +1767,12 @@ def backup_project(project_dir: Path = None, backup_base_dir: Path = None) -> bo
 
         project_dir = Path(__file__).parent
 
-        excluded_dirs = {".git", "__pycache__", "tts_venv", backup_root_dir.name} # Add backup_root_dir.name
+        excluded_dirs = {
+            ".git",
+            "__pycache__",
+            "tts_venv",
+            backup_root_dir.name,
+        }  # Add backup_root_dir.name
         excluded_files = {".DS_Store"}
 
         logger.info(f"Starting backup of {project_dir} to {backup_path}")
@@ -1795,12 +1801,22 @@ def backup_project(project_dir: Path = None, backup_base_dir: Path = None) -> bo
             try:
                 if item.is_dir():
                     # Use logged_copy2 for copy_function
-                    shutil.copytree(item, destination_item, dirs_exist_ok=True, ignore=ignore_func, copy_function=logged_copy2)
+                    shutil.copytree(
+                        item,
+                        destination_item,
+                        dirs_exist_ok=True,
+                        ignore=ignore_func,
+                        copy_function=logged_copy2,
+                    )
                 elif item.is_file():
-                    if not is_excluded(item, excluded_files_patterns): # Check if file is excluded
+                    if not is_excluded(
+                        item, excluded_files_patterns
+                    ):  # Check if file is excluded
                         # Ensure parent directory exists
                         destination_item.parent.mkdir(parents=True, exist_ok=True)
-                        logged_copy2(item, destination_item) # Use logged_copy2 for individual files
+                        logged_copy2(
+                            item, destination_item
+                        )  # Use logged_copy2 for individual files
             except KeyboardInterrupt:
                 logger.error(f"KEYBOARD_INTERRUPT during copy of: {src}")
                 speak(f"Backup interrupted while copying {Path(src).name}")
@@ -1832,71 +1848,70 @@ def logged_copy2(src, dst, *, follow_symlinks=True):
     except Exception as e:
         logger.error(f"ERROR copying file {src}: {e}")
         # speak(f"Error copying file {Path(src).name}") # Optional: too noisy if many small errors
-        raise # Re-raise to be handled by backup_project's main try-except
+        raise  # Re-raise to be handled by backup_project's main try-except
 
 
 def try_push_project() -> bool:
     """Comprehensive project push attempt with detailed logging."""
     try:
         project_dir = Path(__file__).parent
-        
+
         print("🚀 Attempting to push project to GitHub...")
         print("=" * 50)
-        
+
         # Step 1: Check and fix repository setup
         print("1. Checking repository setup...")
         issues = detect_github_issues()
-        
+
         if not issues.get("repo_initialized", False):
             print("   Initializing Git repository...")
             subprocess.run(["git", "init"], cwd=project_dir)
-        
+
         # Step 2: Fix remote URL
         print("2. Setting correct remote URL...")
         correct_url = "https://github.com/Maggot4703/Crew.git"
         subprocess.run(
             ["git", "remote", "set-url", "origin", correct_url],
             cwd=project_dir,
-            stderr=subprocess.DEVNULL
+            stderr=subprocess.DEVNULL,
         )
         subprocess.run(
             ["git", "remote", "add", "origin", correct_url],
             cwd=project_dir,
-            stderr=subprocess.DEVNULL
+            stderr=subprocess.DEVNULL,
         )
-        
+
         # Step 3: Stage and commit changes
         print("3. Staging and committing changes...")
         result = subprocess.run(
-            ["git", "add", "."],
-            capture_output=True,
-            text=True,
-            cwd=project_dir
+            ["git", "add", "."], capture_output=True, text=True, cwd=project_dir
         )
-        
+
         result = subprocess.run(
-            ["git", "commit", "-m", "Push NPCs Data Processing Tool to GitHub\n\n- Complete project with image processing, data analysis, and Git integration\n- Fixed repository URL for Maggot4703 account\n- Added comprehensive push functionality"],
+            [
+                "git",
+                "commit",
+                "-m",
+                "Push NPCs Data Processing Tool to GitHub\n\n- Complete project with image processing, data analysis, and Git integration\n- Fixed repository URL for Maggot4703 account\n- Added comprehensive push functionality",
+            ],
             capture_output=True,
             text=True,
-            cwd=project_dir
+            cwd=project_dir,
         )
-        
+
         # Step 4: Set main branch
         print("4. Setting main branch...")
-        subprocess.run(
-            ["git", "branch", "-M", "main"],
-            cwd=project_dir
-        )
-        
+        subprocess.run(["git", "branch", "-M", "main"], cwd=project_dir)
+
         # Step 5: Attempt push
         print("5. Pushing to GitHub...")
         result = subprocess.run(
             ["git", "push", "-u", "origin", "main"],
             capture_output=True,
             text=True,
-            cwd=project_dir
+            cwd=project_dir,
         )
-        
+
         if result.returncode == 0:
             print("✅ SUCCESS: Project pushed to GitHub!")
             print(f"🌐 View at: https://github.com/Maggot4703/Crew")
@@ -1907,16 +1922,16 @@ def try_push_project() -> bool:
                 ["git", "push", "-u", "origin", "main", "--force"],
                 capture_output=True,
                 text=True,
-                cwd=project_dir
+                cwd=project_dir,
             )
-            
+
             if result.returncode == 0:
                 print("✅ SUCCESS: Force push completed!")
                 return True
             else:
                 print(f"❌ FAILED: {result.stderr}")
                 return False
-                
+
     except Exception as e:
         logger.error(f"Error pushing project: {e}")
         return False
@@ -1942,10 +1957,10 @@ Repository: https://github.com/Maggot4703/Crew
 {'- Clone with: git clone https://github.com/Maggot4703/Crew.git' if success else '- Verify authentication credentials'}
 {'- Share the repository link' if success else '- Try manual push commands'}
 """
-    
+
     with open("push_log.txt", "w") as f:
         f.write(log_content)
-    
+
     print(f"📄 Push log saved to: push_log.txt")
 
 
@@ -1955,44 +1970,51 @@ def read_and_analyze_logs() -> dict:
         "git_errors": [],
         "auth_errors": [],
         "repo_errors": [],
-        "suggestions": []
+        "suggestions": [],
     }
-    
+
     try:
         # Read push log if exists
         push_log_path = Path("push_log.txt")
         if push_log_path.exists():
             with open(push_log_path, "r") as f:
                 content = f.read()
-                
+
                 if "repository not found" in content.lower():
-                    log_analysis["repo_errors"].append("Repository doesn't exist on GitHub")
-                    log_analysis["suggestions"].append("Create repository 'Crew' on GitHub under Maggot4703 account")
-                
+                    log_analysis["repo_errors"].append(
+                        "Repository doesn't exist on GitHub"
+                    )
+                    log_analysis["suggestions"].append(
+                        "Create repository 'Crew' on GitHub under Maggot4703 account"
+                    )
+
                 if "authentication failed" in content.lower():
                     log_analysis["auth_errors"].append("GitHub authentication failed")
-                    log_analysis["suggestions"].append("Use Personal Access Token instead of password")
-                
+                    log_analysis["suggestions"].append(
+                        "Use Personal Access Token instead of password"
+                    )
+
                 if "permission denied" in content.lower():
                     log_analysis["auth_errors"].append("Permission denied")
-                    log_analysis["suggestions"].append("Check repository ownership and access rights")
-        
+                    log_analysis["suggestions"].append(
+                        "Check repository ownership and access rights"
+                    )
+
         # Read Git output from previous attempts
         project_dir = Path(__file__).parent
         result = subprocess.run(
-            ["git", "remote", "-v"],
-            capture_output=True,
-            text=True,
-            cwd=project_dir
+            ["git", "remote", "-v"], capture_output=True, text=True, cwd=project_dir
         )
-        
+
         if "markferguson" in result.stdout:
             log_analysis["repo_errors"].append("Wrong GitHub username in remote URL")
             log_analysis["suggestions"].append("Fix remote URL to use Maggot4703")
-        
-        logger.info(f"Log analysis complete: {len(log_analysis['suggestions'])} issues found")
+
+        logger.info(
+            f"Log analysis complete: {len(log_analysis['suggestions'])} issues found"
+        )
         return log_analysis
-        
+
     except Exception as e:
         logger.error(f"Error reading logs: {e}")
         return log_analysis
@@ -2003,26 +2025,30 @@ def apply_automated_fixes(log_analysis: dict) -> bool:
     try:
         project_dir = Path(__file__).parent
         fixes_applied = []
-        
+
         # Fix remote URL if wrong username detected
-        if any("Wrong GitHub username" in error for error in log_analysis["repo_errors"]):
+        if any(
+            "Wrong GitHub username" in error for error in log_analysis["repo_errors"]
+        ):
             subprocess.run(
-                ["git", "remote", "set-url", "origin", "https://github.com/Maggot4703/Crew.git"],
-                cwd=project_dir
+                [
+                    "git",
+                    "remote",
+                    "set-url",
+                    "origin",
+                    "https://github.com/Maggot4703/Crew.git",
+                ],
+                cwd=project_dir,
             )
             fixes_applied.append("Fixed remote URL to Maggot4703")
-        
+
         # Ensure Git user is set correctly
+        subprocess.run(["git", "config", "user.name", "Maggot4703"], cwd=project_dir)
         subprocess.run(
-            ["git", "config", "user.name", "Maggot4703"],
-            cwd=project_dir
-        )
-        subprocess.run(
-            ["git", "config", "user.email", "maggot4703@example.com"],
-            cwd=project_dir
+            ["git", "config", "user.email", "maggot4703@example.com"], cwd=project_dir
         )
         fixes_applied.append("Set Git user configuration")
-        
+
         # Create fix summary
         if fixes_applied:
             fix_summary = f"""# Automated Fixes Applied
@@ -2037,15 +2063,15 @@ Issues Found in Logs:
 Suggestions:
 {chr(10).join(f'- {suggestion}' for suggestion in log_analysis["suggestions"])}
 """
-            
+
             with open("automated_fixes.txt", "w") as f:
                 f.write(fix_summary)
-            
+
             logger.info(f"Applied {len(fixes_applied)} automated fixes")
             return True
-        
+
         return False
-        
+
     except Exception as e:
         logger.error(f"Error applying fixes: {e}")
         return False
