@@ -6,21 +6,58 @@
 
 **Model Context Protocol (MCP)** is an open protocol for exchanging context, data, and instructions between AI models, tools, and applications. It is designed to standardize how context is shared, enabling better interoperability, reproducibility, and extensibility for AI-powered systems.
 
-Official site: https://modelcontext.org/
+MCP provides a structured format for sending and receiving context data, making it easier to integrate different systems and ensure consistent data exchange.
+
+## MCP ARCHITECTURE
+------------------------
+
+MCP operates on a client-server architecture:
+
+1. **MCP Server**: Acts as a context receiver that listens for connections and processes incoming context data
+2. **MCP Client**: Connects to the server to send context information and receive responses
+
+## MCP DATA FORMAT
+------------------------
+
+MCP uses a JSON-based format with the following structure:
+
+```json
+{
+    "version": "1.0.0",
+    "context_type": "application_data_snapshot",
+    "payload": [
+        {
+            "data_source_identifier": "source_name",
+            "item_count": n,
+            "items": [
+                { /* data item 1 */ },
+                { /* data item 2 */ },
+                // ...
+            ]
+        }
+    ],
+    "metadata": {
+        "timestamp": "ISO-format timestamp",
+        "description": "Description of the data"
+    }
+}
+```
+
+Key components:
+- **version**: The MCP format version being used
+- **context_type**: Indicates the type of context being shared
+- **payload**: Contains the actual data being shared, organized by data source
+- **metadata**: Additional information about the context
 
 ## INSTALLATION & SETUP
 ------------------------
 
-### Install MCP Python Package
-```bash
-pip install model-context-protocol
-```
+### Clone the Repository
+To use the MCP implementation in this project, you can simply import the provided modules:
 
-### Install from Source
-```bash
-git clone https://github.com/modelcontext/model-context-protocol.git
-cd model-context-protocol
-pip install .
+```python
+from mcp import MCPClient, MCPServer
+from mcp_service import get_mcp_context_for_npcs, CustomEncoder
 ```
 
 ## BASIC USAGE
@@ -33,18 +70,33 @@ from mcp import MCPClient, MCPServer
 
 ### Start an MCP Server
 ```python
-from mcp import MCPServer
-
+# Initialize a server on localhost port 8000
 server = MCPServer(host='127.0.0.1', port=8000)
+
+# Start the server (runs in a separate thread)
+print("Starting MCP server on 127.0.0.1:8000 ...")
 server.start()
+
+# When done (for graceful shutdown)
+server.stop()
 ```
+
+The server will:
+1. Listen for client connections
+2. Accept connections and handle them in separate threads
+3. Process incoming context data (JSON format)
+4. Send responses back to clients
 
 ### Connect as an MCP Client
 ```python
-from mcp import MCPClient
-
+# Create a client that connects to localhost port 8000
 client = MCPClient('127.0.0.1', 8000)
-client.connect()
+
+# Establish connection
+if client.connect():
+    print("Connected to MCP server.")
+else:
+    print("Failed to connect to MCP server")
 ```
 
 ### Send and Receive Context
@@ -53,74 +105,115 @@ client.connect()
 data = {"user": "alice", "query": "What is MCP?"}
 client.send_context(data)
 
-# Receive context
-context = client.receive_context()
-print(context)
+# Receive context (with optional timeout)
+context = client.receive_context(timeout=5)
+print(f"Server response: {context}")
+
+# Close connection when done
+client.close()
 ```
 
 ## KEY CONCEPTS
 ------------------------
 
 - **Context**: Structured data (text, code, metadata, etc.) shared between models and tools.
-- **Session**: A persistent connection for exchanging context and results.
-- **Schema**: Defines the structure of context objects (JSON Schema, YAML, etc.).
-- **Adapters**: Plugins for integrating with different models, tools, or data sources.
-- **Streaming**: MCP supports streaming context and results for large or real-time data.
+- **Server**: A component that listens for connections and processes incoming context.
+- **Client**: A component that sends context data to servers and receives responses.
+- **Payload**: The actual data being shared through MCP.
+- **Data Source**: The origin of the context data (identified in the MCP format).
 
 ## ADVANCED USAGE
 ------------------------
 
-### Define Custom Context Schemas
+### Working with Pandas DataFrames
+
+Our implementation includes utilities to easily convert Pandas DataFrames to MCP format:
+
 ```python
-custom_schema = {
-    "type": "object",
-    "properties": {
-        "user": {"type": "string"},
-        "query": {"type": "string"},
-        "timestamp": {"type": "string", "format": "date-time"}
-    },
-    "required": ["user", "query"]
-}
-client.set_schema(custom_schema)
+import pandas as pd
+from mcp_service import get_mcp_context_for_npcs
+
+# Create or load your DataFrame
+df = pd.DataFrame({
+    "NPC": ["Alice", "Bob", "Charlie"],
+    "ROLE": ["Engineer", "Pilot", "Medic"],
+    "CLASS": ["Tech-5", "Navy-5", "Doctor-3"]
+})
+
+# Convert DataFrame to MCP format
+mcp_context = get_mcp_context_for_npcs(df)
+
+# mcp_context is now ready to be sent via an MCP client
 ```
 
-### Use Adapters
+### Handling Special Data Types
+
+The `CustomEncoder` class in `mcp_service.py` handles problematic data types:
+
 ```python
-from mcp.adapters import OpenAIAdapter
-adapter = OpenAIAdapter(api_key="sk-...")
-client.register_adapter(adapter)
+import json
+import pandas as pd
+from mcp_service import CustomEncoder
+
+# Data with problematic values
+data = {"value": float('nan'), "timestamp": pd.Timestamp.now()}
+
+# Use the custom encoder
+json_str = json.dumps(data, cls=CustomEncoder, indent=2)
 ```
 
-### Streaming Context
+The encoder handles:
+- **NaN values**: Converted to `null` in JSON
+- **Pandas Timestamps**: Converted to ISO-formatted strings
+- **Other pandas objects**: Properly serialized to standard formats
+
+## COMPLETE EXAMPLE
+------------------------
+
+A complete example demonstrating both server and client is provided in `mcp_example.py`:
+
 ```python
-for chunk in client.stream_context():
-    print(chunk)
+# Start the server
+python mcp_example.py server
+
+# In another terminal, run the client
+python mcp_example.py
 ```
 
-### Integrate with Other Tools
-- Use adapters or write your own to connect MCP to databases, LLMs, APIs, or custom tools.
+The client will connect to the server, send a context object, and receive a response.
 
 ## TROUBLESHOOTING
 ------------------------
 
-- **Connection Issues**: Ensure server and client are using the same host/port and firewall allows traffic.
-- **Schema Errors**: Validate your context data matches the schema.
-- **Adapter Problems**: Check adapter documentation and API keys.
-- **Debugging**: Use logging or MCP's debug mode for more information.
+- **Connection refused**: Ensure the server is running before starting the client
+- **JSON decode error**: Check that the data being sent is valid JSON
+- **Timeout**: Consider increasing the timeout value or check network connectivity
+- **Data serialization errors**: Use the CustomEncoder for handling complex data types
 
 ## BEST PRACTICES
 ------------------------
-1. Always define clear context schemas for reproducibility.
-2. Use sessions for multi-step workflows.
-3. Secure your MCP server if exposed to a network.
-4. Use adapters to modularize integrations.
-5. Log all context exchanges for traceability.
+1. **Error Handling**: Always implement robust error handling for network operations and JSON parsing
+2. **Data Validation**: Validate context data before sending it
+3. **Timeouts**: Use appropriate timeouts when waiting for responses
+4. **Security**: In production environments, implement proper authentication and encryption
+5. **Threading**: Be aware of threading issues when running servers for extended periods
 
-## RESOURCES
+## EXTENDING MCP
 ------------------------
-- [MCP GitHub](https://github.com/modelcontext/model-context-protocol)
-- [MCP Documentation](https://modelcontext.org/docs)
-- [MCP Python Package](https://pypi.org/project/model-context-protocol/)
-- [MCP Community](https://discord.gg/modelcontext)
+The current implementation can be extended in several ways:
 
-This guide should help you use MCP for context exchange and AI tool integration from basic to advanced usage!
+1. Add authentication mechanisms
+2. Implement SSL/TLS encryption for secure communication
+3. Create adapters for different data sources
+4. Add support for binary data transfer
+5. Implement a request-response protocol on top of MCP
+
+## COMMON USE CASES
+------------------------
+1. **LLM Context Augmentation**: Send relevant data to LLMs for more informed responses
+2. **Cross-Application Communication**: Share context between different applications
+3. **Persistent Context**: Maintain contextual information across sessions
+4. **Data Transformation**: Convert between different data formats using MCP as an intermediate representation
+5. **NPC Data Management**: Share character information in game systems (as demonstrated in the example)
+
+This guide should help you understand and use MCP effectively for context exchange between systems!

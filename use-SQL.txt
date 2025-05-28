@@ -1,0 +1,1035 @@
+# COMPREHENSIVE SQL GUIDE
+=============================
+
+## WHAT IS SQL?
+------------------------
+
+**SQL (Structured Query Language)** is a standard programming language designed for managing and manipulating relational databases. It allows you to create, retrieve, update, and delete data, as well as manage database structures.
+
+## SQL FLAVORS
+------------------------
+
+While SQL is a standard, different database systems have their own implementations with slight variations:
+
+- **MySQL/MariaDB**: Open-source database management systems
+- **PostgreSQL**: Advanced open-source object-relational database 
+- **SQLite**: Lightweight, file-based database
+- **Microsoft SQL Server**: Enterprise-level database system
+- **Oracle Database**: Enterprise-level database system
+- **IBM Db2**: Enterprise-level database system
+
+## DATABASE FUNDAMENTALS
+------------------------
+
+### Database Terminology
+- **Database**: Collection of organized data
+- **Table**: Structure that organizes data into rows and columns
+- **Column/Field**: A specific piece of data (attribute) in a table
+- **Row/Record**: A single data entry in a table
+- **Primary Key**: Unique identifier for each record
+- **Foreign Key**: A field that links to a primary key in another table
+- **Index**: Data structure to improve the speed of data retrieval
+- **Schema**: Blueprint that defines the structure of a database
+
+## CREATING AND MODIFYING DATABASES
+------------------------
+
+### Creating a Database
+```sql
+-- Create a new database
+CREATE DATABASE my_database;
+
+-- Select/use a database
+USE my_database;  -- MySQL, SQL Server
+\c my_database    -- PostgreSQL (command line)
+```
+
+### Creating Tables
+```sql
+-- Basic table creation
+CREATE TABLE employees (
+    employee_id INT PRIMARY KEY,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    hire_date DATE,
+    salary DECIMAL(10, 2),
+    department_id INT
+);
+
+-- Create table with primary key
+CREATE TABLE departments (
+    department_id INT PRIMARY KEY,
+    department_name VARCHAR(100) NOT NULL,
+    location VARCHAR(100)
+);
+
+-- Create table with foreign key
+CREATE TABLE projects (
+    project_id INT PRIMARY KEY,
+    project_name VARCHAR(100) NOT NULL,
+    start_date DATE,
+    end_date DATE,
+    department_id INT,
+    FOREIGN KEY (department_id) REFERENCES departments(department_id)
+);
+```
+
+### Modifying Tables
+```sql
+-- Add a column
+ALTER TABLE employees
+ADD email VARCHAR(100);
+
+-- Modify a column
+ALTER TABLE employees
+MODIFY email VARCHAR(150) NOT NULL;  -- MySQL
+ALTER TABLE employees
+ALTER COLUMN email VARCHAR(150) NOT NULL;  -- SQL Server, PostgreSQL
+
+-- Drop a column
+ALTER TABLE employees
+DROP COLUMN email;
+
+-- Rename a table
+ALTER TABLE employees
+RENAME TO staff;  -- MySQL, PostgreSQL
+EXEC sp_rename 'employees', 'staff';  -- SQL Server
+
+-- Add a constraint after table creation
+ALTER TABLE employees
+ADD CONSTRAINT fk_department
+FOREIGN KEY (department_id) REFERENCES departments(department_id);
+
+-- Drop a constraint
+ALTER TABLE employees
+DROP CONSTRAINT fk_department;
+```
+
+### Deleting Database Objects
+```sql
+-- Drop a table
+DROP TABLE employees;
+
+-- Drop a database
+DROP DATABASE my_database;
+
+-- Truncate a table (delete all rows but keep structure)
+TRUNCATE TABLE employees;
+```
+
+## DATA MANIPULATION
+------------------------
+
+### Inserting Data
+```sql
+-- Insert a single row
+INSERT INTO employees (employee_id, first_name, last_name, hire_date, salary, department_id)
+VALUES (1, 'John', 'Doe', '2023-01-15', 75000.00, 1);
+
+-- Insert multiple rows
+INSERT INTO employees (employee_id, first_name, last_name, hire_date, salary, department_id)
+VALUES 
+    (2, 'Jane', 'Smith', '2023-02-01', 82000.00, 2),
+    (3, 'Bob', 'Johnson', '2023-02-15', 65000.00, 1);
+
+-- Insert data from another table (insert into select)
+INSERT INTO archive_employees (employee_id, first_name, last_name, hire_date)
+SELECT employee_id, first_name, last_name, hire_date
+FROM employees
+WHERE hire_date < '2020-01-01';
+```
+
+### Selecting Data
+```sql
+-- Select all columns from a table
+SELECT * FROM employees;
+
+-- Select specific columns
+SELECT employee_id, first_name, last_name FROM employees;
+
+-- Select with filtering (WHERE clause)
+SELECT * FROM employees WHERE department_id = 1;
+
+-- Select with multiple conditions
+SELECT * FROM employees 
+WHERE salary > 70000 AND hire_date > '2023-01-01';
+
+SELECT * FROM employees 
+WHERE department_id = 1 OR department_id = 2;
+
+-- Select with pattern matching
+SELECT * FROM employees WHERE last_name LIKE 'S%';  -- Starts with S
+SELECT * FROM employees WHERE last_name LIKE '%son';  -- Ends with son
+SELECT * FROM employees WHERE last_name LIKE '%oh%';  -- Contains oh
+
+-- Select with NULL checks
+SELECT * FROM employees WHERE department_id IS NULL;
+SELECT * FROM employees WHERE department_id IS NOT NULL;
+
+-- Select with sorting (ORDER BY)
+SELECT * FROM employees ORDER BY salary ASC;  -- Ascending (default)
+SELECT * FROM employees ORDER BY hire_date DESC;  -- Descending
+SELECT * FROM employees ORDER BY department_id ASC, salary DESC;  -- Multiple columns
+
+-- Select with result limiting
+SELECT * FROM employees LIMIT 10;  -- MySQL, PostgreSQL, SQLite
+SELECT TOP 10 * FROM employees;  -- SQL Server
+SELECT * FROM employees FETCH FIRST 10 ROWS ONLY;  -- Standard SQL
+
+-- Select distinct values
+SELECT DISTINCT department_id FROM employees;
+
+-- Select with calculated columns
+SELECT 
+    employee_id, 
+    first_name,
+    last_name,
+    salary,
+    salary * 1.1 AS increased_salary
+FROM employees;
+```
+
+### Updating Data
+```sql
+-- Update all rows
+UPDATE employees SET salary = salary * 1.05;
+
+-- Update with condition
+UPDATE employees
+SET salary = salary * 1.10
+WHERE department_id = 1;
+
+-- Update multiple columns
+UPDATE employees
+SET 
+    salary = salary * 1.05,
+    last_updated = CURRENT_TIMESTAMP
+WHERE employee_id = 3;
+
+-- Update with data from another table
+UPDATE employees e
+SET salary = salary * 1.1
+FROM performance_ratings pr
+WHERE e.employee_id = pr.employee_id AND pr.rating > 4;  -- SQL Server syntax
+
+-- MySQL/PostgreSQL version
+UPDATE employees e
+SET salary = salary * 1.1
+WHERE employee_id IN (
+    SELECT employee_id FROM performance_ratings WHERE rating > 4
+);
+```
+
+### Deleting Data
+```sql
+-- Delete all rows
+DELETE FROM temp_employees;
+
+-- Delete with condition
+DELETE FROM employees
+WHERE hire_date < '2010-01-01';
+
+-- Delete with subquery
+DELETE FROM employees
+WHERE department_id IN (
+    SELECT department_id FROM departments WHERE location = 'Remote'
+);
+```
+
+## QUERIES AND FILTERING
+------------------------
+
+### Comparison Operators
+```sql
+-- Equality/Inequality
+SELECT * FROM products WHERE price = 19.99;
+SELECT * FROM products WHERE price != 19.99;  -- or <>
+
+-- Greater than, less than
+SELECT * FROM products WHERE price > 100;
+SELECT * FROM products WHERE price < 50;
+SELECT * FROM products WHERE price >= 100;
+SELECT * FROM products WHERE price <= 50;
+
+-- Between (inclusive)
+SELECT * FROM products WHERE price BETWEEN 50 AND 100;
+SELECT * FROM employees WHERE hire_date BETWEEN '2022-01-01' AND '2022-12-31';
+
+-- IN operator (matches any value in list)
+SELECT * FROM employees WHERE department_id IN (1, 3, 5);
+SELECT * FROM products WHERE category IN ('Electronics', 'Computers');
+
+-- NOT IN
+SELECT * FROM employees WHERE department_id NOT IN (2, 4);
+```
+
+### Logical Operators
+```sql
+-- AND (both conditions must be true)
+SELECT * FROM products WHERE price > 50 AND category = 'Electronics';
+
+-- OR (either condition can be true)
+SELECT * FROM customers WHERE state = 'CA' OR state = 'NY';
+
+-- NOT (negates condition)
+SELECT * FROM products WHERE NOT category = 'Clothing';
+
+-- Combining operators
+SELECT * FROM products 
+WHERE (category = 'Electronics' OR category = 'Computers') 
+AND price < 100;
+```
+
+### NULL Handling
+```sql
+-- Find NULL values
+SELECT * FROM employees WHERE manager_id IS NULL;
+
+-- Find non-NULL values
+SELECT * FROM employees WHERE phone IS NOT NULL;
+
+-- COALESCE (returns first non-NULL value)
+SELECT
+    employee_id,
+    COALESCE(phone, email, 'No contact info') AS contact_info
+FROM employees;
+
+-- NULLIF (returns NULL if arguments are equal)
+SELECT NULLIF(department_id, 0) FROM employees;
+
+-- IFNULL, NVL, or ISNULL (database-specific)
+SELECT employee_id, IFNULL(manager_id, 0) FROM employees;  -- MySQL
+SELECT employee_id, NVL(manager_id, 0) FROM employees;  -- Oracle
+SELECT employee_id, ISNULL(manager_id, 0) FROM employees;  -- SQL Server
+```
+
+## JOINS AND RELATIONSHIPS
+------------------------
+
+### Types of Joins
+
+```sql
+-- INNER JOIN (only matching rows)
+SELECT e.employee_id, e.first_name, e.last_name, d.department_name
+FROM employees e
+INNER JOIN departments d ON e.department_id = d.department_id;
+
+-- LEFT JOIN (all rows from left table)
+SELECT e.employee_id, e.first_name, e.last_name, d.department_name
+FROM employees e
+LEFT JOIN departments d ON e.department_id = d.department_id;
+
+-- RIGHT JOIN (all rows from right table)
+SELECT e.employee_id, e.first_name, e.last_name, d.department_name
+FROM employees e
+RIGHT JOIN departments d ON e.department_id = d.department_id;
+
+-- FULL OUTER JOIN (all rows from both tables)
+SELECT e.employee_id, e.first_name, e.last_name, d.department_name
+FROM employees e
+FULL OUTER JOIN departments d ON e.department_id = d.department_id;
+
+-- CROSS JOIN (Cartesian product - all possible combinations)
+SELECT e.employee_id, d.department_name
+FROM employees e
+CROSS JOIN departments d;
+
+-- SELF JOIN (joining a table to itself)
+SELECT e1.employee_id, e1.first_name, e1.last_name, 
+       e2.employee_id AS manager_id, e2.first_name AS manager_first_name
+FROM employees e1
+LEFT JOIN employees e2 ON e1.manager_id = e2.employee_id;
+```
+
+### Multi-table Joins
+```sql
+-- Three-way join
+SELECT e.employee_id, e.first_name, e.last_name, 
+       d.department_name, p.project_name
+FROM employees e
+INNER JOIN departments d ON e.department_id = d.department_id
+INNER JOIN project_assignments pa ON e.employee_id = pa.employee_id
+INNER JOIN projects p ON pa.project_id = p.project_id;
+```
+
+### Advanced Join Techniques
+```sql
+-- Join with additional filter conditions
+SELECT e.employee_id, e.first_name, d.department_name
+FROM employees e
+INNER JOIN departments d ON e.department_id = d.department_id
+WHERE e.hire_date > '2022-01-01' AND d.location = 'New York';
+
+-- Join with USING clause (when column names match)
+SELECT e.employee_id, e.first_name, d.department_name
+FROM employees e
+INNER JOIN departments d USING (department_id);
+
+-- Natural join (automatically joins on columns with the same name)
+SELECT e.employee_id, e.first_name, d.department_name
+FROM employees e
+NATURAL JOIN departments d;
+
+-- Finding rows that don't match (anti-join)
+SELECT d.department_id, d.department_name
+FROM departments d
+LEFT JOIN employees e ON d.department_id = e.department_id
+WHERE e.employee_id IS NULL;
+```
+
+## AGGREGATION AND GROUPING
+------------------------
+
+### Aggregate Functions
+```sql
+-- COUNT
+SELECT COUNT(*) FROM employees;  -- Count all rows
+SELECT COUNT(phone) FROM employees;  -- Count non-NULL values
+SELECT COUNT(DISTINCT department_id) FROM employees;  -- Count unique values
+
+-- SUM
+SELECT SUM(salary) FROM employees;
+
+-- AVG (average)
+SELECT AVG(salary) FROM employees;
+
+-- MIN and MAX
+SELECT MIN(salary), MAX(salary) FROM employees;
+
+-- Multiple aggregates
+SELECT 
+    COUNT(*) AS employee_count,
+    SUM(salary) AS total_salary,
+    AVG(salary) AS average_salary,
+    MIN(salary) AS lowest_salary,
+    MAX(salary) AS highest_salary
+FROM employees;
+```
+
+### GROUP BY Clause
+```sql
+-- Group by a single column
+SELECT department_id, COUNT(*) AS employee_count
+FROM employees
+GROUP BY department_id;
+
+-- Group by multiple columns
+SELECT department_id, job_title, COUNT(*) AS employee_count
+FROM employees
+GROUP BY department_id, job_title;
+
+-- Group with aggregates
+SELECT 
+    department_id,
+    COUNT(*) AS employee_count,
+    AVG(salary) AS avg_salary
+FROM employees
+GROUP BY department_id;
+
+-- Group with join
+SELECT 
+    d.department_name,
+    COUNT(e.employee_id) AS employee_count,
+    AVG(e.salary) AS avg_salary
+FROM departments d
+LEFT JOIN employees e ON d.department_id = e.department_id
+GROUP BY d.department_id, d.department_name;
+```
+
+### HAVING Clause
+```sql
+-- Filter groups (HAVING filters after grouping, WHERE filters before)
+SELECT department_id, COUNT(*) AS employee_count
+FROM employees
+GROUP BY department_id
+HAVING COUNT(*) > 5;
+
+-- Complex HAVING condition
+SELECT 
+    department_id,
+    AVG(salary) AS avg_salary
+FROM employees
+WHERE hire_date > '2020-01-01'
+GROUP BY department_id
+HAVING AVG(salary) > 60000 AND COUNT(*) >= 3;
+```
+
+## SUBQUERIES
+------------------------
+
+### Basic Subqueries
+```sql
+-- Subquery in WHERE clause
+SELECT employee_id, first_name, last_name
+FROM employees
+WHERE department_id = (
+    SELECT department_id
+    FROM departments
+    WHERE department_name = 'Finance'
+);
+
+-- IN with subquery (multiple results)
+SELECT employee_id, first_name, last_name
+FROM employees
+WHERE department_id IN (
+    SELECT department_id
+    FROM departments
+    WHERE location = 'New York'
+);
+
+-- Comparison operators with subqueries
+SELECT employee_id, first_name, last_name, salary
+FROM employees
+WHERE salary > (
+    SELECT AVG(salary)
+    FROM employees
+);
+```
+
+### Correlated Subqueries
+```sql
+-- Subquery references outer query
+SELECT e.employee_id, e.first_name, e.last_name, e.salary
+FROM employees e
+WHERE e.salary > (
+    SELECT AVG(salary)
+    FROM employees
+    WHERE department_id = e.department_id
+);
+
+-- EXISTS operator
+SELECT d.department_id, d.department_name
+FROM departments d
+WHERE EXISTS (
+    SELECT 1
+    FROM employees e
+    WHERE e.department_id = d.department_id
+);
+
+-- NOT EXISTS (find departments with no employees)
+SELECT d.department_id, d.department_name
+FROM departments d
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM employees e
+    WHERE e.department_id = d.department_id
+);
+```
+
+### Subqueries in SELECT and FROM Clauses
+```sql
+-- Subquery in SELECT list
+SELECT 
+    e.employee_id,
+    e.first_name,
+    e.last_name,
+    e.salary,
+    (SELECT AVG(salary) FROM employees) AS company_avg_salary,
+    e.salary - (SELECT AVG(salary) FROM employees) AS diff_from_avg
+FROM employees e;
+
+-- Derived tables (subquery in FROM clause)
+SELECT 
+    dept_avg.department_id,
+    dept_avg.department_name,
+    dept_avg.avg_salary,
+    (SELECT AVG(salary) FROM employees) AS company_avg
+FROM (
+    SELECT 
+        d.department_id,
+        d.department_name,
+        AVG(e.salary) AS avg_salary
+    FROM departments d
+    JOIN employees e ON d.department_id = e.department_id
+    GROUP BY d.department_id, d.department_name
+) dept_avg;
+```
+
+## SUBQUERIES
+------------------------
+
+### Basic Subqueries
+```sql
+-- Subquery in WHERE clause
+SELECT employee_id, first_name, last_name
+FROM employees
+WHERE department_id = (
+    SELECT department_id
+    FROM departments
+    WHERE department_name = 'Finance'
+);
+
+-- IN with subquery (multiple results)
+SELECT employee_id, first_name, last_name
+FROM employees
+WHERE department_id IN (
+    SELECT department_id
+    FROM departments
+    WHERE location = 'New York'
+);
+
+-- Comparison operators with subqueries
+SELECT employee_id, first_name, last_name, salary
+FROM employees
+WHERE salary > (
+    SELECT AVG(salary)
+    FROM employees
+);
+```
+
+### Correlated Subqueries
+```sql
+-- Subquery references outer query
+SELECT e.employee_id, e.first_name, e.last_name, e.salary
+FROM employees e
+WHERE e.salary > (
+    SELECT AVG(salary)
+    FROM employees
+    WHERE department_id = e.department_id
+);
+
+-- EXISTS operator
+SELECT d.department_id, d.department_name
+FROM departments d
+WHERE EXISTS (
+    SELECT 1
+    FROM employees e
+    WHERE e.department_id = d.department_id
+);
+
+-- NOT EXISTS (find departments with no employees)
+SELECT d.department_id, d.department_name
+FROM departments d
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM employees e
+    WHERE e.department_id = d.department_id
+);
+```
+
+### Subqueries in SELECT and FROM Clauses
+```sql
+-- Subquery in SELECT list
+SELECT 
+    e.employee_id,
+    e.first_name,
+    e.last_name,
+    e.salary,
+    (SELECT AVG(salary) FROM employees) AS company_avg_salary,
+    e.salary - (SELECT AVG(salary) FROM employees) AS diff_from_avg
+FROM employees e;
+
+-- Derived tables (subquery in FROM clause)
+SELECT 
+    dept_avg.department_id,
+    dept_avg.department_name,
+    dept_avg.avg_salary,
+    (SELECT AVG(salary) FROM employees) AS company_avg
+FROM (
+    SELECT 
+        d.department_id,
+        d.department_name,
+        AVG(e.salary) AS avg_salary
+    FROM departments d
+    JOIN employees e ON d.department_id = e.department_id
+    GROUP BY d.department_id, d.department_name
+) dept_avg;
+```
+
+## COMMON TABLE EXPRESSIONS (CTEs)
+------------------------
+
+```sql
+-- Basic CTE
+WITH employee_counts AS (
+    SELECT 
+        department_id,
+        COUNT(*) AS emp_count
+    FROM employees
+    GROUP BY department_id
+)
+SELECT 
+    d.department_name,
+    COALESCE(ec.emp_count, 0) AS employee_count
+FROM departments d
+LEFT JOIN employee_counts ec ON d.department_id = ec.department_id;
+
+-- Multiple CTEs
+WITH 
+dept_salaries AS (
+    SELECT 
+        department_id,
+        SUM(salary) AS total_salary,
+        AVG(salary) AS avg_salary
+    FROM employees
+    GROUP BY department_id
+),
+high_salary_depts AS (
+    SELECT
+        department_id
+    FROM dept_salaries
+    WHERE avg_salary > 75000
+)
+SELECT 
+    d.department_name,
+    ds.total_salary,
+    ds.avg_salary
+FROM departments d
+JOIN dept_salaries ds ON d.department_id = ds.department_id
+WHERE d.department_id IN (SELECT department_id FROM high_salary_depts);
+
+-- Recursive CTE
+WITH RECURSIVE employee_hierarchy AS (
+    -- Base case (top-level managers)
+    SELECT 
+        employee_id, 
+        first_name, 
+        last_name, 
+        manager_id,
+        0 AS level
+    FROM employees
+    WHERE manager_id IS NULL
+    
+    UNION ALL
+    
+    -- Recursive case (direct reports)
+    SELECT 
+        e.employee_id,
+        e.first_name,
+        e.last_name,
+        e.manager_id,
+        eh.level + 1 AS level
+    FROM employees e
+    JOIN employee_hierarchy eh ON e.manager_id = eh.employee_id
+)
+SELECT 
+    employee_id,
+    first_name,
+    last_name,
+    level,
+    REPEAT('  ', level) || first_name || ' ' || last_name AS hierarchy
+FROM employee_hierarchy
+ORDER BY level, first_name;
+```
+
+## WINDOW FUNCTIONS
+------------------------
+
+```sql
+-- ROW_NUMBER (unique sequential number)
+SELECT
+    employee_id,
+    first_name,
+    last_name,
+    department_id,
+    salary,
+    ROW_NUMBER() OVER (ORDER BY salary DESC) AS overall_salary_rank,
+    ROW_NUMBER() OVER (PARTITION BY department_id ORDER BY salary DESC) AS dept_salary_rank
+FROM employees;
+
+-- RANK and DENSE_RANK (with and without gaps)
+SELECT
+    employee_id,
+    first_name,
+    department_id,
+    salary,
+    RANK() OVER (ORDER BY salary DESC) AS salary_rank,
+    DENSE_RANK() OVER (ORDER BY salary DESC) AS dense_salary_rank
+FROM employees;
+
+-- NTILE (divide into buckets)
+SELECT
+    employee_id,
+    first_name,
+    salary,
+    NTILE(4) OVER (ORDER BY salary DESC) AS salary_quartile
+FROM employees;
+
+-- Window aggregate functions
+SELECT
+    employee_id,
+    first_name,
+    department_id,
+    salary,
+    AVG(salary) OVER (PARTITION BY department_id) AS dept_avg_salary,
+    MAX(salary) OVER (PARTITION BY department_id) AS dept_max_salary,
+    salary / SUM(salary) OVER (PARTITION BY department_id) * 100 AS pct_of_dept_total
+FROM employees;
+
+-- Cumulative and offset functions
+SELECT
+    employee_id,
+    first_name,
+    hire_date,
+    salary,
+    SUM(salary) OVER (ORDER BY hire_date) AS cumulative_salary,
+    LAG(salary) OVER (ORDER BY hire_date) AS prev_hire_salary,
+    LEAD(salary) OVER (ORDER BY hire_date) AS next_hire_salary
+FROM employees;
+
+-- FIRST_VALUE and LAST_VALUE
+SELECT
+    employee_id,
+    first_name,
+    department_id,
+    salary,
+    FIRST_VALUE(first_name) OVER (
+        PARTITION BY department_id 
+        ORDER BY salary DESC
+        RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+    ) AS highest_paid_in_dept
+FROM employees;
+
+-- Window with frame clause
+SELECT
+    employee_id,
+    first_name,
+    hire_date,
+    salary,
+    AVG(salary) OVER (
+        ORDER BY hire_date 
+        ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING
+    ) AS moving_avg_salary
+FROM employees;
+```
+
+## TRANSACTIONS
+------------------------
+
+```sql
+-- Basic transaction
+BEGIN TRANSACTION;  -- or BEGIN; or START TRANSACTION;
+
+UPDATE accounts SET balance = balance - 100 WHERE account_id = 123;
+UPDATE accounts SET balance = balance + 100 WHERE account_id = 456;
+
+COMMIT;  -- Complete the transaction
+
+-- Transaction with rollback
+BEGIN TRANSACTION;
+
+UPDATE accounts SET balance = balance - 100 WHERE account_id = 123;
+
+-- Check if account 456 exists
+IF (SELECT COUNT(*) FROM accounts WHERE account_id = 456) = 0 THEN
+    ROLLBACK;  -- Undo changes
+ELSE
+    UPDATE accounts SET balance = balance + 100 WHERE account_id = 456;
+    COMMIT;
+END IF;
+
+-- Savepoints
+BEGIN TRANSACTION;
+
+UPDATE products SET stock = stock - 1 WHERE product_id = 1;
+
+SAVEPOINT stock_updated;
+
+UPDATE orders SET status = 'Shipped' WHERE order_id = 1001;
+
+-- If something goes wrong
+ROLLBACK TO stock_updated;  -- Rollback to savepoint
+
+-- Continue with alternative action
+UPDATE orders SET status = 'Pending' WHERE order_id = 1001;
+
+COMMIT;
+```
+
+## INDEXES
+------------------------
+
+```sql
+-- Create basic index
+CREATE INDEX idx_employees_last_name
+ON employees(last_name);
+
+-- Create unique index
+CREATE UNIQUE INDEX idx_employees_email
+ON employees(email);
+
+-- Create composite index (multiple columns)
+CREATE INDEX idx_employees_dept_hire_date
+ON employees(department_id, hire_date);
+
+-- Create partial/filtered index
+CREATE INDEX idx_active_employees
+ON employees(employee_id, first_name, last_name)
+WHERE active = TRUE;
+
+-- Drop index
+DROP INDEX idx_employees_last_name;  -- PostgreSQL, SQLite, MySQL
+DROP INDEX idx_employees_last_name ON employees;  -- SQL Server
+
+-- Create function-based index
+CREATE INDEX idx_employees_upper_last_name
+ON employees(UPPER(last_name));
+
+-- Create covering index
+CREATE INDEX idx_employees_dept_coverage
+ON employees(department_id)
+INCLUDE (first_name, last_name, salary);  -- SQL Server syntax
+```
+
+## VIEWS
+------------------------
+
+```sql
+-- Create simple view
+CREATE VIEW employee_details AS
+SELECT 
+    e.employee_id,
+    e.first_name,
+    e.last_name,
+    e.salary,
+    d.department_name
+FROM employees e
+JOIN departments d ON e.department_id = d.department_id;
+
+-- Create or replace view
+CREATE OR REPLACE VIEW department_summary AS
+SELECT 
+    d.department_id,
+    d.department_name,
+    COUNT(e.employee_id) AS employee_count,
+    AVG(e.salary) AS average_salary
+FROM departments d
+LEFT JOIN employees e ON d.department_id = e.department_id
+GROUP BY d.department_id, d.department_name;
+
+-- Create materialized view (stored result set)
+CREATE MATERIALIZED VIEW performance_stats AS
+SELECT 
+    department_id,
+    COUNT(*) AS employee_count,
+    AVG(salary) AS avg_salary,
+    SUM(sales_amount) AS total_sales
+FROM employee_performance
+GROUP BY department_id
+WITH DATA;  -- Populate with data immediately
+
+-- Refresh materialized view
+REFRESH MATERIALIZED VIEW performance_stats;
+
+-- Drop view
+DROP VIEW employee_details;
+DROP MATERIALIZED VIEW performance_stats;
+```
+
+## DATA TYPES
+------------------------
+
+### Numeric Types
+```sql
+-- Integer types
+TINYINT    -- -128 to 127 (MySQL, SQL Server)
+SMALLINT   -- -32,768 to 32,767
+INT/INTEGER -- -2,147,483,648 to 2,147,483,647
+BIGINT     -- -9,223,372,036,854,775,808 to 9,223,372,036,854,775,807
+
+-- Fixed-point types
+DECIMAL(p,s) -- Exact decimal with precision p and scale s
+NUMERIC(p,s) -- Equivalent to DECIMAL in most databases
+
+-- Floating-point types
+FLOAT      -- Single-precision floating point
+DOUBLE PRECISION -- Double-precision floating point
+REAL       -- Equivalent to FLOAT in most databases
+```
+
+### Character Types
+```sql
+-- Fixed-length strings
+CHAR(n)    -- Fixed-length string of n characters
+
+-- Variable-length strings
+VARCHAR(n) -- Variable-length string up to n characters
+TEXT       -- Variable-length string with large maximum size
+```
+
+### Date and Time Types
+```sql
+DATE       -- Date only (YYYY-MM-DD)
+TIME       -- Time only (HH:MM:SS)
+DATETIME   -- Date and time (YYYY-MM-DD HH:MM:SS)
+TIMESTAMP  -- Date and time, typically with timezone awareness
+INTERVAL   -- Time period/duration (PostgreSQL, Oracle)
+```
+
+### Binary Types
+```sql
+BINARY(n)  -- Fixed-length binary data
+VARBINARY(n) -- Variable-length binary data
+BLOB       -- Binary Large Object
+```
+
+### Boolean Type
+```sql
+BOOLEAN    -- TRUE, FALSE, NULL (PostgreSQL)
+BIT        -- 0, 1, NULL (SQL Server)
+TINYINT(1) -- 0, 1, NULL (MySQL)
+```
+
+### Specialized Types
+```sql
+ENUM       -- List of predefined values
+JSON       -- JSON data (modern DBMS)
+UUID       -- Universally Unique Identifier (some DBMS)
+ARRAY      -- Array of values (PostgreSQL)
+GEOMETRY   -- Spatial data (MySQL, PostgreSQL)
+```
+
+## SQL BEST PRACTICES
+------------------------
+
+### Query Optimization
+1. **Use specific column names** instead of `SELECT *`
+2. **Create appropriate indexes** for columns used in WHERE, JOIN, and ORDER BY
+3. **Avoid functions in WHERE clauses** that prevent index usage
+4. **Use EXPLAIN/EXECUTION PLAN** to analyze query performance
+5. **Limit result sets** when possible
+6. **Optimize JOINs** by joining the smallest datasets first
+7. **Use EXISTS instead of IN** for large subqueries
+
+### Database Design
+1. **Normalize your database** to reduce redundancy
+2. **Use appropriate data types** for columns
+3. **Define constraints** (primary keys, foreign keys, unique)
+4. **Use meaningful naming conventions**
+5. **Document your database** with comments and diagrams
+
+### Security
+1. **Use parameterized queries/prepared statements** to prevent SQL injection
+2. **Implement least privilege access** to database users
+3. **Encrypt sensitive data** stored in the database
+4. **Audit user access** to sensitive data
+5. **Regular security updates** for your database system
+
+## RESOURCES AND TOOLS
+------------------------
+
+### SQL Standards
+- **SQL-92** - ANSI/ISO standard SQL from 1992
+- **SQL:1999** - Introduction of recursive queries and triggers
+- **SQL:2003** - XML-related features, window functions
+- **SQL:2008** - TRUNCATE statement, ORDER BY in aggregates
+- **SQL:2011** - Temporal data features
+- **SQL:2016** - JSON features, row pattern matching
+- **SQL:2023** - Latest standard with multi-dimensional arrays, property graphs
+
+### Database Management Tools
+- **phpMyAdmin** - Web-based MySQL administration
+- **pgAdmin** - PostgreSQL administration
+- **SQL Server Management Studio** - Microsoft SQL Server
+- **DBeaver** - Universal database tool
+- **MySQL Workbench** - MySQL visual design tool
+- **DataGrip** - JetBrains IDE for databases
+
+### Learning Resources
+- **W3Schools SQL Tutorial** - w3schools.com/sql/
+- **PostgreSQL Documentation** - postgresql.org/docs/
+- **MySQL Documentation** - dev.mysql.com/doc/
+- **SQL Server Documentation** - docs.microsoft.com/en-us/sql/
+- **Mode SQL Tutorial** - mode.com/sql-tutorial/
+- **SQLZoo** - sqlzoo.net
+- **LeetCode Database Problems** - leetcode.com/problemset/database/

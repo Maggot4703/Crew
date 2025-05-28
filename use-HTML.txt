@@ -1,0 +1,521 @@
+# COMPREHENSIVE HTML GUIDE
+=============================
+
+## WHAT IS HTML?
+------------------------
+
+**HTML (HyperText Markup Language)** is the standard markup language used to create web pages. It defines the structure and content of a web page using various elements represented by tags. HTML documents are the foundation of the World Wide Web.
+
+## HTML DOCUMENT STRUCTURE
+------------------------
+
+Every HTML document follows this basic structure:
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page Title</title>
+</head>
+<body>
+    <!-- Content goes here -->
+    <h1>Hello, World!</h1>
+    <p>This is a paragraph.</p>
+</body>
+</html>
+```
+
+Key components:
+- **<!DOCTYPE html>**: Declaration defining this document as HTML5
+- **<html>**: Root element of an HTML page
+- **<head>**: Contains meta-information about the document
+- **<title>**: Specifies the title shown in browser tab
+- **<body>**: Contains the visible content of the page
+
+## BASIC HTML ELEMENTS
+------------------------
+
+### Headings
+```html
+<h1>Heading Level 1</h1>
+<h2>Heading Level 2</h2>
+<h3>Heading Level 3</h3>
+<h4>Heading Level 4</h4>
+<h5>Heading Level 5</h5>
+<h6>Heading Level 6</h6>
+```
+
+### Paragraphs and Text Formatting
+```html
+<p>This is a paragraph.</p>
+<p>This is another paragraph with <b>bold text</b> and <i>italic text</i>.</p>
+<p>You can also use <strong>strong</strong> for importance and <em>emphasis</em>.</p>
+<p>This text contains a <br> line break.</p>
+<hr> <!-- Horizontal rule/line -->
+<p>Text can be <mark>highlighted</mark>, <small>smaller</small>, <del>deleted</del>, or <ins>inserted</ins>.</p>
+```
+
+### Links
+```html
+<a href="https://www.example.com">Visit Example Website</a>
+<a href="https://www.example.com" target="_blank">Open in new tab</a>
+<a href="page2.html">Internal link</a>
+<a href="mailto:email@example.com">Send Email</a>
+<a href="tel:+1234567890">Call Us</a>
+<a href="#section-id">Jump to section</a>
+```
+
+### Images
+```html
+<img src="image.jpg" alt="Description of image">
+<img src="https://example.com/image.jpg" alt="Online image" width="300" height="200">
+<figure>
+    <img src="image.jpg" alt="Figure image">
+    <figcaption>Caption for the image</figcaption>
+</figure>
+```
+
+### Lists
+```html
+<!-- Unordered list -->
+<ul>
+    <li>Item 1</li>
+    <li>Item 2</li>
+    <li>Item 3</li>
+</ul>
+
+<!-- Ordered list -->
+<ol>
+    <li>First item</li>
+    <li>Second item</li>
+    <li>Third item</li>
+</ol>
+
+<!-- Definition list -->
+<dl>
+    <dt>Term 1</dt>
+    <dd>Definition 1</dd>
+    <dt>Term 2</dt>
+    <dd>Definition 2</dd>
+</dl>
+
+<!-- Nested lists -->
+<ul>
+    <li>Item 1</li>
+    <li>Item 2
+        <ol>
+            <li>Sub-item 1</li>
+            <li>Sub-item 2</li>
+        </ol>
+    </li>
+    <li>Item 3</li>
+</ul>
+```
+
+## HTML CONTAINERS & SECTIONS
+------------------------
+
+### Divisions and Spans
+```html
+<div>Block-level container for grouping elements</div>
+<span>Inline container for text</span>
+```
+
+### Semantic Elements
+```html
+<header>Header section of page or section</header>
+<nav>Navigation links</nav>
+<main>Main content of page</main>
+<article>Self-contained content</article>
+<section>Thematic grouping of content</section>
+<aside>Related content/sidebar</aside>
+<footer>Footer of page or section</footer>
+```
+
+### Example Page Layout
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Semantic HTML Layout</title>
+</head>
+<body>
+    <header>
+        <h1>Website Title</h1>
+        <nav>
+            <ul>
+                <li><a href="#">Home</a></li>
+                <li><a href="#">About</a></li>
+                <li><a href="#">Services</a></li>
+                <li><a href="#">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+    
+    <main>
+        <section id="intro">
+            <h2>Introduction</h2>
+            <p>Welcome to our website!</p>
+        </section>
+        
+        <article>
+            <h2>Article Title</h2>
+            <p>Article content goes here...</p>
+        </article>
+        
+        <aside>
+            <h3>Related Links</h3>
+            <ul>
+                <li><a href="#">Link 1</a></li>
+                <li><a href="#">Link 2</a></li>
+            </ul>
+        </aside>
+    </main>
+    
+    <footer>
+        <p>&copy; 2025 My Website. All rights reserved.</p>
+    </footer>
+</body>
+</html>
+```
+
+## TABLES
+------------------------
+
+```html
+<table>
+    <caption>Monthly Savings</caption>
+    <thead>
+        <tr>
+            <th>Month</th>
+            <th>Savings</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>January</td>
+            <td>$100</td>
+        </tr>
+        <tr>
+            <td>February</td>
+            <td>$150</td>
+        </tr>
+    </tbody>
+    <tfoot>
+        <tr>
+            <td>Total</td>
+            <td>$250</td>
+        </tr>
+    </tfoot>
+</table>
+```
+
+Table elements:
+- **table**: Container for the table
+- **caption**: Table caption/title
+- **thead**: Group header content
+- **tbody**: Group body content
+- **tfoot**: Group footer content
+- **tr**: Table row
+- **th**: Table header cell
+- **td**: Table data cell
+
+Advanced table attributes:
+```html
+<table border="1" cellspacing="0" cellpadding="5">
+    <tr>
+        <td colspan="2">Cell spans two columns</td>
+    </tr>
+    <tr>
+        <td>Regular cell</td>
+        <td rowspan="2">Cell spans two rows</td>
+    </tr>
+    <tr>
+        <td>Regular cell</td>
+    </tr>
+</table>
+```
+
+## FORMS
+------------------------
+
+Forms are used to collect user input:
+
+```html
+<form action="/submit-form" method="post">
+    <!-- Text input -->
+    <label for="name">Name:</label>
+    <input type="text" id="name" name="name" placeholder="Enter your name" required><br>
+    
+    <!-- Email input -->
+    <label for="email">Email:</label>
+    <input type="email" id="email" name="email" required><br>
+    
+    <!-- Password input -->
+    <label for="password">Password:</label>
+    <input type="password" id="password" name="password" minlength="8"><br>
+    
+    <!-- Radio buttons -->
+    <p>Gender:</p>
+    <input type="radio" id="male" name="gender" value="male">
+    <label for="male">Male</label><br>
+    <input type="radio" id="female" name="gender" value="female">
+    <label for="female">Female</label><br>
+    <input type="radio" id="other" name="gender" value="other">
+    <label for="other">Other</label><br>
+    
+    <!-- Checkboxes -->
+    <p>Interests:</p>
+    <input type="checkbox" id="coding" name="interests" value="coding">
+    <label for="coding">Coding</label><br>
+    <input type="checkbox" id="music" name="interests" value="music">
+    <label for="music">Music</label><br>
+    
+    <!-- Select dropdown -->
+    <label for="country">Country:</label>
+    <select id="country" name="country">
+        <option value="">Select a country</option>
+        <option value="us">United States</option>
+        <option value="ca">Canada</option>
+        <option value="uk">United Kingdom</option>
+    </select><br>
+    
+    <!-- Textarea -->
+    <label for="message">Message:</label><br>
+    <textarea id="message" name="message" rows="4" cols="50"></textarea><br>
+    
+    <!-- Submit and Reset buttons -->
+    <input type="submit" value="Submit">
+    <input type="reset" value="Reset">
+</form>
+```
+
+Form attributes:
+- **action**: URL where form data is sent
+- **method**: HTTP method (get or post)
+- **enctype**: How form data is encoded when submitted
+
+Input attributes:
+- **type**: Type of input (text, password, email, etc.)
+- **id**: Unique identifier
+- **name**: Name of the input (sent with form data)
+- **value**: Default value
+- **placeholder**: Hint text shown before user input
+- **required**: Makes the field mandatory
+- **disabled**: Disables the input
+- **readonly**: Makes the input read-only
+- **min/max**: Minimum/maximum values for number inputs
+- **minlength/maxlength**: Min/max text length
+
+## HTML5 FEATURES
+------------------------
+
+### Canvas
+```html
+<canvas id="myCanvas" width="200" height="100" style="border:1px solid #000000;">
+Your browser does not support the HTML canvas tag.
+</canvas>
+
+<script>
+    var canvas = document.getElementById("myCanvas");
+    var ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#FF0000";
+    ctx.fillRect(10, 10, 150, 80);
+</script>
+```
+
+### SVG
+```html
+<svg width="100" height="100">
+    <circle cx="50" cy="50" r="40" stroke="black" stroke-width="3" fill="red" />
+</svg>
+```
+
+### Audio & Video
+```html
+<!-- Audio -->
+<audio controls>
+    <source src="audio.mp3" type="audio/mpeg">
+    <source src="audio.ogg" type="audio/ogg">
+    Your browser does not support the audio element.
+</audio>
+
+<!-- Video -->
+<video width="640" height="360" controls>
+    <source src="video.mp4" type="video/mp4">
+    <source src="video.webm" type="video/webm">
+    Your browser does not support the video tag.
+</video>
+```
+
+## RESPONSIVE WEB DESIGN
+------------------------
+
+### Viewport Meta Tag
+```html
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+```
+
+### Responsive Images
+```html
+<!-- Using max-width -->
+<img src="img.jpg" style="max-width:100%;height:auto;" alt="Responsive Image">
+
+<!-- Using srcset for different resolutions -->
+<img srcset="small.jpg 500w, medium.jpg 1000w, large.jpg 1500w"
+     sizes="(max-width: 600px) 500px, (max-width: 1200px) 1000px, 1500px"
+     src="medium.jpg" alt="Responsive image with srcset">
+
+<!-- Using picture element -->
+<picture>
+    <source media="(max-width: 650px)" srcset="small-image.jpg">
+    <source media="(max-width: 1000px)" srcset="medium-image.jpg">
+    <img src="large-image.jpg" alt="Default image">
+</picture>
+```
+
+## ACCESSIBILITY FEATURES
+------------------------
+
+```html
+<!-- Use semantic HTML elements -->
+<header>, <nav>, <main>, <article>, <section>, <aside>, <footer>
+
+<!-- Add alt text to images -->
+<img src="image.jpg" alt="Detailed description of image">
+
+<!-- Use ARIA (Accessible Rich Internet Applications) attributes -->
+<div role="button" aria-pressed="false">Clickable element</div>
+
+<!-- Skip navigation link for screen readers -->
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<!-- Proper form labels -->
+<label for="username">Username:</label>
+<input type="text" id="username" name="username">
+
+<!-- Table captions and headers -->
+<table>
+    <caption>Monthly Budget</caption>
+    <tr>
+        <th scope="col">Item</th>
+        <th scope="col">Amount</th>
+    </tr>
+</table>
+```
+
+## BEST PRACTICES
+------------------------
+
+1. **Always declare DOCTYPE**: Use `<!DOCTYPE html>` for HTML5
+2. **Use lowercase for tags**: `<div>` not `<DIV>`
+3. **Close all tags**: Self-closing tags like `<img>` should be `<img />`
+4. **Quote attribute values**: Use `<a href="page.html">` not `<a href=page.html>`
+5. **Use semantic HTML**: Choose `<article>`, `<section>`, etc. over generic `<div>` when appropriate
+6. **Add alt text to images**: For accessibility
+7. **Optimize page load**: Place CSS in `<head>` and JS before `</body>`
+8. **Use meta viewport**: For responsive design
+9. **Validate your HTML**: Check for errors using W3C validator
+10. **Comment your code**: For complex sections
+
+## EXAMPLE: COMPLETE HTML5 PAGE
+------------------------
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A sample HTML5 webpage">
+    <title>HTML5 Example Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }
+        header, footer {
+            background-color: #f4f4f4;
+            padding: 20px;
+            text-align: center;
+        }
+        nav {
+            background-color: #333;
+            overflow: hidden;
+        }
+        nav a {
+            color: white;
+            display: inline-block;
+            padding: 14px 16px;
+            text-decoration: none;
+        }
+        main {
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>HTML5 Example Website</h1>
+        <p>A demonstration of HTML5 features and best practices</p>
+    </header>
+    
+    <nav>
+        <a href="#home">Home</a>
+        <a href="#about">About</a>
+        <a href="#services">Services</a>
+        <a href="#contact">Contact</a>
+    </nav>
+    
+    <main>
+        <section id="home">
+            <h2>Home</h2>
+            <p>Welcome to our website! This is an example of a modern HTML5 page structure.</p>
+        </section>
+        
+        <section id="about">
+            <h2>About Us</h2>
+            <p>We are a company specializing in web development and design.</p>
+        </section>
+        
+        <section id="services">
+            <h2>Our Services</h2>
+            <ul>
+                <li>Web Design</li>
+                <li>Web Development</li>
+                <li>SEO Optimization</li>
+            </ul>
+        </section>
+        
+        <section id="contact">
+            <h2>Contact Us</h2>
+            <form>
+                <div>
+                    <label for="name">Name:</label>
+                    <input type="text" id="name" name="name" required>
+                </div>
+                <div>
+                    <label for="email">Email:</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                <button type="submit">Send Message</button>
+            </form>
+        </section>
+    </main>
+    
+    <footer>
+        <p>&copy; 2025 Example Company. All rights reserved.</p>
+    </footer>
+</body>
+</html>
+```
+
+This guide covers the fundamentals of HTML5 and provides practical examples for creating structured, accessible, and responsive web pages.

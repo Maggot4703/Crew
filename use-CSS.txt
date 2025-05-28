@@ -1,0 +1,1324 @@
+# COMPREHENSIVE CSS GUIDE
+=============================
+
+## WHAT IS CSS?
+------------------------
+
+**CSS (Cascading Style Sheets)** is a stylesheet language used to describe the presentation of a document written in HTML. CSS describes how elements should be rendered on screen, on paper, in speech, or on other media. CSS is one of the core languages of the web and standardized across Web browsers.
+
+## CSS SYNTAX
+------------------------
+
+CSS has a simple syntax:
+
+```css
+selector {
+    property: value;
+    another-property: value;
+}
+```
+
+For example:
+
+```css
+h1 {
+    color: blue;
+    font-size: 24px;
+}
+```
+
+## INCLUDING CSS IN HTML
+------------------------
+
+### Inline CSS
+```html
+<p style="color: red; font-size: 16px;">This paragraph has inline CSS</p>
+```
+
+### Internal CSS (in the HTML head)
+```html
+<head>
+    <style>
+        p {
+            color: blue;
+            font-size: 16px;
+        }
+        
+        .highlight {
+            background-color: yellow;
+        }
+    </style>
+</head>
+```
+
+### External CSS (separate file)
+```html
+<head>
+    <link rel="stylesheet" href="styles.css">
+</head>
+```
+
+## SELECTORS
+------------------------
+
+### Basic Selectors
+```css
+/* Element selector */
+p {
+    color: blue;
+}
+
+/* Class selector */
+.highlight {
+    background-color: yellow;
+}
+
+/* ID selector */
+#header {
+    font-size: 24px;
+}
+
+/* Universal selector */
+* {
+    margin: 0;
+    padding: 0;
+}
+
+/* Attribute selector */
+[type="text"] {
+    border: 1px solid gray;
+}
+```
+
+### Combinators
+```css
+/* Descendant selector (any level) */
+article p {
+    text-indent: 20px;
+}
+
+/* Child selector (direct children only) */
+ul > li {
+    list-style-type: square;
+}
+
+/* Adjacent sibling selector */
+h1 + p {
+    font-weight: bold;
+}
+
+/* General sibling selector */
+h1 ~ p {
+    color: gray;
+}
+```
+
+### Pseudo-classes
+```css
+/* Link states */
+a:link {
+    color: blue;
+}
+a:visited {
+    color: purple;
+}
+a:hover {
+    color: red;
+    text-decoration: underline;
+}
+a:active {
+    color: orange;
+}
+
+/* Form states */
+input:focus {
+    border-color: blue;
+}
+input:disabled {
+    background-color: #f0f0f0;
+}
+input:checked {
+    border: 2px solid green;
+}
+
+/* Structural pseudo-classes */
+li:first-child {
+    font-weight: bold;
+}
+li:last-child {
+    margin-bottom: 0;
+}
+li:nth-child(odd) {
+    background-color: #f0f0f0;
+}
+li:nth-child(2n) {
+    background-color: #e0e0e0; /* Every even item */
+}
+```
+
+### Pseudo-elements
+```css
+/* First line of text */
+p::first-line {
+    font-variant: small-caps;
+}
+
+/* First letter of text */
+p::first-letter {
+    font-size: 200%;
+    float: left;
+}
+
+/* Before and after elements */
+.quote::before {
+    content: "❝";
+    color: #999;
+}
+.quote::after {
+    content: "❞";
+    color: #999;
+}
+
+/* Selection styling */
+::selection {
+    background-color: yellow;
+    color: black;
+}
+```
+
+## CSS BOX MODEL
+------------------------
+
+Every HTML element is a box that consists of:
+
+1. **Content**: The actual content (text, images, etc.)
+2. **Padding**: Space between content and border
+3. **Border**: The border surrounding the padding
+4. **Margin**: Space outside the border
+
+```css
+div {
+    /* Content dimensions */
+    width: 300px;
+    height: 200px;
+    
+    /* Padding (inside) */
+    padding-top: 10px;
+    padding-right: 20px;
+    padding-bottom: 10px;
+    padding-left: 20px;
+    /* Shorthand: top right bottom left */
+    padding: 10px 20px 10px 20px;
+    /* Shorthand: vertical horizontal */
+    padding: 10px 20px;
+    /* Shorthand: all sides */
+    padding: 10px;
+    
+    /* Border */
+    border-width: 2px;
+    border-style: solid;
+    border-color: black;
+    /* Shorthand */
+    border: 2px solid black;
+    /* Individual sides */
+    border-top: 1px dashed red;
+    
+    /* Margin (outside) */
+    margin-top: 10px;
+    margin-right: 20px;
+    margin-bottom: 10px;
+    margin-left: 20px;
+    /* Shorthand: same as padding */
+    margin: 10px 20px 10px 20px;
+    /* Center horizontally */
+    margin: 0 auto;
+}
+```
+
+### Box-sizing
+```css
+/* Default (content-box): width and height apply to content area only */
+.default-box {
+    box-sizing: content-box;
+    width: 300px; /* Content width only */
+    padding: 20px;
+    border: 10px solid black;
+    /* Total width = 300 + 20*2 + 10*2 = 360px */
+}
+
+/* Border-box: width and height include padding and border */
+.border-box {
+    box-sizing: border-box;
+    width: 300px; /* Total width including padding and border */
+    padding: 20px;
+    border: 10px solid black;
+    /* Total width = 300px */
+}
+
+/* Commonly used reset */
+* {
+    box-sizing: border-box;
+}
+```
+
+## TYPOGRAPHY
+------------------------
+
+```css
+/* Font properties */
+body {
+    font-family: 'Helvetica', Arial, sans-serif; /* Font family with fallbacks */
+    font-size: 16px; /* Base font size */
+    font-weight: normal; /* normal, bold, 100-900 */
+    font-style: normal; /* normal, italic, oblique */
+    font-variant: normal; /* normal, small-caps */
+    
+    /* Shorthand */
+    font: italic bold 16px/1.5 'Helvetica', Arial, sans-serif;
+    /* font-style font-weight font-size/line-height font-family */
+}
+
+/* Text properties */
+p {
+    color: #333; /* Text color */
+    line-height: 1.5; /* Line spacing (1.5 times font size) */
+    letter-spacing: 0.5px; /* Space between letters */
+    word-spacing: 2px; /* Space between words */
+    text-align: left; /* left, right, center, justify */
+    text-decoration: none; /* none, underline, line-through, overline */
+    text-transform: none; /* none, uppercase, lowercase, capitalize */
+    text-indent: 20px; /* First line indent */
+    white-space: normal; /* normal, nowrap, pre, pre-line, pre-wrap */
+}
+
+/* Web Fonts */
+@font-face {
+    font-family: 'CustomFont';
+    src: url('fonts/customfont.woff2') format('woff2'),
+         url('fonts/customfont.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}
+
+/* Google Fonts Example */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+
+.custom-font {
+    font-family: 'Roboto', sans-serif;
+}
+```
+
+## COLORS AND BACKGROUNDS
+------------------------
+
+### Colors
+```css
+.colors {
+    color: red; /* Named color */
+    color: #ff0000; /* Hex (RGB) */
+    color: #f00; /* Hex shorthand */
+    color: rgb(255, 0, 0); /* RGB format */
+    color: rgba(255, 0, 0, 0.5); /* RGBA with alpha/transparency */
+    color: hsl(0, 100%, 50%); /* HSL (hue, saturation, lightness) */
+    color: hsla(0, 100%, 50%, 0.5); /* HSLA with alpha */
+    color: transparent; /* Fully transparent */
+    color: currentColor; /* Inherits from parent */
+}
+```
+
+### Backgrounds
+```css
+.bg-properties {
+    /* Background color */
+    background-color: #f0f0f0;
+    
+    /* Background image */
+    background-image: url('image.jpg');
+    
+    /* Background repeat */
+    background-repeat: repeat; /* repeat, repeat-x, repeat-y, no-repeat */
+    
+    /* Background position */
+    background-position: center center; /* x y positions */
+    
+    /* Background size */
+    background-size: cover; /* cover, contain, or explicit dimensions */
+    
+    /* Background attachment */
+    background-attachment: fixed; /* scroll, fixed, local */
+    
+    /* Background shorthand */
+    background: #f0f0f0 url('image.jpg') no-repeat center/cover;
+    
+    /* Multiple backgrounds */
+    background: 
+        url('overlay.png') center/contain no-repeat,
+        linear-gradient(to bottom, rgba(0,0,0,0.5), rgba(0,0,0,0)),
+        url('background.jpg') center/cover no-repeat;
+}
+
+/* Gradients */
+.gradients {
+    /* Linear gradient */
+    background-image: linear-gradient(to right, red, yellow);
+    background-image: linear-gradient(45deg, red, yellow);
+    
+    /* Radial gradient */
+    background-image: radial-gradient(circle, red, yellow);
+    
+    /* Repeating gradient */
+    background-image: repeating-linear-gradient(45deg, red, red 10px, yellow 10px, yellow 20px);
+}
+```
+
+## LAYOUT AND POSITIONING
+------------------------
+
+### Display Property
+```css
+.display-values {
+    display: block; /* Takes full width, starts on new line */
+    display: inline; /* Takes only needed width, no new line */
+    display: inline-block; /* Inline but respects width/height */
+    display: none; /* Removes element completely */
+    display: flex; /* Flexbox layout */
+    display: grid; /* Grid layout */
+    display: table; /* Table layout */
+}
+```
+
+### Position Property
+```css
+.position-values {
+    /* Static (default) */
+    position: static; /* Normal flow, not affected by top/right/bottom/left */
+    
+    /* Relative */
+    position: relative; /* Positioned relative to normal position */
+    top: 10px;
+    left: 20px;
+    
+    /* Absolute */
+    position: absolute; /* Positioned relative to nearest positioned ancestor */
+    top: 20px;
+    right: 20px;
+    
+    /* Fixed */
+    position: fixed; /* Positioned relative to viewport, stays in place when scrolling */
+    bottom: 20px;
+    right: 20px;
+    
+    /* Sticky */
+    position: sticky; /* Hybrid of relative and fixed */
+    top: 0; /* Sticks to top when scrolled to */
+    
+    /* Z-index */
+    z-index: 100; /* Controls stacking order of positioned elements */
+}
+```
+
+### Float and Clear
+```css
+.float-example {
+    float: left; /* Element floats to the left */
+    float: right; /* Element floats to the right */
+    float: none; /* No floating (default) */
+}
+
+.clear-example {
+    clear: left; /* No floating elements allowed on left */
+    clear: right; /* No floating elements allowed on right */
+    clear: both; /* No floating elements allowed on either side */
+}
+
+/* Clearfix (for containing floated children) */
+.clearfix::after {
+    content: "";
+    display: table;
+    clear: both;
+}
+```
+
+## FLEXBOX
+------------------------
+
+Flexbox is a one-dimensional layout method designed for laying out items in rows or columns.
+
+```css
+/* Parent (flex container) */
+.container {
+    display: flex; /* or inline-flex */
+    
+    /* Direction */
+    flex-direction: row; /* row, row-reverse, column, column-reverse */
+    
+    /* Wrapping */
+    flex-wrap: nowrap; /* nowrap, wrap, wrap-reverse */
+    
+    /* Shorthand for direction and wrap */
+    flex-flow: row wrap;
+    
+    /* Horizontal alignment */
+    justify-content: flex-start; /* flex-start, flex-end, center, space-between, space-around, space-evenly */
+    
+    /* Vertical alignment */
+    align-items: stretch; /* stretch, flex-start, flex-end, center, baseline */
+    
+    /* Multi-line alignment */
+    align-content: stretch; /* stretch, flex-start, flex-end, center, space-between, space-around */
+}
+
+/* Children (flex items) */
+.item {
+    /* Order */
+    order: 0; /* Default 0, can be negative */
+    
+    /* Flexibility growth factor */
+    flex-grow: 0; /* Default 0, proportion of extra space to take up */
+    
+    /* Flexibility shrink factor */
+    flex-shrink: 1; /* Default 1, proportion of space to give up */
+    
+    /* Initial size */
+    flex-basis: auto; /* Initial size before growing/shrinking */
+    
+    /* Shorthand for grow, shrink, basis */
+    flex: 0 1 auto; /* default */
+    flex: 1; /* 1 0 0% - take up all available space equally */
+    flex: auto; /* 1 1 auto */
+    flex: none; /* 0 0 auto - make inflexible */
+    
+    /* Individual alignment (overrides container's align-items) */
+    align-self: auto; /* auto, flex-start, flex-end, center, baseline, stretch */
+}
+```
+
+### Flexbox Example
+```css
+/* Navigation with flexbox */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #333;
+    padding: 10px;
+}
+
+.nav-links {
+    display: flex;
+    list-style: none;
+    gap: 20px; /* Space between items */
+}
+
+.logo {
+    flex-grow: 0; /* Don't grow */
+}
+
+/* Card layout with flexbox */
+.card-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.card {
+    flex: 1 0 300px; /* Grow, don't shrink, base width 300px */
+    padding: 20px;
+    border: 1px solid #ccc;
+}
+```
+
+## CSS GRID
+------------------------
+
+CSS Grid is a two-dimensional layout system designed for complex layouts.
+
+```css
+/* Parent (grid container) */
+.container {
+    display: grid;
+    
+    /* Define columns */
+    grid-template-columns: 100px 200px 100px; /* 3 columns with fixed widths */
+    grid-template-columns: 1fr 2fr 1fr; /* 3 columns in proportion 1:2:1 */
+    grid-template-columns: repeat(3, 1fr); /* 3 equal columns */
+    grid-template-columns: minmax(100px, 1fr) 2fr; /* Min 100px, max 1fr + 2fr column */
+    grid-template-columns: auto 1fr auto; /* auto-sized, flexible, auto-sized */
+    
+    /* Define rows */
+    grid-template-rows: 100px auto 100px; /* Fixed, flexible, fixed */
+    grid-template-rows: repeat(3, 100px); /* 3 equal rows */
+    
+    /* Gap between cells */
+    grid-column-gap: 20px; /* Horizontal gap */
+    grid-row-gap: 10px; /* Vertical gap */
+    grid-gap: 10px 20px; /* Shorthand: row-gap column-gap */
+    gap: 10px; /* Modern shorthand for all gaps */
+    
+    /* Alignment of all items */
+    justify-items: stretch; /* stretch, start, end, center */
+    align-items: stretch; /* stretch, start, end, center */
+    
+    /* Alignment of entire grid */
+    justify-content: center; /* start, end, center, stretch, space-around, space-between, space-evenly */
+    align-content: center; /* start, end, center, stretch, space-around, space-between, space-evenly */
+    
+    /* Named template areas */
+    grid-template-areas: 
+        "header header header"
+        "sidebar content content"
+        "footer footer footer";
+}
+
+/* Children (grid items) */
+.item {
+    /* Placement by line numbers */
+    grid-column-start: 1;
+    grid-column-end: 3; /* or span 2 */
+    grid-row-start: 2;
+    grid-row-end: 4; /* or span 2 */
+    
+    /* Shorthand for column placement */
+    grid-column: 1 / 3; /* start / end */
+    grid-column: 1 / span 2; /* start / span */
+    
+    /* Shorthand for row placement */
+    grid-row: 2 / 4; /* start / end */
+    
+    /* Super shorthand for column and row */
+    grid-area: 2 / 1 / 4 / 3; /* row-start / column-start / row-end / column-end */
+    
+    /* Placement by template area */
+    grid-area: header; /* Uses named area from grid-template-areas */
+    
+    /* Individual alignment (overrides container values) */
+    justify-self: center; /* stretch, start, end, center */
+    align-self: center; /* stretch, start, end, center */
+}
+```
+
+### Grid Example
+```css
+.page-layout {
+    display: grid;
+    grid-template-columns: 1fr 3fr;
+    grid-template-rows: auto 1fr auto;
+    grid-template-areas:
+        "header header"
+        "sidebar main"
+        "footer footer";
+    min-height: 100vh;
+    gap: 20px;
+}
+
+.header { grid-area: header; }
+.sidebar { grid-area: sidebar; }
+.main { grid-area: main; }
+.footer { grid-area: footer; }
+
+/* Responsive grid */
+@media (max-width: 768px) {
+    .page-layout {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "header"
+            "main"
+            "sidebar"
+            "footer";
+    }
+}
+
+## RESPONSIVE DESIGN
+------------------------
+
+### Media Queries
+```css
+/* Basic media query structure */
+@media screen and (max-width: 768px) {
+    /* Styles applied when screen width is 768px or less */
+    body {
+        font-size: 14px;
+    }
+}
+
+/* Media query types */
+@media screen { } /* Screen devices */
+@media print { } /* Print preview and printed pages */
+@media speech { } /* Screen readers */
+@media all { } /* All media types (default) */
+
+/* Media features */
+@media (min-width: 768px) { } /* Minimum width */
+@media (max-width: 1200px) { } /* Maximum width */
+@media (min-height: 500px) { } /* Minimum height */
+@media (orientation: portrait) { } /* Device in portrait orientation */
+@media (orientation: landscape) { } /* Device in landscape orientation */
+@media (aspect-ratio: 16/9) { } /* Specific aspect ratio */
+@media (prefers-color-scheme: dark) { } /* User prefers dark color scheme */
+@media (prefers-reduced-motion) { } /* User prefers reduced motion */
+
+/* Combining media features */
+@media (min-width: 768px) and (max-width: 1200px) { } /* Between 768px and 1200px */
+@media (min-width: 768px), (orientation: portrait) { } /* 768px or wider OR in portrait */
+@media not (color) { } /* Devices that don't support color */
+```
+
+### Responsive Units
+```css
+.responsive-units {
+    /* Percentage - relative to parent */
+    width: 50%; /* Half of parent width */
+    
+    /* Viewport units */
+    width: 50vw; /* 50% of viewport width */
+    height: 50vh; /* 50% of viewport height */
+    min-height: 100vh; /* Full viewport height */
+    
+    /* Viewport minimum/maximum */
+    width: 50vmin; /* 50% of viewport's smaller dimension */
+    height: 50vmax; /* 50% of viewport's larger dimension */
+    
+    /* Font relative units */
+    margin: 1em; /* Relative to font-size of the element */
+    padding: 1.5rem; /* Relative to font-size of root element */
+    letter-spacing: 0.1em; /* Relative to font-size of element */
+    
+    /* Responsive font sizing */
+    font-size: calc(16px + 1vw); /* Base size plus viewport-relative increment */
+    font-size: clamp(1rem, 2.5vw, 2rem); /* Min, preferred, max */
+}
+```
+
+### Responsive Images
+```css
+/* Fluid images */
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Background image sizing */
+.hero {
+    background-image: url('hero.jpg');
+    background-size: cover;
+    height: 50vh;
+}
+
+/* Art direction with picture element (HTML) */
+/* 
+<picture>
+    <source media="(min-width: 1200px)" srcset="large.jpg">
+    <source media="(min-width: 768px)" srcset="medium.jpg">
+    <img src="small.jpg" alt="Responsive image">
+</picture> 
+*/
+```
+
+### Mobile-first vs Desktop-first
+```css
+/* Mobile-first approach */
+.element {
+    /* Base styles for mobile */
+    width: 100%;
+    padding: 10px;
+}
+
+@media (min-width: 768px) {
+    /* Tablet styles */
+    .element {
+        width: 50%;
+        padding: 20px;
+    }
+}
+
+@media (min-width: 1200px) {
+    /* Desktop styles */
+    .element {
+        width: 33.33%;
+        padding: 30px;
+    }
+}
+
+/* Desktop-first approach */
+.element {
+    /* Base styles for desktop */
+    width: 33.33%;
+    padding: 30px;
+}
+
+@media (max-width: 1199px) {
+    /* Tablet styles */
+    .element {
+        width: 50%;
+        padding: 20px;
+    }
+}
+
+@media (max-width: 767px) {
+    /* Mobile styles */
+    .element {
+        width: 100%;
+        padding: 10px;
+    }
+}
+```
+
+## ANIMATIONS AND TRANSITIONS
+------------------------
+
+### CSS Transitions
+```css
+.transition-element {
+    width: 100px;
+    height: 100px;
+    background-color: blue;
+    
+    /* Individual transition properties */
+    transition-property: width, background-color;
+    transition-duration: 0.3s;
+    transition-timing-function: ease-in-out;
+    transition-delay: 0.1s;
+    
+    /* Shorthand */
+    transition: width 0.3s ease-in-out, 
+               background-color 0.5s ease 0.1s;
+               /* property duration timing-function delay */
+}
+
+/* Apply changes on hover */
+.transition-element:hover {
+    width: 200px;
+    background-color: red;
+}
+
+/* Common timing functions */
+.timing-examples {
+    transition-timing-function: ease; /* Default */
+    transition-timing-function: linear; /* Same speed start to finish */
+    transition-timing-function: ease-in; /* Slow start */
+    transition-timing-function: ease-out; /* Slow end */
+    transition-timing-function: ease-in-out; /* Slow start and end */
+    transition-timing-function: cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Custom curve */
+    transition-timing-function: steps(5, end); /* Stepped animation */
+}
+```
+
+### CSS Animations
+```css
+/* Define the animation */
+@keyframes slide-in {
+    /* Starting state (0%) */
+    from {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+    
+    /* Ending state (100%) */
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* More complex animation with multiple steps */
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Apply animation */
+.animated-element {
+    /* Individual animation properties */
+    animation-name: slide-in;
+    animation-duration: 1s;
+    animation-timing-function: ease-out;
+    animation-delay: 0.5s;
+    animation-iteration-count: 1; /* or "infinite" */
+    animation-direction: normal; /* normal, reverse, alternate, alternate-reverse */
+    animation-fill-mode: forwards; /* none, forwards, backwards, both */
+    animation-play-state: running; /* running, paused */
+    
+    /* Shorthand */
+    animation: slide-in 1s ease-out 0.5s 1 normal forwards;
+    /* name duration timing-function delay iteration-count direction fill-mode */
+}
+
+/* Multiple animations */
+.multi-animated {
+    animation: 
+        slide-in 1s ease-out,
+        pulse 2s infinite ease-in-out 1s;
+}
+
+/* Pause animation on hover */
+.animated-element:hover {
+    animation-play-state: paused;
+}
+```
+
+### CSS Transforms
+```css
+.transform-examples {
+    /* 2D Transforms */
+    transform: translateX(20px); /* Move horizontally */
+    transform: translateY(-20px); /* Move vertically */
+    transform: translate(20px, -20px); /* Move in both directions */
+    
+    transform: scale(1.5); /* Scale uniformly */
+    transform: scaleX(1.5); /* Scale horizontally */
+    transform: scaleY(0.8); /* Scale vertically */
+    transform: scale(1.5, 0.8); /* Scale in both directions */
+    
+    transform: rotate(45deg); /* Rotate clockwise */
+    transform: rotate(-45deg); /* Rotate counter-clockwise */
+    
+    transform: skewX(10deg); /* Skew horizontally */
+    transform: skewY(10deg); /* Skew vertically */
+    transform: skew(10deg, 5deg); /* Skew in both directions */
+    
+    /* 3D Transforms */
+    transform: rotateX(45deg); /* Rotate around X-axis */
+    transform: rotateY(45deg); /* Rotate around Y-axis */
+    transform: rotateZ(45deg); /* Rotate around Z-axis (same as rotate) */
+    
+    transform: perspective(500px) rotateY(45deg); /* Add perspective */
+    
+    /* Multiple transforms */
+    transform: translateY(20px) rotate(45deg) scale(1.5);
+    
+    /* Transform origin */
+    transform-origin: center; /* Default */
+    transform-origin: top left; /* From top-left corner */
+    transform-origin: 50px 50px; /* From specific point */
+}
+
+/* 3D space for children */
+.container-3d {
+    perspective: 1000px; /* Depth of 3D space */
+    perspective-origin: center; /* Viewpoint origin */
+    transform-style: preserve-3d; /* Preserve 3D positioning of children */
+    backface-visibility: hidden; /* Hide elements when turned away */
+}
+```
+
+## CSS BEST PRACTICES
+------------------------
+
+### Performance Optimization
+```css
+/* Efficient selectors (fastest to slowest) */
+#unique-id { } /* ID (fastest) */
+.my-class { } /* Class */
+div { } /* Element */
+* { } /* Universal (slowest) */
+div > p { } /* Child combinator */
+div p { } /* Descendant combinator (slowest) */
+
+/* Avoid excessive specificity */
+/* Bad */
+body div.container ul li.item a.link { }
+
+/* Better */
+.link { }
+
+/* Reduce repaints and reflows */
+/* Bad - causes reflow */
+.box {
+    width: 300px;
+    transition: width 0.3s;
+}
+.box:hover {
+    width: 350px;
+}
+
+/* Better - use transform instead */
+.box {
+    width: 300px;
+    transform: scale(1);
+    transition: transform 0.3s;
+}
+.box:hover {
+    transform: scale(1.17); /* 350/300 ≈ 1.17 */
+}
+```
+
+### CSS Organization
+```css
+/* BEM (Block, Element, Modifier) methodology */
+.block { } /* Component */
+.block__element { } /* Child of component */
+.block--modifier { } /* Variation of component */
+.block__element--modifier { } /* Variation of child */
+
+/* Examples */
+.card { } /* Block: Card component */
+.card__title { } /* Element: Title inside card */
+.card__image { } /* Element: Image inside card */
+.card--featured { } /* Modifier: Featured variation of card */
+.card__title--large { } /* Modifier: Large variation of card title */
+
+/* Commenting and sectioning */
+/* ==========================================================================
+   HEADER SECTION
+   ========================================================================== */
+
+/* Main navigation */
+.main-nav {
+    /* ... */
+}
+
+/* Logo */
+.logo {
+    /* ... */
+}
+```
+
+### Accessibility
+```css
+/* Focus styles */
+button:focus {
+    outline: 2px solid blue;
+    outline-offset: 2px;
+}
+
+/* Visually hidden content (available to screen readers) */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Respect user preferences */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: #121212;
+        color: #e0e0e0;
+    }
+}
+
+/* High contrast mode */
+@media (forced-colors: active) {
+    button {
+        border: 1px solid ButtonText;
+    }
+}
+```
+
+### CSS Resets and Normalization
+```css
+/* Simple reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Modern CSS reset example */
+html {
+    box-sizing: border-box;
+    font-size: 16px;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: inherit;
+}
+
+body {
+    margin: 0;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+}
+
+img,
+picture,
+video,
+canvas,
+svg {
+    display: block;
+    max-width: 100%;
+}
+
+input,
+button,
+textarea,
+select {
+    font: inherit;
+}
+
+/* Popular CSS Reset Libraries:
+   - normalize.css (github.com/necolas/normalize.css)
+   - modern-normalize (github.com/sindresorhus/modern-normalize)
+*/
+```
+
+## CSS VARIABLES (CUSTOM PROPERTIES)
+------------------------
+
+```css
+/* Defining variables in :root scope (global) */
+:root {
+    --primary-color: #3498db;
+    --secondary-color: #2ecc71;
+    --text-color: #333;
+    --font-size-base: 16px;
+    --spacing-unit: 8px;
+    --border-radius: 4px;
+    --transition-quick: 0.2s ease;
+}
+
+/* Using variables */
+.button {
+    background-color: var(--primary-color);
+    color: white;
+    padding: calc(var(--spacing-unit) * 1.5) calc(var(--spacing-unit) * 3);
+    border-radius: var(--border-radius);
+    font-size: var(--font-size-base);
+    transition: background-color var(--transition-quick);
+}
+
+.button:hover {
+    background-color: var(--secondary-color);
+}
+
+/* Fallback values */
+.element {
+    color: var(--undefined-color, #666);
+}
+
+/* Locally scoped variables */
+.card {
+    --card-padding: 16px;
+    padding: var(--card-padding);
+}
+
+/* Variables in media queries */
+@media (min-width: 768px) {
+    :root {
+        --font-size-base: 18px;
+        --spacing-unit: 12px;
+    }
+}
+
+/* Theme switching with variables */
+.light-theme {
+    --bg-color: #ffffff;
+    --text-color: #333333;
+}
+
+.dark-theme {
+    --bg-color: #121212;
+    --text-color: #e0e0e0;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+}
+```
+
+## CSS METHODOLOGIES
+------------------------
+
+### 1. BEM (Block Element Modifier)
+```css
+/* Block component */
+.card {}
+
+/* Element that depends upon the block */
+.card__title {}
+.card__image {}
+.card__button {}
+
+/* Modifier that changes the style of the block */
+.card--featured {}
+.card--dark {}
+.card__button--primary {}
+```
+
+### 2. OOCSS (Object-Oriented CSS)
+```css
+/* Separate structure from skin */
+.btn { /* Structure */
+    display: inline-block;
+    padding: 0.5em 1em;
+    border-radius: 4px;
+}
+.btn-primary { /* Skin */
+    background-color: blue;
+    color: white;
+}
+.btn-secondary { /* Skin */
+    background-color: gray;
+    color: black;
+}
+
+/* Separate container from content */
+.content h2 {} /* Bad: element depends on container */
+.heading {} /* Better: reusable regardless of container */
+```
+
+### 3. SMACSS (Scalable and Modular Architecture for CSS)
+```css
+/* Base rules */
+body { margin: 0; }
+a { color: #03c; }
+
+/* Layout rules */
+.l-header { height: 80px; }
+.l-sidebar { width: 200px; }
+
+/* Module rules */
+.btn {}
+.card {}
+
+/* State rules */
+.is-active {}
+.is-hidden {}
+
+/* Theme rules */
+.theme-dark {}
+.theme-holiday {}
+```
+
+### 4. Atomic CSS / Utility-First (like Tailwind CSS)
+```css
+/* Utility classes */
+.d-flex { display: flex; }
+.justify-between { justify-content: space-between; }
+.p-4 { padding: 1rem; }
+.m-2 { margin: 0.5rem; }
+.text-lg { font-size: 1.125rem; }
+.bg-blue { background-color: blue; }
+.text-white { color: white; }
+
+<!-- Example HTML -->
+<!-- <div class="d-flex justify-between p-4 bg-blue text-white"> -->
+<!--   <span class="text-lg">Title</span> -->
+<!--   <button class="p-2 m-2">Button</button> -->
+<!-- </div> -->
+```
+
+## CSS PREPROCESSORS
+------------------------
+
+CSS preprocessors extend CSS with variables, nesting, mixins, functions, and more.
+
+### SASS/SCSS Example
+```scss
+// Variables
+$primary-color: #3498db;
+$padding-base: 15px;
+
+// Nesting
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  
+  .header {
+    background-color: $primary-color;
+    padding: $padding-base;
+    
+    h1 {
+      font-size: 2em;
+    }
+  }
+}
+
+// Mixins
+@mixin flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.centered-box {
+  @include flex-center;
+  height: 200px;
+}
+
+// Extend/Inheritance
+%button-base {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 4px;
+}
+
+.primary-button {
+  @extend %button-base;
+  background-color: $primary-color;
+  color: white;
+}
+
+// Functions
+@function calculate-width($cols) {
+  @return 100% / $cols;
+}
+
+.col-3 {
+  width: calculate-width(3); // 33.3333%
+}
+
+// Conditionals
+@mixin text-color($bg-color) {
+  background-color: $bg-color;
+  
+  @if (lightness($bg-color) > 50%) {
+    color: #333; // Dark text for light backgrounds
+  } @else {
+    color: #fff; // Light text for dark backgrounds
+  }
+}
+
+.light-box {
+  @include text-color(#f0f0f0);
+}
+
+// Loops
+@for $i from 1 through 4 {
+  .m-#{$i} {
+    margin: 0.25rem * $i;
+  }
+}
+```
+
+## ADDITIONAL RESOURCES
+------------------------
+
+### Online Tools
+- **CSS Validators**: W3C CSS Validation Service (jigsaw.w3.org/css-validator/)
+- **CSS Frameworks**: Bootstrap, Tailwind CSS, Foundation, Bulma
+- **CSS Generators**: Gradient generators, Flexbox generators, Grid generators
+- **CSS Animation Tools**: Animate.css, Animation libraries
+
+### Learning Resources
+- **MDN Web Docs**: developer.mozilla.org/en-US/docs/Web/CSS
+- **CSS-Tricks**: css-tricks.com
+- **Codecademy CSS Courses**: codecademy.com/learn/learn-css
+- **freeCodeCamp**: freecodecamp.org
+- **CSS Grid Garden**: cssgridgarden.com
+- **Flexbox Froggy**: flexboxfroggy.com
+```
