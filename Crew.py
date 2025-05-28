@@ -940,7 +940,7 @@ def start_gui() -> None:
     Prints the output and errors (if any) from the subprocess.
     """
     # Define the command to be executed
-    command = ["python", "gui.py"]
+    command = ["python", "gui.py", "/home/me/BACKUP/PROJECTS/Crew/Crew.py"]
     # Execute the command
     try:
         result = subprocess.run(command, check=True, capture_output=True, text=True)
