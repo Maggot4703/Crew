@@ -1,0 +1,367 @@
+# Docker Guide
+
+## Introduction
+Docker is an open-source platform that automates the deployment, scaling, and management of applications through containerization. Containers package software and dependencies together, ensuring consistent behavior across different environments.
+
+## Key Concepts
+
+### Containers
+Containers are lightweight, standalone executable packages that include everything needed to run an application: code, runtime, system tools, libraries, and settings.
+
+### Images
+Images are read-only templates used to create containers. They contain the application code, libraries, dependencies, tools, and other files needed for the application to run.
+
+### Dockerfile
+A Dockerfile is a text file containing instructions for building a Docker image. It specifies the base image, environment variables, files to include, ports to expose, and commands to run.
+
+### Registry
+A registry is a repository for Docker images. Docker Hub is the default public registry, but private registries can also be used.
+
+## Docker Installation
+
+### Linux (Ubuntu/Debian)
+```bash
+# Update package listings
+sudo apt-get update
+
+# Install prerequisites
+sudo apt-get install apt-transport-https ca-certificates curl software-properties-common
+
+# Add Docker's official GPG key
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+
+# Add Docker repository
+sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+
+# Update package listings again
+sudo apt-get update
+
+# Install Docker
+sudo apt-get install docker-ce docker-ce-cli containerd.io
+
+# Start Docker
+sudo systemctl start docker
+sudo systemctl enable docker
+
+# Test Docker installation
+sudo docker run hello-world
+```
+
+### Windows
+1. Download Docker Desktop from [Docker Hub](https://hub.docker.com/editions/community/docker-ce-desktop-windows/)
+2. Follow the installation wizard
+3. Enable WSL 2 if prompted
+4. Launch Docker Desktop
+
+### macOS
+1. Download Docker Desktop from [Docker Hub](https://hub.docker.com/editions/community/docker-ce-desktop-mac/)
+2. Follow the installation wizard
+3. Launch Docker Desktop
+
+## Basic Docker Commands
+
+### Image Commands
+```bash
+# List all images
+docker images
+
+# Pull an image from Docker Hub
+docker pull ubuntu:20.04
+
+# Build an image from a Dockerfile
+docker build -t myapp:1.0 .
+
+# Remove an image
+docker rmi ubuntu:20.04
+
+# Search for images on Docker Hub
+docker search nginx
+```
+
+### Container Commands
+```bash
+# List running containers
+docker ps
+
+# List all containers (including stopped)
+docker ps -a
+
+# Create and start a container
+docker run -d -p 80:80 --name webserver nginx
+
+# Stop a container
+docker stop webserver
+
+# Start a stopped container
+docker start webserver
+
+# Remove a container
+docker rm webserver
+
+# Execute a command in a running container
+docker exec -it webserver bash
+
+# View container logs
+docker logs webserver
+
+# Inspect container details
+docker inspect webserver
+```
+
+### Volume Commands
+```bash
+# Create a volume
+docker volume create mydata
+
+# List volumes
+docker volume ls
+
+# Mount a volume when running a container
+docker run -d -v mydata:/data --name mycontainer ubuntu
+
+# Remove a volume
+docker volume rm mydata
+```
+
+### Network Commands
+```bash
+# Create a network
+docker network create mynetwork
+
+# List networks
+docker network ls
+
+# Connect a container to a network
+docker network connect mynetwork mycontainer
+
+# Disconnect a container from a network
+docker network disconnect mynetwork mycontainer
+
+# Remove a network
+docker network rm mynetwork
+```
+
+## Writing Dockerfiles
+
+### Basic Structure
+```dockerfile
+# Base image
+FROM ubuntu:20.04
+
+# Set working directory
+WORKDIR /app
+
+# Copy files from host to container
+COPY . .
+
+# Run commands to install dependencies
+RUN apt-get update && apt-get install -y python3 python3-pip
+
+# Set environment variables
+ENV PORT=8000
+
+# Expose ports
+EXPOSE 8000
+
+# Default command to run when container starts
+CMD ["python3", "app.py"]
+```
+
+### Common Dockerfile Instructions
+- **FROM**: Sets the base image
+- **WORKDIR**: Sets the working directory for subsequent instructions
+- **COPY/ADD**: Copies files from host to container
+- **RUN**: Executes commands during build
+- **ENV**: Sets environment variables
+- **EXPOSE**: Informs Docker that the container listens on specific ports
+- **VOLUME**: Creates a mount point for persisting data
+- **CMD**: Sets the default command to run when the container starts
+- **ENTRYPOINT**: Configures the container to run as an executable
+
+### Best Practices for Dockerfiles
+1. Use specific image versions (e.g., `python:3.9-slim` instead of `python:latest`)
+2. Minimize layers by combining related commands
+3. Clean up after package installations to reduce image size
+4. Use multi-stage builds for smaller production images
+5. Don't run processes as root when possible
+6. Include only necessary files
+7. Use .dockerignore to exclude unnecessary files
+8. Set proper health checks
+
+### Multi-stage Build Example
+```dockerfile
+# Build stage
+FROM node:14 AS build
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build
+
+# Production stage
+FROM nginx:alpine
+COPY --from=build /app/dist /usr/share/nginx/html
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
+```
+
+## Docker Compose
+Docker Compose is a tool for defining and running multi-container Docker applications.
+
+### docker-compose.yml Example
+```yaml
+version: '3'
+services:
+  web:
+    build: ./web
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./web:/app
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgres://postgres:password@db:5432/mydb
+  
+  db:
+    image: postgres:13
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=mydb
+
+volumes:
+  postgres_data:
+```
+
+### Docker Compose Commands
+```bash
+# Start services
+docker-compose up
+
+# Start services in detached mode
+docker-compose up -d
+
+# Stop services
+docker-compose down
+
+# Stop services and remove volumes
+docker-compose down -v
+
+# View logs
+docker-compose logs
+
+# Execute command in service
+docker-compose exec web bash
+
+# Build or rebuild services
+docker-compose build
+```
+
+## Container Orchestration
+For managing containers at scale, consider:
+- **Docker Swarm**: Native Docker clustering and scheduling tool
+- **Kubernetes**: Open-source container orchestration platform
+- **Amazon ECS**: Amazon's container management service
+- **Azure Container Instances**: Microsoft's serverless container service
+
+## Data Management with Docker
+
+### Volume Types
+1. **Named Volumes**: Managed by Docker, persistent
+   ```bash
+   docker run -v mydata:/app/data nginx
+   ```
+
+2. **Bind Mounts**: Maps a host directory to a container directory
+   ```bash
+   docker run -v $(pwd):/app nginx
+   ```
+
+3. **tmpfs Mounts**: Stored in host memory only (not persistent)
+   ```bash
+   docker run --tmpfs /app/temp nginx
+   ```
+
+## Networking in Docker
+
+### Network Types
+1. **Bridge**: Default network for containers on the same host
+2. **Host**: Uses the host's networking directly
+3. **Overlay**: For containers across multiple Docker hosts
+4. **Macvlan**: Assigns MAC addresses to containers
+5. **None**: Disables networking
+
+```bash
+# Run container with specific network
+docker run --network=host nginx
+```
+
+## Docker Security Best Practices
+1. Use official images or build from trusted sources
+2. Scan images for vulnerabilities (using tools like Trivy, Clair)
+3. Don't run containers as root
+4. Use read-only file systems when possible
+5. Limit container resources (CPU, memory)
+6. Apply security updates regularly
+7. Use secrets management for sensitive data
+8. Implement network segmentation
+9. Use Docker Content Trust for signed images
+10. Audit Docker daemon and container logs
+
+## Debugging Docker Containers
+```bash
+# Get container logs
+docker logs container_name
+
+# Inspect container configuration
+docker inspect container_name
+
+# Get container stats
+docker stats container_name
+
+# Execute commands in running containers
+docker exec -it container_name bash
+
+# View container processes
+docker top container_name
+
+# Debug container networking
+docker network inspect network_name
+```
+
+## Common Issues and Solutions
+1. **Container exits immediately**: Missing foreground process or incorrect CMD/ENTRYPOINT
+2. **Can't connect to container**: Port mapping issues or network configuration
+3. **Permission denied**: File ownership/permission problems
+4. **Out of disk space**: Need to prune unused images/containers
+5. **Image pull failures**: Registry authentication or connectivity issues
+
+## Docker in CI/CD Pipelines
+Docker can be integrated with CI/CD tools like Jenkins, GitLab CI, GitHub Actions, and CircleCI for automated testing and deployment.
+
+```yaml
+# Example GitHub Actions workflow
+name: Docker Build and Push
+on:
+  push:
+    branches: [ main ]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          tags: username/repository:latest
+```
+
+## Resources
+- [Docker Documentation](https://docs.docker.com/)
+- [Docker Hub](https://hub.docker.com/)
+- [Docker Curriculum](https://docker-curriculum.com/)
+- [Play with Docker](https://labs.play-with-docker.com/)
+- [Docker Cheat Sheet](https://www.docker.com/sites/default/files/d8/2019-09/docker-cheat-sheet.pdf)

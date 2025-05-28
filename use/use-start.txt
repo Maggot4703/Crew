@@ -1,0 +1,13 @@
+could you give me comprehensive details of using the folowing list of langauges/tools below. save files as ""use-" +filename+".txt".  include examples and useage,  graphics would be nice also,  if you get problems, retry then continue list,  create files in smaller chunks,
+
+LIST:
+BASH
+Python
+
+
+
+
+create a file to read out contents of a selected "use-" file to be read out loud
+
+
+create script to suggest further files to write as new  "use-"+filename+".txt" files
