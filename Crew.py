@@ -2055,47 +2055,47 @@ if __name__ == "__main__":
     # Initialize logging
     # ... (rest of the main block, ensure logging is initialized if not already)
 
-    # Backup project first
-    if not backup_project():
-        logger.error("Project backup failed. Aborting further operations.")
-        speak("Project backup failed. Aborting further operations.")
-        # sys.exit(1) # Consider exiting if backup is critical
+    # Attempt to run the backup process first
+    try:
+        logger.info("Attempting to create a backup of the project...")
+        speak("Attempting to create a backup of the project.")
+        if not backup_project():
+            logger.error("Project backup failed. Aborting further operations.")
+            speak("Project backup failed. Aborting further operations.")
+            # sys.exit(1) # Consider exiting if backup is critical
+        else:
+            logger.info("Project backup completed. Proceeding with other operations.")
+            speak("Project backup completed. Proceeding with other operations.")
+    except Exception as e:
+        logger.error(f"Error during backup process: {e}")
+        speak("Error during backup process. Proceeding with other operations.")
 
     # Generate project summary
-    generate_project_summary()
+    try:
+        logger.info("Generating project summary...")
+        generate_project_summary()
+    except Exception as e:
+        logger.error(f"Error generating project summary: {e}")
 
-    # Run the main application logic
-    # main_return_code = main() # Assuming main() is your primary script logic
+    # Attempt to fix all issues
+    try:
+        logger.info("Attempting to fix all project issues...")
+        if auto_fix_all_issues():
+            logger.info("All detected issues fixed.")
+        else:
+            logger.warning("Some issues could not be fixed automatically.")
+    except Exception as e:
+        logger.error(f"Error in auto-fix process: {e}")
 
-    # Auto-fix and push at the end
-    logger.info("Attempting to auto-fix and push project...")
-    if auto_fix_all_issues():
-        logger.info("Auto-fix and push process completed successfully.")
-        speak("Project auto-fix and push completed successfully.")
-    else:
-        logger.warning("Auto-fix and push process encountered issues. Please review logs.")
-        speak("Project auto-fix and push encountered issues. Please review logs.")
-        # Optional: Generate help file if push fails within auto_fix_all_issues
-        # issues = detect_github_issues()
-        # if not issues.get("auth_working"): # Example condition
-        #     generate_help_file(issues)
-            
-    # Attempt to push the project to GitHub
-    # if auto_commit_changes(): # This was auto_commit_changes, consider if auto_fix_all_issues covers it
-    #    logger.info("Changes committed. Attempting to push to GitHub.")
-    #    if try_push_project(): # try_push_project handles its own TTS
-    #        logger.info("Project push successful.")
-    #    else:
-    #        logger.error("Project push failed. Please check logs and github_issues_help.txt.")
-    #        speak("Project push failed. Please review logs and the generated help file.")
-            # issues = detect_github_issues() # Detect issues again after push attempt
-            # generate_help_file(issues) # Generate help file if push fails
-    # else:
-    #    logger.info("No changes to commit or commit failed.")
-    #    speak("No new changes were committed.")
+    # Start the GUI
+    try:
+        logger.info("Attempting to start the GUI...")
+        speak("Attempting to start the GUI.")
+        start_gui()
+        logger.info("GUI started (or at least the attempt was made).")
+    except Exception as e:
+        logger.error(f"Failed to start the GUI: {e}")
+        speak("Failed to start the GUI.")
 
-
-    # Final message
-    speak("NPCs Data Processing Tool script execution finished.")
-    logger.info("Script finished.")
-    # sys.exit(main_return_code) # Exit with the return code from main()
+    logger.info("Crew script main execution finished.")
+    speak("Crew script main execution finished.")
