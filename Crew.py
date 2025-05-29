@@ -1130,11 +1130,9 @@ if __name__ == "__main__":
     backup_parent_dir = project_dir.parent / f"{project_dir.name}_Backups"
 
     # Add backup pause option
-    logger.info("--- Backup Control ---")
-    backup_response = (
-        input("Do you want to proceed with backup? (y/n): ").strip().lower()
-    )
-    if backup_response not in ["y", "yes"]:
+    logger.info("--- Backup Control ---")y
+    backup_response = input("Do you want to proceed with backup? (y/n): ").strip().lower()
+    if backup_response not in ['y', 'yes']:
         logger.info("Backup skipped by user request.")
         speak("Backup skipped.")
     else:
