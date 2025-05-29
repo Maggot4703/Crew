@@ -33,7 +33,10 @@ Date: May 2025
 Version: 2.0 with enhanced layout and script execution
 """
 
+import glob
+import importlib.util
 import logging  # Application logging
+import sys
 import threading  # Background task processing
 import tkinter as tk
 from pathlib import Path  # Cross-platform file handling
@@ -159,20 +162,6 @@ def auto_import_py_files() -> Tuple[List[str], List[Tuple[str, str]]]:
 
                 # Skip files in excluded directories
                 if any(skip_dir in relative_path.parts for skip_dir in skip_dirs):
-                    continue
-
-                # Skip any file in virtual environment or site-packages path
-                path_str = str(relative_path).lower()
-                if any(
-                    venv_indicator in path_str
-                    for venv_indicator in [
-                        "venv",
-                        "site-packages",
-                        "lib/python",
-                        ".venv",
-                        "env/lib",
-                    ]
-                ):
                     continue
 
                 # Skip excluded files
@@ -603,6 +592,11 @@ class CrewGUI:
             # Store column widths for later application after table is populated
             self._saved_column_widths = self.config.get("column_widths", {})
 
+            # Restore column visibility preferences
+            saved_visibility = self.config.get("column_visibility", {})
+            if saved_visibility and hasattr(self, "column_visibility"):
+                self.column_visibility.update(saved_visibility)
+
         except Exception as e:
             logging.error(f"Error loading window state: {e}")
 
@@ -679,6 +673,10 @@ class CrewGUI:
             for col in self.data_table["columns"]:
                 column_widths[col] = self.data_table.column(col, "width")
             self.config.set("column_widths", column_widths)
+
+            # Save column visibility preferences
+            if hasattr(self, "column_visibility"):
+                self.config.set("column_visibility", self.column_visibility)
 
         except Exception as e:
             logging.error(f"Error saving window state: {e}")
@@ -886,6 +884,7 @@ class CrewGUI:
         self.current_columns = []
         self.current_data = []
         self.headers = []  # Initialize empty headers
+        self.column_visibility = {}  # Initialize column visibility tracking
 
     def create_main_layout(self) -> None:
         """Create the main application layout with resizable panels.
