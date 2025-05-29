@@ -3759,3 +3759,33 @@ class CrewGUI:
             self.details_text.delete("1.0", tk.END)
             error_msg = f"Error loading script: {script_path}\n\nError: {str(e)}"
             self.details_text.insert("1.0", error_msg)
+
+
+def main():
+    """Main entry point for the GUI application."""
+    try:
+        # Configure logging for standalone execution
+        logging.basicConfig(
+            level=logging.INFO,
+            format="%(asctime)s - %(levelname)s - %(message)s",
+            handlers=[logging.FileHandler("gui.log"), logging.StreamHandler()],
+        )
+
+        # Create main window
+        root = tk.Tk()
+
+        # Initialize and run the GUI application
+        app = CrewGUI(root)
+
+        # Start the GUI main loop
+        root.mainloop()
+
+    except Exception as e:
+        logging.error(f"Failed to start GUI application: {e}")
+        if "root" in locals():
+            messagebox.showerror("GUI Error", f"Failed to start application:\n{e}")
+        raise
+
+
+if __name__ == "__main__":
+    main()
