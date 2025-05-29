@@ -1129,11 +1129,21 @@ if __name__ == "__main__":
     project_dir = project_root
     backup_parent_dir = project_dir.parent / f"{project_dir.name}_Backups"
 
-    logger.info("--- Task: Project Backup ---")
-    if backup_project(project_dir, backup_parent_dir):
-        logger.info("Project backup task completed successfully.")
+    # Add backup pause option
+    logger.info("--- Backup Control ---")
+    backup_response = (
+        input("Do you want to proceed with backup? (y/n): ").strip().lower()
+    )
+    if backup_response not in ["y", "yes"]:
+        logger.info("Backup skipped by user request.")
+        speak("Backup skipped.")
     else:
-        logger.error("Project backup task failed.")
+        logger.info("--- Task: Project Backup ---")
+        logger.info("--- Task: Project Backup ---")
+        if backup_project(project_dir, backup_parent_dir):
+            logger.info("Project backup task completed successfully.")
+        else:
+            logger.error("Project backup task failed.")
 
     logger.info("--- Task: Generate Project Summary ---")
     summary_file = project_dir / "project_summary.md"

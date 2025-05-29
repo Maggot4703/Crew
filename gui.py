@@ -14,6 +14,7 @@ Core Features:
 - Background script execution from workspace
 - Export data to Excel format
 - Auto-save window state and preferences
+- Text-to-speech functionality for details view
 
 Layout:
 - Left panel: Controls, Groups, and Filters (narrow, fixed width)
@@ -27,6 +28,7 @@ Technical Features:
 - Configurable window state persistence
 - Error handling with user-friendly dialogs
 - Comprehensive logging system
+- TTS (pyttsx3) integration for selected text
 
 Author: Generated via AI assistance
 Date: May 2025
@@ -52,6 +54,15 @@ from typing import (  # Type hints for better code quality; Additional type hint
     Optional,
     Tuple,
 )
+
+# TTS imports
+try:
+    import pyttsx3
+
+    TTS_AVAILABLE = True
+except ImportError:
+    TTS_AVAILABLE = False
+    pyttsx3 = None
 
 from config import Config  # Configuration management
 from database_manager import DatabaseManager  # Data persistence layer
@@ -382,6 +393,9 @@ class CrewGUI:
                 target=self._background_worker, daemon=True
             )
             self.worker_thread.start()
+
+            # Initialize TTS engine
+            self._init_tts()
 
             # Load window state after widgets are created
             self.load_window_state()
@@ -834,6 +848,192 @@ class CrewGUI:
             thread safety and prevent application instability.
         """
         self.task_queue.put((func, args, callback))
+
+    def _init_tts(self) -> None:
+        """Initialize the TTS engine with optimal settings."""
+        self.tts_engine = None
+        self.tts_voice_id = None
+        self.tts_rate = 150  # Default speech rate
+        self.tts_volume = 0.8  # Default volume
+
+        if not TTS_AVAILABLE:
+            logging.warning("TTS not available: pyttsx3 not installed")
+            return
+
+        try:
+            self.tts_engine = pyttsx3.init()
+
+            # Set up female voice if available
+            voices = self.tts_engine.getProperty("voices")
+            if voices:
+                # Try to find a female voice
+                for voice in voices:
+                    if voice.gender and "female" in voice.gender.lower():
+                        self.tts_voice_id = voice.id
+                        break
+
+                # If no female voice found, use the first available voice
+                if not self.tts_voice_id and voices:
+                    self.tts_voice_id = voices[0].id
+
+                if self.tts_voice_id:
+                    self.tts_engine.setProperty("voice", self.tts_voice_id)
+
+            # Set default properties
+            self.tts_engine.setProperty("rate", self.tts_rate)
+            self.tts_engine.setProperty("volume", self.tts_volume)
+
+            logging.info("TTS engine initialized successfully")
+
+        except Exception as e:
+            logging.error(f"Failed to initialize TTS engine: {e}")
+            self.tts_engine = None
+
+    def _preprocess_text_for_tts(self, text: str) -> str:
+        """Preprocess text for better TTS pronunciation."""
+        if not text:
+            return ""
+
+        # Remove excessive whitespace and normalize line breaks
+        text = " ".join(text.split())
+
+        # Handle common programming terms and symbols
+        replacements = {
+            "def ": "define ",
+            "import ": "import ",
+            "from ": "from ",
+            "class ": "class ",
+            "if ": "if ",
+            "else:": "else",
+            "elif ": "else if ",
+            "for ": "for ",
+            "while ": "while ",
+            "try:": "try",
+            "except:": "except",
+            "finally:": "finally",
+            "return ": "return ",
+            "print(": "print ",
+            "()": " parentheses",
+            "[]": " brackets",
+            "{}": " braces",
+            "==": " equals ",
+            "!=": " not equals ",
+            "<=": " less than or equal ",
+            ">=": " greater than or equal ",
+            "&&": " and ",
+            "||": " or ",
+            "++": " increment ",
+            "--": " decrement ",
+            "/*": " comment start ",
+            "*/": " comment end ",
+            "//": " comment ",
+            "#": " hash ",
+            "\t": " tab ",
+            "\n": ". ",
+            "\r": ". ",
+        }
+
+        for old, new in replacements.items():
+            text = text.replace(old, new)
+
+        return text
+
+    def speak_text(self, text: str) -> None:
+        """Speak the given text using TTS in a background thread."""
+        if not self.tts_engine or not text.strip():
+            return
+
+        def tts_worker():
+            try:
+                processed_text = self._preprocess_text_for_tts(text)
+                if processed_text:
+                    self.tts_engine.say(processed_text)
+                    self.tts_engine.runAndWait()
+            except Exception as e:
+                logging.error(f"TTS error: {e}")
+
+        # Run TTS in background thread to avoid blocking UI
+        tts_thread = threading.Thread(target=tts_worker, daemon=True)
+        tts_thread.start()
+
+    def stop_tts(self) -> None:
+        """Stop current TTS playback."""
+        if self.tts_engine:
+            try:
+                self.tts_engine.stop()
+            except Exception as e:
+                logging.error(f"Error stopping TTS: {e}")
+
+    def _speak_selected_text(self) -> None:
+        """Speak the currently selected text in the details view."""
+        try:
+            # Check if details_text widget has focus and has selected text
+            if hasattr(self, "details_text"):
+                try:
+                    selected_text = self.details_text.selection_get()
+                    if selected_text.strip():
+                        self.update_status("Speaking selected text...")
+                        self.speak_text(selected_text)
+                    else:
+                        self.update_status("No text selected")
+                except tk.TclError:
+                    # No text selected
+                    self.update_status("No text selected")
+        except Exception as e:
+            logging.error(f"Error speaking selected text: {e}")
+            self.update_status("Error speaking text")
+
+    def _speak_all_details_text(self) -> None:
+        """Speak all text in the details view."""
+        try:
+            if hasattr(self, "details_text"):
+                all_text = self.details_text.get("1.0", tk.END)
+                if all_text.strip():
+                    self.update_status("Speaking all details text...")
+                    self.speak_text(all_text)
+                else:
+                    self.update_status("No text to speak")
+        except Exception as e:
+            logging.error(f"Error speaking all text: {e}")
+            self.update_status("Error speaking text")
+
+    def _show_details_context_menu(self, event: tk.Event) -> None:
+        """Show TTS context menu for the Details View on right-click."""
+        try:
+            # Only show menu if TTS is available
+            if TTS_AVAILABLE and hasattr(self, "details_context_menu"):
+                # Update menu items based on current selection
+                try:
+                    # Check if there's selected text
+                    selected_text = self.details_text.selection_get()
+                    has_selection = bool(selected_text.strip())
+                except tk.TclError:
+                    # No selection
+                    has_selection = False
+
+                # Enable/disable menu items based on context
+                menu = self.details_context_menu
+                menu.entryconfig(
+                    0, state="normal" if has_selection else "disabled"
+                )  # Speak Selected
+
+                # Check if there's any text to speak
+                all_text = self.details_text.get("1.0", tk.END)
+                has_text = bool(all_text.strip())
+                menu.entryconfig(
+                    1, state="normal" if has_text else "disabled"
+                )  # Speak All
+
+                # Show context menu at cursor position
+                menu.tk_popup(event.x_root, event.y_root)
+        except Exception as e:
+            logging.error(f"Error showing details context menu: {e}")
+        finally:
+            # Ensure menu is hidden if there's an error
+            try:
+                self.details_context_menu.grab_release()
+            except:
+                pass
 
     def setup_logging(self) -> None:
         """Configure logging system for the application.
@@ -2586,6 +2786,22 @@ class CrewGUI:
             # Configure text widget to use scrollbar
             self.details_text.configure(yscrollcommand=y_scroll.set)
 
+            # Create TTS context menu for details view
+            self.details_context_menu = tk.Menu(self.details_text, tearoff=0)
+            self.details_context_menu.add_command(
+                label="🔊 Speak Selected Text", command=self._speak_selected_text
+            )
+            self.details_context_menu.add_command(
+                label="🔊 Speak All Text", command=self._speak_all_details_text
+            )
+            self.details_context_menu.add_separator()
+            self.details_context_menu.add_command(
+                label="🔇 Stop Speech", command=self.stop_tts
+            )
+
+            # Bind context menu to details text widget
+            self.details_text.bind("<Button-3>", self._show_details_context_menu)
+
             # Grid layout with proper weights
             details_frame.grid_columnconfigure(0, weight=1)
             details_frame.grid_rowconfigure(0, weight=1)
@@ -3012,40 +3228,6 @@ class CrewGUI:
         Orchestrates the complete data loading workflow from file to display:
 
         File Processing Pipeline:
-        - Validates file existence and accessibility before processing
-        - Stores current file path for future save operations and detail exports
-        - Provides immediate status feedback during loading operations
-        - Forces UI refresh for responsive user experience
-
-        Background Processing:
-        - Delegates actual file parsing to DatabaseManager in background thread
-        - Prevents UI freezing during large file processing
-        - Maintains application responsiveness throughout operation
-        - Uses callback pattern for safe UI updates from background
-
-        Data Management:
-        - Updates application state with loaded headers, data, and groups
-        - Maintains consistency across all data-dependent components
-        - Preserves file context for subsequent operations
-        - Handles various data formats and structures gracefully
-
-        UI Synchronization:
-        - Refreshes data table view with new information
-        - Updates group tree view with discovered data groupings
-        - Rebuilds column visibility menu for current dataset
-        - Provides clear status feedback throughout process
-
-        Callback Processing:
-        - Safely handles background operation results on main thread
-        - Updates all dependent UI components atomically
-        - Maintains application state consistency during updates
-        - Provides completion feedback to user
-
-        Error Handling Strategy:
-        - Comprehensive exception monitoring with detailed logging
-        - User-friendly error dialogs with specific failure context
-        - Graceful recovery from file format or access issues
-        - Status bar updates reflecting operation failure
 
         Integration Features:
         - Connects with DatabaseManager for robust file processing
@@ -3759,33 +3941,3 @@ class CrewGUI:
             self.details_text.delete("1.0", tk.END)
             error_msg = f"Error loading script: {script_path}\n\nError: {str(e)}"
             self.details_text.insert("1.0", error_msg)
-
-
-def main():
-    """Main entry point for the GUI application."""
-    try:
-        # Configure logging for standalone execution
-        logging.basicConfig(
-            level=logging.INFO,
-            format="%(asctime)s - %(levelname)s - %(message)s",
-            handlers=[logging.FileHandler("gui.log"), logging.StreamHandler()],
-        )
-
-        # Create main window
-        root = tk.Tk()
-
-        # Initialize and run the GUI application
-        app = CrewGUI(root)
-
-        # Start the GUI main loop
-        root.mainloop()
-
-    except Exception as e:
-        logging.error(f"Failed to start GUI application: {e}")
-        if "root" in locals():
-            messagebox.showerror("GUI Error", f"Failed to start application:\n{e}")
-        raise
-
-
-if __name__ == "__main__":
-    main()
