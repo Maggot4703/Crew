@@ -141,8 +141,8 @@ def auto_import_py_files() -> Tuple[List[str], List[Tuple[str, str]]]:
             "env",
             "tests",
             "test",
-            "tts_venv",  # TTS virtual environment
-            ".venv",  # Hidden virtual environment
+            "tts_venv",  # Legacy TTS environment (removed, kept for compatibility)
+            ".venv",  # Primary virtual environment
             "node_modules",  # Node.js modules
             "build",  # Build directories
             "dist",  # Distribution directories

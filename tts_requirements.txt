@@ -1,1 +1,3 @@
+# TTS Requirements for .venv environment
+# Install with: .venv/bin/pip install -r tts_requirements.txt
 pyttsx3>=2.90

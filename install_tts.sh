@@ -11,8 +11,8 @@ fi
 
 # Setup virtual environment
 echo "Setting up Python virtual environment..."
-if [ ! -d "tts_venv" ]; then
-  python3 -m venv tts_venv || {
+if [ ! -d ".venv" ]; then
+  python3 -m venv .venv || {
     echo "ERROR: Failed to create virtual environment. Make sure python3-venv is installed."
     echo "On Debian/Ubuntu: sudo apt-get install python3-venv"
     exit 1
@@ -21,7 +21,7 @@ fi
 
 # Activate virtual environment and install dependencies
 echo "Installing Python dependencies..."
-source tts_venv/bin/activate
+source .venv/bin/activate
 pip install --upgrade pip
 pip install pyttsx3
 
@@ -51,7 +51,7 @@ cat > read_use_venv.sh << 'WRAPPER'
 #!/bin/bash
 # Wrapper script to run read_use_file_cli.py with the virtual environment
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PYTHON="$SCRIPT_DIR/tts_venv/bin/python"
+PYTHON="$SCRIPT_DIR/.venv/bin/python"
 "$PYTHON" "$SCRIPT_DIR/read_use_file_cli.py" --file "$@"
 WRAPPER
 
@@ -59,7 +59,7 @@ cat > read_use_file_venv.sh << 'WRAPPER'
 #!/bin/bash
 # Wrapper script to run read_use_file.py with the virtual environment
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PYTHON="$SCRIPT_DIR/tts_venv/bin/python"
+PYTHON="$SCRIPT_DIR/.venv/bin/python"
 "$PYTHON" "$SCRIPT_DIR/read_use_file.py" "$@"
 WRAPPER
 
@@ -67,7 +67,7 @@ cat > read_use_file_cli_venv.sh << 'WRAPPER'
 #!/bin/bash
 # Wrapper script to run read_use_file_cli.py with the virtual environment
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PYTHON="$SCRIPT_DIR/tts_venv/bin/python"
+PYTHON="$SCRIPT_DIR/.venv/bin/python"
 "$PYTHON" "$SCRIPT_DIR/read_use_file_cli.py" "$@"
 WRAPPER
 
@@ -83,7 +83,7 @@ echo "  ./read_use_file_cli_venv.sh --list - CLI version (list files)"
 echo "  ./read_use_venv.sh Docker        - Quick access to read a specific file"
 echo
 echo "Or activate the virtual environment manually:"
-echo "  source tts_venv/bin/activate"
+echo "  source .venv/bin/activate"
 echo "  ./read_use_file.py"
 echo "  (when done) deactivate"
 echo

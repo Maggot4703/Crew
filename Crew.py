@@ -127,7 +127,7 @@ def backup_project(project_dir: Path, backup_parent_dir: Path) -> bool:
     """
     excluded_patterns = [
         ".venv",
-        "tts_venv",  # Added to exclude the TTS virtual environment
+        "tts_venv",  # Legacy TTS environment (removed, kept for compatibility)
         "data",  # Added to exclude the data directory
         ".git",
         ".pytest_cache",

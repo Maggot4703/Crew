@@ -99,7 +99,7 @@ Use the provided installation script:
 
 This script will:
 
-- Create a Python virtual environment (`tts_venv`) if it doesn't exist if it doesn't exist
+- Create a Python virtual environment (`.venv`) if it doesn't exist
 - Install pyttsx3 in the virtual environment
 - Install espeak and related system dependencies
 - Make all scripts executable
@@ -126,8 +126,8 @@ If you prefer to install dependencies manually:
 
 ```bash
 # Create and activate a virtual environment
-python3 -m venv tts_venv
-source tts_venv/bin/activate
+python3 -m venv .venv
+source .venv/bin/activate
 
 # Install Python dependencies in the virtual environment
 pip install pyttsx3
