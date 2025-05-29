@@ -495,6 +495,10 @@ class CrewGUI:
         file_menu.add_command(
             label="Import (Ctrl+I)", command=self._on_import_data
         )  # Added Import menu item
+        file_menu.add_command(
+            label="Load Text Content", command=self._on_load_text_content
+        )
+        file_menu.add_separator()
         file_menu.add_command(label="Save (Ctrl+S)", command=self._on_save)
         file_menu.add_command(label="Export (Ctrl+E)", command=self._on_export)
         file_menu.add_separator()
@@ -2604,1199 +2608,656 @@ class CrewGUI:
             self.details_text.grid(row=0, column=0, sticky="nsew")
             y_scroll.grid(row=0, column=1, sticky="ns")
 
+            # Add TTS functionality for script content
+            if TTS_AVAILABLE:
+                self._setup_details_tts()
+
         except Exception as e:
             logging.error(f"Failed to create details section: {e}")
             raise
 
-    def bind_events(self) -> None:
-        """Establish comprehensive event handling for user interactions.
-
-        Configures all event bindings and keyboard shortcuts for optimal UX:
-
-        Data Table Events:
-        - TreeviewSelect: Responds to row selection for detail updates
-        - Automatic detail view population when users click table rows
-        - Selection persistence and state management
-
-        Group Management Events:
-        - TreeviewSelect: Handles group list selection changes
-        - Enables group-based filtering and data subset viewing
-        - Synchronizes group selection with data display
-
-        Keyboard Shortcuts (Application-wide):
-        - Ctrl+O: Quick file loading (opens file dialog)
-        - Ctrl+I: Import data (opens import dialog)
-        - Ctrl+S: Save current data to file
-        - Ctrl+E: Export data to Excel format
-        - Ctrl+F: Focus on filter input for quick searching
-        - Escape: Clear current filters and reset view
-        - F5: Refresh all views and reload data
-
-        Filter Interface Events:
-        - Enter/Return: Apply current filter immediately
-        - KP_Enter: Numeric keypad Enter support
-        - Real-time filter application on key events
-
-        Window Management Events:
-        - WM_DELETE_WINDOW: Proper application shutdown handling
-        - Window state saving before closure
-        - Graceful cleanup of resources and threads
-
-        Menu System Updates:
-        - Column visibility menu population
-        - Script menu refresh for dynamic content
-        - Menu state synchronization with data changes
-
-        Event Handler Integration:
-        - Connects UI events to appropriate handler methods
-        - Maintains consistent event processing patterns
-        - Ensures proper error handling in event callbacks
-
-        Lambda Function Usage:
-        - Lightweight event wrapper functions
-        - Parameter passing for event handlers
-        - Event object management and forwarding
-
-        Filter Entry Bindings:
-        - Multiple entry point support (regular and numeric)
-        - Consistent behavior across input methods
-        - Dynamic filter entry widget identification
-
-        Error Handling Strategy:
-        - Exception monitoring for event binding failures
-        - Detailed error logging with context information
-        - Critical failure escalation to prevent broken UI
-        - Graceful degradation when bindings fail
-
-        Note:
-            Event binding occurs after all widgets are created to ensure
-            proper reference availability and prevent binding errors.
-            The order of binding operations is important for proper
-            event propagation and handler execution.
-        """
+    def _setup_details_tts(self) -> None:
+        """Set up TTS functionality for the Details View"""
         try:
-            # Data table events
-            self.data_table.bind("<<TreeviewSelect>>", self._on_data_select)
+            # Initialize TTS engine if available
+            self.tts_engine = pyttsx3.init()
 
-            # Group list events
-            self.group_list.bind("<<TreeviewSelect>>", self._on_group_select)
+            # Configure voice settings
+            self.tts_engine.setProperty("rate", 150)  # Default reading speed
+            self.tts_engine.setProperty("volume", 1.0)  # Full volume
 
-            # Add keyboard shortcuts
-            self.root.bind("<Control-o>", lambda e: self._on_load_data())
-            self.root.bind(
-                "<Control-i>", lambda e: self._on_import_data()
-            )  # Added Ctrl+I shortcut for Import
-            self.root.bind("<Control-s>", lambda e: self._on_save())
-            self.root.bind("<Control-e>", lambda e: self._on_export())
-            self.root.bind("<Control-f>", lambda e: self.filter_var.focus_set())
-            self.root.bind("<Escape>", lambda e: self.clear_filter())
-            self.root.bind("<F5>", lambda e: self._refresh_views())
+            # Try to set female voice if available
+            self._setup_female_voice()
 
-            # Filter entry bindings
-            filter_entry = self.filter_frame.winfo_children()[1]
-            filter_entry.bind("<Return>", lambda e: self._on_apply_filter())
-            filter_entry.bind("<KP_Enter>", lambda e: self._on_apply_filter())
+            # Add right-click context menu for text selection
+            self.details_context_menu = tk.Menu(self.root, tearoff=0)
+            self.details_context_menu.add_command(
+                label="🔊 Read Selected Text", command=self._read_selected_text
+            )
+            self.details_context_menu.add_separator()
+            self.details_context_menu.add_command(
+                label="🔊 Read All Text", command=self._read_all_text
+            )
+            self.details_context_menu.add_command(
+                label="⏹️ Stop Reading", command=self._stop_reading
+            )
 
-            # Window close handler
-            self.root.protocol("WM_DELETE_WINDOW", self._on_closing)
+            # Bind right-click to show context menu
+            self.details_text.bind("<Button-3>", self._show_details_context_menu)
 
-            self._update_column_menu()
-            self._update_script_menu()
+            # Track reading state
+            self.is_reading = False
+            self.reading_thread = None
+
+            logging.info("TTS functionality enabled for Details View")
 
         except Exception as e:
-            logging.error(f"Error binding events: {e}")
-            raise
+            logging.error(f"Failed to setup TTS for Details View: {e}")
+            # TTS functionality will be disabled but won't break the app
 
-    def clear_filter(self) -> None:
-        """Clear current filter and reset view"""
-        self.filter_var.set("")
-        self._on_apply_filter()
-
-    def _refresh_views(self) -> None:
-        """Refresh all views with current data"""
-        self._update_data_view()
-        self._update_groups_view()
-        self.update_status("Views refreshed")
-
-    def _show_imported_modules(self) -> None:
-        """Show dialog with imported modules information"""
+    def _setup_female_voice(self) -> None:
+        """Configure female voice if available"""
         try:
-            # Create dialog window
-            dialog = tk.Toplevel(self.root)
-            dialog.title("Auto-Imported Modules")
-            dialog.geometry("800x600")
-            dialog.transient(self.root)
-            dialog.grab_set()
+            voices = self.tts_engine.getProperty("voices")
+            english_voice = None
 
-            # Create main frame
-            main_frame = ttk.Frame(dialog, padding="10")
-            main_frame.grid(row=0, column=0, sticky="nsew")
+            # Find an English voice
+            for voice in voices:
+                if voice.id and "english" in voice.id.lower():
+                    english_voice = voice
+                    break
 
-            # Configure dialog weights
-            dialog.grid_rowconfigure(0, weight=1)
-            dialog.grid_columnconfigure(0, weight=1)
-            main_frame.grid_rowconfigure(1, weight=1)
-            main_frame.grid_columnconfigure(0, weight=1)
-
-            # Title label
-            title_label = ttk.Label(
-                main_frame,
-                text="Auto-Imported Python Modules",
-                font=("TkDefaultFont", 12, "bold"),
-            )
-            title_label.grid(row=0, column=0, pady=(0, 10), sticky="w")
-
-            # Create notebook for tabs
-            notebook = ttk.Notebook(main_frame)
-            notebook.grid(row=1, column=0, sticky="nsew")
-
-            # Successful imports tab
-            success_frame = ttk.Frame(notebook)
-            notebook.add(
-                success_frame,
-                text=f"Successfully Imported ({len(getattr(self, 'imported_modules', []))})",
-            )
-
-            success_frame.grid_rowconfigure(0, weight=1)
-            success_frame.grid_columnconfigure(0, weight=1)
-
-            success_text = tk.Text(success_frame, wrap="word", font=("Consolas", 10))
-            success_scroll = ttk.Scrollbar(
-                success_frame, orient="vertical", command=success_text.yview
-            )
-            success_text.configure(yscrollcommand=success_scroll.set)
-
-            success_text.grid(row=0, column=0, sticky="nsew")
-            success_scroll.grid(row=0, column=1, sticky="ns")
-
-            # Failed imports tab
-            failed_frame = ttk.Frame(notebook)
-            notebook.add(
-                failed_frame,
-                text=f"Failed Imports ({len(getattr(self, 'failed_imports', []))})",
-            )
-
-            failed_frame.grid_rowconfigure(0, weight=1)
-            failed_frame.grid_columnconfigure(0, weight=1)
-
-            failed_text = tk.Text(failed_frame, wrap="word", font=("Consolas", 10))
-            failed_scroll = ttk.Scrollbar(
-                failed_frame, orient="vertical", command=failed_text.yview
-            )
-            failed_text.configure(yscrollcommand=failed_scroll.set)
-
-            failed_text.grid(row=0, column=0, sticky="nsew")
-            failed_scroll.grid(row=0, column=1, sticky="ns")
-
-            # Populate successful imports
-            if hasattr(self, "imported_modules"):
-                success_text.insert("1.0", "Successfully imported modules:\n\n")
-                for i, module in enumerate(self.imported_modules, 1):
-                    success_text.insert("end", f"{i:3d}. {module}\n")
+            if english_voice:
+                # Use espeak female voice variant
+                fem_voice = english_voice.id + "+f3"
+                self.tts_engine.setProperty("voice", fem_voice)
+                logging.info(f"Using female voice: {fem_voice}")
             else:
-                success_text.insert(
-                    "1.0",
-                    "No import information available.\nAuto-import may not have run yet.",
-                )
+                logging.info("Using default TTS voice")
 
-            # Populate failed imports
-            if hasattr(self, "failed_imports") and self.failed_imports:
-                failed_text.insert("1.0", "Failed imports:\n\n")
-                for i, (file_path, error) in enumerate(self.failed_imports, 1):
-                    failed_text.insert("end", f"{i:3d}. {file_path}\n")
-                    failed_text.insert("end", f"     Error: {error}\n\n")
+        except Exception as e:
+            logging.warning(f"Could not configure female voice: {e}")
+
+    def _show_details_context_menu(self, event) -> None:
+        """Show context menu for Details View"""
+        try:
+            # Update menu state based on current conditions
+            selected_text = self._get_selected_text()
+            all_text = self.details_text.get("1.0", tk.END).strip()
+
+            # Enable/disable menu items based on content
+            if selected_text:
+                self.details_context_menu.entryconfig(
+                    0, state="normal"
+                )  # Read Selected
             else:
-                failed_text.insert("1.0", "No failed imports!")
+                self.details_context_menu.entryconfig(0, state="disabled")
 
-            # Make text widgets read-only
-            success_text.configure(state="disabled")
-            failed_text.configure(state="disabled")
+            if all_text:
+                self.details_context_menu.entryconfig(2, state="normal")  # Read All
+            else:
+                self.details_context_menu.entryconfig(2, state="disabled")
 
-            # Button frame
-            button_frame = ttk.Frame(main_frame)
-            button_frame.grid(row=2, column=0, pady=(10, 0), sticky="ew")
+            if self.is_reading:
+                self.details_context_menu.entryconfig(3, state="normal")  # Stop Reading
+            else:
+                self.details_context_menu.entryconfig(3, state="disabled")
 
-            # Re-import button
-            ttk.Button(
-                button_frame,
-                text="Re-import All",
-                command=lambda: self._reimport_modules(dialog),
-            ).pack(side="left", padx=(0, 5))
-
-            # Close button
-            ttk.Button(button_frame, text="Close", command=dialog.destroy).pack(
-                side="right"
-            )
+            # Show context menu
+            self.details_context_menu.tk_popup(event.x_root, event.y_root)
 
         except Exception as e:
-            logging.error(f"Error showing imported modules dialog: {e}")
-            messagebox.showerror("Error", f"Failed to show imported modules: {e}")
+            logging.error(f"Error showing details context menu: {e}")
 
-    def _reimport_modules(self, dialog=None) -> None:
-        """Re-run the auto-import process"""
+    def _get_selected_text(self) -> str:
+        """Get currently selected text from Details View"""
         try:
-            self.update_status("Re-importing workspace modules...")
-            self.imported_modules, self.failed_imports = auto_import_py_files()
+            if self.details_text.tag_ranges(tk.SEL):
+                return self.details_text.get(tk.SEL_FIRST, tk.SEL_LAST)
+            return ""
+        except Exception:
+            return ""
 
-            # Update status with import results
-            total_imported = len(self.imported_modules)
-            total_failed = len(self.failed_imports)
-            self.update_status(
-                f"Re-import complete - {total_imported} modules ({total_failed} failed)"
-            )
+    def _read_selected_text(self) -> None:
+        """Read the currently selected text aloud"""
+        if not TTS_AVAILABLE or self.is_reading:
+            return
 
-            # Close dialog if provided and show new one
-            if dialog:
-                dialog.destroy()
-                self._show_imported_modules()
+        selected_text = self._get_selected_text()
+        if not selected_text.strip():
+            self.update_status("No text selected for reading")
+            return
 
-        except Exception as e:
-            logging.error(f"Error re-importing modules: {e}")
-            self.update_status("Re-import failed")
+        self._speak_text(selected_text, "selected text")
 
-    def load_default_data(self) -> None:
-        """Automatically load default crew data file during application startup.
+    def _read_all_text(self) -> None:
+        """Read all text in the Details View aloud"""
+        if not TTS_AVAILABLE or self.is_reading:
+            return
 
-        Attempts to load the standard 'npcs.csv' file from the data directory
-        to provide immediate data availability for users:
+        all_text = self.details_text.get("1.0", tk.END).strip()
+        if not all_text:
+            self.update_status("No text to read")
+            return
 
-        Default File Detection:
-        - Searches for 'data/npcs.csv' as the standard crew data file
-        - Uses Path.exists() for reliable file existence checking
-        - Handles missing default file gracefully without user interruption
+        self._speak_text(all_text, "all text")
 
-        Data Loading Process:
-        - Delegates to DatabaseManager.load_data() for consistent processing
-        - Loads headers, data rows, and group information in single operation
-        - Updates all relevant application state variables
-
-        UI Updates:
-        - Refreshes data table view with loaded information
-        - Updates group tree view with discovered groups
-        - Provides status feedback about successful default loading
-
-        Error Handling Strategy:
-        - Comprehensive exception catching with detailed logging
-        - Silent failure mode - doesn't display error dialogs to user
-        - Prevents startup interruption if default data is unavailable
-        - Allows application to continue normally without default data
-
-        Application Integration:
-        - Called during initialization sequence after UI setup
-        - Provides immediate data context for new users
-        - Supports workflow continuity across application sessions
-        - Enables quick start without manual file selection
-
-        Performance Considerations:
-        - Minimal startup impact with efficient file checking
-        - Non-blocking operation that doesn't delay UI initialization
-        - Quick validation before attempting full data load
-        - Graceful handling of network or disk access issues
-
-        User Experience:
-        - Seamless data availability without user action required
-        - Consistent application state across launches
-        - Immediate productivity without configuration steps
-        - Professional application behavior with smart defaults
-
-        Note:
-            Default data loading is designed to be non-intrusive and
-            fail-safe, ensuring the application starts successfully
-            regardless of default file availability.
-        """
+    def _speak_text(self, text: str, description: str) -> None:
+        """Speak the given text using TTS"""
         try:
-            default_file = Path("data/npcs.csv")
-            if default_file.exists():
-                self.headers, self.current_data, self.groups = self.db.load_data(
-                    str(default_file)
+            if self.is_reading:
+                self.update_status(
+                    "Already reading - please stop current reading first"
                 )
-                self._update_data_view()
-                self._update_groups_view()
-                self.update_status(f"Loaded default data from {default_file.name}")
-        except Exception as e:
-            logging.error(f"Failed to load default data: {e}")
-            # Don't show error dialog for default data load failure
+                return
 
-    def _on_import_data(self, event=None) -> None:
-        """Handle file import requests (similar to load but could be for merging/appending)."""
-        try:
-            filetypes = [
-                ("CSV files", "*.csv"),
-                ("Excel files", "*.xlsx"),  # Added Excel for import
-                ("All files", "*.*"),
-            ]
+            # Preprocess text for better speech
+            processed_text = self._preprocess_text_for_speech(text)
 
-            filename = filedialog.askopenfilename(
-                title="Import Data File", filetypes=filetypes, initialdir="data"
+            # Update status
+            self.update_status(f"Reading {description}...")
+            self.is_reading = True
+
+            # Start reading in background thread
+            self.reading_thread = threading.Thread(
+                target=self._speak_text_worker, args=(processed_text,), daemon=True
             )
-
-            if filename:
-                # For now, treat import same as load.
-                # Future: Could have different logic for merging or appending data.
-                self.load_data_file(filename)
-                self.update_status(f"Imported data from {Path(filename).name}")
+            self.reading_thread.start()
 
         except Exception as e:
-            logging.error(f"Error importing data: {e}")
-            messagebox.showerror("Error", f"Failed to import data: {e}")
-            self.update_status("Failed to import data")
+            logging.error(f"Error starting TTS: {e}")
+            self.update_status(f"TTS error: {e}")
+            self.is_reading = False
 
-    def _on_load_data(self, event=None) -> None:
-        """Handle file loading requests from menu commands and keyboard shortcuts.
-
-        Provides comprehensive file selection and loading functionality:
-
-        File Dialog Configuration:
-        - Supports CSV files as primary format with appropriate filter
-        - Includes 'All files' option for flexibility with other formats
-        - Sets intelligent default directory to 'data' folder
-        - Uses descriptive dialog title for clear user guidance
-
-        Supported File Operations:
-        - CSV file loading with automatic format detection
-        - Handles various CSV dialects and encoding formats
-        - Processes files of different sizes efficiently
-        - Maintains data integrity during import operations
-
-        Event Handling:
-        - Responds to menu commands (File > Load Data)
-        - Processes keyboard shortcuts (Ctrl+O) seamlessly
-        - Handles both programmatic and user-initiated calls
-        - Maintains consistent behavior across trigger methods
-
-        User Interaction Flow:
-        - Opens native file dialog with appropriate filters
-        - Provides clear feedback during file selection process
-        - Handles user cancellation gracefully without errors
-        - Delegates actual loading to specialized load_data_file method
-
-        Error Management:
-        - Comprehensive exception catching and logging
-        - User-friendly error dialogs with specific failure information
-        - Detailed error context for debugging and support
-        - Graceful recovery from file access or format issues
-
-        Integration Points:
-        - Connects to load_data_file method for actual processing
-        - Updates status bar with operation progress
-        - Refreshes all dependent UI components after loading
-        - Maintains application state consistency
-
-        Performance Features:
-        - Efficient file dialog handling with minimal memory usage
-        - Quick validation before resource-intensive operations
-        - Background processing delegation for large files
-        - Responsive UI during file selection process
-
-        Args:
-            event: Optional event object from keyboard shortcut or menu selection,
-                   allows method to work with both programmatic and user triggers
-
-        Accessibility Features:
-        - Keyboard shortcut support for efficient navigation
-        - Clear dialog titles and file type descriptions
-        - Consistent behavior with standard file operations
-        - Proper focus management after dialog operations
-
-        Note:
-            This method serves as the primary entry point for data loading
-            operations, coordinating between user interface elements and
-            the underlying data management system.
-        """
+    def _speak_text_worker(self, text: str) -> None:
+        """Background worker for TTS to avoid blocking UI"""
         try:
-            filetypes = [("CSV files", "*.csv"), ("All files", "*.*")]
+            # Split text into chunks for better TTS handling
+            chunks = self._chunk_text(text, max_length=1000)
 
-            filename = filedialog.askopenfilename(
-                title="Select Data File", filetypes=filetypes, initialdir="data"
+            for chunk in chunks:
+                if not self.is_reading:  # Check for stop signal
+                    break
+
+                self.tts_engine.say(chunk)
+                self.tts_engine.runAndWait()
+
+                if not self.is_reading:  # Check again after each chunk
+                    break
+
+        except Exception as e:
+            logging.error(f"TTS worker error: {e}")
+        finally:
+            # Update UI on main thread
+            self.root.after(0, self._reading_finished)
+
+    def _reading_finished(self) -> None:
+        """Called when TTS reading is complete"""
+        self.is_reading = False
+        self.update_status("Reading complete")
+
+    def _stop_reading(self) -> None:
+        """Stop the current TTS reading"""
+        if self.is_reading:
+            self.is_reading = False
+            try:
+                self.tts_engine.stop()
+            except Exception as e:
+                logging.error(f"Error stopping TTS: {e}")
+            self.update_status("Reading stopped")
+
+    def _preprocess_text_for_speech(self, text: str) -> str:
+        """Preprocess text to make it more suitable for TTS"""
+        import re
+
+        # Remove script header if present (generated by _load_script_content)
+        text = re.sub(r"^Script:.*?\n.*?\n.*?\n={40,}\n\n", "", text, flags=re.DOTALL)
+
+        # Remove markdown headers
+        text = re.sub(r"^#{1,6}\s+", "", text, flags=re.MULTILINE)
+
+        # Remove code blocks
+        text = re.sub(r"```.*?```", " Code block omitted. ", text, flags=re.DOTALL)
+
+        # Remove inline code
+        text = re.sub(r"`.*?`", " Code omitted. ", text)
+
+        # Replace bullet points
+        text = re.sub(r"^[\*\-\+]\s+", "• ", text, flags=re.MULTILINE)
+
+        # Handle numbered lists
+        text = re.sub(r"^\d+\.\s+", "Number. ", text, flags=re.MULTILINE)
+
+        # Replace URLs with placeholders
+        text = re.sub(r"https?://\S+", " URL link. ", text)
+
+        # Replace multiple whitespace with single spaces
+        text = re.sub(r"\s+", " ", text)
+
+        return text.strip()
+
+    def _chunk_text(self, text: str, max_length: int = 1000) -> list:
+        """Split text into smaller chunks for better TTS handling"""
+        words = text.split()
+        chunks = []
+        current_chunk = []
+
+        for word in words:
+            current_chunk.append(word)
+            if len(" ".join(current_chunk)) > max_length:
+                chunks.append(" ".join(current_chunk))
+                current_chunk = []
+
+        if current_chunk:
+            chunks.append(" ".join(current_chunk))
+
+        return chunks
+
+    def _on_load_data(self) -> None:
+        """Handle Load Data menu/button action - open file dialog and load CSV/Excel data"""
+        try:
+            # Open file dialog for CSV/Excel files only (no "All files" option)
+            file_path = filedialog.askopenfilename(
+                title="Select Data File to Load",
+                filetypes=[("CSV files", "*.csv"), ("Excel files", "*.xlsx *.xls")],
             )
 
-            if filename:
-                self.load_data_file(filename)
+            # Check if user cancelled the dialog
+            if not file_path:
+                return
 
+            # Additional safety check: verify file type is supported for data loading
+            file_path_obj = Path(file_path)
+            if file_path_obj.suffix.lower() not in [".csv", ".xlsx", ".xls"]:
+                messagebox.showwarning(
+                    "Unsupported File Type",
+                    f"File type '{file_path_obj.suffix}' is not supported for data loading.\n\n"
+                    "Supported formats: CSV (.csv), Excel (.xlsx, .xls)\n\n"
+                    "For text content files, use the 'View > Run Script' menu.",
+                )
+                return
+
+            # Check if file is in use/ directory (should use script loading instead)
+            if "use" in file_path_obj.parts:
+                messagebox.showinfo(
+                    "Use Script Loading",
+                    f"Files in 'use/' directory should be loaded as script content.\n\n"
+                    "Please use 'View > Run Script' menu to load this file for reading.",
+                )
+                return
+
+            # Update status to show loading progress
+            self.update_status("Loading data file...")
+
+            # Load data using DatabaseManager
+            with DatabaseManager() as db:
+                headers, rows, groups = db.load_data(file_path)
+
+                # Update GUI state with loaded data
+                self.current_file = file_path
+                self.current_data = rows
+                self.headers = headers
+
+                # Update the data view with new data
+                self._update_data_view(rows)
+
+                # Update groups view if groups were found
+                if groups:
+                    self.groups = groups
+                    self._update_groups_view()
+
+                # Update status with success message
+                filename = Path(file_path).name
+                self.update_status(f"Loaded {len(rows)} records from {filename}")
+
+        except FileNotFoundError:
+            self.update_status("File not found")
+            messagebox.showerror("File Error", "The selected file could not be found.")
         except Exception as e:
             logging.error(f"Error loading data: {e}")
-            messagebox.showerror("Error", f"Failed to load data: {e}")
+            self.update_status("Failed to load data file")
+            messagebox.showerror("Load Error", f"Failed to load data file:\n{e}")
 
-    def load_data_file(self, filename: str) -> None:
-        """Load and process data file with comprehensive error handling and UI updates.
-
-        Orchestrates the complete data loading workflow from file to display:
-
-        File Processing Pipeline:
-        - Validates file existence and accessibility before processing
-        - Stores current file path for future save operations and detail exports
-        - Provides immediate status feedback during loading operations
-        - Forces UI refresh for responsive user experience
-
-        Background Processing:
-        - Delegates actual file parsing to DatabaseManager in background thread
-        - Prevents UI freezing during large file processing
-        - Maintains application responsiveness throughout operation
-        - Uses callback pattern for safe UI updates from background
-
-        Data Management:
-        - Updates application state with loaded headers, data, and groups
-        - Maintains consistency across all data-dependent components
-        - Preserves file context for subsequent operations
-        - Handles various data formats and structures gracefully
-
-        UI Synchronization:
-        - Refreshes data table view with new information
-        - Updates group tree view with discovered data groupings
-        - Rebuilds column visibility menu for current dataset
-        - Provides clear status feedback throughout process
-
-        Callback Processing:
-        - Safely handles background operation results on main thread
-        - Updates all dependent UI components atomically
-        - Maintains application state consistency during updates
-        - Provides completion feedback to user
-
-        Error Handling Strategy:
-        - Comprehensive exception monitoring with detailed logging
-        - User-friendly error dialogs with specific failure context
-        - Graceful recovery from file format or access issues
-        - Status bar updates reflecting operation failure
-
-        Integration Features:
-        - Connects with DatabaseManager for robust file processing
-        - Coordinates with background task system for performance
-        - Updates multiple UI components through single operation
-        - Maintains file context for detail export functionality
-
-        Performance Optimization:
-        - Background thread utilization for non-blocking operations
-        - Efficient memory usage during large file processing
-        - Minimal UI update frequency for smooth user experience
-        - Strategic use of update_idletasks() for responsiveness
-
-        Args:
-            filename: Absolute or relative path to data file for loading,
-                     supports CSV and other formats handled by DatabaseManager
-
-        State Management:
-        - Sets self.current_file for save and export operations
-        - Updates self.headers, self.current_data, and self.groups
-        - Maintains consistency across all application components
-        - Enables proper file context for subsequent operations
-
-        Note:
-            This method is the core data loading implementation, designed
-            for reliability, performance, and comprehensive error handling
-            while maintaining responsive user interaction.
-        """
+    def _on_import_data(self) -> None:
+        """Handle Import Data menu action - similar to load but for different data sources"""
         try:
-            self.update_status(f"Loading {Path(filename).name}...")
-            self.root.update_idletasks()
-
-            # Store current file path for saving details
-            self.current_file = filename  # Add this line
-
-            def load_callback(result):
-                headers, data, groups = result
-                self.headers = headers
-                self.current_data = data
-                self.groups = groups
-                self._update_data_view()
-                self._update_groups_view()
-                self._update_column_menu()
-                self.update_status(f"Loaded {Path(filename).name}")
-
-            self.run_in_background(self.db.load_data, filename, callback=load_callback)
-
-        except Exception as e:
-            logging.error(f"Error loading file {filename}: {e}")
-            messagebox.showerror("Error", f"Failed to load file: {e}")
-            self.update_status("Failed to load data")
-
-    def _on_save(self, event=None) -> None:
-        """Handle data saving operations with format selection and background processing.
-
-        Provides comprehensive data persistence functionality with user control:
-
-        File Dialog Configuration:
-        - CSV format as primary option for maximum compatibility
-        - 'All files' option for custom extensions and flexibility
-        - Intelligent default location in 'data' directory
-        - Automatic CSV extension assignment for proper file handling
-
-        User Interface Flow:
-        - Clear dialog title indicating save operation purpose
-        - File type filtering for appropriate format selection
-        - Default extension handling for consistent file naming
-        - Graceful handling of user cancellation without errors
-
-        Background Processing Strategy:
-        - Immediate status feedback before background operation starts
-        - Background thread utilization for non-blocking file operations
-        - Callback mechanism for safe UI updates upon completion
-        - Prevention of UI freezing during large file saves
-
-        Data Export Process:
-        - Uses current application state (headers and data)
-        - Delegates to DatabaseManager for reliable CSV writing
-        - Maintains data integrity throughout save operation
-        - Handles various data types and formats appropriately
-
-        Status and Feedback Management:
-        - Immediate status update with filename during operation
-        - UI refresh to show status changes responsively
-        - Success confirmation with file basename for clarity
-        - Error reporting with specific failure information
-
-        Error Handling System:
-        - Comprehensive exception catching with detailed logging
-        - User-friendly error dialogs with actionable information
-        - Status bar updates reflecting operation failures
-        - Graceful recovery from file system or permission issues
-
-        Callback Implementation:
-        - Safe UI updates from background thread results
-        - Status messages based on operation success/failure
-        - Error dialog display for user notification
-        - Consistent feedback regardless of operation outcome
-
-        Integration Features:
-        - Works with background task queue system
-        - Coordinates with DatabaseManager for file operations
-        - Maintains application responsiveness during saves
-        - Supports both manual and keyboard shortcut triggers
-
-        Event Support:
-        - Responds to menu commands (File > Save)
-        - Processes keyboard shortcuts (Ctrl+S) seamlessly
-        - Optional event parameter for trigger source identification
-        - Consistent behavior across activation methods
-
-        Args:
-            event: Optional event object from keyboard shortcut (Ctrl+S) or
-                   menu selection, enables unified handling of save requests
-
-        Performance Considerations:
-        - Background processing prevents UI blocking
-        - Efficient file dialog handling with minimal resource usage
-        - Strategic UI updates for optimal user experience
-        - Minimal memory overhead during save operations
-
-        Note:
-            This method coordinates between user interface, file system,
-            and background processing to provide reliable, responsive
-            data saving functionality with comprehensive error handling.
-        """
-        try:
-            from pathlib import Path  # Used instead of os.path for F821
-
-            filetypes = [("CSV files", "*.csv"), ("All files", "*.*")]
-
-            filename = filedialog.asksaveasfilename(
-                title="Save Data",
-                filetypes=filetypes,
-                initialdir="data",
-                defaultextension=".csv",
+            # Open file dialog for import data files
+            file_path = filedialog.askopenfilename(
+                title="Select Data File to Import",
+                filetypes=[
+                    ("CSV files", "*.csv"),
+                    ("Excel files", "*.xlsx *.xls"),
+                    ("Text files", "*.txt"),
+                    ("All files", "*.*"),
+                ],
             )
 
-            if filename:
-                # Show saving status
-                self.update_status(
-                    f"Saving to {Path(filename).name}..."
-                )  # F821: Replaced os.path.basename
-                self.root.update_idletasks()
+            # Check if user cancelled the dialog
+            if not file_path:
+                return
 
-                def save_callback(result):
-                    if result:
-                        self.update_status(
-                            f"Saved to {Path(filename).name}"
-                        )  # F821: Replaced os.path.basename
-                    else:
-                        self.update_status("Failed to save data")
-                        messagebox.showerror("Error", "Failed to save data file")
+            # Update status to show import progress
+            self.update_status("Importing data file...")
 
-                # Save in background
-                self.run_in_background(
-                    self.db.save_data,
-                    filename,
-                    self.headers,
-                    self.current_data,
-                    callback=save_callback,
+            # Load data using DatabaseManager
+            with DatabaseManager() as db:
+                headers, rows, groups = db.load_data(file_path)
+
+                # For import, we could potentially merge with existing data
+                # For now, treat similar to load but with different status message
+                self.current_file = file_path
+                self.current_data = rows
+                self.headers = headers
+
+                # Update the data view with imported data
+                self._update_data_view(rows)
+
+                # Update groups view if groups were found
+                if groups:
+                    self.groups = groups
+                    self._update_groups_view()
+
+                # Update status with success message
+                filename = Path(file_path).name
+                self.update_status(f"Imported {len(rows)} records from {filename}")
+
+        except FileNotFoundError:
+            self.update_status("Import file not found")
+            messagebox.showerror(
+                "File Error", "The selected import file could not be found."
+            )
+        except Exception as e:
+            logging.error(f"Error importing data: {e}")
+            self.update_status("Failed to import data file")
+            messagebox.showerror("Import Error", f"Failed to import data file:\n{e}")
+
+    def _on_save(self) -> None:
+        """Handle Save menu/button action - save current data to CSV file"""
+        try:
+            # Check if we have data to save
+            if not hasattr(self, "current_data") or not self.current_data:
+                messagebox.showwarning("No Data", "No data available to save.")
+                return
+
+            # Check if we have headers
+            if not hasattr(self, "headers") or not self.headers:
+                messagebox.showwarning(
+                    "No Headers", "No column headers available for saving."
                 )
+                return
+
+            # Open save file dialog
+            file_path = filedialog.asksaveasfilename(
+                title="Save Data As",
+                defaultextension=".csv",
+                filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
+            )
+
+            # Check if user cancelled the dialog
+            if not file_path:
+                return
+
+            # Update status to show saving progress
+            self.update_status("Saving data file...")
+
+            # Save data using DatabaseManager
+            with DatabaseManager() as db:
+                success = db.save_data(file_path, self.headers, self.current_data)
+
+                if success:
+                    # Update current file path
+                    self.current_file = file_path
+                    filename = Path(file_path).name
+                    self.update_status(
+                        f"Saved {len(self.current_data)} records to {filename}"
+                    )
+                else:
+                    raise Exception("Save operation failed")
 
         except Exception as e:
             logging.error(f"Error saving data: {e}")
-            messagebox.showerror("Error", f"Failed to save data: {e}")
-            self.update_status("Failed to save data")
+            self.update_status("Failed to save data file")
+            messagebox.showerror("Save Error", f"Failed to save data file:\n{e}")
 
-    def _on_export(self, event=None) -> None:
-        """Handle data export operations with Excel format and view-based content.
-
-        Provides advanced export functionality for current data view:
-
-        Export Format Configuration:
-        - Excel (.xlsx) as primary format for rich formatting capabilities
-        - 'All files' option for alternative export formats
-        - Automatic Excel extension assignment for proper file associations
-        - Professional dialog presentation with clear export context
-
-        View-Based Export Strategy:
-        - Exports currently visible/filtered data from table view
-        - Respects user's current filtering and sorting preferences
-        - Includes only data that user can see in current session
-        - Maintains view context for meaningful export results
-
-        Data Collection Process:
-        - Iterates through current treeview children for visible data
-        - Extracts values from each visible table row
-        - Preserves data order as displayed in current view
-        - Handles dynamic view content based on filters and sorts
-
-        Background Processing Implementation:
-        - Immediate status feedback during export preparation
-        - Background thread utilization for Excel file generation
-        - Non-blocking operation preserving UI responsiveness
-        - Callback system for completion notification and error handling
-
-        Excel Export Features:
-        - Full formatting preservation and professional appearance
-        - Column headers included for data context and usability
-        - Proper data type handling for numeric and text content
-        - Compatibility with Excel and other spreadsheet applications
-
-        User Feedback System:
-        - Real-time status updates during export process
-        - File basename display for export confirmation
-        - Success/failure messaging with specific error details
-        - Status bar updates reflecting operation progress
-
-        Error Management:
-        - Comprehensive exception handling with detailed logging
-        - User-friendly error dialogs with actionable information
-        - Graceful recovery from file system or permission issues
-        - Clear error messaging for troubleshooting support
-
-        Callback Processing:
-        - Safe UI updates from background thread completion
-        - Conditional messaging based on export success/failure
-        - Error dialog display for user notification
-        - Status bar updates with operation results
-
-        Integration Points:
-        - Coordinates with DatabaseManager for Excel generation
-        - Uses background task system for performance
-        - Maintains UI responsiveness throughout operation
-        - Supports multiple activation methods (menu/keyboard)
-
-        Performance Optimization:
-        - Efficient data collection from current view
-        - Background processing for non-blocking file generation
-        - Minimal memory usage during data extraction
-        - Strategic UI updates for smooth user experience
-
-        Args:
-            event: Optional event object from keyboard shortcut (Ctrl+E) or
-                   menu selection, allows unified export request handling
-
-        View Context Handling:
-        - Respects current table filtering and sorting state
-        - Exports exactly what user sees in current session
-        - Maintains data relationships and order from view
-        - Provides meaningful export based on user's work context
-
-        Note:
-            This method specializes in view-contextual exports, ensuring
-            users get exactly the data they're currently working with,
-            formatted professionally in Excel for external use.
-        """
+    def _on_export(self) -> None:
+        """Handle Export menu/button action - export current data to Excel file"""
         try:
-            from pathlib import Path  # Used instead of os.path for F821
+            # Check if we have data to export
+            if not hasattr(self, "current_data") or not self.current_data:
+                messagebox.showwarning("No Data", "No data available to export.")
+                return
 
-            filetypes = [("Excel files", "*.xlsx"), ("All files", "*.*")]
+            # Check if we have headers
+            if not hasattr(self, "headers") or not self.headers:
+                messagebox.showwarning(
+                    "No Headers", "No column headers available for export."
+                )
+                return
 
-            filename = filedialog.asksaveasfilename(
-                title="Export Data",
-                filetypes=filetypes,
-                initialdir="data",
+            # Open export file dialog
+            file_path = filedialog.asksaveasfilename(
+                title="Export Data As",
                 defaultextension=".xlsx",
+                filetypes=[
+                    ("Excel files", "*.xlsx"),
+                    ("CSV files", "*.csv"),
+                    ("All files", "*.*"),
+                ],
             )
 
-            if filename:
-                # Show exporting status
-                self.update_status(
-                    f"Exporting to {Path(filename).name}..."
-                )  # F821: Replaced os.path.basename
-                self.root.update_idletasks()
+            # Check if user cancelled the dialog
+            if not file_path:
+                return
 
-                def export_callback(result):
-                    if result:
-                        self.update_status(
-                            f"Exported to {Path(filename).name}"
-                        )  # F821: Replaced os.path.basename
-                    else:
-                        self.update_status("Failed to export data")
-                        messagebox.showerror("Error", "Failed to export data file")
+            # Update status to show export progress
+            self.update_status("Exporting data file...")
 
-                # Get current view data from treeview
-                view_data = []
-                for item in self.data_table.get_children():
-                    view_data.append(self.data_table.item(item)["values"])
+            # Export data using DatabaseManager
+            with DatabaseManager() as db:
+                success = db.export_data(file_path, self.headers, self.current_data)
 
-                # Export in background
-                self.run_in_background(
-                    self.db.export_data,
-                    filename,
-                    self.headers,
-                    view_data,
-                    callback=export_callback,
-                )
+                if success:
+                    filename = Path(file_path).name
+                    self.update_status(
+                        f"Exported {len(self.current_data)} records to {filename}"
+                    )
+                else:
+                    raise Exception("Export operation failed")
 
         except Exception as e:
             logging.error(f"Error exporting data: {e}")
-            messagebox.showerror("Error", f"Failed to export data: {e}")
-            self.update_status("Failed to export data")
-
-    def _update_column_menu(self) -> None:
-        """Update column visibility menu with current headers"""
-        try:
-            if hasattr(self, "column_visibility_menu") and hasattr(self, "headers"):
-                # Clear existing menu items
-                self.column_visibility_menu.delete(0, "end")
-
-                # Initialize column visibility tracking if not exists
-                if not hasattr(self, "column_visibility"):
-                    self.column_visibility = {}
-
-                # Add "Show All" and "Hide All" options
-                self.column_visibility_menu.add_command(
-                    label="Show All", command=self._show_all_columns
-                )
-                self.column_visibility_menu.add_command(
-                    label="Hide All", command=self._hide_all_columns
-                )
-                self.column_visibility_menu.add_separator()
-
-                # Add toggle option for each column
-                for i, header in enumerate(self.headers):
-                    # Initialize visibility state if not set
-                    if header not in self.column_visibility:
-                        self.column_visibility[header] = True
-
-                    # Create checkable menu item
-                    var = tk.BooleanVar(value=self.column_visibility[header])
-                    self.column_visibility_menu.add_checkbutton(
-                        label=header,
-                        variable=var,
-                        command=lambda h=header, v=var: self._toggle_column_visibility(
-                            h, v
-                        ),
-                    )
-
-                    # Store variable for later reference
-                    setattr(self, f"column_var_{i}", var)
-
-            # Also update the filter dropdown with column names
-            if hasattr(self, "column_menu") and hasattr(self, "headers"):
-                headers = ["All Columns"] + self.headers
-                self.column_menu["values"] = headers
-                if self.column_var.get() not in headers:
-                    self.column_var.set("All Columns")
-
-        except Exception as e:
-            logging.error(f"Error updating column menu: {e}")
-
-    def _show_all_columns(self) -> None:
-        """Show all columns in the data view"""
-        try:
-            if hasattr(self, "headers") and hasattr(self, "column_visibility"):
-                for i, header in enumerate(self.headers):
-                    self.column_visibility[header] = True
-                    if hasattr(self, f"column_var_{i}"):
-                        getattr(self, f"column_var_{i}").set(True)
-
-                self._apply_column_visibility()
-                self.update_status("All columns shown")
-
-        except Exception as e:
-            logging.error(f"Error showing all columns: {e}")
-
-    def _hide_all_columns(self) -> None:
-        """Hide all columns except the first one (to maintain table structure)"""
-        try:
-            if hasattr(self, "headers") and hasattr(self, "column_visibility"):
-                for i, header in enumerate(self.headers):
-                    # Keep at least the first column visible
-                    visibility = True if i == 0 else False
-                    self.column_visibility[header] = visibility
-                    if hasattr(self, f"column_var_{i}"):
-                        getattr(self, f"column_var_{i}").set(visibility)
-
-                self._apply_column_visibility()
-                self.update_status("All columns hidden except first")
-
-        except Exception as e:
-            logging.error(f"Error hiding all columns: {e}")
-
-    def _toggle_column_visibility(self, header: str, var: tk.BooleanVar) -> None:
-        """Toggle visibility of a specific column"""
-        try:
-            if hasattr(self, "column_visibility"):
-                self.column_visibility[header] = var.get()
-                self._apply_column_visibility()
-                status = "shown" if var.get() else "hidden"
-                self.update_status(f"Column '{header}' {status}")
-
-        except Exception as e:
-            logging.error(f"Error toggling column visibility for {header}: {e}")
-
-    def _apply_column_visibility(self) -> None:
-        """Apply current column visibility settings to the data table"""
-        try:
-            if not hasattr(self, "column_visibility") or not hasattr(self, "headers"):
-                return
-
-            # Get current columns
-            columns = self.data_table["columns"]
-            if not columns:
-                return
-
-            # Apply visibility settings
-            for i, header in enumerate(self.headers):
-                if i < len(columns):
-                    column_id = columns[i]
-                    is_visible = self.column_visibility.get(header, True)
-
-                    if is_visible:
-                        # Show column - restore width
-                        self.data_table.column(column_id, width=100, minwidth=50)
-                    else:
-                        # Hide column - set width to 0
-                        self.data_table.column(column_id, width=0, minwidth=0)
-
-        except Exception as e:
-            logging.error(f"Error applying column visibility: {e}")
-
-    def _discover_scripts(self) -> List[str]:
-        """Discover Python scripts in the workspace"""
-        scripts = []
-        try:
-            # import os # F401: os is imported but not used here
-            from pathlib import Path
-
-            # Get workspace root directory
-            workspace_root = Path.cwd()
-
-            # Find all Python files, excluding certain patterns
-            exclude_patterns = {
-                "gui.py",  # Don't include the GUI itself
-                "__pycache__",
-                ".git",
-                "venv",
-                "env",
-                "node_modules",
-            }
-
-            for py_file in workspace_root.rglob("*.py"):
-                # Skip files in excluded directories or with excluded names
-                if any(pattern in str(py_file) for pattern in exclude_patterns):
-                    continue
-
-                # Make path relative to workspace root
-                relative_path = py_file.relative_to(workspace_root)
-                scripts.append(str(relative_path))
-
-        except Exception as e:
-            logging.error(f"Error discovering scripts: {e}")
-
-        return sorted(scripts)
+            self.update_status("Failed to export data file")
+            messagebox.showerror("Export Error", f"Failed to export data file:\n{e}")
 
     def _update_script_menu(self) -> None:
-        """Update script menu with discovered Python scripts"""
+        """Update the script menu with current workspace Python and text files"""
         try:
             # Clear existing menu items
             self.script_menu.delete(0, "end")
 
-            # Discover scripts
-            scripts = self._discover_scripts()
+            # Find Python files in workspace
+            python_files = []
+            current_dir = Path.cwd()
 
-            if not scripts:
-                self.script_menu.add_command(label="No scripts found", state="disabled")
-                return
+            for py_file in current_dir.glob("*.py"):
+                if py_file.is_file():
+                    python_files.append(py_file)
 
-            # Add scripts to menu
-            for script_path in scripts:
-                # Create display name (show just filename for common scripts, full path for nested)
-                display_name = script_path
-                if "/" not in script_path or script_path.count("/") == 1:
-                    display_name = Path(script_path).name
+            # Find text files in use/ directory
+            use_files = []
+            use_dir = current_dir / "use"
+            if use_dir.exists():
+                for txt_file in use_dir.glob("*.txt"):
+                    if txt_file.is_file():
+                        use_files.append(txt_file)
 
+            # Add Python scripts section
+            if python_files:
                 self.script_menu.add_command(
-                    label=display_name,
-                    command=lambda path=script_path: self._load_script_content(path),
+                    label="--- Python Scripts ---", state="disabled"
                 )
+                for py_file in sorted(python_files):
+                    self.script_menu.add_command(
+                        label=f"Run {py_file.name}",
+                        command=lambda f=py_file: self._run_python_script(f),
+                    )
 
-            # Add separator and utility options
-            self.script_menu.add_separator()
-            self.script_menu.add_command(
-                label="Open Script Folder", command=self._open_script_folder
-            )
+            # Add text content section
+            if use_files:
+                if python_files:  # Add separator if we have both types
+                    self.script_menu.add_separator()
+                self.script_menu.add_command(
+                    label="--- Use Files (Text Content) ---", state="disabled"
+                )
+                for txt_file in sorted(use_files):
+                    display_name = txt_file.stem.replace("use-", "").title()
+                    self.script_menu.add_command(
+                        label=f"Load {display_name}",
+                        command=lambda f=txt_file: self._load_script_content(f),
+                    )
+
+            # If no files found, show message
+            if not python_files and not use_files:
+                self.script_menu.add_command(
+                    label="No scripts or content files found", state="disabled"
+                )
 
         except Exception as e:
             logging.error(f"Error updating script menu: {e}")
+            self.script_menu.delete(0, "end")
+            self.script_menu.add_command(
+                label="Error loading scripts", state="disabled"
+            )
 
-    def _run_script(self, script_path: str) -> None:
-        """Run a selected Python script"""
+    def _load_script_content(self, file_path: Path) -> None:
+        """Load text file content into the details view for reading"""
         try:
-            import subprocess
-            import sys
-            from pathlib import Path
+            with open(file_path, "r", encoding="utf-8") as file:
+                content = file.read()
+
+            # Format content with header for better identification
+            header = f"Script: {file_path.name}\nLocation: {file_path}\n{'=' * 50}\n\n"
+            formatted_content = header + content
+
+            # Load content into details view
+            self.details_text.delete("1.0", tk.END)
+            self.details_text.insert("1.0", formatted_content)
 
             # Update status
-            script_name = Path(script_path).name
-            self.update_status(f"Running script: {script_name}...")
-            self.root.update_idletasks()
+            self.update_status(f"Loaded content from {file_path.name}")
 
-            # Run script in background
-            def execute_script():
+            # Log the action
+            logging.info(f"Loaded script content from {file_path}")
+
+        except Exception as e:
+            logging.error(f"Error loading script content from {file_path}: {e}")
+            self.update_status(f"Failed to load {file_path.name}")
+            messagebox.showerror(
+                "Script Load Error", f"Failed to load script content:\n{e}"
+            )
+
+    def _run_python_script(self, script_path: Path) -> None:
+        """Execute a Python script in the background"""
+        try:
+            self.update_status(f"Running {script_path.name}...")
+
+            # Run script in background thread
+            def run_script():
                 try:
-                    # Run the script using the same Python interpreter
+                    import subprocess
+                    import sys
+
+                    # Run the script and capture output
                     result = subprocess.run(
-                        [sys.executable, script_path],
+                        [sys.executable, str(script_path)],
+                        cwd=script_path.parent,
                         capture_output=True,
                         text=True,
-                        timeout=300,  # 5 minute timeout
-                        cwd=Path.cwd(),
+                        timeout=30,  # 30 second timeout
                     )
 
-                    return {
-                        "success": result.returncode == 0,
-                        "stdout": result.stdout,
-                        "stderr": result.stderr,
-                        "returncode": result.returncode,
-                    }
-                except subprocess.TimeoutExpired:
-                    return {
-                        "success": False,
-                        "stdout": "",
-                        "stderr": "Script execution timed out after 5 minutes",
-                        "returncode": -1,
-                    }
-                except Exception as e:
-                    return {
-                        "success": False,
-                        "stdout": "",
-                        "stderr": str(e),
-                        "returncode": -1,
-                    }
+                    # Format output
+                    output_header = f"Script: {script_path.name}\nExecuted: {script_path}\n{'=' * 50}\n\n"
 
-            def on_script_complete(result):
-                try:
-                    if result["success"]:
-                        self.update_status(f"Script completed: {script_name}")
-                        if result["stdout"].strip():
-                            self._show_script_output(
-                                script_name, result["stdout"], result["stderr"]
+                    if result.stdout:
+                        output_header += "STDOUT:\n" + result.stdout + "\n\n"
+
+                    if result.stderr:
+                        output_header += "STDERR:\n" + result.stderr + "\n\n"
+
+                    output_header += f"Return code: {result.returncode}\n"
+
+                    # Update UI on main thread
+                    def update_ui():
+                        self.details_text.delete("1.0", tk.END)
+                        self.details_text.insert("1.0", output_header)
+
+                        if result.returncode == 0:
+                            self.update_status(
+                                f"Script {script_path.name} completed successfully"
                             )
-                    else:
-                        self.update_status(f"Script failed: {script_name}")
-                        self._show_script_output(
-                            script_name, result["stdout"], result["stderr"], False
+                        else:
+                            self.update_status(
+                                f"Script {script_path.name} finished with errors"
+                            )
+
+                    self.root.after(0, update_ui)
+
+                except subprocess.TimeoutExpired:
+
+                    def timeout_ui():
+                        self.update_status(f"Script {script_path.name} timed out")
+                        self.details_text.delete("1.0", tk.END)
+                        self.details_text.insert(
+                            "1.0",
+                            f"Script {script_path.name} timed out after 30 seconds",
                         )
 
+                    self.root.after(0, timeout_ui)
+
                 except Exception as e:
-                    logging.error(f"Error handling script completion: {e}")
-                    self.update_status(
-                        f"Error processing script results: {script_name}"
-                    )
 
-            # Execute in background
-            self.run_in_background(execute_script, callback=on_script_complete)
+                    def error_ui():
+                        self.update_status(f"Error running {script_path.name}")
+                        self.details_text.delete("1.0", tk.END)
+                        self.details_text.insert(
+                            "1.0", f"Error running script {script_path.name}:\n{e}"
+                        )
+
+                    self.root.after(0, error_ui)
+
+            # Start background execution
+            script_thread = threading.Thread(target=run_script, daemon=True)
+            script_thread.start()
 
         except Exception as e:
-            logging.error(f"Error running script {script_path}: {e}")
-            self.update_status(f"Failed to run script: {script_path}")
-            messagebox.showerror(
-                "Script Error", f"Failed to run script {script_path}:\n{e}"
-            )
+            logging.error(f"Error starting script {script_path}: {e}")
+            self.update_status(f"Failed to start {script_path.name}")
+            messagebox.showerror("Script Error", f"Failed to start script:\n{e}")
 
-    def _show_script_output(
-        self, script_name: str, stdout: str, stderr: str, success: bool = True
-    ) -> None:
-        """Show script output in a dialog window"""
+    def _on_load_text_content(self) -> None:
+        """Handle Load Text Content menu action - open file dialog for text files and load into details view"""
         try:
-            # Create dialog window
-            dialog = tk.Toplevel(self.root)
-            dialog.title(f"Script Output: {script_name}")
-            dialog.geometry("800x600")
-            dialog.transient(self.root)
-            dialog.grab_set()
-
-            # Create main frame
-            main_frame = ttk.Frame(dialog, padding="10")
-            main_frame.grid(row=0, column=0, sticky="nsew")
-
-            # Configure dialog weights
-            dialog.grid_rowconfigure(0, weight=1)
-            dialog.grid_columnconfigure(0, weight=1)
-            main_frame.grid_rowconfigure(1, weight=1)
-            main_frame.grid_columnconfigure(0, weight=1)
-
-            # Title label
-            status_text = "✓ Success" if success else "✗ Failed"
-            title_label = ttk.Label(
-                main_frame,
-                text=f"{status_text}: {script_name}",
-                font=("TkDefaultFont", 12, "bold"),
+            # Open file dialog for text files
+            file_path = filedialog.askopenfilename(
+                title="Select Text Content File to Load",
+                filetypes=[
+                    ("Text files", "*.txt"),
+                    ("Markdown files", "*.md"),
+                    ("All text files", "*.txt *.md"),
+                    ("All files", "*.*"),
+                ],
             )
-            title_label.grid(row=0, column=0, pady=(0, 10), sticky="w")
 
-            # Create notebook for tabs
-            notebook = ttk.Notebook(main_frame)
-            notebook.grid(row=1, column=0, sticky="nsew")
+            # Check if user cancelled the dialog
+            if not file_path:
+                return
 
-            # Standard output tab
-            stdout_frame = ttk.Frame(notebook)
-            notebook.add(stdout_frame, text="Standard Output")
-
-            stdout_frame.grid_rowconfigure(0, weight=1)
-            stdout_frame.grid_columnconfigure(0, weight=1)
-
-            stdout_text = tk.Text(stdout_frame, wrap="word", font=("Consolas", 10))
-            stdout_scroll = ttk.Scrollbar(
-                stdout_frame, orient="vertical", command=stdout_text.yview
-            )
-            stdout_text.configure(yscrollcommand=stdout_scroll.set)
-
-            stdout_text.grid(row=0, column=0, sticky="nsew")
-            stdout_scroll.grid(row=0, column=1, sticky="ns")
-
-            # Error output tab
-            stderr_frame = ttk.Frame(notebook)
-            notebook.add(stderr_frame, text="Error Output")
-
-            stderr_frame.grid_rowconfigure(0, weight=1)
-            stderr_frame.grid_columnconfigure(0, weight=1)
-
-            stderr_text = tk.Text(stderr_frame, wrap="word", font=("Consolas", 10))
-            stderr_scroll = ttk.Scrollbar(
-                stderr_frame, orient="vertical", command=stderr_text.yview
-            )
-            stderr_text.configure(yscrollcommand=stderr_scroll.set)
-
-            stderr_text.grid(row=0, column=0, sticky="nsew")
-            stderr_scroll.grid(row=0, column=1, sticky="ns")
-
-            # Populate content
-            stdout_text.insert(
-                "1.0", stdout if stdout.strip() else "No standard output"
-            )
-            stderr_text.insert("1.0", stderr if stderr.strip() else "No error output")
-
-            # Make text widgets read-only
-            stdout_text.configure(state="disabled")
-            stderr_text.configure(state="disabled")
-
-            # Button frame
-            button_frame = ttk.Frame(main_frame)
-            button_frame.grid(row=2, column=0, pady=(10, 0), sticky="ew")
-
-            # Close button
-            ttk.Button(button_frame, text="Close", command=dialog.destroy).pack(
-                side="right"
-            )
+            # Load the text content
+            file_path_obj = Path(file_path)
+            self._load_script_content(file_path_obj)
 
         except Exception as e:
-            logging.error(f"Error showing script output: {e}")
-            messagebox.showerror("Error", f"Failed to show script output: {e}")
-
-    def _open_script_folder(self) -> None:
-        """Open the current directory in the system file manager"""
-        try:
-            import platform
-            import subprocess
-
-            system = platform.system()
-            if system == "Windows":
-                subprocess.run(["explorer", "."])
-            elif system == "Darwin":  # macOS
-                subprocess.run(["open", "."])
-            else:  # Linux and others
-                subprocess.run(["xdg-open", "."])
-
-            self.update_status("Opened script folder")
-
-        except Exception as e:
-            logging.error(f"Error opening script folder: {e}")
-            self.update_status("Failed to open script folder")
-
-    def _on_closing(self) -> None:
-        """Handle window closing event"""
-        try:
-            self.save_window_state()
-            self.root.destroy()
-        except Exception as e:
-            logging.error(f"Error during shutdown: {e}")
-            self.root.destroy()
-
-    def _load_script_content(self, script_path: str) -> None:
-        """Load script content into the Details View"""
-        try:
-            from pathlib import Path
-
-            # Update status
-            script_name = Path(script_path).name
-            self.update_status(f"Loading script: {script_name}")
-
-            # Read script content
-            with open(script_path, "r", encoding="utf-8") as f:
-                script_content = f.read()
-
-            # Clear and update details view
-            self.details_text.delete("1.0", tk.END)
-
-            # Add header with script information
-            header = f"Script: {script_name}\n"
-            header += f"Path: {script_path}\n"
-            header += f"Size: {len(script_content)} characters\n"
-            header += "=" * 50 + "\n\n"
-
-            # Insert content into details view
-            self.details_text.insert("1.0", header + script_content)
-
-            # Update status
-            self.update_status(f"Loaded script: {script_name}")
-
-        except Exception as e:
-            logging.error(f"Error loading script content {script_path}: {e}")
-            self.update_status(f"Failed to load script: {script_path}")
-
-            # Show error in details view
-            self.details_text.delete("1.0", tk.END)
-            error_msg = f"Error loading script: {script_path}\n\nError: {str(e)}"
-            self.details_text.insert("1.0", error_msg)
-
-
-def main():
-    """Main entry point for the GUI application."""
-    try:
-        # Configure logging for standalone execution
-        logging.basicConfig(
-            level=logging.INFO,
-            format="%(asctime)s - %(levelname)s - %(message)s",
-            handlers=[logging.FileHandler("gui.log"), logging.StreamHandler()],
-        )
-
-        # Create main window
-        root = tk.Tk()
-
-        # Initialize and run the GUI application
-        app = CrewGUI(root)
-
-        # Start the GUI main loop
-        root.mainloop()
-
-    except Exception as e:
-        logging.error(f"Failed to start GUI application: {e}")
-        if "root" in locals():
-            messagebox.showerror("GUI Error", f"Failed to start application:\n{e}")
-        raise
-
-
-if __name__ == "__main__":
-    main()
+            logging.error(f"Error loading text content: {e}")
+            self.update_status("Failed to load text content")
+            messagebox.showerror("Load Error", f"Failed to load text content:\n{e}")

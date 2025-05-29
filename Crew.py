@@ -1130,9 +1130,11 @@ if __name__ == "__main__":
     backup_parent_dir = project_dir.parent / f"{project_dir.name}_Backups"
 
     # Add backup pause option
-    logger.info("--- Backup Control ---")y
-    backup_response = input("Do you want to proceed with backup? (y/n): ").strip().lower()
-    if backup_response not in ['y', 'yes']:
+    logger.info("--- Backup Control ---")
+    backup_response = (
+        input("Do you want to proceed with backup? (y/n): ").strip().lower()
+    )
+    if backup_response not in ["y", "yes"]:
         logger.info("Backup skipped by user request.")
         speak("Backup skipped.")
     else:
@@ -1163,8 +1165,25 @@ if __name__ == "__main__":
 
     if ENABLE_LINTING:
         if (project_dir / ".git").is_dir():
-            auto_fix_all_issues(project_dir)
-            logger.info("Auto-fix and Git push task processed.")
+            # Add GitHub push prompt
+            logger.info("--- GitHub Push Control ---")
+            github_response = (
+                input("Do you want to proceed with GitHub push? (y/n): ")
+                .strip()
+                .lower()
+            )
+            if github_response not in ["y", "yes"]:
+                logger.info("GitHub push skipped by user request.")
+                speak("GitHub push skipped.")
+                # Still run local linting without GitHub push
+                logger.info("Running local linters/formatters only...")
+                if fix_lint_errors(project_dir):
+                    logger.info("Local linting/formatting completed.")
+                else:
+                    logger.error("Local linting/formatting failed.")
+            else:
+                auto_fix_all_issues(project_dir)
+                logger.info("Auto-fix and Git push task processed.")
         else:
             logger.warning(
                 f"'{project_dir}' is not a Git repository. Skipping Git operations in auto_fix_all_issues."
