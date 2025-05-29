@@ -107,41 +107,10 @@ def auto_import_py_files() -> Tuple[List[str], List[Tuple[str, str]]]:
         failed_imports = []
 
         # Files to skip (known problematic files or current file)
-        skip_files = {
-            "gui.py",
-            "setup.py",
-            "__init__.py",
-            "bmp2png.py",
-            "mcp_example.py",
-            "mcp_service.py",
-            "mcp.py",
-            "read_use_file.py",
-            "read_use_file_cli.py",
-            "save_simple.py",
-            "storySearch.py",
-            "traveller5_scraper.py",
-            "log_analyzer.py",
-            "output.txt.py",
-            "test_script_demo.py",
-            "test_script_error.py",
-            "test_auto_import.py",
-            "test_column_visibility.py",
-            "test_layout.py",
-            "test_tts.py",
-            "import unittest.py",
-        }
+        skip_files = {"gui.py", "setup.py", "__init__.py"}
 
         # Directories to skip
-        skip_dirs = {
-            "__pycache__",
-            ".git",
-            "venv",
-            "env",
-            "tests",
-            "test",
-            "tts_venv",
-            "data",
-        }
+        skip_dirs = {"__pycache__", ".git", "venv", "env", "tests", "test"}
 
         for py_file in py_files:
             try:
