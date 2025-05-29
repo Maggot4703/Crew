@@ -2195,7 +2195,7 @@ class CrewGUI:
 
                Context-Aware Filtering:
                - Applies filters to currently active data view context
-               - Resects active group selection for scoped filtering
+               - Resets active group selection for scoped filtering
                - Falls back to full dataset when no group is selected
                - Maintains user workflow continuity across filter operations
 
@@ -3517,7 +3517,7 @@ class CrewGUI:
 
                 self.script_menu.add_command(
                     label=display_name,
-                    command=lambda path=script_path: self._run_script(path),
+                    command=lambda path=script_path: self._load_script_content(path),
                 )
 
             # Add separator and utility options
@@ -3723,18 +3723,39 @@ class CrewGUI:
             logging.error(f"Error during shutdown: {e}")
             self.root.destroy()
 
+    def _load_script_content(self, script_path: str) -> None:
+        """Load script content into the Details View"""
+        try:
+            from pathlib import Path
 
-def main() -> None:
-    """Main entry point for the Crew Manager application"""
-    try:
-        root = tk.Tk()
-        CrewGUI(root)  # F841: app = CrewGUI(root) -> CrewGUI(root)
-        root.mainloop()
-    except Exception as e:
-        logging.error(f"Application crashed: {e}")
-        messagebox.showerror("Fatal Error", f"Application crashed: {e}")
-        raise
+            # Update status
+            script_name = Path(script_path).name
+            self.update_status(f"Loading script: {script_name}")
 
+            # Read script content
+            with open(script_path, "r", encoding="utf-8") as f:
+                script_content = f.read()
 
-if __name__ == "__main__":
-    main()
+            # Clear and update details view
+            self.details_text.delete("1.0", tk.END)
+
+            # Add header with script information
+            header = f"Script: {script_name}\n"
+            header += f"Path: {script_path}\n"
+            header += f"Size: {len(script_content)} characters\n"
+            header += "=" * 50 + "\n\n"
+
+            # Insert content into details view
+            self.details_text.insert("1.0", header + script_content)
+
+            # Update status
+            self.update_status(f"Loaded script: {script_name}")
+
+        except Exception as e:
+            logging.error(f"Error loading script content {script_path}: {e}")
+            self.update_status(f"Failed to load script: {script_path}")
+
+            # Show error in details view
+            self.details_text.delete("1.0", tk.END)
+            error_msg = f"Error loading script: {script_path}\n\nError: {str(e)}"
+            self.details_text.insert("1.0", error_msg)
