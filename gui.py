@@ -107,10 +107,50 @@ def auto_import_py_files() -> Tuple[List[str], List[Tuple[str, str]]]:
         failed_imports = []
 
         # Files to skip (known problematic files or current file)
-        skip_files = {"gui.py", "setup.py", "__init__.py"}
+        skip_files = {
+            "gui.py",
+            "setup.py",
+            "__init__.py",
+            "output.txt.py",  # Script file, not a module
+            "globals.py",  # Has side effects during import (prints when loaded)
+            "Crew.py",  # Main script file
+            "test_script_demo.py",  # Test script
+            "test_auto_import.py",  # Test script
+            "enhanced_features.py",  # May have dependencies that aren't needed
+        }
+
+        # Additional patterns to skip
+        skip_patterns = {
+            ".txt.py",  # Files with .txt.py extension are likely not modules
+            "main.py",  # Main script files
+            "run.py",  # Runner script files
+            "test_",  # Test files
+            "_test",  # Test files
+            "demo",  # Demo scripts
+            "example",  # Example scripts
+        }
 
         # Directories to skip
-        skip_dirs = {"__pycache__", ".git", "venv", "env", "tests", "test"}
+        skip_dirs = {
+            "__pycache__",
+            ".git",
+            "venv",
+            "env",
+            "tests",
+            "test",
+            "tts_venv",  # TTS virtual environment
+            ".venv",  # Hidden virtual environment
+            "node_modules",  # Node.js modules
+            "build",  # Build directories
+            "dist",  # Distribution directories
+            ".pytest_cache",  # Pytest cache
+            ".mypy_cache",  # MyPy cache
+            "site-packages",  # Python site packages
+            "lib",  # Library directories
+            "bin",  # Binary directories
+            "include",  # Include directories
+            "share",  # Share directories
+        }
 
         for py_file in py_files:
             try:
@@ -121,12 +161,83 @@ def auto_import_py_files() -> Tuple[List[str], List[Tuple[str, str]]]:
                 if any(skip_dir in relative_path.parts for skip_dir in skip_dirs):
                     continue
 
+                # Skip any file in virtual environment or site-packages path
+                path_str = str(relative_path).lower()
+                if any(
+                    venv_indicator in path_str
+                    for venv_indicator in [
+                        "venv",
+                        "site-packages",
+                        "lib/python",
+                        ".venv",
+                        "env/lib",
+                    ]
+                ):
+                    continue
+
                 # Skip excluded files
                 if py_path.name in skip_files:
                     continue
 
+                # Skip files matching problematic patterns
+                if any(pattern in py_path.name for pattern in skip_patterns):
+                    continue
+
                 # Skip test files
                 if py_path.name.startswith("test_") or "unittest" in py_path.name:
+                    continue
+
+                # Additional safety check: skip files that look like scripts rather than modules
+                if py_path.name.lower() in {
+                    "main.py",
+                    "run.py",
+                    "start.py",
+                    "launch.py",
+                }:
+                    continue
+
+                # Quick safety check: read first few lines to detect obvious script files
+                try:
+                    with open(py_file, "r", encoding="utf-8") as f:
+                        first_lines = [f.readline().strip() for _ in range(10)]
+
+                    # Skip files that look like scripts
+                    script_indicators = [
+                        'if __name__ == "__main__"',
+                        "subprocess.call",
+                        "subprocess.run",
+                        "sys.argv",
+                        "argparse",
+                        "print(",  # Files with immediate print statements
+                        "input(",  # Interactive scripts
+                        "main()",  # Scripts with main function calls
+                        "logging.basicconfig",  # Scripts that configure logging
+                        "logger.info",  # Scripts with immediate logging
+                        "speak(",  # Scripts with TTS functionality
+                        "sys.exit",  # Scripts that exit immediately
+                        "os.system",  # Scripts that run system commands
+                        "plt.show",  # Scripts with matplotlib plots
+                        "plt.plot",  # Scripts with immediate plotting
+                    ]
+
+                    file_content = "\n".join(first_lines).lower()
+                    if any(
+                        indicator in file_content for indicator in script_indicators
+                    ):
+                        logging.debug(
+                            f"Skipping {py_path.name} - appears to be a script file"
+                        )
+                        continue
+
+                    # Special check for files with immediate side effects
+                    if "print(" in file_content and "loaded" in file_content:
+                        logging.debug(
+                            f"Skipping {py_path.name} - has print statements with side effects"
+                        )
+                        continue
+
+                except (IOError, UnicodeDecodeError):
+                    # If we can't read the file, skip it for safety
                     continue
 
                 # Create module name from path
