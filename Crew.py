@@ -1215,11 +1215,12 @@ if __name__ == "__main__":
         logger.info(f"Attempting to launch GUI: {gui_script_path}")
         speak("Attempting to launch the graphical user interface.")
         try:
+            # Temporarily show output to debug GUI issues
             subprocess.Popen(
                 [sys.executable, str(gui_script_path)],
                 cwd=project_dir,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
+                # stdout=subprocess.DEVNULL,
+                # stderr=subprocess.DEVNULL,
                 start_new_session=True,
             )
             logger.info("GUI launch command issued.")
