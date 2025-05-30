@@ -3559,18 +3559,88 @@ class CrewGUI:
             self.update_status("Failed to load text content")
             messagebox.showerror("Load Error", f"Failed to load text content:\n{e}")
 
+    def _show_imported_modules(self) -> None:
+        """Display information about auto-imported modules in a dialog window.
 
-if __name__ == "__main__":
-    root = tk.Tk()
-    app = CrewGUI(root)
-
-    # Optional: Handle window close event for proper cleanup
-    def on_closing():
+        Shows a comprehensive report of module import status including:
+        - Successfully imported modules with their file paths
+        - Failed imports with error details
+        - Import statistics and summary information
+        """
         try:
-            app.save_window_state()
-        except:
-            pass
-        root.destroy()
+            # Create dialog window
+            dialog = tk.Toplevel(self.root)
+            dialog.title("Auto-Imported Modules")
+            dialog.geometry("800x600")
+            dialog.transient(self.root)
+            dialog.grab_set()
 
-    root.protocol("WM_DELETE_WINDOW", on_closing)
-    root.mainloop()
+            # Create scrollable text widget
+            frame = tk.Frame(dialog)
+            frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+            text_widget = tk.Text(frame, wrap=tk.WORD, font=("Courier", 10))
+            scrollbar = tk.Scrollbar(
+                frame, orient=tk.VERTICAL, command=text_widget.yview
+            )
+            text_widget.configure(yscrollcommand=scrollbar.set)
+
+            text_widget.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+            scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+            # Display import information
+            content = []
+            content.append("AUTO-IMPORTED MODULES REPORT")
+            content.append("=" * 50)
+            content.append("")
+
+            if hasattr(self, "imported_modules") and self.imported_modules:
+                content.append(
+                    f"Successfully Imported ({len(self.imported_modules)} modules):"
+                )
+                content.append("-" * 40)
+                for module_name in self.imported_modules:
+                    content.append(f"• {module_name}")
+                content.append("")
+            else:
+                content.append("No modules successfully imported.")
+                content.append("")
+
+            if hasattr(self, "failed_imports") and self.failed_imports:
+                content.append(f"Failed Imports ({len(self.failed_imports)} modules):")
+                content.append("-" * 40)
+                for file_path, error in self.failed_imports:
+                    content.append(f"• {file_path}")
+                    content.append(f"  Error: {error}")
+                    content.append("")
+            else:
+                content.append("No import failures.")
+                content.append("")
+
+            # Summary
+            total_imported = (
+                len(self.imported_modules) if hasattr(self, "imported_modules") else 0
+            )
+            total_failed = (
+                len(self.failed_imports) if hasattr(self, "failed_imports") else 0
+            )
+            content.append("SUMMARY")
+            content.append("-" * 20)
+            content.append(f"Total successful imports: {total_imported}")
+            content.append(f"Total failed imports: {total_failed}")
+            content.append(
+                f"Success rate: {total_imported/(total_imported + total_failed)*100:.1f}%"
+                if (total_imported + total_failed) > 0
+                else "No imports attempted"
+            )
+
+            text_widget.insert(tk.END, "\n".join(content))
+            text_widget.config(state=tk.DISABLED)
+
+            # Close button
+            close_btn = tk.Button(dialog, text="Close", command=dialog.destroy)
+            close_btn.pack(pady=5)
+
+        except Exception as e:
+            logging.error(f"Error displaying imported modules: {e}")
+            messagebox.showerror("Error", f"Failed to display module information: {e}")
