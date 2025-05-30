@@ -1005,7 +1005,8 @@ def auto_fix_all_issues(project_dir: Path) -> None:
 
 
 # region Job Functions - Data Processing Tasks
-def spacer():
+def spacer():y
+
     """Print a visual separator for console output."""
     print("\n" + "=" * 50 + "\n")
 

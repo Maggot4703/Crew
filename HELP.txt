@@ -1,0 +1,100 @@
+
+# Crew.py Help Guide - 2025-05-30
+
+Thank you for using Crew.py! This guide provides an overview of its features and how to use them.
+
+## Core Functionalities:
+
+1.  **Project Backup (`backup_project`)**:
+    *   Creates a timestamped backup of the entire project directory.
+    *   Excludes common temporary files, virtual environments, and Git folders (see `excluded_patterns` in `Crew.py`).
+    *   Backups are stored in a sister directory named `PROJECTS_Crew_Backups` (or as configured).
+    *   Usage: This is typically run automatically at the start of the main script execution.
+
+2.  **Project Summary (`generate_project_summary`)**:
+    *   Generates a `project_summary.md` file in the project root.
+    *   This file includes:
+        *   Directory structure (excluding common temporary/build directories).
+        *   Total file and directory counts.
+        *   Breakdown of file types.
+        *   Approximate lines of Python code (excluding comments and blank lines).
+    *   Usage: Run automatically by the main script.
+
+3.  **Automated Fixes & Git Integration (`auto_fix_all_issues`)**:
+    *   **Code Formatting**: Runs `isort` (for import sorting) and `black` (for code style) on all Python files in the project.
+        *   Requires `isort` and `black` to be installed in your Python environment (`pip install isort black`).
+    *   **Git Commit & Push**: After formatting, it automatically:
+        *   Adds all changes (`git add .`).
+        *   Commits changes with a timestamped message (e.g., "Automated fixes and updates (YYYY-MM-DD HH:MM:SS)").
+        *   Pushes the commit to the `origin` remote (typically GitHub).
+        *   Requires Git to be installed and configured for the project (e.g., `git init`, `git remote add origin <your-repo-url>`).
+        *   Errors during Git operations are logged to `push_log.txt`.
+    *   Usage: Run automatically by the main script.
+
+4.  **Text-to-Speech (TTS) Notifications (`speak`)**:
+    *   Provides audible feedback for key operations (e.g., backup start/finish, errors).
+    *   Uses the `pyttsx3` library. Requires TTS engines to be installed on your system.
+        *   On Linux: `sudo apt-get install espeak festival` (or other TTS engines).
+        *   See `tts_requirements.txt` and `install_tts.sh` for setup help.
+    *   If TTS initialization fails, it logs a warning and continues silently.
+
+5.  **GUI Launch (`launch_gui_if_configured`)**:
+    *   Attempts to launch a `gui.py` script if it exists in the project directory.
+    *   The GUI is expected to be a separate Tkinter or PyQt application.
+    *   Usage: Run automatically at the end of the main script execution.
+
+6.  **Image Processing (`job1`, `markHorizontalLine`, `overlayGrid`)**:
+    *   `job1`: Example task that overlays grids on images specified in `IMAGE_FILES`.
+    *   These are more specific utilities and might need adaptation for your use case.
+
+7.  **Data Handling (`job2`, `job3`, `read_csv_pandas`, `read_excel`, etc.)**:
+    *   Example tasks for reading and performing basic analysis on CSV and Excel files.
+    *   Utilizes the `pandas` library.
+
+8.  **Logging**:
+    *   Comprehensive logging is implemented using Python's `logging` module.
+    *   Logs are by default sent to the console and also to `output.txt` in the project root when the script is run directly.
+    *   Log file `output.txt` is created by the main script to capture stdout/stderr.
+
+## Setup & Requirements:
+
+*   **Python 3.x**: Ensure you have a compatible Python version.
+*   **`requirements.txt`**: Install core dependencies: `pip install -r requirements.txt`
+    *   Key libraries: `pandas`, `Pillow` (for image processing), `tqdm`.
+*   **`tts_requirements.txt`**: For Text-to-Speech: `pip install -r tts_requirements.txt`
+    *   Key library: `pyttsx3`.
+    *   System-level TTS engines might also be needed (see TTS section above).
+*   **Linters/Formatters**: For `auto_fix_all_issues`: `pip install isort black`.
+*   **Git**: For `auto_fix_all_issues`: Ensure Git is installed and your project is a Git repository with a remote configured.
+
+## Running Crew.py:
+
+    python3 Crew.py
+
+The script will perform its main sequence: backup, summary, auto-fixes, GUI launch, etc.
+
+## Customization:
+
+*   **Backup Exclusions**: Modify `excluded_patterns` in the `backup_project` function in `Crew.py`.
+*   **Image Processing**: Adjust `IMAGE_FILES`, `GRID_SIZES`, etc., in the "Configuration and Constants" section of `Crew.py`.
+*   **Data Files**: Update paths in `job2`, `job3`, etc., if you use these data processing tasks.
+*   **Main Sequence**: Modify the `if __name__ == "__main__":` block in `Crew.py` to change the order of operations or disable certain features.
+
+## Troubleshooting:
+
+*   **TTS Issues**:
+    *   Check `tts_requirements.txt` and `install_tts.sh`.
+    *   Ensure system TTS engines are installed (e.g., `espeak` on Linux).
+    *   Look for error messages in the console log related to `pyttsx3.init()`.
+    *   The script attempts to find an English voice; if not found, it uses the default.
+*   **Git Push Failures**:
+    *   Check `push_log.txt` for detailed error messages from Git.
+    *   Ensure your Git remote (`origin`) is correctly configured.
+    *   Ensure you have an internet connection and permissions to push to the repository.
+*   **Linter/Formatter Issues**:
+    *   Make sure `isort` and `black` are installed in the environment where `Crew.py` is run.
+    *   Check console logs for errors from these tools.
+*   **`ModuleNotFoundError`**: Ensure all dependencies from `requirements.txt` (and `tts_requirements.txt` if using TTS) are installed in your active Python environment.
+*   **File Paths**: The script uses `pathlib.Path` for robust path handling. Most paths are relative to the script's location.
+
+This help file is automatically generated. For the most up-to-date information, please refer to the source code and comments within `Crew.py`.

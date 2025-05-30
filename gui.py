@@ -43,6 +43,7 @@ import re
 import sys
 import threading
 import tkinter as tk
+
 # Remove deprecated tix import, use ttk tooltips instead
 from pathlib import Path  # Cross-platform file handling
 from queue import Queue  # Thread-safe task queue
@@ -64,6 +65,7 @@ from database_manager import DatabaseManager  # Data persistence layer
 # TTS functionality
 try:
     import pyttsx3
+
     TTS_AVAILABLE = True
 except ImportError:
     TTS_AVAILABLE = False
@@ -1196,7 +1198,7 @@ class CrewGUI:
 
     def _show_status_tooltip(self, event: tk.Event) -> None:
         """Display detailed tooltip for long status messages on hover.
-        
+
         Note: Uses simple Label widget instead of deprecated tix.Balloon
         """
         msg = self.status_var.get()
@@ -1204,12 +1206,12 @@ class CrewGUI:
             # Create a simple tooltip using a Toplevel window
             self.status_tooltip = tk.Toplevel(self.root)
             self.status_tooltip.wm_overrideredirect(True)
-            
+
             # Position tooltip near the cursor
             x = event.x_root + 10
             y = event.y_root + 10
             self.status_tooltip.geometry(f"+{x}+{y}")
-            
+
             # Create tooltip content
             tooltip_label = tk.Label(
                 self.status_tooltip,
@@ -1218,13 +1220,13 @@ class CrewGUI:
                 relief="solid",
                 borderwidth=1,
                 font=("TkDefaultFont", 9),
-                wraplength=300
+                wraplength=300,
             )
             tooltip_label.pack()
 
     def _hide_status_tooltip(self, event: tk.Event) -> None:
         """Clean up and hide status tooltip when mouse leaves area."""
-        if hasattr(self, 'status_tooltip') and self.status_tooltip:
+        if hasattr(self, "status_tooltip") and self.status_tooltip:
             try:
                 self.status_tooltip.destroy()
                 self.status_tooltip = None
@@ -2598,9 +2600,13 @@ class CrewGUI:
                         header in self.column_visibility
                         and not self.column_visibility[header]
                     ):
-                        self.data_table.column(col_id, width=0, minwidth=0)  # Hide column
+                        self.data_table.column(
+                            col_id, width=0, minwidth=0
+                        )  # Hide column
                     else:
-                        self.data_table.column(col_id, width=100, minwidth=50)  # Show column
+                        self.data_table.column(
+                            col_id, width=100, minwidth=50
+                        )  # Show column
 
         except Exception as e:
             logging.error(f"Error applying column visibility: {e}")
@@ -2670,9 +2676,13 @@ class CrewGUI:
                     # Format the row data nicely
                     details = "Selected Row Details:\n" + "=" * 40 + "\n\n"
                     for i, value in enumerate(values):
-                        header = self.headers[i] if i < len(self.headers) else f"Column {i+1}"
+                        header = (
+                            self.headers[i]
+                            if i < len(self.headers)
+                            else f"Column {i+1}"
+                        )
                         details += f"{header}: {value}\n"
-                    
+
                     self.details_text.insert("1.0", details)
             else:
                 self.details_text.insert("1.0", str(data))
@@ -2789,18 +2799,24 @@ class CrewGUI:
         try:
             # Update menu state based on current conditions
             selected_text = self._get_selected_text()
-            
+
             # Enable/disable menu items based on selection and reading state
             if selected_text:
-                self.details_context_menu.entryconfig("🔊 Read Selected Text", state="normal")
+                self.details_context_menu.entryconfig(
+                    "🔊 Read Selected Text", state="normal"
+                )
             else:
-                self.details_context_menu.entryconfig("🔊 Read Selected Text", state="disabled")
-            
+                self.details_context_menu.entryconfig(
+                    "🔊 Read Selected Text", state="disabled"
+                )
+
             if self.is_reading:
                 self.details_context_menu.entryconfig("⏹️ Stop Reading", state="normal")
             else:
-                self.details_context_menu.entryconfig("⏹️ Stop Reading", state="disabled")
-                
+                self.details_context_menu.entryconfig(
+                    "⏹️ Stop Reading", state="disabled"
+                )
+
             self.details_context_menu.post(event.x_root, event.y_root)
 
         except Exception as e:
@@ -2842,18 +2858,16 @@ class CrewGUI:
         try:
             if self.is_reading:
                 return
-                
+
             self.is_reading = True
             self.update_status(f"Reading {description}...")
-            
+
             # Preprocess text for better speech
             processed_text = self._preprocess_text_for_speech(text)
-            
+
             # Start reading in background thread
             self.reading_thread = threading.Thread(
-                target=self._speak_text_worker, 
-                args=(processed_text,), 
-                daemon=True
+                target=self._speak_text_worker, args=(processed_text,), daemon=True
             )
             self.reading_thread.start()
 
@@ -2866,7 +2880,7 @@ class CrewGUI:
         try:
             # Split text into chunks to avoid memory issues
             chunks = self._chunk_text(text, 1000)
-            
+
             for chunk in chunks:
                 if not self.is_reading:  # Check if stopped
                     break
@@ -2914,32 +2928,32 @@ class CrewGUI:
         text = re.sub(r"^\d+\.\s+", "", text, flags=re.MULTILINE)
 
         # Clean up extra whitespace
-        text = re.sub(r'\n\s*\n', '\n\n', text)
-        text = re.sub(r' +', ' ', text)
+        text = re.sub(r"\n\s*\n", "\n\n", text)
+        text = re.sub(r" +", " ", text)
 
         return text.strip()
 
     def _chunk_text(self, text: str, max_length: int = 1000) -> list:
         """Split text into chunks for TTS processing"""
-        sentences = re.split(r'[.!?]+', text)
+        sentences = re.split(r"[.!?]+", text)
         chunks = []
         current_chunk = ""
-        
+
         for sentence in sentences:
             sentence = sentence.strip()
             if not sentence:
                 continue
-                
+
             if len(current_chunk) + len(sentence) <= max_length:
                 current_chunk += sentence + ". "
             else:
                 if current_chunk:
                     chunks.append(current_chunk.strip())
                 current_chunk = sentence + ". "
-        
+
         if current_chunk:
             chunks.append(current_chunk.strip())
-            
+
         return chunks if chunks else [text]
 
     def _on_load_data(self) -> None:
@@ -2950,10 +2964,10 @@ class CrewGUI:
                 filetypes=[
                     ("CSV files", "*.csv"),
                     ("Excel files", "*.xlsx *.xls"),
-                    ("All files", "*.*")
-                ]
+                    ("All files", "*.*"),
+                ],
             )
-            
+
             if file_path:
                 self.update_status("Loading data...")
                 # TODO: Implement actual data loading
@@ -2970,10 +2984,10 @@ class CrewGUI:
                 filetypes=[
                     ("CSV files", "*.csv"),
                     ("Excel files", "*.xlsx *.xls"),
-                    ("All files", "*.*")
-                ]
+                    ("All files", "*.*"),
+                ],
             )
-            
+
             if file_path:
                 self.update_status("Importing data...")
                 # TODO: Implement actual data import
@@ -2987,17 +3001,14 @@ class CrewGUI:
         try:
             file_path = filedialog.askopenfilename(
                 title="Load Text Content",
-                filetypes=[
-                    ("Text files", "*.txt"),
-                    ("All files", "*.*")
-                ]
+                filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
             )
-            
+
             if file_path:
                 self.update_status("Loading text content...")
-                with open(file_path, 'r', encoding='utf-8') as f:
+                with open(file_path, "r", encoding="utf-8") as f:
                     content = f.read()
-                
+
                 self.details_text.delete("1.0", tk.END)
                 self.details_text.insert("1.0", content)
                 self.update_status(f"Text content loaded from {file_path}")
@@ -3014,10 +3025,10 @@ class CrewGUI:
                 filetypes=[
                     ("CSV files", "*.csv"),
                     ("Excel files", "*.xlsx"),
-                    ("All files", "*.*")
-                ]
+                    ("All files", "*.*"),
+                ],
             )
-            
+
             if file_path:
                 self.update_status("Saving data...")
                 # TODO: Implement actual data saving
@@ -3035,10 +3046,10 @@ class CrewGUI:
                 filetypes=[
                     ("Excel files", "*.xlsx"),
                     ("CSV files", "*.csv"),
-                    ("All files", "*.*")
-                ]
+                    ("All files", "*.*"),
+                ],
             )
-            
+
             if file_path:
                 self.update_status("Exporting data...")
                 # TODO: Implement actual data export
@@ -3050,21 +3061,21 @@ class CrewGUI:
     def _show_imported_modules(self) -> None:
         """Show dialog with auto-imported modules information"""
         try:
-            if hasattr(self, 'imported_modules') and hasattr(self, 'failed_imports'):
+            if hasattr(self, "imported_modules") and hasattr(self, "failed_imports"):
                 total_imported = len(self.imported_modules)
                 total_failed = len(self.failed_imports)
-                
+
                 message = f"Auto-Import Results:\n\n"
                 message += f"✓ Successfully imported: {total_imported} modules\n"
                 message += f"✗ Failed/Skipped: {total_failed} modules\n\n"
-                
+
                 if self.imported_modules:
                     message += "Imported modules:\n"
                     for module in self.imported_modules[:10]:  # Show first 10
                         message += f"  • {module}\n"
                     if total_imported > 10:
                         message += f"  ... and {total_imported - 10} more\n"
-                
+
                 messagebox.showinfo("Auto-Import Results", message)
             else:
                 messagebox.showinfo("Auto-Import", "No import information available")
@@ -3074,25 +3085,24 @@ class CrewGUI:
     def _update_script_menu(self) -> None:
         """Update the script execution menu with available Python files"""
         try:
-            if not hasattr(self, 'script_menu'):
+            if not hasattr(self, "script_menu"):
                 return
-                
+
             # Clear existing menu items
-            self.script_menu.delete(0, 'end')
-            
+            self.script_menu.delete(0, "end")
+
             # Find Python scripts in workspace
             script_files = glob.glob("*.py")
-            script_files = [f for f in script_files if not f.startswith('gui.py')]
-            
+            script_files = [f for f in script_files if not f.startswith("gui.py")]
+
             if script_files:
                 for script in sorted(script_files):
                     self.script_menu.add_command(
-                        label=script,
-                        command=lambda s=script: self._run_script(s)
+                        label=script, command=lambda s=script: self._run_script(s)
                     )
             else:
                 self.script_menu.add_command(label="No scripts found", state="disabled")
-            
+
         except Exception as e:
             logging.error(f"Error updating script menu: {e}")
 
@@ -3125,16 +3135,15 @@ def main():
     try:
         # Configure logging
         logging.basicConfig(
-            level=logging.INFO,
-            format="%(asctime)s - %(levelname)s - %(message)s"
+            level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
         )
-        
+
         # Create main window
         root = tk.Tk()
-        
+
         # Initialize the GUI application
         app = CrewGUI(root)
-        
+
         # Set up proper window closing behavior
         def on_closing():
             try:
@@ -3144,13 +3153,13 @@ def main():
             except Exception as e:
                 logging.error(f"Error during shutdown: {e}")
                 root.destroy()
-        
+
         root.protocol("WM_DELETE_WINDOW", on_closing)
-        
+
         # Start the main event loop
         logging.info("Starting Crew Manager GUI...")
         root.mainloop()
-        
+
     except KeyboardInterrupt:
         logging.info("Application interrupted by user")
     except Exception as e:
