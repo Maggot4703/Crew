@@ -1213,7 +1213,13 @@ def job6(data_file: str):
             logger.info(f"Processing file: {data_path}")
             # Add specific job6 logic here
             logger.info("Job6 completed successfully")
-        else:y6: {e}")
+        else:
+            logger.warning(f"Data file not found: {data_path}")
+            
+        speak("Job 6 complete.")
+        
+    except Exception as e:
+        logger.error(f"Error in job6: {e}")
         speak("Job 6 encountered an error.")
 
 
@@ -1224,8 +1230,8 @@ def job8(data_file: str):
     
     try:
         # Placeholder for final processing
-        logger.info("Executing job8 processing...")
-        data_path = Path(data_file)
+        logger.info("Executiny
+                    a_file)
         
         if data_path.exists():
             logger.info(f"Processing file: {data_path}")

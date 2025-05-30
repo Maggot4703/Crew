@@ -3558,3 +3558,19 @@ class CrewGUI:
             logging.error(f"Error loading text content: {e}")
             self.update_status("Failed to load text content")
             messagebox.showerror("Load Error", f"Failed to load text content:\n{e}")
+
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = CrewGUI(root)
+
+    # Optional: Handle window close event for proper cleanup
+    def on_closing():
+        try:
+            app.save_window_state()
+        except:
+            pass
+        root.destroy()
+
+    root.protocol("WM_DELETE_WINDOW", on_closing)
+    root.mainloop()
