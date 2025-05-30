@@ -1005,8 +1005,7 @@ def auto_fix_all_issues(project_dir: Path) -> None:
 
 
 # region Job Functions - Data Processing Tasks
-def spacer():y
-
+def spacer():
     """Print a visual separator for console output."""
     print("\n" + "=" * 50 + "\n")
 
@@ -1255,7 +1254,8 @@ def job8(data_file: str):
 
     try:
         # Placeholder for final processing
-        logger.info("Executing a_file")
+        logger.info("Executing job8 processing...")
+        data_path = Path(data_file)
 
         if data_path.exists():
             logger.info(f"Processing file: {data_path}")
