@@ -1,20 +1,20 @@
-2025-05-30 22:09:20 - __main__ - INFO - Crew.py script started. Logging to console and output.txt
-2025-05-30 22:09:20 - __main__ - INFO - --- Backup Control ---
-2025-05-30 22:09:57 - __main__ - INFO - --- Task: Project Backup ---
-2025-05-30 22:09:57 - __main__ - INFO - --- Task: Project Backup ---
-2025-05-30 22:09:57 - __main__ - INFO - Starting backup of '/home/me/BACKUP/PROJECTS/Crew' to '/home/me/BACKUP/PROJECTS/Crew_Backups/Crew_Backup_20250530_220957'...
-2025-05-30 22:09:58 - __main__ - DEBUG - Ignoring '/home/me/BACKUP/PROJECTS/Crew/.pytest_cache' due to pattern '.pytest_cache' (direct match)
-2025-05-30 22:09:58 - __main__ - DEBUG - Ignoring '/home/me/BACKUP/PROJECTS/Crew/HELP.txt' due to pattern 'HELP.txt' (direct match)
-2025-05-30 22:09:58 - __main__ - DEBUG - Ignoring '/home/me/BACKUP/PROJECTS/Crew/output.txt' due to pattern 'output.txt' (direct match)
-2025-05-30 22:09:58 - __main__ - DEBUG - Ignoring hidden directory '/home/me/BACKUP/PROJECTS/Crew/.venv' (explicit check)
-2025-05-30 22:09:58 - __main__ - DEBUG - Ignoring '/home/me/BACKUP/PROJECTS/Crew/data' due to pattern 'data' (direct match)
-2025-05-30 22:09:58 - __main__ - DEBUG - Ignoring '/home/me/BACKUP/PROJECTS/Crew/traveller5_scraping_20250522.log' due to pattern '*.log' (direct match)
-2025-05-30 22:09:58 - __main__ - DEBUG - Ignoring '/home/me/BACKUP/PROJECTS/Crew/.git' due to pattern '.git' (direct match)
-2025-05-30 22:09:58 - __main__ - DEBUG - Ignoring '/home/me/BACKUP/PROJECTS/Crew/traveller5_scraping_20250525.log' due to pattern '*.log' (direct match)
-2025-05-30 22:09:58 - __main__ - DEBUG - Ignoring '/home/me/BACKUP/PROJECTS/Crew/__pycache__' due to pattern '__pycache__' (direct match)
-2025-05-30 22:09:58 - __main__ - DEBUG - Ignoring '/home/me/BACKUP/PROJECTS/Crew/project_summary.md' due to pattern 'project_summary.md' (direct match)
-2025-05-30 22:09:58 - __main__ - DEBUG - Ignoring '/home/me/BACKUP/PROJECTS/Crew/tests/__pycache__' due to pattern '__pycache__' (direct match)
-2025-05-30 22:09:58 - __main__ - ERROR - Backup failed for '/home/me/BACKUP/PROJECTS/Crew'. Error: [('/home/me/BACKUP/PROJECTS/Crew/Scratch.txt', '/home/me/BACKUP/PROJECTS/Crew_Backups/Crew_Backup_20250530_220957/Scratch.txt', "[Errno 2] No such file or directory: '/home/me/BACKUP/PROJECTS/Crew/Scratch.txt'")]
+2025-05-30 22:34:42 - __main__ - INFO - Crew.py script started. Logging to console and output.txt
+2025-05-30 22:34:42 - __main__ - INFO - --- Backup Control ---
+2025-05-30 22:34:47 - __main__ - INFO - --- Task: Project Backup ---
+2025-05-30 22:34:47 - __main__ - INFO - --- Task: Project Backup ---
+2025-05-30 22:34:47 - __main__ - INFO - Starting backup of '/home/me/BACKUP/PROJECTS/Crew' to '/home/me/BACKUP/PROJECTS/Crew_Backups/Crew_Backup_20250530_223447'...
+2025-05-30 22:34:49 - __main__ - DEBUG - Ignoring '/home/me/BACKUP/PROJECTS/Crew/.pytest_cache' due to pattern '.pytest_cache' (direct match)
+2025-05-30 22:34:49 - __main__ - DEBUG - Ignoring '/home/me/BACKUP/PROJECTS/Crew/HELP.txt' due to pattern 'HELP.txt' (direct match)
+2025-05-30 22:34:49 - __main__ - DEBUG - Ignoring '/home/me/BACKUP/PROJECTS/Crew/output.txt' due to pattern 'output.txt' (direct match)
+2025-05-30 22:34:49 - __main__ - DEBUG - Ignoring hidden directory '/home/me/BACKUP/PROJECTS/Crew/.venv' (explicit check)
+2025-05-30 22:34:49 - __main__ - DEBUG - Ignoring '/home/me/BACKUP/PROJECTS/Crew/data' due to pattern 'data' (direct match)
+2025-05-30 22:34:49 - __main__ - DEBUG - Ignoring '/home/me/BACKUP/PROJECTS/Crew/traveller5_scraping_20250522.log' due to pattern '*.log' (direct match)
+2025-05-30 22:34:49 - __main__ - DEBUG - Ignoring '/home/me/BACKUP/PROJECTS/Crew/.git' due to pattern '.git' (direct match)
+2025-05-30 22:34:49 - __main__ - DEBUG - Ignoring '/home/me/BACKUP/PROJECTS/Crew/traveller5_scraping_20250525.log' due to pattern '*.log' (direct match)
+2025-05-30 22:34:49 - __main__ - DEBUG - Ignoring '/home/me/BACKUP/PROJECTS/Crew/__pycache__' due to pattern '__pycache__' (direct match)
+2025-05-30 22:34:49 - __main__ - DEBUG - Ignoring '/home/me/BACKUP/PROJECTS/Crew/project_summary.md' due to pattern 'project_summary.md' (direct match)
+2025-05-30 22:34:49 - __main__ - DEBUG - Ignoring '/home/me/BACKUP/PROJECTS/Crew/tests/__pycache__' due to pattern '__pycache__' (direct match)
+2025-05-30 22:34:49 - __main__ - ERROR - Backup failed for '/home/me/BACKUP/PROJECTS/Crew'. Error: [('/home/me/BACKUP/PROJECTS/Crew/Scratch.txt', '/home/me/BACKUP/PROJECTS/Crew_Backups/Crew_Backup_20250530_223447/Scratch.txt', "[Errno 2] No such file or directory: '/home/me/BACKUP/PROJECTS/Crew/Scratch.txt'")]
 Traceback (most recent call last):
   File "/home/me/BACKUP/PROJECTS/Crew/Crew.py", line 207, in backup_project
     shutil.copytree(
@@ -23,26 +23,26 @@ Traceback (most recent call last):
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/usr/lib/python3.11/shutil.py", line 515, in _copytree
     raise Error(errors)
-shutil.Error: [('/home/me/BACKUP/PROJECTS/Crew/Scratch.txt', '/home/me/BACKUP/PROJECTS/Crew_Backups/Crew_Backup_20250530_220957/Scratch.txt', "[Errno 2] No such file or directory: '/home/me/BACKUP/PROJECTS/Crew/Scratch.txt'")]
-2025-05-30 22:10:02 - __main__ - ERROR - Project backup task failed.
-2025-05-30 22:10:02 - __main__ - INFO - --- Task: Generate Project Summary ---
-2025-05-30 22:10:02 - __main__ - INFO - Generating project summary for '/home/me/BACKUP/PROJECTS/Crew' to '/home/me/BACKUP/PROJECTS/Crew/project_summary.md'...
-2025-05-30 22:10:18 - __main__ - INFO - Project summary saved to '/home/me/BACKUP/PROJECTS/Crew/project_summary.md'.
-2025-05-30 22:10:20 - __main__ - INFO - Project summary generation completed successfully.
-2025-05-30 22:10:20 - __main__ - INFO - --- Task: Generate Help File ---
-2025-05-30 22:10:20 - __main__ - INFO - Generating help file at '/home/me/BACKUP/PROJECTS/Crew/HELP.txt'...
-2025-05-30 22:10:23 - __main__ - INFO - Help file '/home/me/BACKUP/PROJECTS/Crew/HELP.txt' generated successfully.
-2025-05-30 22:10:25 - __main__ - INFO - Help file generation completed successfully.
-2025-05-30 22:10:25 - __main__ - INFO - --- Task: Auto Fix All Issues ---
-2025-05-30 22:10:25 - __main__ - INFO - --- GitHub Push Control ---
-2025-05-30 22:10:30 - __main__ - INFO - Starting auto-fix all issues process...
-2025-05-30 22:10:33 - __main__ - INFO - Running linters (isort, black) on '/home/me/BACKUP/PROJECTS/Crew' (safe mode)...
-2025-05-30 22:10:36 - __main__ - INFO - Formatting 24 Python files: ['.female_voice_temp.py', 'verify_script_loading.py', 'log_analyzer.py', 'gui.py', 'final_verification.py', 'storySearch.py', 'cache.py', 'Crew.py', 'mcp_service.py', 'traveller5_scraper.py', 'launch_gui.py', 'database_manager.py', 'verify_gui_status.py', 'mcp_example.py', 'import unittest.py', 'config.py', 'read_use_file_cli.py', 'read_use_file.py', 'bmp2png.py', 'globals.py', 'run_gui.py', 'errors.py', 'enhanced_features.py', 'mcp.py']
-2025-05-30 22:10:37 - __main__ - INFO - isort completed.
+shutil.Error: [('/home/me/BACKUP/PROJECTS/Crew/Scratch.txt', '/home/me/BACKUP/PROJECTS/Crew_Backups/Crew_Backup_20250530_223447/Scratch.txt', "[Errno 2] No such file or directory: '/home/me/BACKUP/PROJECTS/Crew/Scratch.txt'")]
+2025-05-30 22:34:52 - __main__ - ERROR - Project backup task failed.
+2025-05-30 22:34:52 - __main__ - INFO - --- Task: Generate Project Summary ---
+2025-05-30 22:34:52 - __main__ - INFO - Generating project summary for '/home/me/BACKUP/PROJECTS/Crew' to '/home/me/BACKUP/PROJECTS/Crew/project_summary.md'...
+2025-05-30 22:34:55 - __main__ - INFO - Project summary saved to '/home/me/BACKUP/PROJECTS/Crew/project_summary.md'.
+2025-05-30 22:34:57 - __main__ - INFO - Project summary generation completed successfully.
+2025-05-30 22:34:57 - __main__ - INFO - --- Task: Generate Help File ---
+2025-05-30 22:34:57 - __main__ - INFO - Generating help file at '/home/me/BACKUP/PROJECTS/Crew/HELP.txt'...
+2025-05-30 22:34:59 - __main__ - INFO - Help file '/home/me/BACKUP/PROJECTS/Crew/HELP.txt' generated successfully.
+2025-05-30 22:35:02 - __main__ - INFO - Help file generation completed successfully.
+2025-05-30 22:35:02 - __main__ - INFO - --- Task: Auto Fix All Issues ---
+2025-05-30 22:35:02 - __main__ - INFO - --- GitHub Push Control ---
+2025-05-30 22:35:07 - __main__ - INFO - Starting auto-fix all issues process...
+2025-05-30 22:35:10 - __main__ - INFO - Running linters (isort, black) on '/home/me/BACKUP/PROJECTS/Crew' (safe mode)...
+2025-05-30 22:35:13 - __main__ - INFO - Formatting 24 Python files: ['.female_voice_temp.py', 'verify_script_loading.py', 'log_analyzer.py', 'gui.py', 'final_verification.py', 'storySearch.py', 'cache.py', 'Crew.py', 'mcp_service.py', 'traveller5_scraper.py', 'launch_gui.py', 'database_manager.py', 'verify_gui_status.py', 'mcp_example.py', 'import unittest.py', 'config.py', 'read_use_file_cli.py', 'read_use_file.py', 'bmp2png.py', 'globals.py', 'run_gui.py', 'errors.py', 'enhanced_features.py', 'mcp.py']
+2025-05-30 22:35:14 - __main__ - INFO - isort completed.
 Fixing /home/me/BACKUP/PROJECTS/Crew/gui.py
 
-2025-05-30 22:10:39 - __main__ - INFO - black completed.
+2025-05-30 22:35:20 - __main__ - INFO - black completed.
 
-2025-05-30 22:10:39 - __main__ - INFO - Linters (isort, black) finished safely.
-2025-05-30 22:10:40 - __main__ - INFO - Linting completed. Proceeding to Git operations.
-2025-05-30 22:10:40 - __main__ - INFO - Attempting to push changes to GitHub for '/home/me/BACKUP/PROJECTS/Crew'...
+2025-05-30 22:35:20 - __main__ - INFO - Linters (isort, black) finished safely.
+2025-05-30 22:35:21 - __main__ - INFO - Linting completed. Proceeding to Git operations.
+2025-05-30 22:35:21 - __main__ - INFO - Attempting to push changes to GitHub for '/home/me/BACKUP/PROJECTS/Crew'...
