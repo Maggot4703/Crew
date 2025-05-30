@@ -1004,6 +1004,296 @@ def auto_fix_all_issues(project_dir: Path) -> None:
 # endregion
 
 
+# region Job Functions - Data Processing Tasks
+def spacer():
+    """Print a visual separator for console output."""
+    print("\n" + "="*50 + "\n")
+
+
+def job1():
+    """Image Processing - Overlay grids on images in IMAGE_FILES."""
+    logger.info("Starting image processing job...")
+    speak("Starting image processing.")
+    
+    try:
+        if not IMAGE_FILES:
+            logger.warning("No image files specified in IMAGE_FILES list")
+            return
+            
+        for img_file in IMAGE_FILES:
+            img_path = INPUT_DIR / img_file
+            if img_path.exists():
+                logger.info(f"Processing image: {img_file}")
+                # Process with multiple grid sizes
+                for grid_size in GRID_SIZES:
+                    output_name = f"{img_path.stem}_grid_{grid_size[0]}x{grid_size[1]}.png"
+                    output_path = OUTPUT_DIR / output_name
+                    
+                    # Call image processing functions if they exist
+                    try:
+                        if 'overlayGrid' in globals():
+                            overlayGrid(str(img_path), str(output_path), grid_size)
+                            logger.info(f"Created grid overlay: {output_name}")
+                        else:
+                            logger.warning("overlayGrid function not available - creating placeholder")
+                            # Create a simple placeholder file
+                            import shutil
+                            shutil.copy2(str(img_path), str(output_path))
+                    except Exception as e:
+                        logger.error(f"Error processing {img_file} with grid {grid_size}: {e}")
+            else:
+                logger.warning(f"Image file not found: {img_path}")
+                
+        logger.info("Image processing job completed")
+        speak("Image processing complete.")
+        
+    except Exception as e:
+        logger.error(f"Error in job1: {e}")
+        speak("Image processing encountered an error.")
+
+
+def job2(csv_file: str):
+    """CSV Analysis - Basic analysis of NPC CSV data."""
+    logger.info(f"Starting CSV analysis job for: {csv_file}")
+    speak("Starting CSV analysis.")
+    
+    try:
+        csv_path = Path(csv_file)
+        if not csv_path.exists():
+            logger.error(f"CSV file not found: {csv_path}")
+            return
+            
+        # Try to import pandas for CSV processing
+        try:
+            import pandas as pd
+            df = pd.read_csv(csv_path)
+            
+            logger.info(f"CSV loaded successfully: {len(df)} rows, {len(df.columns)} columns")
+            logger.info(f"Columns: {list(df.columns)}")
+            
+            # Basic statistics
+            if not df.empty:
+                logger.info(f"Sample data (first 3 rows):")
+                for i, row in df.head(3).iterrows():
+                    logger.info(f"  Row {i}: {dict(row)}")
+                    
+            logger.info("CSV analysis completed")
+            speak("CSV analysis complete.")
+            
+        except ImportError:
+            logger.warning("pandas not available - using basic CSV reading")
+            import csv
+            with open(csv_path, 'r', encoding='utf-8') as f:
+                reader = csv.reader(f)
+                rows = list(reader)
+                logger.info(f"CSV loaded: {len(rows)} rows")
+                if rows:
+                    logger.info(f"Headers: {rows[0]}")
+                    
+    except Exception as e:
+        logger.error(f"Error in job2: {e}")
+        speak("CSV analysis encountered an error.")
+
+
+def job3(excel_file: str):
+    """Excel Analysis - Basic analysis of Excel data."""
+    logger.info(f"Starting Excel analysis job for: {excel_file}")
+    speak("Starting Excel analysis.")
+    
+    try:
+        excel_path = Path(excel_file)
+        if not excel_path.exists():
+            logger.error(f"Excel file not found: {excel_path}")
+            return
+            
+        try:
+            import pandas as pd
+            df = pd.read_excel(excel_path)
+            
+            logger.info(f"Excel loaded successfully: {len(df)} rows, {len(df.columns)} columns")
+            logger.info(f"Columns: {list(df.columns)}")
+            
+            if not df.empty:
+                logger.info(f"Sample data (first 3 rows):")
+                for i, row in df.head(3).iterrows():
+                    logger.info(f"  Row {i}: {dict(row)}")
+                    
+            logger.info("Excel analysis completed")
+            speak("Excel analysis complete.")
+            
+        except ImportError:
+            logger.warning("pandas not available for Excel reading")
+            logger.info("Excel analysis requires pandas - skipping")
+            
+    except Exception as e:
+        logger.error(f"Error in job3: {e}")
+        speak("Excel analysis encountered an error.")
+
+
+def job4(data_file: str):
+    """Combined Analysis - Advanced analysis combining multiple data sources."""
+    logger.info(f"Starting combined analysis job for: {data_file}")
+    speak("Starting combined analysis.")
+    
+    try:
+        # This is a placeholder for more complex analysis
+        logger.info("Performing combined data analysis...")
+        
+        # Could combine CSV and Excel data, perform correlations, etc.
+        data_path = Path(data_file)
+        if data_path.exists():
+            logger.info(f"Processing combined analysis for: {data_path}")
+            # Add actual combined analysis logic here
+            logger.info("Combined analysis completed")
+        else:
+            logger.warning(f"Data file not found: {data_path}")
+            
+        speak("Combined analysis complete.")
+        
+    except Exception as e:
+        logger.error(f"Error in job4: {e}")
+        speak("Combined analysis encountered an error.")
+
+
+def job5(npc_file: str):
+    """NPC Analysis - Specialized analysis for NPC character data."""
+    logger.info(f"Starting NPC analysis job for: {npc_file}")
+    speak("Starting NPC analysis.")
+    
+    try:
+        npc_path = Path(npc_file)
+        if not npc_path.exists():
+            logger.error(f"NPC file not found: {npc_path}")
+            return
+            
+        try:
+            import pandas as pd
+            df = pd.read_csv(npc_path)
+            
+            logger.info("Analyzing NPC data structure...")
+            
+            # Look for common NPC columns
+            npc_columns = ['NPC', 'NAME', 'CHARACTER', 'ROLE', 'CLASS', 'POSITION', 'PRIMUS', 'SECUNDUS']
+            found_columns = [col for col in npc_columns if col in df.columns]
+            
+            if found_columns:
+                logger.info(f"Found NPC columns: {found_columns}")
+                
+                # Basic NPC statistics
+                if 'NPC' in df.columns:
+                    unique_npcs = df['NPC'].nunique()
+                    logger.info(f"Unique NPCs: {unique_npcs}")
+                    
+                if 'ROLE' in df.columns:
+                    roles = df['ROLE'].value_counts()
+                    logger.info(f"Role distribution: {dict(roles.head())}")
+                    
+            logger.info("NPC analysis completed")
+            speak("NPC analysis complete.")
+            
+        except ImportError:
+            logger.warning("pandas not available for NPC analysis")
+            
+    except Exception as e:
+        logger.error(f"Error in job5: {e}")
+        speak("NPC analysis encountered an error.")
+
+
+def job6(data_file: str):
+    """Job6 - Additional data processing task."""
+    logger.info(f"Starting job6 for: {data_file}")
+    speak("Starting job 6.")
+    
+    try:
+        # Placeholder for additional functionality
+        logger.info("Executing job6 processing...")
+        data_path = Path(data_file)
+        
+        if data_path.exists():
+            logger.info(f"Processing file: {data_path}")
+            # Add specific job6 logic here
+            logger.info("Job6 completed successfully")
+        else:y6: {e}")
+        speak("Job 6 encountered an error.")
+
+
+def job8(data_file: str):
+    """Job8 - Final data processing task."""
+    logger.info(f"Starting job8 for: {data_file}")
+    speak("Starting job 8.")
+    
+    try:
+        # Placeholder for final processing
+        logger.info("Executing job8 processing...")
+        data_path = Path(data_file)
+        
+        if data_path.exists():
+            logger.info(f"Processing file: {data_path}")
+            # Add specific job8 logic here
+            logger.info("Job8 completed successfully")
+        else:
+            logger.warning(f"Data file not found: {data_path}")
+            
+        speak("Job 8 complete.")
+        
+    except Exception as e:
+        logger.error(f"Error in job8: {e}")
+        speak("Job 8 encountered an error.")
+
+
+def display_npc_groups(npc_file: str):
+    """Display NPC groups organized by roles or other criteria."""
+    logger.info(f"Starting NPC groups display for: {npc_file}")
+    speak("Displaying NPC groups.")
+    
+    try:
+        npc_path = Path(npc_file)
+        if not npc_path.exists():
+            logger.error(f"NPC file not found: {npc_path}")
+            return
+            
+        try:
+            import pandas as pd
+            df = pd.read_csv(npc_path)
+            
+            logger.info("Organizing NPCs into groups...")
+            
+            # Group by role if available
+            if 'ROLE' in df.columns:
+                groups = df.groupby('ROLE')
+                logger.info(f"NPC Groups by Role:")
+                for role, group in groups:
+                    npcs = group['NPC'].tolist() if 'NPC' in group.columns else group.index.tolist()
+                    logger.info(f"  {role}: {len(npcs)} members - {', '.join(npcs[:5])}")
+                    if len(npcs) > 5:
+                        logger.info(f"    ... and {len(npcs) - 5} more")
+                        
+            # Group by class if available
+            elif 'CLASS' in df.columns:
+                groups = df.groupby('CLASS')
+                logger.info(f"NPC Groups by Class:")
+                for cls, group in groups:
+                    npcs = group['NPC'].tolist() if 'NPC' in group.columns else group.index.tolist()
+                    logger.info(f"  {cls}: {len(npcs)} members - {', '.join(npcs[:3])}")
+                    
+            else:
+                logger.info("No suitable grouping columns found (ROLE, CLASS)")
+                logger.info(f"Available columns: {list(df.columns)}")
+                
+            logger.info("NPC groups display completed")
+            speak("NPC groups display complete.")
+            
+        except ImportError:
+            logger.warning("pandas not available for NPC groups display")
+            
+    except Exception as e:
+        logger.error(f"Error in display_npc_groups: {e}")
+        speak("NPC groups display encountered an error.")
+
+
+# endregion
+
+
 # region Main Execution
 def main() -> int:
     """

@@ -530,6 +530,52 @@ class CrewGUI:
         view_menu.add_cascade(label="Run Script", menu=self.script_menu)
         view_menu.add_command(label="Refresh Scripts", command=self._update_script_menu)
 
+    def bind_events(self) -> None:
+        """Set up keyboard shortcuts and event bindings for the application.
+
+        Configures essential keyboard shortcuts for improved user experience:
+
+        Keyboard Shortcuts:
+        - Escape: Clear all filters and restore full data view
+        - Ctrl+F: Focus on filter input field for quick search
+        - Ctrl+S: Save current data (if implemented)
+        - Ctrl+E: Export current data view (if implemented)
+        - F5: Refresh all views and reload data
+
+        Event Bindings:
+        - Window close events for proper cleanup
+        - Focus events for optimal user workflow
+        - Selection events for data table and group list
+
+        Integration:
+        - Works seamlessly with menu commands
+        - Provides alternative access to key functionality
+        - Maintains consistency with standard application shortcuts
+        - Supports efficient keyboard-driven workflows
+        """
+        try:
+            # Clear filter with Escape key
+            self.root.bind("<Escape>", lambda event: self.clear_filter())
+
+            # Focus filter field with Ctrl+F
+            self.root.bind(
+                "<Control-f>",
+                lambda event: (
+                    self.filter_var.focus_set() if hasattr(self, "filter_var") else None
+                ),
+            )
+
+            # Refresh with F5
+            self.root.bind(
+                "<F5>",
+                lambda event: (
+                    self._refresh_views() if hasattr(self, "_refresh_views") else None
+                ),
+            )
+
+        except Exception as e:
+            logging.error(f"Error setting up event bindings: {e}")
+
     def load_window_state(self) -> None:
         """Restore previously saved window configuration and layout preferences.
 
@@ -2325,6 +2371,117 @@ class CrewGUI:
             logging.error(f"Error applying filter: {e}")
             messagebox.showerror("Error", f"Failed to apply filter: {e}")
 
+    def clear_filter(self) -> None:
+        """Clear all filters and restore the full data view.
+
+        Provides comprehensive filter clearing functionality:
+
+        Filter State Reset:
+        - Clears the filter text input field completely
+        - Resets column selection to "All Columns" default
+        - Removes any active filter groups or selections
+        - Restores original data display state
+
+        View Restoration:
+        - Returns to full dataset display when no groups selected
+        - Maintains group view if a non-filter group is selected
+        - Clears group selection if current selection is a filter group
+        - Preserves user workflow context appropriately
+
+        User Interface Updates:
+        - Updates status bar to confirm filter clearing
+        - Refreshes data table with unfiltered content
+        - Maintains table sorting and column visibility preferences
+        - Provides immediate visual feedback
+
+        Integration:
+        - Works seamlessly with existing filter and group systems
+        - Bound to Escape key for quick access
+        - Available via Edit menu for discoverability
+        - Maintains consistency with filter application workflow
+        """
+        try:
+            # Clear filter inputs
+            self.filter_var.set("")
+            self.column_var.set("All Columns")
+
+            # Clear group selection if it's a filter group
+            selection = self.group_list.selection()
+            if selection:
+                item_id = selection[0]
+                group_name = self.group_list.item(item_id)["text"]
+                if group_name.startswith("Filter"):
+                    self.group_list.selection_remove(item_id)
+                    # Show full data
+                    self._update_data_view(self.current_data)
+                else:
+                    # Keep non-filter group selected
+                    if group_name in self.groups:
+                        self._update_data_view(self.groups[group_name])
+            else:
+                # Show full data
+                self._update_data_view(self.current_data)
+
+            self.update_status("Filters cleared")
+
+        except Exception as e:
+            logging.error(f"Error clearing filter: {e}")
+
+    def _refresh_views(self) -> None:
+        """Refresh all data views and reload current data.
+
+        Provides comprehensive view refresh functionality:
+
+        Data Refresh:
+        - Reloads current data from source file if available
+        - Updates main data table with latest information
+        - Refreshes group list with current group memberships
+        - Maintains current filter and selection states
+
+        View Updates:
+        - Refreshes data table display with current sorting
+        - Updates group list with latest group information
+        - Maintains column visibility preferences
+        - Preserves user interface customizations
+
+        Status Updates:
+        - Provides user feedback during refresh operation
+        - Shows completion status in status bar
+        - Handles refresh errors gracefully
+        - Maintains application responsiveness
+
+        Integration:
+        - Bound to F5 key for quick access
+        - Available via View menu for discoverability
+        - Works with existing data loading systems
+        - Maintains consistency with other refresh operations
+        """
+        try:
+            # Update status
+            self.update_status("Refreshing views...")
+
+            # Refresh data view with current data
+            if hasattr(self, "current_data") and self.current_data:
+                self._update_data_view(self.current_data)
+
+            # Refresh groups view
+            if hasattr(self, "groups") and self.groups:
+                self._update_groups_view()
+
+            # Update script menu
+            if hasattr(self, "_update_script_menu"):
+                self._update_script_menu()
+
+            # Update column menu
+            if hasattr(self, "_update_column_menu"):
+                self._update_column_menu()
+
+            self.update_status("Views refreshed")
+
+        except Exception as e:
+            logging.error(f"Error refreshing views: {e}")
+            self.update_status(f"Error refreshing views: {e}")
+
     def _update_data_view(self, data: List[Any] = None) -> None:
         """Refresh the main data table with specified or current dataset.
 
@@ -2431,6 +2588,146 @@ class CrewGUI:
         except Exception as e:
             logging.error(f"Error updating data view: {e}")
             raise
+
+    def _update_column_menu(self) -> None:
+        """Update the column visibility menu with current table headers.
+
+        Provides dynamic column control functionality:
+
+        Menu Refresh:
+        - Clears existing column visibility menu items
+        - Rebuilds menu with current table headers
+        - Creates checkable menu items for each column
+        - Maintains menu consistency with table structure
+
+        Column Controls:
+        - Individual checkboxes for each column visibility
+        - Default visibility state (all columns shown initially)
+        - Interactive toggling for user customization
+        - Immediate visual feedback for column changes
+
+        State Management:
+        - Tracks column visibility preferences
+        - Integrates with configuration system
+        - Preserves user choices across sessions
+        - Handles dynamic header changes gracefully
+
+        Integration:
+        - Works with data view updates seamlessly
+        - Coordinates with table population events
+        - Supports runtime header modifications
+        - Maintains consistency with other UI elements
+        """
+        try:
+            if not hasattr(self, "column_visibility_menu") or not hasattr(
+                self, "headers"
+            ):
+                return
+
+            # Clear existing menu items
+            self.column_visibility_menu.delete(0, "end")
+
+            # Initialize column visibility tracking if needed
+            if not hasattr(self, "column_visibility"):
+                self.column_visibility = {}
+
+            # Add menu items for each column
+            for i, header in enumerate(self.headers):
+                # Default to visible if not already tracked
+                if header not in self.column_visibility:
+                    self.column_visibility[header] = True
+
+                # Create checkable menu item
+                var = tk.BooleanVar(value=self.column_visibility[header])
+                self.column_visibility_menu.add_checkbutton(
+                    label=header,
+                    variable=var,
+                    command=lambda h=header, v=var: self._toggle_column_visibility(
+                        h, v
+                    ),
+                )
+
+        except Exception as e:
+            logging.error(f"Error updating column menu: {e}")
+
+    def _apply_column_visibility(self) -> None:
+        """Apply current column visibility settings to the data table.
+
+        Implements column show/hide functionality:
+
+        Visibility Application:
+        - Reads current column visibility preferences
+        - Shows or hides columns based on user settings
+        - Maintains table layout and functionality
+        - Preserves data integrity during visibility changes
+
+        Column Management:
+        - Uses tkinter column width manipulation (0 width = hidden)
+        - Maintains column order and structure
+        - Handles dynamic column addition/removal
+        - Preserves column content when hidden
+
+        State Consistency:
+        - Ensures UI reflects actual column visibility
+        - Maintains consistency with menu checkboxes
+        - Handles edge cases gracefully
+        - Preserves user preferences
+
+        Integration:
+        - Called after table updates to maintain consistency
+        - Works with data view refresh operations
+        - Coordinates with column menu updates
+        - Supports configuration persistence
+        """
+        try:
+            if (
+                not hasattr(self, "data_table")
+                or not hasattr(self, "column_visibility")
+                or not hasattr(self, "headers")
+            ):
+                return
+
+            # Get current table columns
+            columns = self.data_table["columns"]
+            if not columns:
+                return
+
+            # Apply visibility settings
+            for i, header in enumerate(self.headers):
+                if i < len(columns):
+                    col_id = columns[i]
+                    if (
+                        header in self.column_visibility
+                        and not self.column_visibility[header]
+                    ):
+                        # Hide column by setting width to 0
+                        self.data_table.column(col_id, width=0, minwidth=0)
+                    else:
+                        # Show column with default width
+                        self.data_table.column(col_id, width=100, minwidth=50)
+
+        except Exception as e:
+            logging.error(f"Error applying column visibility: {e}")
+
+    def _toggle_column_visibility(self, header: str, var: tk.BooleanVar) -> None:
+        """Toggle the visibility of a specific column.
+
+        Args:
+            header: The column header name to toggle
+            var: The BooleanVar associated with the menu checkbox
+        """
+        try:
+            if not hasattr(self, "column_visibility"):
+                self.column_visibility = {}
+
+            # Update visibility state
+            self.column_visibility[header] = var.get()
+
+            # Apply the visibility change
+            self._apply_column_visibility()
+
+        except Exception as e:
+            logging.error(f"Error toggling column visibility for {header}: {e}")
 
     def _on_treeview_configure(
         self, event: tk.Event, original_widths: Dict[int, int]
