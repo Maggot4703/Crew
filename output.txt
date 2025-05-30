@@ -1,0 +1,2 @@
+2025-05-30 16:06:14 - __main__ - INFO - Crew.py script started. Logging to console and output.txt
+2025-05-30 16:06:14 - __main__ - INFO - --- Backup Control ---

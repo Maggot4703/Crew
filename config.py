@@ -1,3 +1,10 @@
+"""
+Configuration Manager for Crew Management Application
+===================================================
+
+Handles application settings, window state persistence, and user preferences.
+"""
+
 import json
 import logging
 from pathlib import Path
@@ -91,3 +98,15 @@ class Config:
         """
         self.settings[key] = value
         self.save_config()
+
+    def _get_default_config(self) -> Dict[str, Any]:
+        """Get default configuration settings."""
+        return {
+            "window_size": "1200x800",
+            "min_window_size": "800x600",
+            "column_widths": {},
+            "column_visibility": {},
+            "last_file_path": "",
+            "auto_save": True,
+            "theme": "default",
+        }
