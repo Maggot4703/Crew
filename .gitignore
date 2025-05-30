@@ -20,11 +20,11 @@ wheels/
 .installed.cfg
 *.egg
 
-# Virtual environments
-.venv/
-venv/
-env/
-ENV/
+# Virtual environments (uncomment to exclude from git)
+# .venv/
+# venv/
+# env/
+# ENV/
 
 # IDE
 .vscode/
@@ -49,3 +49,14 @@ crew_config.json
 temp/
 tmp/
 *.tmp
+
+# Keep data directory structure but exclude contents
+#data/*
+!data/.gitkeep
+
+# Project specific excludes
+output.txt
+push_log.txt
+automated_fixes.txt
+HELP.txt
+project_summary.md

@@ -126,7 +126,7 @@ def backup_project(project_dir: Path, backup_parent_dir: Path) -> bool:
         True if backup was successful, False otherwise.
     """
     excluded_patterns = [
-        ".venv",
+        # ".venv",  # Commented out to include .venv in backups
         "tts_venv",  # Legacy TTS environment (removed, kept for compatibility)
         "data",  # Added to exclude the data directory
         ".git",
