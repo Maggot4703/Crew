@@ -30,6 +30,26 @@ import pyttsx3  # Added import for TTS
 from PIL import Image, ImageDraw
 from tqdm import tqdm  # Added for progress bar
 
+# Import our error handling utilities
+try:
+    from error_handler import (
+        CSV_FILE_VALIDATORS,
+        EXCEL_FILE_VALIDATORS,
+        DataProcessingError,
+        FileOperationError,
+        handle_errors,
+        safe_execute,
+        safe_file_operation,
+        validate_data,
+    )
+
+    ERROR_HANDLING_AVAILABLE = True
+except ImportError:
+    ERROR_HANDLING_AVAILABLE = False
+    logging.warning(
+        "Error handling utilities not available - using basic error handling"
+    )
+
 # Setup basic logging
 logging.basicConfig(
     level=logging.INFO,
@@ -1059,10 +1079,18 @@ def job1():
         speak("Image processing encountered an error.")
 
 
+@handle_errors(default_return=None) if ERROR_HANDLING_AVAILABLE else lambda f: f
 def job2(csv_file: str):
-    """CSV Analysis - Basic analysis of NPC CSV data."""
-    logger.info(f"Starting CSV analysis job for: {csv_file}")
+    """CSV Analysis - Comprehensive analysis of CSV data with statistics and insights."""
+    logger.info(f"Starting enhanced CSV analysis job for: {csv_file}")
     speak("Starting CSV analysis.")
+
+    # Validate input file if error handling is available
+    if ERROR_HANDLING_AVAILABLE:
+        if not validate_data(csv_file, CSV_FILE_VALIDATORS, "CSV file validation"):
+            logger.error("CSV file validation failed - cannot proceed with analysis")
+            speak("CSV file validation failed.")
+            return
 
     try:
         csv_path = Path(csv_file)
@@ -1070,24 +1098,168 @@ def job2(csv_file: str):
             logger.error(f"CSV file not found: {csv_path}")
             return
 
-        # Try to import pandas for CSV processing
+        # Try to import pandas for comprehensive CSV processing
         try:
             import pandas as pd
 
-            df = pd.read_csv(csv_path)
+            # Load CSV with error handling for encoding issues
+            encodings_to_try = ["utf-8", "latin-1", "cp1252", "iso-8859-1"]
+            df = None
+            encoding_used = None
 
-            logger.info(
-                f"CSV loaded successfully: {len(df)} rows, {len(df.columns)} columns"
-            )
+            for encoding in encodings_to_try:
+                try:
+                    df = pd.read_csv(csv_path, encoding=encoding)
+                    encoding_used = encoding
+                    break
+                except UnicodeDecodeError:
+                    continue
+
+            if df is None:
+                logger.error("Could not decode CSV file with any standard encoding")
+                return
+
+            logger.info(f"CSV loaded successfully with {encoding_used} encoding")
+            logger.info(f"Dataset shape: {len(df)} rows, {len(df.columns)} columns")
+
+            # === COMPREHENSIVE CSV ANALYSIS ===
+            logger.info("=== CSV ANALYSIS REPORT ===")
+
+            # 1. Basic Data Information
+            logger.info(f"File: {csv_path.name}")
+            logger.info(f"Size: {csv_path.stat().st_size / 1024:.2f} KB")
             logger.info(f"Columns: {list(df.columns)}")
 
-            # Basic statistics
-            if not df.empty:
-                logger.info(f"Sample data (first 3 rows):")
-                for i, row in df.head(3).iterrows():
-                    logger.info(f"  Row {i}: {dict(row)}")
+            # 2. Data Types Analysis
+            logger.info("\n--- Data Types ---")
+            for col, dtype in df.dtypes.items():
+                null_count = df[col].isnull().sum()
+                null_pct = (null_count / len(df)) * 100
+                logger.info(f"  {col}: {dtype} ({null_count} nulls, {null_pct:.1f}%)")
 
-            logger.info("CSV analysis completed")
+            # 3. Missing Data Analysis
+            missing_data = df.isnull().sum()
+            total_missing = missing_data.sum()
+            if total_missing > 0:
+                logger.info(f"\n--- Missing Data Summary ---")
+                logger.info(f"Total missing values: {total_missing}")
+                for col, count in missing_data[missing_data > 0].items():
+                    percentage = (count / len(df)) * 100
+                    logger.info(f"  {col}: {count} ({percentage:.2f}%)")
+            else:
+                logger.info("\n--- No Missing Data Found ---")
+
+            # 4. Numeric Columns Analysis
+            numeric_cols = df.select_dtypes(include=["number"]).columns
+            if len(numeric_cols) > 0:
+                logger.info(f"\n--- Numeric Analysis ({len(numeric_cols)} columns) ---")
+                for col in numeric_cols:
+                    stats = df[col].describe()
+                    logger.info(f"  {col}:")
+                    logger.info(
+                        f"    Mean: {stats['mean']:.2f}, Std: {stats['std']:.2f}"
+                    )
+                    logger.info(f"    Min: {stats['min']:.2f}, Max: {stats['max']:.2f}")
+                    logger.info(
+                        f"    Q1: {stats['25%']:.2f}, Median: {stats['50%']:.2f}, Q3: {stats['75%']:.2f}"
+                    )
+
+            # 5. Categorical Columns Analysis
+            categorical_cols = df.select_dtypes(include=["object"]).columns
+            if len(categorical_cols) > 0:
+                logger.info(
+                    f"\n--- Categorical Analysis ({len(categorical_cols)} columns) ---"
+                )
+                for col in categorical_cols:
+                    unique_count = df[col].nunique()
+                    logger.info(f"  {col}: {unique_count} unique values")
+
+                    if (
+                        unique_count <= 20
+                    ):  # Show distribution for columns with few unique values
+                        value_counts = df[col].value_counts().head(10)
+                        logger.info(f"    Distribution: {dict(value_counts)}")
+                    else:
+                        # Show most and least common values
+                        top_values = df[col].value_counts().head(3)
+                        logger.info(f"    Top 3 values: {dict(top_values)}")
+
+            # 6. Data Quality Checks
+            logger.info(f"\n--- Data Quality Assessment ---")
+
+            # Check for duplicates
+            duplicates = df.duplicated().sum()
+            if duplicates > 0:
+                logger.info(f"  Duplicate rows: {duplicates}")
+            else:
+                logger.info("  No duplicate rows found")
+
+            # Check for empty strings in text columns
+            empty_strings = 0
+            for col in categorical_cols:
+                empty_count = (df[col] == "").sum()
+                empty_strings += empty_count
+                if empty_count > 0:
+                    logger.info(f"  Empty strings in {col}: {empty_count}")
+
+            if empty_strings == 0:
+                logger.info("  No empty strings found in text columns")
+
+            # 7. Sample Data Display
+            if not df.empty and len(df) > 0:
+                logger.info(f"\n--- Sample Data (first 3 rows) ---")
+                for i, row in df.head(3).iterrows():
+                    logger.info(
+                        f"  Row {i+1}: {dict(row.head(10))}"
+                    )  # Limit to first 10 columns for readability
+
+                if len(df.columns) > 10:
+                    logger.info(f"    ... and {len(df.columns) - 10} more columns")
+
+            # 8. Pattern Detection for common CSV types
+            logger.info(f"\n--- Pattern Detection ---")
+
+            # Look for common data patterns
+            patterns_found = []
+            column_names_lower = [col.lower() for col in df.columns]
+
+            # Check for common patterns
+            if any("id" in name for name in column_names_lower):
+                patterns_found.append("ID columns detected")
+            if any("name" in name for name in column_names_lower):
+                patterns_found.append("Name columns detected")
+            if any("date" in name or "time" in name for name in column_names_lower):
+                patterns_found.append("Date/Time columns detected")
+            if any("email" in name for name in column_names_lower):
+                patterns_found.append("Email columns detected")
+            if any("phone" in name for name in column_names_lower):
+                patterns_found.append("Phone columns detected")
+
+            # NPC-specific patterns
+            npc_indicators = [
+                "npc",
+                "character",
+                "role",
+                "class",
+                "level",
+                "hp",
+                "strength",
+                "dexterity",
+            ]
+            if any(
+                indicator in name
+                for name in column_names_lower
+                for indicator in npc_indicators
+            ):
+                patterns_found.append("NPC/Gaming data detected")
+
+            if patterns_found:
+                for pattern in patterns_found:
+                    logger.info(f"  {pattern}")
+            else:
+                logger.info("  No specific patterns detected")
+
+            logger.info("\n=== CSV Analysis Complete ===")
             speak("CSV analysis complete.")
 
         except ImportError:
@@ -1100,16 +1272,28 @@ def job2(csv_file: str):
                 logger.info(f"CSV loaded: {len(rows)} rows")
                 if rows:
                     logger.info(f"Headers: {rows[0]}")
+                    if len(rows) > 1:
+                        logger.info(f"Sample row: {rows[1]}")
 
     except Exception as e:
         logger.error(f"Error in job2: {e}")
         speak("CSV analysis encountered an error.")
 
 
+@handle_errors(default_return=None) if ERROR_HANDLING_AVAILABLE else lambda f: f
 def job3(excel_file: str):
-    """Excel Analysis - Basic analysis of Excel data."""
-    logger.info(f"Starting Excel analysis job for: {excel_file}")
+    """Excel Analysis - Comprehensive analysis of Excel data with multi-sheet support."""
+    logger.info(f"Starting enhanced Excel analysis job for: {excel_file}")
     speak("Starting Excel analysis.")
+
+    # Validate input file if error handling is available
+    if ERROR_HANDLING_AVAILABLE:
+        if not validate_data(
+            excel_file, EXCEL_FILE_VALIDATORS, "Excel file validation"
+        ):
+            logger.error("Excel file validation failed - cannot proceed with analysis")
+            speak("Excel file validation failed.")
+            return
 
     try:
         excel_path = Path(excel_file)
@@ -1120,24 +1304,263 @@ def job3(excel_file: str):
         try:
             import pandas as pd
 
-            df = pd.read_excel(excel_path)
+            # First, check all available sheets
+            excel_file_obj = pd.ExcelFile(excel_path)
+            sheet_names = excel_file_obj.sheet_names
 
-            logger.info(
-                f"Excel loaded successfully: {len(df)} rows, {len(df.columns)} columns"
-            )
-            logger.info(f"Columns: {list(df.columns)}")
+            logger.info("=== EXCEL ANALYSIS REPORT ===")
+            logger.info(f"File: {excel_path.name}")
+            logger.info(f"Size: {excel_path.stat().st_size / 1024:.2f} KB")
+            logger.info(f"Number of sheets: {len(sheet_names)}")
+            logger.info(f"Sheet names: {sheet_names}")
 
-            if not df.empty:
-                logger.info(f"Sample data (first 3 rows):")
-                for i, row in df.head(3).iterrows():
-                    logger.info(f"  Row {i}: {dict(row)}")
+            # Analyze each sheet
+            for sheet_idx, sheet_name in enumerate(sheet_names):
+                logger.info(f"\n--- SHEET {sheet_idx + 1}: '{sheet_name}' ---")
 
-            logger.info("Excel analysis completed")
+                try:
+                    # Load the sheet
+                    df = pd.read_excel(excel_path, sheet_name=sheet_name)
+
+                    if df.empty:
+                        logger.info(f"  Sheet '{sheet_name}' is empty")
+                        continue
+
+                    logger.info(f"  Shape: {len(df)} rows, {len(df.columns)} columns")
+                    logger.info(f"  Columns: {list(df.columns)}")
+
+                    # Data types analysis
+                    logger.info("  Data Types:")
+                    for col, dtype in df.dtypes.items():
+                        null_count = df[col].isnull().sum()
+                        null_pct = (null_count / len(df)) * 100 if len(df) > 0 else 0
+                        logger.info(
+                            f"    {col}: {dtype} ({null_count} nulls, {null_pct:.1f}%)"
+                        )
+
+                    # Missing data analysis
+                    missing_data = df.isnull().sum()
+                    total_missing = missing_data.sum()
+                    if total_missing > 0:
+                        logger.info(f"  Missing values summary:")
+                        for col, count in missing_data[missing_data > 0].items():
+                            percentage = (count / len(df)) * 100
+                            logger.info(f"    {col}: {count} ({percentage:.2f}%)")
+
+                    # Numeric analysis
+                    numeric_cols = df.select_dtypes(include=["number"]).columns
+                    if len(numeric_cols) > 0:
+                        logger.info(f"  Numeric columns ({len(numeric_cols)}):")
+                        for col in numeric_cols:
+                            stats = df[col].describe()
+                            logger.info(
+                                f"    {col}: Mean={stats['mean']:.2f}, "
+                                f"Std={stats['std']:.2f}, Min={stats['min']:.2f}, Max={stats['max']:.2f}"
+                            )
+
+                    # Categorical analysis
+                    categorical_cols = df.select_dtypes(include=["object"]).columns
+                    if len(categorical_cols) > 0:
+                        logger.info(f"  Categorical columns ({len(categorical_cols)}):")
+                        for col in categorical_cols:
+                            unique_count = df[col].nunique()
+                            logger.info(f"    {col}: {unique_count} unique values")
+
+                            if (
+                                unique_count <= 10
+                            ):  # Show distribution for small categorical sets
+                                value_counts = df[col].value_counts().head(5)
+                                logger.info(f"      Top values: {dict(value_counts)}")
+
+                    # Date columns detection
+                    date_like_cols = []
+                    for col in df.columns:
+                        if df[col].dtype == "object":
+                            # Try to detect date-like strings
+                            sample_values = df[col].dropna().head(10)
+                            if len(sample_values) > 0:
+                                # Simple heuristic for date detection
+                                sample_str = str(sample_values.iloc[0])
+                                if any(
+                                    indicator in sample_str.lower()
+                                    for indicator in [
+                                        "date",
+                                        "time",
+                                        "/",
+                                        "-",
+                                        ":",
+                                        "2020",
+                                        "2021",
+                                        "2022",
+                                        "2023",
+                                        "2024",
+                                        "2025",
+                                    ]
+                                ):
+                                    date_like_cols.append(col)
+
+                    if date_like_cols:
+                        logger.info(f"  Potential date columns: {date_like_cols}")
+
+                    # Data quality checks
+                    duplicates = df.duplicated().sum()
+                    if duplicates > 0:
+                        logger.info(f"  Duplicate rows: {duplicates}")
+
+                    # Sample data
+                    if len(df) > 0:
+                        logger.info("  Sample data (first 2 rows):")
+                        for i, row in df.head(2).iterrows():
+                            # Limit display to first 8 columns for readability
+                            sample_data = dict(list(row.items())[:8])
+                            logger.info(f"    Row {i+1}: {sample_data}")
+                            if len(df.columns) > 8:
+                                logger.info(
+                                    f"      ... and {len(df.columns) - 8} more columns"
+                                )
+
+                    # Excel-specific checks
+                    # Check for merged cells (approximate by looking for repeated values)
+                    if len(df) > 1:
+                        potential_merged = []
+                        for col in df.columns:
+                            if df[col].dtype == "object":
+                                # Look for consecutive identical values (might indicate merged cells)
+                                consecutive_same = 0
+                                for i in range(
+                                    1, min(len(df), 20)
+                                ):  # Check first 20 rows
+                                    if (
+                                        pd.notna(df[col].iloc[i])
+                                        and df[col].iloc[i] == df[col].iloc[i - 1]
+                                    ):
+                                        consecutive_same += 1
+                                    else:
+                                        consecutive_same = 0
+                                    if (
+                                        consecutive_same >= 3
+                                    ):  # 3+ consecutive same values
+                                        potential_merged.append(col)
+                                        break
+
+                        if potential_merged:
+                            logger.info(
+                                f"  Potential merged cell columns: {potential_merged}"
+                            )
+
+                    # Pattern detection for specific data types
+                    patterns = []
+                    column_names_lower = [col.lower() for col in df.columns]
+
+                    # Financial data patterns
+                    if any(
+                        keyword in name
+                        for name in column_names_lower
+                        for keyword in [
+                            "price",
+                            "cost",
+                            "amount",
+                            "salary",
+                            "revenue",
+                            "profit",
+                        ]
+                    ):
+                        patterns.append("Financial data detected")
+
+                    # Personal data patterns
+                    if any(
+                        keyword in name
+                        for name in column_names_lower
+                        for keyword in [
+                            "name",
+                            "first",
+                            "last",
+                            "email",
+                            "phone",
+                            "address",
+                        ]
+                    ):
+                        patterns.append("Personal/Contact data detected")
+
+                    # Inventory/Product patterns
+                    if any(
+                        keyword in name
+                        for name in column_names_lower
+                        for keyword in [
+                            "product",
+                            "item",
+                            "inventory",
+                            "stock",
+                            "quantity",
+                        ]
+                    ):
+                        patterns.append("Inventory/Product data detected")
+
+                    # Gaming/NPC patterns
+                    if any(
+                        keyword in name
+                        for name in column_names_lower
+                        for keyword in [
+                            "npc",
+                            "character",
+                            "level",
+                            "hp",
+                            "strength",
+                            "class",
+                            "role",
+                        ]
+                    ):
+                        patterns.append("Gaming/NPC data detected")
+
+                    if patterns:
+                        logger.info(f"  Data patterns: {', '.join(patterns)}")
+
+                except Exception as sheet_error:
+                    logger.error(
+                        f"  Error analyzing sheet '{sheet_name}': {sheet_error}"
+                    )
+                    continue
+
+            # Summary across all sheets
+            if len(sheet_names) > 1:
+                logger.info(f"\n--- WORKBOOK SUMMARY ---")
+                total_rows = 0
+                total_cols = 0
+
+                for sheet_name in sheet_names:
+                    try:
+                        df = pd.read_excel(excel_path, sheet_name=sheet_name)
+                        total_rows += len(df)
+                        total_cols += len(df.columns)
+                    except:
+                        continue
+
+                logger.info(
+                    f"  Total data across all sheets: {total_rows} rows, {total_cols} total columns"
+                )
+                logger.info(
+                    f"  Average per sheet: {total_rows/len(sheet_names):.1f} rows, "
+                    f"{total_cols/len(sheet_names):.1f} columns"
+                )
+
+            logger.info("\n=== EXCEL ANALYSIS COMPLETE ===")
             speak("Excel analysis complete.")
 
         except ImportError:
-            logger.warning("pandas not available for Excel reading")
-            logger.info("Excel analysis requires pandas - skipping")
+            logger.warning(
+                "pandas not available for Excel reading - install pandas and openpyxl for full Excel support"
+            )
+            logger.info("Excel analysis requires pandas and openpyxl packages")
+            speak("Excel analysis requires additional packages.")
+
+        except Exception as read_error:
+            logger.error(f"Could not read Excel file: {read_error}")
+            logger.info(
+                "Note: For .xlsx files, you may need to install openpyxl: pip install openpyxl"
+            )
+            logger.info(
+                "Note: For .xls files, you may need to install xlrd: pip install xlrd"
+            )
 
     except Exception as e:
         logger.error(f"Error in job3: {e}")
@@ -1150,17 +1573,71 @@ def job4(data_file: str):
     speak("Starting combined analysis.")
 
     try:
-        # This is a placeholder for more complex analysis
+        data_path = Path(data_file)
+        if not data_path.exists():
+            logger.error(f"Data file not found: {data_path}")
+            return
+
         logger.info("Performing combined data analysis...")
 
-        # Could combine CSV and Excel data, perform correlations, etc.
-        data_path = Path(data_file)
-        if data_path.exists():
-            logger.info(f"Processing combined analysis for: {data_path}")
-            # Add actual combined analysis logic here
-            logger.info("Combined analysis completed")
-        else:
-            logger.warning(f"Data file not found: {data_path}")
+        # Try to load and analyze data
+        try:
+            import pandas as pd
+
+            # Load data based on file type
+            if data_path.suffix.lower() == ".csv":
+                df = pd.read_csv(data_path)
+            elif data_path.suffix.lower() in [".xlsx", ".xls"]:
+                df = pd.read_excel(data_path)
+            else:
+                logger.warning(f"Unsupported file type: {data_path.suffix}")
+                return
+
+            logger.info(f"Loaded {len(df)} rows with {len(df.columns)} columns")
+
+            # Perform comprehensive analysis
+            logger.info("=== Data Summary ===")
+            logger.info(f"Shape: {df.shape}")
+            logger.info(f"Columns: {list(df.columns)}")
+
+            # Check for missing values
+            missing_data = df.isnull().sum()
+            if missing_data.any():
+                logger.info("Missing values found:")
+                for col, count in missing_data[missing_data > 0].items():
+                    logger.info(f"  {col}: {count} missing")
+
+            # Basic statistics for numeric columns
+            numeric_cols = df.select_dtypes(include=["number"]).columns
+            if len(numeric_cols) > 0:
+                logger.info("Numeric column statistics:")
+                stats = df[numeric_cols].describe()
+                for col in numeric_cols:
+                    logger.info(
+                        f"  {col}: mean={stats.loc['mean', col]:.2f}, std={stats.loc['std', col]:.2f}"
+                    )
+
+            # Analyze categorical columns
+            categorical_cols = df.select_dtypes(include=["object"]).columns
+            if len(categorical_cols) > 0:
+                logger.info("Categorical column analysis:")
+                for col in categorical_cols:
+                    unique_count = df[col].nunique()
+                    logger.info(f"  {col}: {unique_count} unique values")
+                    if unique_count <= 10:  # Show values if not too many
+                        value_counts = df[col].value_counts().head(5)
+                        logger.info(f"    Top values: {dict(value_counts)}")
+
+            logger.info("Combined analysis completed successfully")
+
+        except ImportError:
+            logger.warning("pandas not available - using basic file analysis")
+            # Basic file analysis without pandas
+            with open(data_path, "r", encoding="utf-8") as f:
+                content = f.read()
+                lines = content.split("\n")
+                logger.info(f"File contains {len(lines)} lines")
+                logger.info(f"File size: {len(content)} characters")
 
         speak("Combined analysis complete.")
 
@@ -1180,14 +1657,88 @@ def job5(npc_file: str):
             logger.error(f"NPC file not found: {npc_path}")
             return
 
+        logger.info("Performing NPC character analysis...")
+
         try:
             import pandas as pd
 
-            df = pd.read_csv(npc_path)
+            # Load NPC data
+            if npc_path.suffix.lower() == ".csv":
+                df = pd.read_csv(npc_path)
+            elif npc_path.suffix.lower() in [".xlsx", ".xls"]:
+                df = pd.read_excel(npc_path)
+            else:
+                logger.warning(
+                    f"Unsupported file type for NPC analysis: {npc_path.suffix}"
+                )
+                return
 
-            logger.info("Analyzing NPC data structure...")
+            logger.info(f"Loaded {len(df)} NPCs")
 
-            # Look for common NPC columns
+            # Analyze NPC data structure
+            logger.info("=== NPC Analysis ===")
+            logger.info(f"Total NPCs: {len(df)}")
+            logger.info(f"Data columns: {list(df.columns)}")
+
+            # Look for common NPC fields and analyze them
+            role_columns = [
+                col
+                for col in df.columns
+                if any(
+                    keyword in col.lower()
+                    for keyword in ["role", "class", "job", "position", "rank"]
+                )
+            ]
+
+            if role_columns:
+                for col in role_columns:
+                    logger.info(f"Role distribution in {col}:")
+                    role_counts = df[col].value_counts()
+                    for role, count in role_counts.head(10).items():
+                        logger.info(f"  {role}: {count}")
+
+            # Look for skill or attribute columns
+            skill_columns = [
+                col
+                for col in df.columns
+                if any(
+                    keyword in col.lower()
+                    for keyword in ["skill", "attribute", "stat", "ability"]
+                )
+            ]
+
+            if skill_columns:
+                logger.info("Skill/Attribute analysis:")
+                for col in skill_columns:
+                    if df[col].dtype in ["int64", "float64"]:
+                        avg_val = df[col].mean()
+                        logger.info(f"  {col}: average = {avg_val:.2f}")
+
+            # Look for name patterns
+            name_columns = [col for col in df.columns if "name" in col.lower()]
+            if name_columns:
+                for col in name_columns:
+                    unique_names = df[col].nunique()
+                    logger.info(f"Unique values in {col}: {unique_names}")
+
+            # Group analysis if applicable
+            group_columns = [
+                col
+                for col in df.columns
+                if any(
+                    keyword in col.lower()
+                    for keyword in ["group", "team", "squad", "faction", "org"]
+                )
+            ]
+
+            if group_columns:
+                for col in group_columns:
+                    logger.info(f"Group distribution in {col}:")
+                    group_counts = df[col].value_counts()
+                    for group, count in group_counts.head(10).items():
+                        logger.info(f"  {group}: {count} members")
+
+            # Look for common NPC columns from the original implementation
             npc_columns = [
                 "NPC",
                 "NAME",
@@ -1201,7 +1752,7 @@ def job5(npc_file: str):
             found_columns = [col for col in npc_columns if col in df.columns]
 
             if found_columns:
-                logger.info(f"Found NPC columns: {found_columns}")
+                logger.info(f"Found standard NPC columns: {found_columns}")
 
                 # Basic NPC statistics
                 if "NPC" in df.columns:
@@ -1212,11 +1763,22 @@ def job5(npc_file: str):
                     roles = df["ROLE"].value_counts()
                     logger.info(f"Role distribution: {dict(roles.head())}")
 
-            logger.info("NPC analysis completed")
-            speak("NPC analysis complete.")
+            logger.info("NPC analysis completed successfully")
 
         except ImportError:
-            logger.warning("pandas not available for NPC analysis")
+            logger.warning("pandas not available - using basic NPC file analysis")
+            # Basic analysis without pandas
+            import csv
+
+            with open(npc_path, "r", encoding="utf-8") as f:
+                if npc_path.suffix.lower() == ".csv":
+                    reader = csv.reader(f)
+                    rows = list(reader)
+                    if rows:
+                        logger.info(f"NPC file headers: {rows[0]}")
+                        logger.info(f"Total NPC records: {len(rows) - 1}")
+
+        speak("NPC analysis complete.")
 
     except Exception as e:
         logger.error(f"Error in job5: {e}")
@@ -1224,21 +1786,100 @@ def job5(npc_file: str):
 
 
 def job6(data_file: str):
-    """Job6 - Additional data processing task."""
+    """Job6 - Data Quality Analysis and Validation."""
     logger.info(f"Starting job6 for: {data_file}")
     speak("Starting job 6.")
 
     try:
-        # Placeholder for additional functionality
-        logger.info("Executing job6 processing...")
         data_path = Path(data_file)
+        if not data_path.exists():
+            logger.error(f"Data file not found: {data_path}")
+            return
 
-        if data_path.exists():
-            logger.info(f"Processing file: {data_path}")
-            # Add specific job6 logic here
-            logger.info("Job6 completed successfully")
-        else:
-            logger.warning(f"Data file not found: {data_path}")
+        logger.info("Executing data quality analysis...")
+
+        try:
+            import pandas as pd
+
+            # Load data based on file type
+            if data_path.suffix.lower() == ".csv":
+                df = pd.read_csv(data_path)
+            elif data_path.suffix.lower() in [".xlsx", ".xls"]:
+                df = pd.read_excel(data_path)
+            else:
+                logger.warning(f"Unsupported file type: {data_path.suffix}")
+                return
+
+            logger.info("=== Data Quality Analysis ===")
+            logger.info(f"Dataset shape: {df.shape}")
+
+            # Check for missing values
+            missing_analysis = df.isnull().sum()
+            total_missing = missing_analysis.sum()
+            if total_missing > 0:
+                logger.info(f"Total missing values: {total_missing}")
+                for col, missing_count in missing_analysis[
+                    missing_analysis > 0
+                ].items():
+                    percentage = (missing_count / len(df)) * 100
+                    logger.info(f"  {col}: {missing_count} ({percentage:.2f}%)")
+            else:
+                logger.info("No missing values found")
+
+            # Check for duplicate rows
+            duplicates = df.duplicated().sum()
+            if duplicates > 0:
+                logger.info(f"Duplicate rows found: {duplicates}")
+            else:
+                logger.info("No duplicate rows found")
+
+            # Data type analysis
+            logger.info("Data types:")
+            for col, dtype in df.dtypes.items():
+                logger.info(f"  {col}: {dtype}")
+
+            # Check for potential data inconsistencies
+            for col in df.columns:
+                if df[col].dtype == "object":  # String columns
+                    unique_count = df[col].nunique()
+                    if unique_count < len(df) * 0.1:  # If less than 10% unique values
+                        logger.info(
+                            f"Categorical column '{col}' has {unique_count} unique values"
+                        )
+                        top_values = df[col].value_counts().head(5)
+                        logger.info(f"  Top values: {dict(top_values)}")
+
+            # Check for outliers in numeric columns
+            numeric_cols = df.select_dtypes(include=["number"]).columns
+            if len(numeric_cols) > 0:
+                logger.info("Outlier analysis (values beyond 3 standard deviations):")
+                for col in numeric_cols:
+                    mean_val = df[col].mean()
+                    std_val = df[col].std()
+                    outliers = df[
+                        (df[col] < mean_val - 3 * std_val)
+                        | (df[col] > mean_val + 3 * std_val)
+                    ]
+                    if len(outliers) > 0:
+                        logger.info(f"  {col}: {len(outliers)} potential outliers")
+
+            logger.info("Data quality analysis completed successfully")
+
+        except ImportError:
+            logger.warning("pandas not available - using basic file validation")
+            # Basic file validation without pandas
+            file_size = data_path.stat().st_size
+            logger.info(f"File size: {file_size} bytes")
+
+            if data_path.suffix.lower() == ".csv":
+                import csv
+
+                with open(data_path, "r", encoding="utf-8") as f:
+                    reader = csv.reader(f)
+                    rows = list(reader)
+                    logger.info(f"CSV has {len(rows)} rows")
+                    if rows:
+                        logger.info(f"Headers: {rows[0]}")
 
         speak("Job 6 complete.")
 
@@ -1248,21 +1889,137 @@ def job6(data_file: str):
 
 
 def job8(data_file: str):
-    """Job8 - Final data processing task."""
+    """Job8 - Data Export and Reporting."""
     logger.info(f"Starting job8 for: {data_file}")
     speak("Starting job 8.")
 
     try:
-        # Placeholder for final processing
-        logger.info("Executing job8 processing...")
         data_path = Path(data_file)
+        if not data_path.exists():
+            logger.error(f"Data file not found: {data_path}")
+            return
 
-        if data_path.exists():
-            logger.info(f"Processing file: {data_path}")
-            # Add specific job8 logic here
-            logger.info("Job8 completed successfully")
-        else:
-            logger.warning(f"Data file not found: {data_path}")
+        logger.info("Executing data export and reporting...")
+
+        try:
+            import pandas as pd
+
+            # Load data based on file type
+            if data_path.suffix.lower() == ".csv":
+                df = pd.read_csv(data_path)
+            elif data_path.suffix.lower() in [".xlsx", ".xls"]:
+                df = pd.read_excel(data_path)
+            else:
+                logger.warning(f"Unsupported file type: {data_path.suffix}")
+                return
+
+            logger.info("=== Data Export and Reporting ===")
+            logger.info(
+                f"Processing dataset with {len(df)} rows and {len(df.columns)} columns"
+            )
+
+            # Create output directory if it doesn't exist
+            output_dir = Path("output")
+            output_dir.mkdir(exist_ok=True)
+
+            # Generate comprehensive data report
+            report_file = output_dir / f"data_report_{data_path.stem}.txt"
+            with open(report_file, "w", encoding="utf-8") as f:
+                f.write(f"Data Analysis Report for {data_path.name}\n")
+                f.write("=" * 50 + "\n\n")
+                f.write(
+                    f"Generated on: {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+                )
+
+                f.write(f"Dataset Information:\n")
+                f.write(f"- File: {data_path.name}\n")
+                f.write(f"- Shape: {df.shape}\n")
+                f.write(f"- Columns: {', '.join(df.columns)}\n\n")
+
+                f.write("Data Types:\n")
+                for col, dtype in df.dtypes.items():
+                    f.write(f"- {col}: {dtype}\n")
+                f.write("\n")
+
+                # Missing values summary
+                missing_data = df.isnull().sum()
+                if missing_data.any():
+                    f.write("Missing Values:\n")
+                    for col, count in missing_data[missing_data > 0].items():
+                        percentage = (count / len(df)) * 100
+                        f.write(f"- {col}: {count} ({percentage:.2f}%)\n")
+                else:
+                    f.write("Missing Values: None\n")
+                f.write("\n")
+
+                # Summary statistics for numeric columns
+                numeric_cols = df.select_dtypes(include=["number"]).columns
+                if len(numeric_cols) > 0:
+                    f.write("Numeric Column Statistics:\n")
+                    stats = df[numeric_cols].describe()
+                    f.write(str(stats))
+                    f.write("\n\n")
+
+                # Categorical columns summary
+                categorical_cols = df.select_dtypes(include=["object"]).columns
+                if len(categorical_cols) > 0:
+                    f.write("Categorical Columns:\n")
+                    for col in categorical_cols:
+                        unique_count = df[col].nunique()
+                        f.write(f"- {col}: {unique_count} unique values\n")
+                        if unique_count <= 10:
+                            top_values = df[col].value_counts().head(5)
+                            f.write(f"  Top values: {dict(top_values)}\n")
+                    f.write("\n")
+
+            logger.info(f"Data report saved to: {report_file}")
+
+            # Export processed data in multiple formats
+            if not df.empty:
+                # Export to CSV (cleaned version)
+                csv_export = output_dir / f"processed_{data_path.stem}.csv"
+                df.to_csv(csv_export, index=False)
+                logger.info(f"Processed data exported to: {csv_export}")
+
+                # Export to JSON for API use
+                json_export = output_dir / f"processed_{data_path.stem}.json"
+                df.to_json(json_export, orient="records", indent=2)
+                logger.info(f"JSON export created: {json_export}")
+
+                # Create summary statistics file
+                summary_file = output_dir / f"summary_{data_path.stem}.json"
+                summary_data = {
+                    "file_name": data_path.name,
+                    "total_rows": len(df),
+                    "total_columns": len(df.columns),
+                    "columns": list(df.columns),
+                    "data_types": {col: str(dtype) for col, dtype in df.dtypes.items()},
+                    "missing_values": {
+                        col: int(count)
+                        for col, count in df.isnull().sum().items()
+                        if count > 0
+                    },
+                    "generated_on": pd.Timestamp.now().isoformat(),
+                }
+
+                with open(summary_file, "w", encoding="utf-8") as f:
+                    json.dump(summary_data, f, indent=2)
+                logger.info(f"Summary data saved to: {summary_file}")
+
+            logger.info("Data export and reporting completed successfully")
+
+        except ImportError:
+            logger.warning("pandas not available - using basic export")
+            # Basic export without pandas
+            if data_path.suffix.lower() == ".csv":
+                import csv
+                import shutil
+
+                output_dir = Path("output")
+                output_dir.mkdir(exist_ok=True)
+                backup_file = output_dir / f"backup_{data_path.name}"
+                shutil.copy2(data_path, backup_file)
+                logger.info(f"Basic backup created: {backup_file}")
 
         speak("Job 8 complete.")
 

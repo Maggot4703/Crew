@@ -37,16 +37,32 @@ Version: 2.0 with enhanced layout and script execution
 
 # region Imports - Core Libraries
 
+import csv  # CSV file handling
 import glob  # File pattern matching
 import importlib.util  # Dynamic module importing
+import json  # JSON file handling for caching
 import logging  # Application logging
+import os  # Operating system interface
+import subprocess  # Process execution
 import sys  # System-specific parameters
 import threading  # Background thread support
+import time  # Time-related functions for caching
 import tkinter as tk  # Core GUI framework
 
 # Remove deprecated tix import, use ttk tooltips instead
 from pathlib import Path  # Cross-platform file handling
 from queue import Queue  # Thread-safe task queue
+
+# Try to import pandas for data handling
+try:
+    import pandas as pd
+
+    PANDAS_AVAILABLE = True
+except ImportError:
+    PANDAS_AVAILABLE = False
+    print(
+        "Warning: pandas not available. Some data import/export features may be limited."
+    )
 
 # region Imports - Core GUI and Data Management
 from tkinter import filedialog, messagebox, ttk  # GUI components and dialogs
@@ -61,6 +77,17 @@ from typing import (  # Type hints for better code quality; Additional type hint
 
 from config import Config  # Configuration management
 from database_manager import DatabaseManager  # Data persistence layer
+
+# Try to import CustomTkinter for modern styling
+try:
+    import customtkinter as ctk
+
+    CTK_AVAILABLE = True
+    ctk.set_appearance_mode("system")
+    ctk.set_default_color_theme("blue")
+except ImportError:
+    CTK_AVAILABLE = False
+    print("CustomTkinter not available. Using standard tkinter styling.")
 
 # TTS functionality
 try:
@@ -101,16 +128,33 @@ def auto_import_py_files() -> Tuple[List[str], List[Tuple[str, str]]]:
         # Get the current working directory
         workspace_root = Path.cwd()
 
+        # Cache for performance - avoid re-scanning if called multiple times
+        cache_file = workspace_root / ".auto_import_cache.json"
+        current_time = time.time()
+
+        # Check if we have a recent cache (less than 5 minutes old)
+        if cache_file.exists():
+            try:
+                cache_age = current_time - cache_file.stat().st_mtime
+                if cache_age < 300:  # 5 minutes
+                    with open(cache_file, "r") as f:
+                        cache_data = json.load(f)
+                        if cache_data.get("workspace_root") == str(workspace_root):
+                            logging.info("Using cached auto-import results")
+                            return (
+                                cache_data["imported_modules"],
+                                cache_data["failed_imports"],
+                            )
+            except (json.JSONDecodeError, KeyError, OSError):
+                # If cache is corrupted, continue with fresh scan
+                pass
+
         # Find all .py files in the workspace
         py_files = []
 
-        # Main directory .py files (excluding current file and known problematic files)
-        main_py_files = glob.glob(str(workspace_root / "*.py"))
-        py_files.extend(main_py_files)
-
-        # Subdirectory .py files
-        sub_py_files = glob.glob(str(workspace_root / "**/*.py"), recursive=True)
-        py_files.extend(sub_py_files)
+        # Use more efficient file discovery
+        for py_file in workspace_root.rglob("*.py"):
+            py_files.append(str(py_file))
 
         # Remove duplicates and sort
         py_files = sorted(list(set(py_files)))
@@ -118,29 +162,251 @@ def auto_import_py_files() -> Tuple[List[str], List[Tuple[str, str]]]:
         imported_modules = []
         failed_imports = []
 
-        # Files to skip (known problematic files or current file)
+        # Enhanced skip patterns with more comprehensive exclusions
         skip_files = {
             "gui.py",
             "setup.py",
             "__init__.py",
-            "output.txt.py",  # Script file, not a module
-            "globals.py",  # Has side effects during import (prints when loaded)
-            "Crew.py",  # Main script file
-            "test_script_demo.py",  # Test script
-            "test_auto_import.py",  # Test script
-            "enhanced_features.py",  # May have dependencies that aren't needed
+            "output.txt.py",
+            "globals.py",
+            "Crew.py",
+            "test_script_demo.py",
+            "test_auto_import.py",
+            "config.py",  # Configuration files may have side effects
+            "settings.py",  # Settings files may have side effects
+            "enhanced_features.py",
+            "conftest.py",  # Pytest configuration
         }
 
         # Additional patterns to skip
         skip_patterns = {
-            ".txt.py",  # Files with .txt.py extension are likely not modules
-            "main.py",  # Main script files
-            "run.py",  # Runner script files
-            "test_",  # Test files
-            "_test",  # Test files
-            "demo",  # Demo scripts
-            "example",  # Example scripts
+            ".txt.py",
+            "main.py",
+            "run.py",
+            "test_",
+            "_test",
+            "demo",
+            "example",
+            "sample",
+            "prototype",
+            "backup",
+            "old",
+            "temp",
+            "tmp",
+            "_backup",
         }
+
+        # Enhanced directory exclusions
+        skip_dirs = {
+            "__pycache__",
+            ".git",
+            "venv",
+            "env",
+            "tests",
+            "test",
+            "tts_venv",
+            ".venv",
+            "node_modules",
+            "build",
+            "dist",
+            ".pytest_cache",
+            ".mypy_cache",
+            "site-packages",
+            "lib",
+            "bin",
+            "include",
+            "share",
+            ".tox",
+            ".coverage",
+            "htmlcov",
+            ".idea",
+            ".vscode",
+            "migrations",
+            "docs",
+            "documentation",
+        }
+
+        # Pre-compile dangerous import patterns for better performance
+        dangerous_patterns = [
+            'if __name__ == "__main__"',
+            "subprocess.call",
+            "subprocess.run",
+            "sys.argv",
+            "argparse",
+            "main()",
+            "logging.basicconfig",
+            "speak(",
+            "sys.exit",
+            "os.system",
+            "plt.show",
+            "plt.plot",
+        ]
+
+        files_processed = 0
+        files_skipped = 0
+
+        for py_file in py_files:
+            try:
+                py_path = Path(py_file)
+                relative_path = py_path.relative_to(workspace_root)
+
+                # Skip files in excluded directories
+                if any(skip_dir in relative_path.parts for skip_dir in skip_dirs):
+                    files_skipped += 1
+                    continue
+
+                # Skip excluded files
+                if py_path.name in skip_files:
+                    files_skipped += 1
+                    continue
+
+                # Skip files matching problematic patterns
+                if any(pattern in py_path.name for pattern in skip_patterns):
+                    files_skipped += 1
+                    continue
+
+                # Skip test files
+                if py_path.name.startswith("test_") or "unittest" in py_path.name:
+                    files_skipped += 1
+                    continue
+
+                # Additional safety check: skip files that look like scripts
+                if py_path.name.lower() in {
+                    "main.py",
+                    "run.py",
+                    "start.py",
+                    "launch.py",
+                }:
+                    files_skipped += 1
+                    continue
+
+                # Enhanced safety check: read first chunk to detect script files
+                try:
+                    with open(py_file, "r", encoding="utf-8") as f:
+                        # Read first 20 lines for better detection
+                        first_chunk = "\n".join(f.readline().strip() for _ in range(20))
+
+                    file_content_lower = first_chunk.lower()
+
+                    # Skip files with dangerous patterns
+                    if any(
+                        pattern in file_content_lower for pattern in dangerous_patterns
+                    ):
+                        files_skipped += 1
+                        logging.debug(
+                            f"Skipping {py_path.name} - contains script patterns"
+                        )
+                        continue
+
+                    # Skip files with immediate side effects
+                    if "print(" in file_content_lower and any(
+                        keyword in file_content_lower
+                        for keyword in ["loaded", "starting", "running"]
+                    ):
+                        files_skipped += 1
+                        logging.debug(
+                            f"Skipping {py_path.name} - has immediate side effects"
+                        )
+                        continue
+
+                except (IOError, UnicodeDecodeError):
+                    # If we can't read the file, skip it for safety
+                    files_skipped += 1
+                    continue
+
+                # Create safe module name from path
+                module_name = str(relative_path.with_suffix(""))
+                module_name = module_name.replace("/", ".").replace("\\", ".")
+
+                # Handle files with spaces or special characters
+                if " " in module_name or any(
+                    char in module_name for char in (",", "-", "+")
+                ):
+                    safe_name = (
+                        module_name.replace(" ", "_")
+                        .replace(",", "_")
+                        .replace("-", "_")
+                        .replace("+", "_")
+                    )
+                    module_name = safe_name
+
+                # Try to import the module with enhanced error handling
+                try:
+                    spec = importlib.util.spec_from_file_location(module_name, py_file)
+                    if spec and spec.loader:
+                        # Check if module is already loaded
+                        if module_name in sys.modules:
+                            imported_modules.append(f"{module_name} (cached)")
+                            files_processed += 1
+                            continue
+
+                        # Import with timeout protection (if available)
+                        module = importlib.util.module_from_spec(spec)
+                        sys.modules[module_name] = module
+
+                        # Execute module with error containment
+                        spec.loader.exec_module(module)
+                        imported_modules.append(module_name)
+                        files_processed += 1
+
+                except (
+                    ImportError,
+                    ModuleNotFoundError,
+                    SyntaxError,
+                    AttributeError,
+                ) as e:
+                    # These are expected for some files
+                    error_msg = f"Import error: {str(e)[:100]}"
+                    failed_imports.append((str(relative_path), error_msg))
+                    files_processed += 1
+                    continue
+
+                except Exception as e:
+                    # Unexpected errors
+                    error_msg = f"Unexpected error: {str(e)[:100]}"
+                    failed_imports.append((str(relative_path), error_msg))
+                    logging.warning(f"Failed to auto-import {py_file}: {e}")
+                    files_processed += 1
+                    continue
+
+            except Exception as e:
+                failed_imports.append((str(py_file), f"Path error: {str(e)[:100]}"))
+                continue
+
+        # Log comprehensive results
+        total_files = files_processed + files_skipped
+        if imported_modules:
+            logging.info(f"Auto-imported {len(imported_modules)} modules successfully")
+
+        if failed_imports:
+            logging.info(
+                f"Skipped {len(failed_imports)} modules (expected for script files)"
+            )
+
+        logging.info(
+            f"Auto-import summary: {len(imported_modules)} imported, "
+            f"{len(failed_imports)} failed, {files_skipped} skipped, "
+            f"{total_files} total files processed"
+        )
+
+        # Cache the results for future use
+        try:
+            cache_data = {
+                "workspace_root": str(workspace_root),
+                "imported_modules": imported_modules,
+                "failed_imports": failed_imports,
+                "timestamp": current_time,
+            }
+            with open(cache_file, "w") as f:
+                json.dump(cache_data, f, indent=2)
+        except Exception as cache_error:
+            logging.debug(f"Could not cache auto-import results: {cache_error}")
+
+        return imported_modules, failed_imports
+
+    except Exception as e:
+        logging.error(f"Auto-import process failed: {e}")
+        return [], [(str(workspace_root), str(e))]
 
         # Directories to skip
         skip_dirs = {
@@ -1773,6 +2039,147 @@ class CrewGUI:
             logging.error(f"Failed to create details section: {e}")
             raise
 
+    def _setup_details_tts(self) -> None:
+        """Set up Text-to-Speech functionality for the details view.
+
+        Creates right-click context menu with TTS options when TTS is available.
+        """
+        if not TTS_AVAILABLE:
+            return
+
+        try:
+            # Create context menu for TTS
+            context_menu = tk.Menu(self.root, tearoff=0)
+            context_menu.add_command(
+                label="Read Selection", command=self._read_selection
+            )
+            context_menu.add_command(label="Read All", command=self._read_all_details)
+            context_menu.add_separator()
+            context_menu.add_command(label="Stop Reading", command=self._stop_reading)
+
+            # Bind right-click to show context menu
+            def show_context_menu(event):
+                try:
+                    context_menu.tk_popup(event.x_root, event.y_root)
+                finally:
+                    context_menu.grab_release()
+
+            self.details_text.bind("<Button-3>", show_context_menu)  # Right-click
+
+        except Exception as e:
+            logging.error(f"Error setting up details TTS: {e}")
+
+    def _read_selection(self) -> None:
+        """Read selected text from details view using TTS."""
+        if not TTS_AVAILABLE:
+            return
+
+        try:
+            # Get selected text
+            if self.details_text.tag_ranges(tk.SEL):
+                selected_text = self.details_text.get(tk.SEL_FIRST, tk.SEL_LAST)
+            else:
+                # If no selection, read current line
+                current_line = self.details_text.index(tk.INSERT).split(".")[0]
+                selected_text = self.details_text.get(
+                    f"{current_line}.0", f"{current_line}.end"
+                )
+
+            if selected_text.strip():
+                import pyttsx3
+
+                engine = pyttsx3.init()
+                engine.say(selected_text)
+                engine.runAndWait()
+
+        except Exception as e:
+            logging.error(f"TTS selection error: {e}")
+
+    def _read_all_details(self) -> None:
+        """Read all text from details view using TTS."""
+        if not TTS_AVAILABLE:
+            return
+
+        try:
+            all_text = self.details_text.get("1.0", tk.END)
+            if all_text.strip():
+                import pyttsx3
+
+                engine = pyttsx3.init()
+                engine.say(all_text)
+                engine.runAndWait()
+
+        except Exception as e:
+            logging.error(f"TTS all details error: {e}")
+
+    def _read_status(self) -> None:
+        """Read current status aloud using TTS."""
+        if not TTS_AVAILABLE:
+            return
+
+        try:
+            if hasattr(self, "status_var") and self.status_var:
+                status_text = self.status_var.get()
+                if status_text.strip():
+                    import pyttsx3
+
+                    engine = pyttsx3.init()
+                    engine.say(status_text)
+                    engine.runAndWait()
+        except Exception as e:
+            logging.error(f"TTS status error: {e}")
+
+    def _read_selected_item(self) -> None:
+        """Read selected item details aloud using TTS."""
+        if not TTS_AVAILABLE:
+            return
+
+        try:
+            if hasattr(self, "data_table"):
+                selection = self.data_table.selection()
+                if selection:
+                    item_data = self.data_table.item(selection[0])
+                    if "values" in item_data and item_data["values"]:
+                        text = (
+                            f"Selected item: {', '.join(map(str, item_data['values']))}"
+                        )
+                        import pyttsx3
+
+                        engine = pyttsx3.init()
+                        engine.say(text)
+                        engine.runAndWait()
+        except Exception as e:
+            logging.error(f"TTS selected item error: {e}")
+
+    def _stop_reading(self) -> None:
+        """Stop TTS if currently running."""
+        if not TTS_AVAILABLE:
+            return
+
+        try:
+            import pyttsx3
+
+            engine = pyttsx3.init()
+            engine.stop()
+        except Exception as e:
+            logging.error(f"TTS stop error: {e}")
+
+    # Callback methods
+    def _on_data_loaded(self, result: Tuple[List[List[Any]], List[str]]) -> None:
+        """Callback when data loading is complete."""
+        try:
+            data, headers = result
+            self.current_data = data
+            self.headers = headers
+            self._update_data_view(data)
+            self._update_column_menu()
+            self.update_status(f"Loaded {len(data)} records")
+        except Exception as e:
+            logging.error(f"Error processing loaded data: {e}")
+            messagebox.showerror("Error", f"Failed to process loaded data: {e}")
+
+    # ...existing code...
+
     def _on_column_click(self, event: tk.Event) -> None:
         """Handle interactive column header clicks for data sorting functionality.
 
@@ -1990,20 +2397,6 @@ class CrewGUI:
         - "Group Name" in main tree column (#0) for hierarchical display
         - "#" column shows member count for quick group size reference
         - "Primary" column displays dominant primary skill in group
-        - "Secondary" column shows dominant secondary skill information
-
-        Data Processing:
-        - Iterates through self.groups dictionary for all active groups
-        - Validates group existence and non-empty status before display
-        - Extracts skill information from PRIMUS and SECUNDUS columns
-        - Determines representative skills for group characterization
-
-        Skill Analysis:
-        - Scans group member data to identify primary skills (column 5)
-        - Identifies secondary skills from member data (column 6)
-        - Uses first encountered skill as group representative
-        - Handles missing or empty skill data gracefully
-
         Visual Organization:
         - Groups displayed with consistent formatting and spacing
         - Member count provides immediate group size awareness
@@ -3016,7 +3409,8 @@ class CrewGUI:
 
                 if self.failed_imports:
                     info += "\nFailed imports:\n"
-                    for module, error in self.failed_imports.items():
+                    # failed_imports is a list of tuples (module_name, error_message)
+                    for module, error in self.failed_imports:
                         info += f"  - {module}: {error}\n"
 
                 messagebox.showinfo("Module Import Status", info)
@@ -3062,86 +3456,6 @@ class CrewGUI:
             logging.error(f"Error running script: {e}")
             messagebox.showerror("Error", f"Failed to run script {script_name}: {e}")
 
-    # Background processing methods
-    def _load_data_background(
-        self, file_path: str
-    ) -> Tuple[List[List[Any]], List[str]]:
-        """Load data from file in background thread."""
-        try:
-            if file_path.endswith(".txt"):
-                # Handle text files specially - load content for details view
-                with open(file_path, "r", encoding="utf-8") as f:
-                    content = f.read()
-
-                # Create a simple single-row data structure for text files
-                headers = ["File Name", "Content"]
-                import os
-
-                file_name = os.path.basename(file_path)
-                data = [[file_name, content]]
-
-                return data, headers
-            else:
-                # Handle CSV and Excel files as before
-                import pandas as pd
-
-                if file_path.endswith(".csv"):
-                    df = pd.read_csv(file_path)
-                else:
-                    df = pd.read_excel(file_path)
-
-                headers = df.columns.tolist()
-                data = df.values.tolist()
-
-                return data, headers
-        except Exception as e:
-            logging.error(f"Error loading data from {file_path}: {e}")
-            raise
-
-    def _load_text_background(self, file_path: str) -> str:
-        """Load text content from file in background thread."""
-        try:
-            with open(file_path, "r", encoding="utf-8") as f:
-                return f.read()
-        except Exception as e:
-            logging.error(f"Error loading text from {file_path}: {e}")
-            raise
-
-    def _export_to_excel(self, file_path: str, data: List[List[Any]]) -> None:
-        """Export data to Excel file in background thread."""
-        try:
-            import pandas as pd
-
-            if data and hasattr(self, "headers"):
-                df = pd.DataFrame(data, columns=self.headers)
-                df.to_excel(file_path, index=False)
-                self.root.after(
-                    0, lambda: self.update_status(f"Exported to {file_path}")
-                )
-            else:
-                raise ValueError("No data to export")
-        except Exception as e:
-            logging.error(f"Error exporting to Excel: {e}")
-            self.root.after(0, lambda: messagebox.showerror("Export Error", str(e)))
-
-    def _save_to_file(self, file_path: str, data: List[List[Any]]) -> None:
-        """Save data to file in background thread."""
-        try:
-            import pandas as pd
-
-            if data and hasattr(self, "headers"):
-                df = pd.DataFrame(data, columns=self.headers)
-                if file_path.endswith(".csv"):
-                    df.to_csv(file_path, index=False)
-                else:
-                    df.to_excel(file_path, index=False)
-                self.root.after(0, lambda: self.update_status(f"Saved to {file_path}"))
-            else:
-                raise ValueError("No data to save")
-        except Exception as e:
-            logging.error(f"Error saving to file: {e}")
-            self.root.after(0, lambda: messagebox.showerror("Save Error", str(e)))
-
     def _execute_script(self, script_name: str) -> None:
         """Execute Python script in background thread."""
         try:
@@ -3170,136 +3484,104 @@ class CrewGUI:
             logging.error(f"Error executing script {script_name}: {e}")
             self.root.after(0, lambda: messagebox.showerror("Script Error", str(e)))
 
-    # Callback methods
-    def _on_data_loaded(self, result: Tuple[List[List[Any]], List[str]]) -> None:
-        """Callback when data loading is complete."""
+    # Background processing methods
+    def _load_data_background(
+        self, file_path: str
+    ) -> Tuple[List[List[Any]], List[str]]:
+        """Load data from file in background thread."""
         try:
-            data, headers = result
-            self.current_data = data
-            self.headers = headers
-            self._update_data_view(data)
-            self._update_column_menu()
-            self.update_status(f"Loaded {len(data)} records")
-        except Exception as e:
-            logging.error(f"Error processing loaded data: {e}")
-            messagebox.showerror("Error", f"Failed to process loaded data: {e}")
+            if not PANDAS_AVAILABLE:
+                # Fallback for CSV without pandas
+                if file_path.endswith(".csv"):
+                    import csv
 
-    def _on_text_loaded(self, text_content: str) -> None:
-        """Callback when text loading is complete."""
+                    with open(file_path, "r", encoding="utf-8") as f:
+                        reader = csv.reader(f)
+                        rows = list(reader)
+                        if rows:
+                            headers = rows[0]
+                            data = rows[1:]
+                            return data, headers
+                        return [], []
+                else:
+                    raise ImportError("pandas required for Excel files")
+
+            if file_path.endswith(".txt"):
+                # Handle text files specially - load content for details view
+                with open(file_path, "r", encoding="utf-8") as f:
+                    content = f.read()
+
+                # Create a simple single-row data structure for text files
+                headers = ["File Name", "Content"]
+                file_name = os.path.basename(file_path)
+                data = [[file_name, content]]
+                return data, headers
+            else:
+                # Handle CSV and Excel files with pandas
+                if file_path.endswith(".csv"):
+                    df = pd.read_csv(file_path)
+                else:
+                    df = pd.read_excel(file_path)
+
+                headers = df.columns.tolist()
+                data = df.values.tolist()
+                return data, headers
+        except Exception as e:
+            logging.error(f"Error loading data from {file_path}: {e}")
+            raise
+
+    def _load_text_background(self, file_path: str) -> str:
+        """Load text content from file in background thread."""
         try:
-            # Create a simple text display dialog
-            dialog = tk.Toplevel(self.root)
-            dialog.title("Text Content")
-            dialog.geometry("600x400")
-
-            text_widget = tk.Text(dialog, wrap="word")
-            text_widget.pack(fill="both", expand=True, padx=10, pady=10)
-            text_widget.insert("1.0", text_content)
-            text_widget.config(state="disabled")
-
-            self.update_status("Text content loaded")
+            with open(file_path, "r", encoding="utf-8") as f:
+                return f.read()
         except Exception as e:
-            logging.error(f"Error displaying text content: {e}")
-            messagebox.showerror("Error", f"Failed to display text content: {e}")
+            logging.error(f"Error loading text from {file_path}: {e}")
+            raise
 
-    # TTS methods (if available)
-    def _read_status(self) -> None:
-        """Read current status aloud using TTS."""
-        if TTS_AVAILABLE and hasattr(self, "status_var"):
-            try:
-                import pyttsx3
-
-                engine = pyttsx3.init()
-                engine.say(self.status_var.get())
-                engine.runAndWait()
-            except Exception as e:
-                logging.error(f"TTS error: {e}")
-
-    def _read_selected_item(self) -> None:
-        """Read selected item details aloud using TTS."""
-        if TTS_AVAILABLE:
-            try:
-                selection = self.data_table.selection()
-                if selection:
-                    item_data = self.data_table.item(selection[0])
-                    text = f"Selected item: {', '.join(map(str, item_data['values']))}"
-
-                    import pyttsx3
-
-                    engine = pyttsx3.init()
-                    engine.say(text)
-                    engine.runAndWait()
-            except Exception as e:
-                logging.error(f"TTS error: {e}")
-
-    def _stop_reading(self) -> None:
-        """Stop TTS if currently running."""
-        if TTS_AVAILABLE:
-            try:
-                import pyttsx3
-
-                engine = pyttsx3.init()
-                engine.stop()
-            except Exception as e:
-                logging.error(f"TTS stop error: {e}")
-
-    def _setup_details_tts(self) -> None:
-        """Setup TTS for details view."""
-        # Placeholder for TTS setup in details view
-        pass
-
-    def load_default_data(self) -> None:
-        """Load default data file if it exists."""
+    def _export_to_excel(self, file_path: str, data: List[List[Any]]) -> None:
+        """Export data to Excel file in background thread."""
         try:
-            # Look for common data files
-            default_files = ["crew_data.csv", "data.csv", "crew.csv"]
-            for filename in default_files:
-                if Path(filename).exists():
-                    self.update_status(f"Loading default data: {filename}")
-                    self.run_in_background(
-                        self._load_data_background,
-                        filename,
-                        callback=self._on_data_loaded,
-                    )
-                    self.current_file_path = filename
-                    break
+            if not PANDAS_AVAILABLE:
+                raise ImportError("pandas required for Excel export")
+
+            if data and hasattr(self, "headers"):
+                df = pd.DataFrame(data, columns=self.headers)
+                df.to_excel(file_path, index=False)
+                self.root.after(
+                    0, lambda: self.update_status(f"Exported to {file_path}")
+                )
+            else:
+                raise ValueError("No data to export")
         except Exception as e:
-            logging.error(f"Error loading default data: {e}")
+            logging.error(f"Error exporting to Excel: {e}")
+            self.root.after(0, lambda: messagebox.showerror("Export Error", str(e)))
 
+    def _save_to_file(self, file_path: str, data: List[List[Any]]) -> None:
+        """Save data to file in background thread."""
+        try:
+            if data and hasattr(self, "headers"):
+                if file_path.endswith(".csv"):
+                    if PANDAS_AVAILABLE:
+                        df = pd.DataFrame(data, columns=self.headers)
+                        df.to_csv(file_path, index=False)
+                    else:
+                        # Fallback CSV writing
+                        import csv
 
-def main():
-    """Main entry point for the Crew Manager application."""
-    try:
-        # Set up logging
-        logging.basicConfig(
-            level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-        )
+                        with open(file_path, "w", newline="", encoding="utf-8") as f:
+                            writer = csv.writer(f)
+                            writer.writerow(self.headers)
+                            writer.writerows(data)
+                else:
+                    if not PANDAS_AVAILABLE:
+                        raise ImportError("pandas required for Excel files")
+                    df = pd.DataFrame(data, columns=self.headers)
+                    df.to_excel(file_path, index=False)
 
-        # Create and run the GUI application
-        root = tk.Tk()
-        app = CrewGUI(root)
-
-        # Set up graceful shutdown
-        def on_closing():
-            try:
-                app.save_window_state()
-                root.destroy()
-            except Exception as e:
-                logging.error(f"Error during shutdown: {e}")
-                root.destroy()
-
-        root.protocol("WM_DELETE_WINDOW", on_closing)
-
-        # Start the application
-        logging.info("Starting Crew Manager application...")
-        root.mainloop()
-
-    except Exception as e:
-        logging.error(f"Failed to start application: {e}")
-        print(f"Error: {e}")
-        if "root" in locals():
-            root.destroy()
-
-
-if __name__ == "__main__":
-    main()
+                self.root.after(0, lambda: self.update_status(f"Saved to {file_path}"))
+            else:
+                raise ValueError("No data to save")
+        except Exception as e:
+            logging.error(f"Error saving to file: {e}")
+            self.root.after(0, lambda: messagebox.showerror("Save Error", str(e)))
