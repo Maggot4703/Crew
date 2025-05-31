@@ -36,13 +36,13 @@ Version: 2.0 with enhanced layout and script execution
 """
 
 # region Imports - Core Libraries
-import glob
-import importlib.util
-import logging
-import re
-import sys
-import threading
-import tkinter as tk
+
+import glob  # File pattern matching
+import importlib.util  # Dynamic module importing
+import logging  # Application logging
+import sys  # System-specific parameters
+import threading  # Background thread support
+import tkinter as tk  # Core GUI framework
 
 # Remove deprecated tix import, use ttk tooltips instead
 from pathlib import Path  # Cross-platform file handling
@@ -64,7 +64,7 @@ from database_manager import DatabaseManager  # Data persistence layer
 
 # TTS functionality
 try:
-    import pyttsx3
+    import pyttsx3  # Text-to-speech engine
 
     TTS_AVAILABLE = True
 except ImportError:
@@ -479,9 +479,8 @@ class CrewGUI:
         - Consistent command placement across sessions
 
         Note:
-            Menu creation occurs early in initialization to provide
-            immediate access to core functionality and ensure proper
-            integration with keyboard shortcuts and event handlers.
+            Menu creation occurs early in initialization to ensure all subsequent
+            operations can use logging functionality.
         """
         self.menu_bar = tk.Menu(self.root)
         self.root.config(menu=self.menu_bar)
@@ -527,6 +526,21 @@ class CrewGUI:
         self.script_menu = tk.Menu(view_menu, tearoff=0)
         view_menu.add_cascade(label="Run Script", menu=self.script_menu)
         view_menu.add_command(label="Refresh Scripts", command=self._update_script_menu)
+
+        # Add TTS menu if available
+        if TTS_AVAILABLE:
+            tts_menu = tk.Menu(self.menu_bar, tearoff=0)
+            self.menu_bar.add_cascade(label="🔊 Speech", menu=tts_menu)
+            tts_menu.add_command(label="Read Status", command=self._read_status)
+            tts_menu.add_command(
+                label="Read Selected Item", command=self._read_selected_item
+            )
+            tts_menu.add_separator()
+            tts_menu.add_command(label="Stop Reading", command=self._stop_reading)
+            tts_menu.add_separator()
+            tts_menu.add_command(
+                label="Speech Settings...", command=self._show_speech_settings
+            )
 
     def bind_events(self) -> None:
         """Set up keyboard shortcuts and event bindings for the application.
@@ -1411,75 +1425,30 @@ class CrewGUI:
             logging.error(f"Error showing group menu: {e}")
 
     def _delete_selected_group(self) -> None:
-        """Remove the currently selected group from the system.
-
-        Provides comprehensive group deletion functionality with safety measures:
-
-        Selection Validation:
-        - Checks for active selection in group list before proceeding
-        - Extracts group name from selected treeview item safely
-        - Prevents deletion attempts when no group is selected
-        - Validates group exists in internal groups dictionary
-
-        Deletion Process:
-        - Removes group from self.groups dictionary completely
-        - Updates all related UI views to reflect the change
-        - Refreshes data view to show all ungrouped data
-        - Provides immediate visual feedback of successful deletion
-
-        UI State Management:
-        - Calls _update_groups_view() to refresh group list display
-        - Updates data view with _update_data_view() using current_data
-        - Ensures consistent state across all interface components
-        - Maintains proper visual synchronization after deletion
-
-        User Feedback:
-        - Updates status bar with confirmation of deletion action
-        - Includes deleted group name in status message
-        - Provides clear indication that operation completed successfully
-        - Gives users confidence that action was processed
-
-        Error Handling:
-        - Comprehensive exception catching for robust operation
-        - Detailed error logging for debugging deletion issues
-        - User-friendly error dialog for deletion failures
-        - Prevents deletion errors from corrupting application state
-
-        Data Integrity:
-        - Safely removes group without affecting underlying data
-        - Preserves original data rows in current_data collection
-        - Maintains referential integrity of group relationships
-        - Ensures no orphaned references remain after deletion
-
-        Integration Features:
-        - Called from context menu delete command
-        - Coordinates with group management system
-        - Updates all dependent UI components automatically
-        - Maintains consistency with data filtering and display
-
-        Safety Considerations:
-        - Validates group existence before deletion attempt
-        - Handles edge cases like already-deleted groups gracefully
-        - Prevents accidental deletion of non-existent groups
-        - Maintains system stability during deletion operations
-
-        Note:
-            Deletion is immediate and irreversible - groups must be
-            recreated manually if accidentally deleted. Future versions
-            might include confirmation dialogs for enhanced safety.
-        """
+        """Delete the currently selected group."""
         try:
             selection = self.group_list.selection()
-            if selection:
-                item_id = selection[0]
-                group_name = self.group_list.item(item_id)["text"]
+            if not selection:
+                messagebox.showwarning("Warning", "No group selected")
+                return
 
-                # Remove from groups dictionary and update views
+            item_id = selection[0]
+            group_name = self.group_list.item(item_id)["text"]
+
+            # Confirm deletion
+            if messagebox.askyesno("Confirm Delete", f"Delete group '{group_name}'?"):
+                # Remove from groups dictionary
                 if group_name in self.groups:
                     del self.groups[group_name]
-                    self._update_groups_view()
-                    self._update_data_view(self.current_data)  # Show all data
-                    self.update_status(f"Deleted group: {group_name}")
+
+                # Remove from treeview
+                self.group_list.delete(item_id)
+
+                # If this was the currently displayed group, show all data
+                self._update_data_view(self.current_data)
+
+                self.update_status(f"Deleted group: {group_name}")
+
         except Exception as e:
             logging.error(f"Error deleting group: {e}")
             messagebox.showerror("Error", f"Failed to delete group: {e}")
@@ -1688,6 +1657,120 @@ class CrewGUI:
 
         except Exception as e:
             logging.error(f"Failed to create data section: {e}")
+            raise
+
+    def create_details_section(self) -> None:
+        """Create the details view section for displaying selected item information.
+
+        Builds a comprehensive details display interface in the right panel:
+
+        Container Architecture:
+        - LabelFrame titled "Details View" with consistent padding
+        - Positioned in right panel, row 1 (secondary display area)
+        - Expandable design (sticky='nsew') to utilize available space
+        - Professional styling consistent with other application sections
+
+        Text Display Component:
+        - Text widget with rich formatting capabilities
+        - Professional monospace font for structured data display
+        - Scrollbar support for long detail content
+        - Read-only configuration to prevent accidental edits
+
+        Scrolling System:
+        - Vertical scrollbar for navigating long details
+        - Synchronized scrolling between text widget and scrollbar
+        - Proper grid layout with weight distribution
+        - Positioned at right edge for intuitive use
+
+        Visual Styling:
+        - Consistent padding and spacing with other sections
+        - Professional appearance with border and relief
+        - Proper font selection for readability
+        - Integrated with application color scheme
+
+        Layout Configuration:
+        - Grid positioning in right panel row 1
+        - Weight=1 for proportional space allocation
+        - Full expansion to utilize available vertical space
+        - Responsive design for different window sizes
+
+        Integration Points:
+        - Connected to _update_details_view method for content updates
+        - Linked to table selection events for automatic updates
+        - Supports TTS functionality via _setup_details_tts
+        - Provides context for selected item examination
+
+        Text Widget Features:
+        - Multi-line text display with word wrapping
+        - Support for formatted text and structure
+        - Clear content management via delete/insert operations
+        - Professional font rendering for data presentation
+
+        Error Handling:
+        - Comprehensive exception monitoring and logging
+        - Re-raises critical failures to ensure complete UI
+        - Specific error context for debugging assistance
+        - Graceful degradation when possible
+
+        Note:
+            This section receives less space (weight=1) compared to the
+            data table (weight=3) but provides essential detailed view
+            functionality for examining individual records.
+        """
+        try:
+            # Create details frame in right panel row 1
+            details_frame = ttk.LabelFrame(
+                self.right_frame, text="Details View", padding="5"
+            )
+            details_frame.grid(row=1, column=0, sticky="nsew", padx=5, pady=5)
+
+            # Create container frame for text and scrollbar
+            text_frame = ttk.Frame(details_frame)
+            text_frame.grid(row=0, column=0, sticky="nsew")
+
+            # Configure frame weights for expansion
+            details_frame.grid_rowconfigure(0, weight=1)
+            details_frame.grid_columnconfigure(0, weight=1)
+            text_frame.grid_rowconfigure(0, weight=1)
+            text_frame.grid_columnconfigure(0, weight=1)
+
+            # Create text widget for details display
+            self.details_text = tk.Text(
+                text_frame,
+                wrap=tk.WORD,
+                font=("Consolas", 10),  # Monospace font for structured data
+                state=tk.NORMAL,  # Allow editing for TTS selection
+                height=8,  # Reasonable default height
+                background="white",
+                foreground="black",
+            )
+
+            # Create vertical scrollbar for text widget
+            details_scroll = ttk.Scrollbar(
+                text_frame, orient="vertical", command=self.details_text.yview
+            )
+
+            # Configure text widget to use scrollbar
+            self.details_text.configure(yscrollcommand=details_scroll.set)
+
+            # Grid layout with scrollbar
+            self.details_text.grid(row=0, column=0, sticky="nsew")
+            details_scroll.grid(row=0, column=1, sticky="ns")
+
+            # Set initial content
+            self.details_text.insert(
+                "1.0", "Select an item from the table above to view details here."
+            )
+
+            # Bind selection event for table to update details
+            if hasattr(self, "data_table"):
+                self.data_table.bind("<<TreeviewSelect>>", self._on_data_select)
+
+            # Setup TTS functionality if available
+            self._setup_details_tts()
+
+        except Exception as e:
+            logging.error(f"Failed to create details section: {e}")
             raise
 
     def _on_column_click(self, event: tk.Event) -> None:
@@ -2071,7 +2154,9 @@ class CrewGUI:
             event: Selection event containing timing and selection information
 
         Note:
-            Group selection creates a temporary filtered view of the data
+
+        Note:
+                       Group selection creates a temporary filtered view of the data
             table, allowing users to focus on specific group members while
             maintaining access to all standard data operations and features.
         """
@@ -2119,6 +2204,9 @@ class CrewGUI:
         Event Handling:
         - Responds to standard TreeviewSelect events
         - Processes single-selection mode interactions efficiently
+
+
+
         - Handles rapid selection changes without conflicts
         - Maintains responsive user interface performance
 
@@ -2665,362 +2753,186 @@ class CrewGUI:
             logging.error(f"Error handling treeview configure: {e}")
             # Don't raise - we don't want to crash on resize events
 
-    def _update_details_view(self, data: Any) -> None:
-        """Update details view and save selected row as text file"""
+    def _update_details_view(self, item_data) -> None:
+        """Update the details view with selected item information."""
         try:
-            self.details_text.delete("1.0", tk.END)
-
-            if isinstance(data, dict) and "values" in data:
-                values = data["values"]
-                if values and len(values) > 0:
-                    # Format the row data nicely
-                    details = "Selected Row Details:\n" + "=" * 40 + "\n\n"
-                    for i, value in enumerate(values):
-                        header = (
-                            self.headers[i]
-                            if i < len(self.headers)
-                            else f"Column {i+1}"
-                        )
-                        details += f"{header}: {value}\n"
-
-                    self.details_text.insert("1.0", details)
-            else:
-                self.details_text.insert("1.0", str(data))
-
-        except Exception as e:
-            logging.error(f"Error updating details: {e}")
-            self.update_status("Failed to update details")
-
-    def create_details_section(self) -> None:
-        """Create the detailed information display panel."""
-        try:
-            details_frame = ttk.LabelFrame(
-                self.right_frame, text="Details", padding="5"
-            )
-            details_frame.grid(row=1, column=0, sticky="nsew", padx=5, pady=5)
-
-            # Create text widget with improved scrolling
-            self.details_text = tk.Text(
-                details_frame,
-                wrap="word",
-                padx=5,
-                pady=5,
-                width=50,
-                height=10,
-            )
-
-            # Create and configure scrollbar
-            y_scroll = ttk.Scrollbar(
-                details_frame, orient="vertical", command=self.details_text.yview
-            )
-
-            # Configure text widget to use scrollbar
-            self.details_text.configure(yscrollcommand=y_scroll.set)
-
-            # Grid layout with proper weights
-            details_frame.grid_columnconfigure(0, weight=1)
-            details_frame.grid_rowconfigure(0, weight=1)
-
-            self.details_text.grid(row=0, column=0, sticky="nsew")
-            y_scroll.grid(row=0, column=1, sticky="ns")
-
-            # Bind selection events for data table
-            self.data_table.bind("<<TreeviewSelect>>", self._on_data_select)
-
-            # Add TTS functionality for script content
-            if TTS_AVAILABLE:
-                self._setup_details_tts()
-
-        except Exception as e:
-            logging.error(f"Failed to create details section: {e}")
-            raise
-
-    def _setup_details_tts(self) -> None:
-        """Set up TTS functionality for the Details View"""
-        try:
-            # Initialize TTS engine if available
-            self.tts_engine = pyttsx3.init()
-
-            # Configure voice settings
-            self.tts_engine.setProperty("rate", 150)  # Default reading speed
-            self.tts_engine.setProperty("volume", 1.0)  # Full volume
-
-            # Try to set female voice if available
-            self._setup_female_voice()
-
-            # Add right-click context menu for text selection
-            self.details_context_menu = tk.Menu(self.root, tearoff=0)
-            self.details_context_menu.add_command(
-                label="🔊 Read Selected Text", command=self._read_selected_text
-            )
-            self.details_context_menu.add_separator()
-            self.details_context_menu.add_command(
-                label="🔊 Read All Text", command=self._read_all_text
-            )
-            self.details_context_menu.add_command(
-                label="⏹️ Stop Reading", command=self._stop_reading
-            )
-
-            # Bind right-click to show context menu
-            self.details_text.bind("<Button-3>", self._show_details_context_menu)
-
-            # Track reading state
-            self.is_reading = False
-            self.reading_thread = None
-
-            logging.info("TTS functionality enabled for Details View")
-
-        except Exception as e:
-            logging.error(f"Failed to setup TTS for Details View: {e}")
-
-    def _setup_female_voice(self) -> None:
-        """Configure female voice if available"""
-        try:
-            voices = self.tts_engine.getProperty("voices")
-            english_voice = None
-
-            # Find an English voice
-            for voice in voices:
-                if "english" in voice.name.lower() or "en" in voice.id.lower():
-                    english_voice = voice
-                    if "female" in voice.name.lower() or "zira" in voice.name.lower():
-                        break  # Prefer female voice
-
-            if english_voice:
-                self.tts_engine.setProperty("voice", english_voice.id)
-            else:
-                logging.info("No specific English voice found, using default")
-
-        except Exception as e:
-            logging.warning(f"Could not configure female voice: {e}")
-
-    def _show_details_context_menu(self, event) -> None:
-        """Show context menu for Details View"""
-        try:
-            # Update menu state based on current conditions
-            selected_text = self._get_selected_text()
-
-            # Enable/disable menu items based on selection and reading state
-            if selected_text:
-                self.details_context_menu.entryconfig(
-                    "🔊 Read Selected Text", state="normal"
-                )
-            else:
-                self.details_context_menu.entryconfig(
-                    "🔊 Read Selected Text", state="disabled"
-                )
-
-            if self.is_reading:
-                self.details_context_menu.entryconfig("⏹️ Stop Reading", state="normal")
-            else:
-                self.details_context_menu.entryconfig(
-                    "⏹️ Stop Reading", state="disabled"
-                )
-
-            self.details_context_menu.post(event.x_root, event.y_root)
-
-        except Exception as e:
-            logging.error(f"Error showing details context menu: {e}")
-
-    def _get_selected_text(self) -> str:
-        """Get currently selected text from Details View"""
-        try:
-            return self.details_text.get(tk.SEL_FIRST, tk.SEL_LAST)
-        except tk.TclError:
-            return ""
-
-    def _read_selected_text(self) -> None:
-        """Read the currently selected text aloud"""
-        if not TTS_AVAILABLE or self.is_reading:
-            return
-
-        selected_text = self._get_selected_text()
-        if not selected_text.strip():
-            messagebox.showwarning("No Selection", "Please select text to read aloud.")
-            return
-
-        self._speak_text(selected_text, "selected text")
-
-    def _read_all_text(self) -> None:
-        """Read all text in the Details View aloud"""
-        if not TTS_AVAILABLE or self.is_reading:
-            return
-
-        all_text = self.details_text.get("1.0", tk.END).strip()
-        if not all_text:
-            messagebox.showwarning("No Text", "No text available to read.")
-            return
-
-        self._speak_text(all_text, "all text")
-
-    def _speak_text(self, text: str, description: str) -> None:
-        """Speak the given text using TTS"""
-        try:
-            if self.is_reading:
+            if not hasattr(self, "details_text"):
                 return
 
-            self.is_reading = True
-            self.update_status(f"Reading {description}...")
+            # Clear current content
+            self.details_text.delete("1.0", "end")
 
-            # Preprocess text for better speech
-            processed_text = self._preprocess_text_for_speech(text)
+            if item_data and "values" in item_data:
+                # Format the item data for display
+                details_text = "Selected Item Details:\n"
+                details_text += "=" * 30 + "\n\n"
 
-            # Start reading in background thread
-            self.reading_thread = threading.Thread(
-                target=self._speak_text_worker, args=(processed_text,), daemon=True
-            )
-            self.reading_thread.start()
+                values = item_data["values"]
+                for i, value in enumerate(values):
+                    if i < len(self.headers):
+                        details_text += f"{self.headers[i]}: {value}\n"
 
-        except Exception as e:
-            logging.error(f"Error starting TTS: {e}")
-            self.is_reading = False
+                # Add any additional metadata
+                if "text" in item_data:
+                    details_text += f"\nItem ID: {item_data['text']}\n"
 
-    def _speak_text_worker(self, text: str) -> None:
-        """Background worker for TTS to avoid blocking UI"""
-        try:
-            # Split text into chunks to avoid memory issues
-            chunks = self._chunk_text(text, 1000)
-
-            for chunk in chunks:
-                if not self.is_reading:  # Check if stopped
-                    break
-                self.tts_engine.say(chunk)
-                self.tts_engine.runAndWait()
-
-        except Exception as e:
-            logging.error(f"Error in TTS worker: {e}")
-        finally:
-            self.root.after(0, self._reading_finished)
-
-    def _reading_finished(self) -> None:
-        """Called when TTS reading is complete"""
-        self.is_reading = False
-        self.update_status("Reading complete")
-
-    def _stop_reading(self) -> None:
-        """Stop the current TTS reading"""
-        if self.is_reading:
-            self.is_reading = False
-            try:
-                self.tts_engine.stop()
-            except:
-                pass
-            self.update_status("Reading stopped")
-
-    def _preprocess_text_for_speech(self, text: str) -> str:
-        """Preprocess text to make it more suitable for TTS"""
-        # Remove script header if present
-        text = re.sub(r"^Script:.*?\n.*?\n.*?\n={40,}\n\n", "", text, flags=re.DOTALL)
-
-        # Remove markdown headers
-        text = re.sub(r"^#{1,6}\s+", "", text, flags=re.MULTILINE)
-
-        # Remove code blocks
-        text = re.sub(r"```.*?```", " Code block omitted. ", text, flags=re.DOTALL)
-
-        # Remove inline code
-        text = re.sub(r"`.*?`", " Code omitted. ", text)
-
-        # Replace bullet points
-        text = re.sub(r"^[\*\-\+]\s+", "• ", text, flags=re.MULTILINE)
-
-        # Handle numbered lists
-        text = re.sub(r"^\d+\.\s+", "", text, flags=re.MULTILINE)
-
-        # Clean up extra whitespace
-        text = re.sub(r"\n\s*\n", "\n\n", text)
-        text = re.sub(r" +", " ", text)
-
-        return text.strip()
-
-    def _chunk_text(self, text: str, max_length: int = 1000) -> list:
-        """Split text into chunks for TTS processing"""
-        sentences = re.split(r"[.!?]+", text)
-        chunks = []
-        current_chunk = ""
-
-        for sentence in sentences:
-            sentence = sentence.strip()
-            if not sentence:
-                continue
-
-            if len(current_chunk) + len(sentence) <= max_length:
-                current_chunk += sentence + ". "
+                self.details_text.insert("1.0", details_text)
             else:
-                if current_chunk:
-                    chunks.append(current_chunk.strip())
-                current_chunk = sentence + ". "
+                self.details_text.insert("1.0", "No item selected or no data available")
 
-        if current_chunk:
-            chunks.append(current_chunk.strip())
+        except Exception as e:
+            logging.error(f"Error updating details view: {e}")
+            if hasattr(self, "details_text"):
+                self.details_text.delete("1.0", "end")
+                self.details_text.insert("1.0", f"Error displaying details: {e}")
 
-        return chunks if chunks else [text]
+    def _show_speech_settings(self) -> None:
+        """Show TTS configuration dialog."""
+        try:
+            settings_window = tk.Toplevel(self.root)
+            settings_window.title("Speech Settings")
+            settings_window.geometry("400x300")
+            settings_window.transient(self.root)
+            settings_window.grab_set()
 
+            # Voice selection
+            ttk.Label(settings_window, text="Voice:").pack(pady=5)
+            voice_var = tk.StringVar()
+            voice_combo = ttk.Combobox(
+                settings_window, textvariable=voice_var, state="readonly"
+            )
+
+            # Get available voices
+            voices = self.tts_engine.getProperty("voices")
+            voice_names = [voice.name for voice in voices]
+            voice_combo["values"] = voice_names
+
+            # Set current voice
+            current_voice = self.tts_engine.getProperty("voice")
+            for voice in voices:
+                if voice.id == current_voice:
+                    voice_var.set(voice.name)
+                    break
+
+            voice_combo.pack(pady=5, padx=20, fill="x")
+
+            # Speed control
+            ttk.Label(settings_window, text="Speed:").pack(pady=5)
+            speed_var = tk.IntVar(value=self.tts_engine.getProperty("rate"))
+            speed_scale = ttk.Scale(
+                settings_window,
+                from_=50,
+                to=300,
+                variable=speed_var,
+                orient="horizontal",
+            )
+            speed_scale.pack(pady=5, padx=20, fill="x")
+
+            # Volume control
+            ttk.Label(settings_window, text="Volume:").pack(pady=5)
+            volume_var = tk.DoubleVar(value=self.tts_engine.getProperty("volume"))
+            volume_scale = ttk.Scale(
+                settings_window,
+                from_=0.0,
+                to=1.0,
+                variable=volume_var,
+                orient="horizontal",
+            )
+            volume_scale.pack(pady=5, padx=20, fill="x")
+
+            # Apply button
+            def apply_settings():
+                try:
+                    # Set voice
+                    selected_voice = voice_var.get()
+                    for voice in voices:
+                        if voice.name == selected_voice:
+                            self.tts_engine.setProperty("voice", voice.id)
+                            break
+
+                    # Set speed and volume
+                    self.tts_engine.setProperty("rate", speed_var.get())
+                    self.tts_engine.setProperty("volume", volume_var.get())
+
+                    settings_window.destroy()
+                    self.update_status("Speech settings updated")
+                except Exception as e:
+                    logging.error(f"Error applying speech settings: {e}")
+                    messagebox.showerror("Error", f"Failed to apply settings: {e}")
+
+            # Buttons frame
+            buttons_frame = ttk.Frame(settings_window)
+            buttons_frame.pack(pady=20)
+
+            ttk.Button(buttons_frame, text="Apply", command=apply_settings).pack(
+                side="left", padx=5
+            )
+            ttk.Button(
+                buttons_frame, text="Cancel", command=settings_window.destroy
+            ).pack(side="left", padx=5)
+
+        except Exception as e:
+            logging.error(f"Error showing speech settings: {e}")
+
+    # Event handler methods for menu operations
     def _on_load_data(self) -> None:
-        """Handle data loading operations"""
+        """Load crew data from CSV or Excel files."""
         try:
             file_path = filedialog.askopenfilename(
-                title="Load Data File",
+                title="Select Data File",
                 filetypes=[
                     ("CSV files", "*.csv"),
-                    ("Excel files", "*.xlsx *.xls"),
+                    ("Excel files", "*.xlsx;*.xls"),
                     ("All files", "*.*"),
                 ],
             )
-
             if file_path:
                 self.update_status("Loading data...")
-                # TODO: Implement actual data loading
-                self.update_status(f"Data loaded from {file_path}")
+                self.run_in_background(
+                    self._load_data_background, file_path, callback=self._on_data_loaded
+                )
         except Exception as e:
             logging.error(f"Error loading data: {e}")
-            self.update_status(f"Error loading data: {e}")
+            messagebox.showerror("Error", f"Failed to load data: {e}")
 
     def _on_import_data(self) -> None:
-        """Handle data import operations"""
+        """Import additional data and merge with current data."""
         try:
             file_path = filedialog.askopenfilename(
                 title="Import Data File",
                 filetypes=[
                     ("CSV files", "*.csv"),
-                    ("Excel files", "*.xlsx *.xls"),
+                    ("Excel files", "*.xlsx;*.xls"),
                     ("All files", "*.*"),
                 ],
             )
-
             if file_path:
                 self.update_status("Importing data...")
-                # TODO: Implement actual data import
-                self.update_status(f"Data imported from {file_path}")
+                self.run_in_background(
+                    self._load_data_background, file_path, callback=self._on_data_loaded
+                )
         except Exception as e:
             logging.error(f"Error importing data: {e}")
-            self.update_status(f"Error importing data: {e}")
-
-    def _on_load_text_content(self) -> None:
-        """Handle text content loading"""
-        try:
-            file_path = filedialog.askopenfilename(
-                title="Load Text Content",
-                filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
-            )
-
-            if file_path:
-                self.update_status("Loading text content...")
-                with open(file_path, "r", encoding="utf-8") as f:
-                    content = f.read()
-
-                self.details_text.delete("1.0", tk.END)
-                self.details_text.insert("1.0", content)
-                self.update_status(f"Text content loaded from {file_path}")
-        except Exception as e:
-            logging.error(f"Error loading text content: {e}")
-            self.update_status(f"Error loading text content: {e}")
+            messagebox.showerror("Error", f"Failed to import data: {e}")
 
     def _on_save(self) -> None:
-        """Handle save operations"""
+        """Save current data to file."""
+        try:
+            if hasattr(self, "current_file_path") and self.current_file_path:
+                self.run_in_background(
+                    self._save_to_file, self.current_file_path, self.current_data
+                )
+            else:
+                self._on_save_as()
+        except Exception as e:
+            logging.error(f"Error saving data: {e}")
+            messagebox.showerror("Error", f"Failed to save data: {e}")
+
+    def _on_save_as(self) -> None:
+        """Save current data to a new file."""
         try:
             file_path = filedialog.asksaveasfilename(
-                title="Save Data",
+                title="Save Data As",
                 defaultextension=".csv",
                 filetypes=[
                     ("CSV files", "*.csv"),
@@ -3028,62 +2940,78 @@ class CrewGUI:
                     ("All files", "*.*"),
                 ],
             )
-
             if file_path:
-                self.update_status("Saving data...")
-                # TODO: Implement actual data saving
-                self.update_status(f"Data saved to {file_path}")
+                self.current_file_path = file_path
+                self.run_in_background(self._save_to_file, file_path, self.current_data)
         except Exception as e:
-            logging.error(f"Error saving data: {e}")
-            self.update_status(f"Error saving data: {e}")
+            logging.error(f"Error saving data as: {e}")
+            messagebox.showerror("Error", f"Failed to save data: {e}")
 
     def _on_export(self) -> None:
-        """Handle export operations"""
+        """Export current data to Excel format."""
         try:
             file_path = filedialog.asksaveasfilename(
-                title="Export Data",
+                title="Export to Excel",
                 defaultextension=".xlsx",
+                filetypes=[("Excel files", "*.xlsx"), ("All files", "*.*")],
+            )
+            if file_path:
+                self.update_status("Exporting to Excel...")
+                self.run_in_background(
+                    self._export_to_excel, file_path, self.current_data
+                )
+        except Exception as e:
+            logging.error(f"Error exporting data: {e}")
+            messagebox.showerror("Error", f"Failed to export data: {e}")
+
+    def _on_load_text_content(self) -> None:
+        """Load text content from file."""
+        try:
+            file_path = filedialog.askopenfilename(
+                title="Load Text File",
                 filetypes=[
-                    ("Excel files", "*.xlsx"),
-                    ("CSV files", "*.csv"),
+                    ("Text files", "*.txt"),
+                    ("Python files", "*.py"),
                     ("All files", "*.*"),
                 ],
             )
-
             if file_path:
-                self.update_status("Exporting data...")
-                # TODO: Implement actual data export
-                self.update_status(f"Data exported to {file_path}")
+                self.update_status("Loading text content...")
+                self.run_in_background(
+                    self._load_text_background, file_path, callback=self._on_text_loaded
+                )
         except Exception as e:
-            logging.error(f"Error exporting data: {e}")
-            self.update_status(f"Error exporting data: {e}")
+            logging.error(f"Error loading text content: {e}")
+            messagebox.showerror("Error", f"Failed to load text content: {e}")
 
     def _show_imported_modules(self) -> None:
-        """Show dialog with auto-imported modules information"""
+        """Show dialog with imported modules information."""
         try:
             if hasattr(self, "imported_modules") and hasattr(self, "failed_imports"):
-                total_imported = len(self.imported_modules)
-                total_failed = len(self.failed_imports)
-
-                message = f"Auto-Import Results:\n\n"
-                message += f"✓ Successfully imported: {total_imported} modules\n"
-                message += f"✗ Failed/Skipped: {total_failed} modules\n\n"
+                info = f"Successfully imported: {len(self.imported_modules)} modules\n"
+                info += f"Failed imports: {len(self.failed_imports)} modules\n\n"
 
                 if self.imported_modules:
-                    message += "Imported modules:\n"
-                    for module in self.imported_modules[:10]:  # Show first 10
-                        message += f"  • {module}\n"
-                    if total_imported > 10:
-                        message += f"  ... and {total_imported - 10} more\n"
+                    info += "Imported modules:\n"
+                    for module in self.imported_modules:
+                        info += f"  - {module}\n"
 
-                messagebox.showinfo("Auto-Import Results", message)
+                if self.failed_imports:
+                    info += "\nFailed imports:\n"
+                    for module, error in self.failed_imports.items():
+                        info += f"  - {module}: {error}\n"
+
+                messagebox.showinfo("Module Import Status", info)
             else:
-                messagebox.showinfo("Auto-Import", "No import information available")
+                messagebox.showinfo(
+                    "Module Import Status", "No module import data available"
+                )
         except Exception as e:
             logging.error(f"Error showing imported modules: {e}")
+            messagebox.showerror("Error", f"Failed to show module information: {e}")
 
     def _update_script_menu(self) -> None:
-        """Update the script execution menu with available Python files"""
+        """Update the script menu with available Python files."""
         try:
             if not hasattr(self, "script_menu"):
                 return
@@ -3091,64 +3019,237 @@ class CrewGUI:
             # Clear existing menu items
             self.script_menu.delete(0, "end")
 
-            # Find Python scripts in workspace
-            script_files = glob.glob("*.py")
-            script_files = [f for f in script_files if not f.startswith("gui.py")]
-
-            if script_files:
-                for script in sorted(script_files):
-                    self.script_menu.add_command(
-                        label=script, command=lambda s=script: self._run_script(s)
-                    )
+            # Find Python files in current directory
+            py_files = glob.glob("*.py")
+            if py_files:
+                for py_file in sorted(py_files):
+                    if py_file != "__pycache__":
+                        self.script_menu.add_command(
+                            label=py_file, command=lambda f=py_file: self._run_script(f)
+                        )
             else:
-                self.script_menu.add_command(label="No scripts found", state="disabled")
+                self.script_menu.add_command(
+                    label="No Python files found", state="disabled"
+                )
 
         except Exception as e:
             logging.error(f"Error updating script menu: {e}")
 
     def _run_script(self, script_name: str) -> None:
-        """Run a Python script"""
+        """Run a Python script in the background."""
         try:
             self.update_status(f"Running script: {script_name}")
-            # TODO: Implement script execution
-            self.update_status(f"Script {script_name} completed")
+            self.run_in_background(self._execute_script, script_name)
         except Exception as e:
-            logging.error(f"Error running script {script_name}: {e}")
-            self.update_status(f"Error running script: {e}")
+            logging.error(f"Error running script: {e}")
+            messagebox.showerror("Error", f"Failed to run script {script_name}: {e}")
+
+    # Background processing methods
+    def _load_data_background(
+        self, file_path: str
+    ) -> Tuple[List[List[Any]], List[str]]:
+        """Load data from file in background thread."""
+        try:
+            import pandas as pd
+
+            if file_path.endswith(".csv"):
+                df = pd.read_csv(file_path)
+            else:
+                df = pd.read_excel(file_path)
+
+            headers = df.columns.tolist()
+            data = df.values.tolist()
+
+            return data, headers
+        except Exception as e:
+            logging.error(f"Error loading data from {file_path}: {e}")
+            raise
+
+    def _load_text_background(self, file_path: str) -> str:
+        """Load text content from file in background thread."""
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                return f.read()
+        except Exception as e:
+            logging.error(f"Error loading text from {file_path}: {e}")
+            raise
+
+    def _export_to_excel(self, file_path: str, data: List[List[Any]]) -> None:
+        """Export data to Excel file in background thread."""
+        try:
+            import pandas as pd
+
+            if data and hasattr(self, "headers"):
+                df = pd.DataFrame(data, columns=self.headers)
+                df.to_excel(file_path, index=False)
+                self.root.after(
+                    0, lambda: self.update_status(f"Exported to {file_path}")
+                )
+            else:
+                raise ValueError("No data to export")
+        except Exception as e:
+            logging.error(f"Error exporting to Excel: {e}")
+            self.root.after(0, lambda: messagebox.showerror("Export Error", str(e)))
+
+    def _save_to_file(self, file_path: str, data: List[List[Any]]) -> None:
+        """Save data to file in background thread."""
+        try:
+            import pandas as pd
+
+            if data and hasattr(self, "headers"):
+                df = pd.DataFrame(data, columns=self.headers)
+                if file_path.endswith(".csv"):
+                    df.to_csv(file_path, index=False)
+                else:
+                    df.to_excel(file_path, index=False)
+                self.root.after(0, lambda: self.update_status(f"Saved to {file_path}"))
+            else:
+                raise ValueError("No data to save")
+        except Exception as e:
+            logging.error(f"Error saving to file: {e}")
+            self.root.after(0, lambda: messagebox.showerror("Save Error", str(e)))
+
+    def _execute_script(self, script_name: str) -> None:
+        """Execute Python script in background thread."""
+        try:
+            import subprocess
+
+            result = subprocess.run(
+                [sys.executable, script_name],
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
+
+            if result.returncode == 0:
+                self.root.after(
+                    0,
+                    lambda: self.update_status(
+                        f"Script {script_name} completed successfully"
+                    ),
+                )
+            else:
+                error_msg = result.stderr or "Script execution failed"
+                self.root.after(
+                    0, lambda: messagebox.showerror("Script Error", error_msg)
+                )
+        except Exception as e:
+            logging.error(f"Error executing script {script_name}: {e}")
+            self.root.after(0, lambda: messagebox.showerror("Script Error", str(e)))
+
+    # Callback methods
+    def _on_data_loaded(self, result: Tuple[List[List[Any]], List[str]]) -> None:
+        """Callback when data loading is complete."""
+        try:
+            data, headers = result
+            self.current_data = data
+            self.headers = headers
+            self._update_data_view(data)
+            self._update_column_menu()
+            self.update_status(f"Loaded {len(data)} records")
+        except Exception as e:
+            logging.error(f"Error processing loaded data: {e}")
+            messagebox.showerror("Error", f"Failed to process loaded data: {e}")
+
+    def _on_text_loaded(self, text_content: str) -> None:
+        """Callback when text loading is complete."""
+        try:
+            # Create a simple text display dialog
+            dialog = tk.Toplevel(self.root)
+            dialog.title("Text Content")
+            dialog.geometry("600x400")
+
+            text_widget = tk.Text(dialog, wrap="word")
+            text_widget.pack(fill="both", expand=True, padx=10, pady=10)
+            text_widget.insert("1.0", text_content)
+            text_widget.config(state="disabled")
+
+            self.update_status("Text content loaded")
+        except Exception as e:
+            logging.error(f"Error displaying text content: {e}")
+            messagebox.showerror("Error", f"Failed to display text content: {e}")
+
+    # TTS methods (if available)
+    def _read_status(self) -> None:
+        """Read current status aloud using TTS."""
+        if TTS_AVAILABLE and hasattr(self, "status_var"):
+            try:
+                import pyttsx3
+
+                engine = pyttsx3.init()
+                engine.say(self.status_var.get())
+                engine.runAndWait()
+            except Exception as e:
+                logging.error(f"TTS error: {e}")
+
+    def _read_selected_item(self) -> None:
+        """Read selected item details aloud using TTS."""
+        if TTS_AVAILABLE:
+            try:
+                selection = self.data_table.selection()
+                if selection:
+                    item_data = self.data_table.item(selection[0])
+                    text = f"Selected item: {', '.join(map(str, item_data['values']))}"
+
+                    import pyttsx3
+
+                    engine = pyttsx3.init()
+                    engine.say(text)
+                    engine.runAndWait()
+            except Exception as e:
+                logging.error(f"TTS error: {e}")
+
+    def _stop_reading(self) -> None:
+        """Stop TTS if currently running."""
+        if TTS_AVAILABLE:
+            try:
+                import pyttsx3
+
+                engine = pyttsx3.init()
+                engine.stop()
+            except Exception as e:
+                logging.error(f"TTS stop error: {e}")
+
+    def _setup_details_tts(self) -> None:
+        """Setup TTS for details view."""
+        # Placeholder for TTS setup in details view
+        pass
 
     def load_default_data(self) -> None:
-        """Load default data file if it exists"""
+        """Load default data file if it exists."""
         try:
-            # Look for common data files in the current directory
-            data_files = glob.glob("*.csv") + glob.glob("*.xlsx")
-            if data_files:
-                self.update_status(f"Found {len(data_files)} data files")
-                # TODO: Load first data file automatically
-            else:
-                self.update_status("No default data files found")
+            # Look for common data files
+            default_files = ["crew_data.csv", "data.csv", "crew.csv"]
+            for filename in default_files:
+                if Path(filename).exists():
+                    self.update_status(f"Loading default data: {filename}")
+                    self.run_in_background(
+                        self._load_data_background,
+                        filename,
+                        callback=self._on_data_loaded,
+                    )
+                    self.current_file_path = filename
+                    break
         except Exception as e:
             logging.error(f"Error loading default data: {e}")
 
 
 def main():
-    """Main entry point for the Crew Manager GUI application."""
+    """Main entry point for the Crew Manager application."""
     try:
-        # Configure logging
+        # Set up logging
         logging.basicConfig(
             level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
         )
 
-        # Create main window
+        # Create and run the GUI application
         root = tk.Tk()
-
-        # Initialize the GUI application
         app = CrewGUI(root)
 
-        # Set up proper window closing behavior
+        # Set up graceful shutdown
         def on_closing():
             try:
                 app.save_window_state()
-                root.quit()
                 root.destroy()
             except Exception as e:
                 logging.error(f"Error during shutdown: {e}")
@@ -3156,19 +3257,15 @@ def main():
 
         root.protocol("WM_DELETE_WINDOW", on_closing)
 
-        # Start the main event loop
-        logging.info("Starting Crew Manager GUI...")
+        # Start the application
+        logging.info("Starting Crew Manager application...")
         root.mainloop()
 
-    except KeyboardInterrupt:
-        logging.info("Application interrupted by user")
     except Exception as e:
-        logging.error(f"Fatal error in main: {e}")
-        try:
-            messagebox.showerror("Fatal Error", f"Application failed to start: {e}")
-        except:
-            print(f"Fatal error: {e}")
-        sys.exit(1)
+        logging.error(f"Failed to start application: {e}")
+        print(f"Error: {e}")
+        if "root" in locals():
+            root.destroy()
 
 
 if __name__ == "__main__":
