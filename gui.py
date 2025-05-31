@@ -2763,20 +2763,37 @@ class CrewGUI:
             self.details_text.delete("1.0", "end")
 
             if item_data and "values" in item_data:
-                # Format the item data for display
-                details_text = "Selected Item Details:\n"
-                details_text += "=" * 30 + "\n\n"
-
                 values = item_data["values"]
-                for i, value in enumerate(values):
-                    if i < len(self.headers):
-                        details_text += f"{self.headers[i]}: {value}\n"
 
-                # Add any additional metadata
-                if "text" in item_data:
-                    details_text += f"\nItem ID: {item_data['text']}\n"
+                # Check if this is a text file (has Content column)
+                if (
+                    hasattr(self, "headers")
+                    and len(self.headers) >= 2
+                    and self.headers[1] == "Content"
+                ):
+                    # This is a text file - display the content in a readable format
+                    file_name = values[0] if len(values) > 0 else "Unknown File"
+                    content = values[1] if len(values) > 1 else "No content"
 
-                self.details_text.insert("1.0", details_text)
+                    details_text = f"Text File: {file_name}\n"
+                    details_text += "=" * 50 + "\n\n"
+                    details_text += content
+
+                    self.details_text.insert("1.0", details_text)
+                else:
+                    # Regular data format - display field by field
+                    details_text = "Selected Item Details:\n"
+                    details_text += "=" * 30 + "\n\n"
+
+                    for i, value in enumerate(values):
+                        if i < len(self.headers):
+                            details_text += f"{self.headers[i]}: {value}\n"
+
+                    # Add any additional metadata
+                    if "text" in item_data:
+                        details_text += f"\nItem ID: {item_data['text']}\n"
+
+                    self.details_text.insert("1.0", details_text)
             else:
                 self.details_text.insert("1.0", "No item selected or no data available")
 
@@ -2876,13 +2893,14 @@ class CrewGUI:
 
     # Event handler methods for menu operations
     def _on_load_data(self) -> None:
-        """Load crew data from CSV or Excel files."""
+        """Load crew data from CSV, Excel, or text files."""
         try:
             file_path = filedialog.askopenfilename(
                 title="Select Data File",
                 filetypes=[
                     ("CSV files", "*.csv"),
                     ("Excel files", "*.xlsx;*.xls"),
+                    ("Text files", "*.txt"),
                     ("All files", "*.*"),
                 ],
             )
@@ -3050,17 +3068,32 @@ class CrewGUI:
     ) -> Tuple[List[List[Any]], List[str]]:
         """Load data from file in background thread."""
         try:
-            import pandas as pd
+            if file_path.endswith(".txt"):
+                # Handle text files specially - load content for details view
+                with open(file_path, "r", encoding="utf-8") as f:
+                    content = f.read()
 
-            if file_path.endswith(".csv"):
-                df = pd.read_csv(file_path)
+                # Create a simple single-row data structure for text files
+                headers = ["File Name", "Content"]
+                import os
+
+                file_name = os.path.basename(file_path)
+                data = [[file_name, content]]
+
+                return data, headers
             else:
-                df = pd.read_excel(file_path)
+                # Handle CSV and Excel files as before
+                import pandas as pd
 
-            headers = df.columns.tolist()
-            data = df.values.tolist()
+                if file_path.endswith(".csv"):
+                    df = pd.read_csv(file_path)
+                else:
+                    df = pd.read_excel(file_path)
 
-            return data, headers
+                headers = df.columns.tolist()
+                data = df.values.tolist()
+
+                return data, headers
         except Exception as e:
             logging.error(f"Error loading data from {file_path}: {e}")
             raise
