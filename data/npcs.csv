@@ -1,1 +1,64 @@
-NPC,ROLE,CLASS\nWarrior1,Fighter,Warrior\nMage1,Spellcaster,Mage\nRogue1,Thief,Rogue
+NPC,LIKENESS,ROLE,R-S,CLASS,RANK,COMPANY,PRIMUS,SECUNDUS,TERTIUS,AI,SQUAD,VEHICLE,SHIP,SYSTEM,MUSIC,QUOTE
+PC,nan,Captain,hm,Other-,O4,Sky Rig,Company,Care,Caress,Mother,Maid,Speeder A,SkyRig,nan,nan,nan
+Carl,nan,Pilot,hm,Navy-5,O4,Carl's Crew,Instruct,Planning,Contacts,Nancy,Alpha,APC A,Cutter A,Regina,nan,nan
+Terrii,Linda Carter,Navigator,hf,Scout-6,O3,Terri's Triangulation,Entertain,Comms,NIL,Sallii,Beta,APC B,Cutter B,Roup,nan,nan
+Andii,Jessica Rabbit,Doctor,hf,Doctor-6,O5,Andii's Angels,Medical,Sisters,Smuggling,Debii,Gamma,APC C,Cutter C,Feri,nan,nan
+Raoul,Rocket (bigger),Chief,hm,Army-5,E6,Raoul's RoughRiders,Mechanic,213th,Bros,Amii,Delta,APC D,Cutter D,Boughene,nan,nan
+Betti,Robyn,SensOp,hf,Army-5,O4,Bettii's Bots,Spares,Brothels,Streetwise,Angii,Epsilon,APC E,Cutter E,Efate,nan,nan
+Teelan,nan,Technician,hm,Other-4,E5,Teelan's,Entertain,Computers,Droids,Orac,Zeta,APC F,Cutter F,Lysen,nan,nan
+Max,Seven,Gunner,hf,Marine-4,E3,Max's,Marine,Postman,213th,Marii,Bad Batch,GCarrier,Jump mod,Jewell,nan,nan
+nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+Fives,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+Sevens,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+Nines,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+Elevens,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+Sister Sledge,2000AD,Medical,hf,Medic-4,O2,Sisters of Mercy,Healing,Teaching,Learning,Mary,Sisters,Meat Wagon,Angelus,Feri,nan,Do you Reshathra?
+Sherlock Holmes,Sherlock Holmes,Sleuth,hm,Other-6,O6,Sleuthes,Perception,Deduction,Reasoning,Hemlock Bones,Bash St Runners,nan,nan,Regina,Sherlock Holmes,Credits for kids
+Tanya Hide,Sherlock Holmes,Other,hf,Therapy-5,O5,Sherlocking,Psychology,Domination,'Fun’,nan,Clerks,Limo A,Phallus,Regina,Sherlock Holmes,You may
+BarBelle,nan,Informer,hf,Other-1,E1,Trixies,Admin,Party,Party,nan,Bitches,nan,nan,nan,nan,What ya buyin?
+Barb Wire,Pamela Anderson,Dancer,hf,Other-2,O4,Downtowns,Streetwise,Smuggling,Dance,Hunnii,Bosses,Bike A,nan,nan,TV,What have you got us?
+Barbii & Bambam,nan,Courtesans,hf,Other-3,O2,Striperelllas,Carousing,Courier,'Fun’,nan,Bashers,Van A,nan,nan,TV,Combat Couple Act
+Col. Deering,Erin Gray,Leader,hf,Navy-5,O2,Roup Defence Force,Leader,Swimming,Aerobics,Twiki,COACC,nan,Star Fighter,Roup,TV,Thats not good
+Ardarla,BR,Princess,hf,Other-2,O5,Peace Mission,Politics,Loving Life,Jogging,nan,Guards,Coach,Cruiser,Feri,nan,Attend me!
+Foxy Roxy,nan,Spy,hf,Scout-4,E3,Foxies mints,SPYING,Deals,Courier,nan,Lazers,Rock E5,Rock-E,Lysen,nan,nan
+Ruby Red,nan,Miner,hf,Navy-3,O4,Red Hand Gang,Mining,Building,Rocking,Crystii,BimboTs,MPak A,Big Red One,Roup,nan,I like big rocks
+Walter,2000AD,Lisping bot,hm,Waiter-3,E1,Creative Cleaning,Wash,Rinse,Repeat,nan,BinBots,nan,nan,Feri,nan,"Hi Im Walter, twy me"
+Mr 10%,2000AD,Employer,hm,Other-8,E2,Robusters,Business,nan,nan,Munii,Bruisers,Rolls A,Preying Mantis,Boughene,nan,Robusters are Go!
+Stogie,2000AD,Cigarillo,hm,AI,E1,Marlboro,Smoke,nan,nan,nan,Cigar Box,nan,nan,Lysen,nan,Hey-Senyor
+Sam C Slade,Clint Eastwood,Robohunter,hm,Scout-6,O4,Robohunter,Job,nan,nan,nan,Droids,Cab A,Beowulf,Lysen,nan,The C stands for Cat
+Dirty Harry,Clint Eastwood,Investigator,hm,Lawman-7,O5,Law,Job,nan,nan,nan,Lawmen,nan,nan,Jewell,nan,I know what you`re thinking
+Dusty Bin,TV321,Bin-stupid,hm,Other-8,E1,Street Cleaner,Informant,nan,nan,nan,Posties,nan,nan,Jewell,nan,nan
+Johnny Alpha,2000AD,Leader,hm,Other-4,O2,Strontium Dogs,Hunt,nan,nan,nan,BountyBoys,Truck A,Hunter,Feri,nan,Muties Work
+Wulf Sternhammer,2000AD,Bounty Hunter,hm,Other-5,E3,Strontium Dogs,Hunt,nan,nan,nan,BountyBoys,Truck A,nan,Feri,nan,Yes Johnny
+Harry 20,2000AD,Employer,hm,Trader-5,O5,Rock Hard Mining,Streetwise,nan,nan,nan,Kinunir Crew,nan,High Rock,Roup,nan,Banged Up
+Buck Rogers,Gil Gerard,Explorer,hm,Pilot-6,O5,Longbow,Admin,nan,nan,Twikii,SSS(S3),nan,Searcher,Roup,nan,Outta Time
+Cammi,nan,Employer,f,Trader-5,E2,Cammis Commandos,Striker,nan,nan,nan,Carlas,air/raft,Cruncher,Jewell,nan,"Come on, is that it?"
+Deathlock,2000AD,Demolisher,hm,Cyborg-1,O5,Damage Inc,Khaos,nan,nan,nan,Demolishers,nan,nan,Boughene,nan,Khaos Abounds
+Col Sam Carter,Stargate,Manager,hf,Navy-6,O4,Stargate,Orders,nan,nan,nan,OSG,nan,SG1,Jewell,nan,nan
+Lt. Pillox,nan,Snooty Shit,hm, COACC,O1,Atari Death Squadron,Orders,nan,nan,nan,A.D.S.,nan,Iramda,Regina,nan,Keep Space Clean – Dump in Jump
+Mike,nan,Mechanic,hm,Other-5,E2,Mike & the Mechanics,Mechanic,Singing,Drugs,nan,Mechanics,nan,nan,Feri,nan,Make it now
+Fat Fran,nan,Mechanic,hf,Other-4,O3,Frans Faire,Food,nan,nan,nan,League of Fatties,nan,nan,nan,nan,We will speack
+Aftab the Greek,Jabba,Crimelord,hm,Criminal-8,O6,???,Crime,nan,nan,nan,Family n Underworld,nan,Many,Feri,nan,Lemme tell you a story about friends
+Savage Sid,Autoduel,Salvage,hm,Mech-6,E1,Sids Salvage,Salvage,nan,nan,Backstock,Scrappers,Truck A,nan,Efate,nan,Got a wreck needs towing?
+Poe,Altered Carbon,AI Hotel,hm,Steward-4,E6,The Raven,Custoer,nan,nan,Poe,Hotel,Cabbi,nan,Lysen,nan,We are fully equipped for any delectation or delight
+Lucy,Lucy Lawless,Attorney,hf,Law-8,E1,Legal Eagles,Law,Law,Truth,nan,Book Babes,nan,nan,Regina,nan,I will ask my boss
+Robyn,Robyn,Singer,hf,Perform-4,E1,FemBots,Music,Dance,Robotics,nan,Robyns Hoods,nan,nan,Lysen,Fembots,nan
+Solitaire,Jane Seymour,Prophecy,hf,Tarot-4,O4,Crocs & Co,Tarot,Companion,Lounging,nan,Voodooms,nan,nan,Jewell,nan,nan
+nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+Nemesis,2000AD,Warlock,m,Mystic-10,O5,ABC Warriors,Khaos,nan,nan,nan,Grandfather,nan,nan,Boughene,nan,nan
+Torquemada,2000AD,BAD,m,Mystic-12,O6,ABC Warriors,Khaos,nan,nan,Slave,Terminators,Coach of Doom,nan,Boughene,nan,"Be Pure, Be Vigilant, Behave!"
+Deadlock,2000AD,Leader,m,???,O4,ABC Warriors,Khaos,???,???,???,Termites,nan,nan,Boughene,nan,nan
+Hammerstein,2000AD,Muscle,m,Marine-5,O3,ABC Warriors,Combat,Repair,Leader,Rover,Rovers,nan,nan,Boughene,nan,Here we go again
+Joe Pineapples,2000AD,Sniper,m,Army-4,E5,ABC Warriors,Recon,Sniper,Vixens,Sexii,Joebots,nan,nan,Boughene,nan,Easy
+Ro Jaws,2000AD,Trash,m,Other-4,nan,ABC Warriors,Trash,Oil,Trouble,M8,Dusty Bin,nan,nan,Boughene,nan,Wotcha Mate
+Happy Shrapnel,2000AD,Stubborn,m,Army-4,nan,ABC Warriors,Combat,nan,Zippo,Scanner,Mongrol,nan,nan,Boughene,nan,Wheres my Zippo?
+General BlackBlood,2000AD,Nasty,m,Marine-5,nan,ABC Warriors,Interrogate,nan,nan,Meanii,Straw Dogs,nan,nan,Boughene,nan,Ssssssalvage
+Mek Quake,2000AD,Stoopid,m,Other-4,nan,ABC Warriors,Drive,nan,nan,-NO-!,ABC Warriors,nan,nan,Boughene,nan,Big Jobs
+Morrigun,2000AD,BarBot,f,Other-4,nan,ABC Warriors,Entertain,nan,nan,nan,The Girls,nan,nan,Boughene,nan,"Nice piece, now look at this"
+Mongrol,2000AD,Para,m,Marine-5,nan,ABC Warriors,Paradroid,nan,nan,nan,ABC Warriors,nan,nan,Boughene,nan,Who`s my girl
+Metal Mickey,TV,Juke Box,m,Music,nan,ABC Warriors,Boogie,nan,nan,nan,Company73,nan,nan,Boughene,nan,nan
+Marvin,HHGTTG,Moaner,m,Navigator,nan,HHGTTG,Moan,Navigate,nan,nan,nan,nan,nan,nan,nan,nan
