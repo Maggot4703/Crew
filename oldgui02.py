@@ -64,12 +64,6 @@ except ImportError:
 
 # endregion
 
-# Initialize logger
-logger = logging.getLogger(__name__)
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-)
-
 
 def auto_import_py_files() -> Tuple[List[str], List[Tuple[str, str]]]:
     try:
@@ -1038,47 +1032,35 @@ class CrewGUI:
             # It stops the current utterance and clears the queue.
             self.tts_engine.stop()
         except Exception as e:
-            logging.error(f"Error stopping TTS: {e}")
+            logging.error(f"TTS stop error: {e}")
 
-    def _update_details_view(self, item_data) -> None:  # Changed signature
+    def _update_details_view(self, event: tk.Event = None) -> None:
         try:
-            if not hasattr(self, "details_text"):
+            selection = self.data_table.selection()
+            if not selection:
+                self.details_text.delete("1.0", tk.END)
+                self.details_text.insert("1.0", "No item selected.")
                 return
 
-            # Clear current content
-            self.details_text.delete("1.0", "end")
+            item_id = selection[0]
+            item_data = self.data_table.item(item_id)
+            item_values = item_data.get("values", [])
+            
+            self.details_text.delete("1.0", tk.END)
+            
+            details_str = f"Item ID: {item_id}\\n"
+            if self.headers and item_values:
+                for header, value in zip(self.headers, item_values):
+                    details_str += f"{header}: {value}\\n"
+            else: # Fallback if headers are not available or item_values is empty
+                details_str += f"Values: {item_values}\\n"
 
-            if item_data and "values" in item_data:
-                values = item_data["values"]
-
-                # Check if this is a text file (has Content column)
-                if (
-                    hasattr(self, "headers")
-                    and len(self.headers) >= 2
-                    and self.headers[1] == "Content"
-                ):
-                    # Display filename and content for text files
-                    details_text = f"File: {values[0]}\n\n{values[1]}"
-                else:
-                    # Display all headers and values for other data
-                    details_text = ""
-                    if hasattr(self, "headers"):
-                        for header, value in zip(self.headers, values):
-                            details_text += f"{header}: {value}\n"
-
-                # Add Item ID if available in item_data (Treeview item's internal ID)
-                if "text" in item_data: # Check if 'text' key exists
-                    details_text += f"\nItem ID: {item_data['text']}\n"
-
-                self.details_text.insert("1.0", details_text)
-            else:
-                self.details_text.insert("1.0", "No details available for this item.")
+            self.details_text.insert("1.0", details_str)
 
         except Exception as e:
             logging.error(f"Error updating details view: {e}")
-            if hasattr(self, "details_text"):
-                self.details_text.delete("1.0", "end")
-                self.details_text.insert("1.0", f"Error displaying details: {e}")
+            self.details_text.delete("1.0", tk.END)
+            self.details_text.insert("1.0", "Error displaying details.")
 
     # Callback methods
     def _on_data_loaded(self, result: Tuple[List[List[Any]], List[str]]) -> None:
@@ -1188,98 +1170,77 @@ class CrewGUI:
         return filtered_data
 
     def _update_groups_view(self) -> None:
-        """Populates the groups list with unique group names from the data."""
-        self.logger.debug("Updating groups view")
         try:
-            if self.data_handler and hasattr(self.data_handler, 'get_all_data'):
-                all_data = self.data_handler.get_all_data()
-                if not all_data:
-                    self.logger.warning("No data available to update groups view.")
-                    self.groups_list.delete(0, tk.END)
-                    return
+            # Clear existing items
+            self.group_list.delete(*self.group_list.get_children())
 
-                groups = sorted(list(set(item.get("group", "Uncategorized") for item in all_data if item.get("group"))))
-                if not groups:
-                    groups = ["Uncategorized"] # Ensure there's at least one entry if data exists but no groups
-                
-                self.groups_list.delete(0, tk.END)
-                for group_name in groups:
-                    self.groups_list.insert(tk.END, group_name)
-                self.logger.info(f"Groups view updated with {len(groups)} groups.")
-            else:
-                self.logger.error("Data handler not available or does not have get_all_data method.")
-                self.groups_list.delete(0, tk.END)
+            # Configure columns for better display
+            if not self.group_list["columns"]:
+                self.group_list["columns"] = ("members", "primary", "secondary")
+                self.group_list.heading("#0", text="Group Name")
+                self.group_list.heading("members", text="#")
+                self.group_list.heading("primary", text="Primary")
+                self.group_list.heading("secondary", text="Secondary")
+
+                # Configure column widths
+                self.group_list.column("#0", width=150, minwidth=100)
+                self.group_list.column("members", width=50, minwidth=30)
+                self.group_list.column("primary", width=100, minwidth=50)
+                self.group_list.column("secondary", width=100, minwidth=50)
+
+            # Add groups to treeview
+            for group_name, group_data in self.groups.items():
+                if group_name and group_data:  # Only add non-empty groups
+                    # Get primary and secondary skills for the group
+                    primary = ""
+                    secondary = ""
+                    for row in group_data:
+                        if len(row) > 5 and row[5]:  # PRIMUS column
+                            primary = row[5] if not primary else primary
+                        if len(row) > 6 and row[6]:  # SECUNDUS column
+                            secondary = row[6] if not secondary else secondary
+
+                    # Insert group into treeview
+                    self.group_list.insert(
+                        "",
+                        "end",
+                        text=group_name,
+                        values=(len(group_data), primary, secondary),
+                        tags=(group_name,),
+                    )
+
+            # Sort groups by name
+            items = [
+                (self.group_list.item(item)["text"], item)
+                for item in self.group_list.get_children("")
+            ]
+            items.sort()
+            for idx, (_, item) in enumerate(items):
+                self.group_list.move(item, "", idx)
+
         except Exception as e:
-            self.logger.error(f"Error updating groups view: {e}")
-            self.show_status_message(f"Error updating groups: {e}", error=True)
-            # Optionally, re-raise if it's critical, or handle more gracefully
-            # raise
+            logging.error(f"Error updating groups view: {e}")
+            raise
 
-    def _on_group_select(self, event=None) -> None:
-        """Handles group selection events to filter the data table."""
-        self.logger.debug("Group selection changed")
+    def _on_group_select(self, event: tk.Event) -> None:
         try:
-            selected_indices = self.groups_list.curselection()
-            if not selected_indices:
-                self.logger.debug("No group selected, clearing filter.")
-                # self._apply_filter(filter_text="", filter_column=None) # Clear filter if no group selected
-                # Or, display all items if that's the desired behavior
-                self.populate_data_table(self.data_handler.get_all_data() if self.data_handler else [])
-                self.show_status_message("Filter cleared. Showing all items.")
-                return
-
-            selected_group = self.groups_list.get(selected_indices[0])
-            self.logger.info(f"Group selected: {selected_group}")
-
-            if selected_group == "Uncategorized" and not any(item.get("group") for item in self.data_handler.get_all_data()):
-                 # If "Uncategorized" is selected and there are no actual groups, show all data
-                self.populate_data_table(self.data_handler.get_all_data())
-                self.show_status_message("Showing all items (no specific groups defined).")
-                return
-            
-            # Apply filter using the group name. Assuming "group" is a column in your data.
-            # The _apply_filter method might need adjustment if it doesn't directly support this.
-            # For now, let's assume direct filtering by the "group" key.
-            if self.data_handler:
-                all_data = self.data_handler.get_all_data()
-                if selected_group == "Uncategorized":
-                    # Items with no group or group explicitly set to "Uncategorized"
-                    # This logic might need refinement based on how "Uncategorized" is handled in data
-                    filtered_data = [item for item in all_data if not item.get("group") or item.get("group") == "Uncategorized"]
-                else:
-                    filtered_data = [item for item in all_data if item.get("group") == selected_group]
-                
-                self.populate_data_table(filtered_data)
-                self.show_status_message(f"Filtered by group: {selected_group}. {len(filtered_data)} items found.")
-                self._clear_filter_input() # Clear the text filter input
-            else:
-                self.logger.warning("Data handler not available for group filtering.")
+            selection = self.group_list.selection()
+            if selection:
+                item_id = selection[0]
+                group_name = self.group_list.item(item_id)["text"]
+                if group_name in self.groups:
+                    # Update data view with just this groups data
+                    self._update_data_view(self.groups[group_name])
+                    self.update_status(f"Showing group: {group_name}")
         except Exception as e:
-            self.logger.error(f"Error in _on_group_select: {e}")
-            self.show_status_message(f"Error selecting group: {e}", error=True)
-            # raise # Consider if re-raising is appropriate
+            logging.error(f"Error handling group selection: {e}")
 
-    def _on_data_select(self, event: tk.Event = None) -> None:
-        """Handles data selection events to update the details view."""
-        try:
-            if not hasattr(self, "data_table"):
-                return
-
-            selected_item_id = self.data_table.focus()  # Get the ID of the selected/focused item
-            if selected_item_id:
-                item_data = self.data_table.item(selected_item_id)
-                # item_data is a dictionary like {'text': 'iid', 'image': '', 'values': [], 'open': 0, 'tags': ''}
-                # We need to pass this dictionary to _update_details_view
-                self._update_details_view(item_data)
-            else:
-                # No item selected, clear details view or show a default message
-                self._update_details_view(None) 
-        except Exception as e:
-            logging.error(f"Error in _on_data_select: {e}")
-            # Optionally, update status or show an error message
-            if hasattr(self, "details_text"):
-                self.details_text.delete("1.0", tk.END)
-                self.details_text.insert("1.0", "Error displaying details after selection.")
+    def _on_data_select(self, event: tk.Event) -> None:
+        # This method is called when a data item is selected.
+        # It's already correctly calling _update_details_view if bound.
+        # If you need additional logic when a data item is selected, add it here.
+        # For now, we'll assume _update_details_view handles what's needed.
+        pass # Placeholder if no additional specific action is needed beyond _update_details_view
 
     def _on_apply_filter(self) -> None:
         try:
@@ -1526,17 +1487,17 @@ class CrewGUI:
                     and self.headers[1] == "Content"
                 ):
                     # Display filename and content for text files
-                    details_text = f"File: {values[0]}\n\n{values[1]}"
+                    details_text = f"File: {values[0]}\\n\\n{values[1]}"
                 else:
                     # Display all headers and values for other data
                     details_text = ""
                     if hasattr(self, "headers"):
                         for header, value in zip(self.headers, values):
-                            details_text += f"{header}: {value}\n"
+                            details_text += f"{header}: {value}\\n"
 
                 # Add Item ID if available in item_data (Treeview item's internal ID)
                 if "text" in item_data: # Check if 'text' key exists
-                    details_text += f"\nItem ID: {item_data['text']}\n"
+                    details_text += f"\\nItem ID: {item_data['text']}\\n"
 
                 self.details_text.insert("1.0", details_text)
             else:
@@ -1648,7 +1609,7 @@ class CrewGUI:
                     ("CSV files", "*.csv"),
                     ("Excel files", "*.xlsx;*.xls"),
                     # ("Text files", "*.txt"), # Text files are handled by a separate menu item
-                    ("All files", "*.*")
+                    ("All files", "*.* G")
                 ],
             )
             if file_path:
@@ -1724,22 +1685,6 @@ class CrewGUI:
         except Exception as e:
             logging.error(f"Error exporting data: {e}")
             messagebox.showerror("Error", f"Failed to export data: {e}")
-
-    def _on_text_loaded(self, text_content: str) -> None:
-        """Callback for when text content is loaded."""
-        try:
-            if text_content is not None:
-                # Assuming you have a text area or similar to display the content
-                # For example, if you have a self.details_text widget:
-                self.details_text.delete("1.0", tk.END)
-                self.details_text.insert("1.0", text_content)
-                self.update_status("Text content loaded successfully.")
-            else:
-                self.update_status("Failed to load text content.", error=True)
-                messagebox.showerror("Error", "Failed to load text content.")
-        except Exception as e:
-            logging.error(f"Error processing loaded text content: {e}")
-            messagebox.showerror("Error", f"Failed to process text content: {e}")
 
     def _on_load_text_content(self) -> None:
         try:
@@ -1839,76 +1784,32 @@ class CrewGUI:
     # Background processing methods
     def _load_data_background(
         self, file_path: str
-    ) -> None:
-        """Load data from a file in a background thread."""
+    ) -> Tuple[List[List[Any]], List[str]]:
         try:
-            logger.info(f"Attempting to load data from {file_path}")
-            if not PANDAS_AVAILABLE:
-                raise ImportError("Pandas library is not available. Please install it to load data.")
-
-            _, file_extension = os.path.splitext(file_path)
-            file_extension = file_extension.lower()
-
-            if file_extension == ".csv":
-                try:
-                    data = pd.read_csv(file_path)
-                except Exception as e:
-                    logger.error(f"Error reading CSV file {file_path}: {e}")
-                    raise ValueError(f"Failed to read CSV file: {e}") from e
-            elif file_extension in [".xlsx", ".xls"]:
-                try:
-                    # Try with default engine first
-                    data = pd.read_excel(file_path, engine=None)
-                except Exception as e_default:
-                    logger.warning(f"Failed to load Excel {file_path} with default engine: {e_default}")
-                    if file_extension == ".xlsx":
-                        try:
-                            logger.info(f"Trying to load Excel {file_path} with openpyxl engine")
-                            data = pd.read_excel(file_path, engine="openpyxl")
-                        except Exception as e_openpyxl:
-                            logger.error(f"Error reading Excel file {file_path} with openpyxl: {e_openpyxl}")
-                            raise ValueError(f"Failed to read Excel file (openpyxl): {e_openpyxl}") from e_openpyxl
-                    elif file_extension == ".xls":
-                        try:
-                            logger.info(f"Trying to load Excel {file_path} with xlrd engine")
-                            data = pd.read_excel(file_path, engine="xlrd")
-                        except Exception as e_xlrd:
-                            logger.error(f"Error reading Excel file {file_path} with xlrd: {e_xlrd}")
-                            raise ValueError(f"Failed to read Excel file (xlrd): {e_xlrd}") from e_xlrd
-                    else: # Should not happen given the outer if
-                        raise ValueError(f"Unsupported Excel file extension: {file_extension}")
-
-            elif file_extension == ".txt":
-                # Assuming simple text file loading for now, adjust if complex parsing is needed
+            self.current_file_path = file_path # Store the loaded file path
+            if file_path.endswith(".txt"):
+                # Handle text files specially - load content for details view
                 with open(file_path, "r", encoding="utf-8") as f:
-                    # Reading lines and creating a DataFrame; adjust as per actual text structure
-                    lines = [line.strip() for line in f if line.strip()]
-                    if not lines:
-                        data = pd.DataFrame() # Empty DataFrame for empty or whitespace-only file
-                    else:
-                        # Attempt to create a single-column DataFrame
-                        # This might need adjustment based on how text files should be represented
-                        data = pd.DataFrame(lines, columns=["text_data"])
-                logger.info(f"Successfully loaded text file {file_path} into a DataFrame.")
+                    content = f.read()
 
+                # Create a simple single-row data structure for text files
+                headers = ["File Name", "Content"]
+                file_name = os.path.basename(file_path)
+                data = [[file_name, content]]
+                return data, headers
             else:
-                logger.error(f"Unsupported file type: {file_extension} for file {file_path}")
-                raise ValueError(f"Unsupported file type: {file_extension}")
+                # Handle CSV and Excel files with pandas
+                if file_path.endswith(".csv"):
+                    df = pd.read_csv(file_path)
+                else:
+                    df = pd.read_excel(file_path)
 
-            self.data_frame = data
-            self.root.event_generate("<<DataLoaded>>")  # Changed to use self.root
-            logger.info(f"Successfully loaded data from {file_path}")
-            # Return data and headers for the callback
-            if self.data_frame is not None:
-                data_list = self.data_frame.values.tolist()
-                headers_list = self.data_frame.columns.tolist()
-                return data_list, headers_list
-            return None, None  # Should not happen if loading was successful
+                headers = df.columns.tolist()
+                data = df.values.tolist()
+                return data, headers
         except Exception as e:
-            logger.exception(f"An error occurred during data loading from {file_path}")
-            # Store the exception to be raised in the main thread
-            self.background_exception = e
-            self.root.event_generate("<<TaskFailed>>")  # Changed to use self.root
+            logging.error(f"Error loading data from {file_path}: {e}")
+            raise
 
     def _load_text_background(self, file_path: str) -> str:
         try:

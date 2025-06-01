@@ -1038,47 +1038,35 @@ class CrewGUI:
             # It stops the current utterance and clears the queue.
             self.tts_engine.stop()
         except Exception as e:
-            logging.error(f"Error stopping TTS: {e}")
+            logging.error(f"TTS stop error: {e}")
 
-    def _update_details_view(self, item_data) -> None:  # Changed signature
+    def _update_details_view(self, event: tk.Event = None) -> None:
         try:
-            if not hasattr(self, "details_text"):
+            selection = self.data_table.selection()
+            if not selection:
+                self.details_text.delete("1.0", tk.END)
+                self.details_text.insert("1.0", "No item selected.")
                 return
 
-            # Clear current content
-            self.details_text.delete("1.0", "end")
+            item_id = selection[0]
+            item_data = self.data_table.item(item_id)
+            item_values = item_data.get("values", [])
+            
+            self.details_text.delete("1.0", tk.END)
+            
+            details_str = f"Item ID: {item_id}\\n"
+            if self.headers and item_values:
+                for header, value in zip(self.headers, item_values):
+                    details_str += f"{header}: {value}\\n"
+            else: # Fallback if headers are not available or item_values is empty
+                details_str += f"Values: {item_values}\\n"
 
-            if item_data and "values" in item_data:
-                values = item_data["values"]
-
-                # Check if this is a text file (has Content column)
-                if (
-                    hasattr(self, "headers")
-                    and len(self.headers) >= 2
-                    and self.headers[1] == "Content"
-                ):
-                    # Display filename and content for text files
-                    details_text = f"File: {values[0]}\n\n{values[1]}"
-                else:
-                    # Display all headers and values for other data
-                    details_text = ""
-                    if hasattr(self, "headers"):
-                        for header, value in zip(self.headers, values):
-                            details_text += f"{header}: {value}\n"
-
-                # Add Item ID if available in item_data (Treeview item's internal ID)
-                if "text" in item_data: # Check if 'text' key exists
-                    details_text += f"\nItem ID: {item_data['text']}\n"
-
-                self.details_text.insert("1.0", details_text)
-            else:
-                self.details_text.insert("1.0", "No details available for this item.")
+            self.details_text.insert("1.0", details_str)
 
         except Exception as e:
             logging.error(f"Error updating details view: {e}")
-            if hasattr(self, "details_text"):
-                self.details_text.delete("1.0", "end")
-                self.details_text.insert("1.0", f"Error displaying details: {e}")
+            self.details_text.delete("1.0", tk.END)
+            self.details_text.insert("1.0", "Error displaying details.")
 
     # Callback methods
     def _on_data_loaded(self, result: Tuple[List[List[Any]], List[str]]) -> None:
@@ -1259,27 +1247,12 @@ class CrewGUI:
             self.show_status_message(f"Error selecting group: {e}", error=True)
             # raise # Consider if re-raising is appropriate
 
-    def _on_data_select(self, event: tk.Event = None) -> None:
-        """Handles data selection events to update the details view."""
-        try:
-            if not hasattr(self, "data_table"):
-                return
-
-            selected_item_id = self.data_table.focus()  # Get the ID of the selected/focused item
-            if selected_item_id:
-                item_data = self.data_table.item(selected_item_id)
-                # item_data is a dictionary like {'text': 'iid', 'image': '', 'values': [], 'open': 0, 'tags': ''}
-                # We need to pass this dictionary to _update_details_view
-                self._update_details_view(item_data)
-            else:
-                # No item selected, clear details view or show a default message
-                self._update_details_view(None) 
-        except Exception as e:
-            logging.error(f"Error in _on_data_select: {e}")
-            # Optionally, update status or show an error message
-            if hasattr(self, "details_text"):
-                self.details_text.delete("1.0", tk.END)
-                self.details_text.insert("1.0", "Error displaying details after selection.")
+    def _on_data_select(self, event=None):
+        # This method is called when a data item is selected.
+        # It's already correctly calling _update_details_view if bound.
+        # If you need additional logic when a data item is selected, add it here.
+        # For now, we'll assume _update_details_view handles what's needed.
+        pass # Placeholder if no additional specific action is needed beyond _update_details_view
 
     def _on_apply_filter(self) -> None:
         try:
@@ -1526,17 +1499,17 @@ class CrewGUI:
                     and self.headers[1] == "Content"
                 ):
                     # Display filename and content for text files
-                    details_text = f"File: {values[0]}\n\n{values[1]}"
+                    details_text = f"File: {values[0]}\\n\\n{values[1]}"
                 else:
                     # Display all headers and values for other data
                     details_text = ""
                     if hasattr(self, "headers"):
                         for header, value in zip(self.headers, values):
-                            details_text += f"{header}: {value}\n"
+                            details_text += f"{header}: {value}\\n"
 
                 # Add Item ID if available in item_data (Treeview item's internal ID)
                 if "text" in item_data: # Check if 'text' key exists
-                    details_text += f"\nItem ID: {item_data['text']}\n"
+                    details_text += f"\\nItem ID: {item_data['text']}\\n"
 
                 self.details_text.insert("1.0", details_text)
             else:
@@ -1725,22 +1698,6 @@ class CrewGUI:
             logging.error(f"Error exporting data: {e}")
             messagebox.showerror("Error", f"Failed to export data: {e}")
 
-    def _on_text_loaded(self, text_content: str) -> None:
-        """Callback for when text content is loaded."""
-        try:
-            if text_content is not None:
-                # Assuming you have a text area or similar to display the content
-                # For example, if you have a self.details_text widget:
-                self.details_text.delete("1.0", tk.END)
-                self.details_text.insert("1.0", text_content)
-                self.update_status("Text content loaded successfully.")
-            else:
-                self.update_status("Failed to load text content.", error=True)
-                messagebox.showerror("Error", "Failed to load text content.")
-        except Exception as e:
-            logging.error(f"Error processing loaded text content: {e}")
-            messagebox.showerror("Error", f"Failed to process text content: {e}")
-
     def _on_load_text_content(self) -> None:
         try:
             file_path = filedialog.askopenfilename(
@@ -1896,19 +1853,13 @@ class CrewGUI:
                 raise ValueError(f"Unsupported file type: {file_extension}")
 
             self.data_frame = data
-            self.root.event_generate("<<DataLoaded>>")  # Changed to use self.root
+            self.event_generate("<<DataLoaded>>")
             logger.info(f"Successfully loaded data from {file_path}")
-            # Return data and headers for the callback
-            if self.data_frame is not None:
-                data_list = self.data_frame.values.tolist()
-                headers_list = self.data_frame.columns.tolist()
-                return data_list, headers_list
-            return None, None  # Should not happen if loading was successful
         except Exception as e:
             logger.exception(f"An error occurred during data loading from {file_path}")
             # Store the exception to be raised in the main thread
             self.background_exception = e
-            self.root.event_generate("<<TaskFailed>>")  # Changed to use self.root
+            self.event_generate("<<TaskFailed>>")
 
     def _load_text_background(self, file_path: str) -> str:
         try:
