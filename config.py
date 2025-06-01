@@ -7,16 +7,20 @@ Handles application settings, window state persistence, and user preferences.
 
 import json
 import logging
+import re
 from pathlib import Path
-from typing import Any, Dict, Union
+from typing import Any, Dict, Union, Optional
 
 # Import custom errors for proper error handling
 try:
-    from errors import ConfigError
+    from .errors import ConfigError  # Relative import if errors is in the same package
 except ImportError:
-    # Fallback if errors module not available
+    # Fallback if errors module not available or not in a package context
     class ConfigError(Exception):
         pass
+
+# Setup logger for this module
+logger = logging.getLogger(__name__)
 
 
 class Config:
@@ -69,309 +73,198 @@ class Config:
         "max_file_size": {"type": int, "min": 1, "max": 1000},
     }
 
-    def __init__(self, config_dir: Union[str, Path] = None):
-        """Initialize configuration manager.
+    def __init__(
+        self,
+        config_dir: Union[str, Path] = ".",
+        config_filename: str = "config.json",
+    ):
+        """Initialize Config object.
 
         Args:
-            config_dir: Custom configuration directory path. Defaults to ~/.crewmanager
+            config_dir: Directory where the config file is stored.
+            config_filename: Name of the configuration file.
         """
-        if config_dir:
-            self.config_dir = Path(config_dir)
-        else:
-            self.config_dir = Path.home() / ".crewmanager"
-
-        self.config_file = self.config_dir / "config.json"
-        self.backup_file = self.config_dir / "config.backup.json"
-        self.logger = logging.getLogger(__name__)
-
-        # Load configuration with error handling
-        self.settings = self.load_config()
+        self.config_dir = Path(config_dir)
+        self.config_file_path = self.config_dir / config_filename
+        self.config_dir.mkdir(parents=True, exist_ok=True)  # Ensure config directory exists
+        self.config: Dict[str, Any] = self.load_config()
 
     def load_config(self) -> Dict[str, Any]:
-        """Load configuration from file with comprehensive error handling.
+        """Load configuration from file, or use defaults if file not found/invalid."""
+        if not self.config_file_path.exists():
+            logger.info(
+                f"Configuration file not found at {self.config_file_path}. Using default configuration."
+            )
+            self.config = self.DEFAULT_CONFIG.copy()
+            self.save_config()  # Save defaults if no config file exists
+            return self.config
 
-        Attempts to load configuration from the config file, with fallback
-        to backup file if the main config is corrupted. If both fail,
-        uses default configuration.
-
-        Returns:
-            dict: A dictionary containing the configuration settings.
-
-        Raises:
-            ConfigError: If configuration validation fails.
-        """
         try:
-            self.config_dir.mkdir(parents=True, exist_ok=True)
-
-            # Try to load main config file
-            if self.config_file.exists():
-                try:
-                    with open(self.config_file, "r", encoding="utf-8") as f:
-                        loaded_config = json.load(f)
-
-                    # Merge with defaults and validate
-                    merged_config = {**self.DEFAULT_CONFIG, **loaded_config}
-                    validated_config = self._validate_config(merged_config)
-
-                    self.logger.info("Configuration loaded successfully")
-                    return validated_config
-
-                except (json.JSONDecodeError, KeyError) as e:
-                    self.logger.warning(f"Main config file corrupted: {e}")
-                    # Try backup file
-                    if self.backup_file.exists():
-                        try:
-                            with open(self.backup_file, "r", encoding="utf-8") as f:
-                                backup_config = json.load(f)
-
-                            merged_config = {**self.DEFAULT_CONFIG, **backup_config}
-                            validated_config = self._validate_config(merged_config)
-
-                            self.logger.info("Configuration restored from backup")
-                            # Save the restored config as main config
-                            self._save_to_file(validated_config, self.config_file)
-                            return validated_config
-
-                        except Exception as backup_error:
-                            self.logger.error(
-                                f"Backup config also corrupted: {backup_error}"
-                            )
-
-            # Use default configuration if no valid config found
-            self.logger.info("Using default configuration")
-            default_config = dict(self.DEFAULT_CONFIG)
-            self._save_to_file(default_config, self.config_file)
-            return default_config
-
+            with open(self.config_file_path, "r", encoding="utf-8") as f:
+                loaded_config = json.load(f)
+            # Merge loaded config with defaults to ensure all keys are present
+            config = self.DEFAULT_CONFIG.copy()
+            config.update(loaded_config)
+            return self._validate_config(config)
+        except json.JSONDecodeError as e:
+            logger.error(
+                f"Error decoding JSON from {self.config_file_path}: {e}. Using default configuration."
+            )
+            return self.DEFAULT_CONFIG.copy()
+        except ConfigError as e:
+            logger.error(
+                f"Configuration validation error: {e}. Using default configuration."
+            )
+            return self.DEFAULT_CONFIG.copy()
         except Exception as e:
-            self.logger.error(f"Critical error loading config: {e}")
-            # Return defaults as last resort
-            return dict(self.DEFAULT_CONFIG)
+            logger.error(
+                f"Unexpected error loading config: {e}. Using default configuration."
+            )
+            return self.DEFAULT_CONFIG.copy()
 
     def _validate_config(self, config: Dict[str, Any]) -> Dict[str, Any]:
-        """Validate configuration against schema.
+        """Validate the loaded configuration against the schema."""
+        validated_config = {}
+        for key, rules in self.VALIDATION_SCHEMA.items():
+            value = config.get(key, self.DEFAULT_CONFIG.get(key))  # Fallback to default if key missing in loaded
 
-        Args:
-            config: Configuration dictionary to validate
+            if not isinstance(value, rules["type"]):
+                raise ConfigError(
+                    f"Invalid type for '{key}'. Expected {rules['type']}, got {type(value)}."
+                )
 
-        Returns:
-            dict: Validated configuration dictionary
+            if "pattern" in rules and not re.match(rules["pattern"], value):
+                raise ConfigError(
+                    f"Invalid format for '{key}'. Value '{value}' does not match pattern '{rules['pattern']}'."
+                )
 
-        Raises:
-            ConfigError: If validation fails
-        """
-        import re
+            if "choices" in rules and value not in rules["choices"]:
+                raise ConfigError(
+                    f"Invalid value for '{key}'. '{value}' is not in {rules['choices']}."
+                )
 
-        validated = {}
+            if "min" in rules and value < rules["min"]:
+                raise ConfigError(
+                    f"Value for '{key}' ('{value}') is less than minimum allowed ('{rules['min']}')."
+                )
 
-        for key, value in config.items():
+            if "max" in rules and value > rules["max"]:
+                raise ConfigError(
+                    f"Value for '{key}' ('{value}') is greater than maximum allowed ('{rules['max']}')."
+                )
+
+            validated_config[key] = value
+
+        # Check for unknown keys (optional, could be logged as warning)
+        for key in config:
             if key not in self.VALIDATION_SCHEMA:
-                self.logger.warning(f"Unknown config key: {key}")
-                continue
+                logger.warning(f"Unknown configuration key '{key}' found in config file.")
+                # Decide whether to include them or not. For now, we'll include them.
+                validated_config[key] = config[key]
 
-            schema = self.VALIDATION_SCHEMA[key]
-
-            # Type validation
-            expected_type = schema["type"]
-            if not isinstance(value, expected_type):
-                try:
-                    # Try to convert basic types
-                    if expected_type == int:
-                        value = int(value)
-                    elif expected_type == bool:
-                        if isinstance(value, str):
-                            value = value.lower() in ("true", "1", "yes", "on")
-                        else:
-                            value = bool(value)
-                    elif expected_type == str:
-                        value = str(value)
-                except (ValueError, TypeError):
-                    self.logger.warning(
-                        f"Invalid type for {key}: {type(value).__name__}, expected {expected_type.__name__}"
-                    )
-                    value = self.DEFAULT_CONFIG[key]
-
-            # Pattern validation for strings
-            if "pattern" in schema and isinstance(value, str):
-                if not re.match(schema["pattern"], value):
-                    self.logger.warning(f"Invalid pattern for {key}: {value}")
-                    value = self.DEFAULT_CONFIG[key]
-
-            # Choice validation
-            if "choices" in schema and value not in schema["choices"]:
-                self.logger.warning(f"Invalid choice for {key}: {value}")
-                value = self.DEFAULT_CONFIG[key]
-
-            # Range validation for integers
-            if expected_type == int:
-                if "min" in schema and value < schema["min"]:
-                    self.logger.warning(f"Value for {key} below minimum: {value}")
-                    value = schema["min"]
-                if "max" in schema and value > schema["max"]:
-                    self.logger.warning(f"Value for {key} above maximum: {value}")
-                    value = schema["max"]
-
-            validated[key] = value
-
-        # Ensure all required keys are present
-        for key in self.DEFAULT_CONFIG:
-            if key not in validated:
-                validated[key] = self.DEFAULT_CONFIG[key]
-
-        return validated
+        return validated_config
 
     def save_config(self) -> None:
-        """Save configuration to file with backup.
-
-        Creates a backup of the current config before saving the new one.
-        This ensures we always have a fallback if the save operation corrupts the file.
-
-        Raises:
-            ConfigError: If saving fails
-        """
+        """Save the current configuration to the file."""
         try:
-            # Validate before saving
-            validated_settings = self._validate_config(self.settings)
-
-            # Create backup of current config if it exists
-            if self.config_file.exists():
-                try:
-                    import shutil
-
-                    shutil.copy2(self.config_file, self.backup_file)
-                except Exception as e:
-                    self.logger.warning(f"Could not create config backup: {e}")
-
-            # Save new config
-            self._save_to_file(validated_settings, self.config_file)
-            self.settings = validated_settings
-            self.logger.debug("Configuration saved successfully")
-
+            self._save_to_file(self.config, self.config_file_path)
+            logger.info(f"Configuration saved to {self.config_file_path}")
         except Exception as e:
-            self.logger.error(f"Error saving config: {e}")
-            raise ConfigError(f"Failed to save configuration: {e}")
+            logger.error(
+                f"Error saving configuration to {self.config_file_path}: {e}", exc_info=True
+            )
+            # Optionally raise a ConfigError here if saving is critical
 
     def _save_to_file(self, config: Dict[str, Any], file_path: Path) -> None:
-        """Save configuration dictionary to file.
-
-        Args:
-            config: Configuration to save
-            file_path: Path to save to
-        """
+        """Helper to save dictionary to a JSON file."""
         with open(file_path, "w", encoding="utf-8") as f:
-            json.dump(config, f, indent=2, ensure_ascii=False)
+            json.dump(config, f, indent=4)
 
     def get(self, key: str, default: Any = None) -> Any:
-        """Get configuration value with validation.
-
-        Retrieve a specific setting by its key with optional default value.
+        """Get a configuration value by key.
 
         Args:
-            key (str): The key of the setting to retrieve.
-            default (any, optional): The value to return if the key is not found.
-                                    If None, uses the default from DEFAULT_CONFIG.
+            key: The configuration key.
+            default: Default value if key is not found.
 
         Returns:
-            any: The value of the setting, or the default value if not found.
+            The configuration value or default.
         """
-        if default is None and key in self.DEFAULT_CONFIG:
-            default = self.DEFAULT_CONFIG[key]
-
-        value = self.settings.get(key, default)
-
-        # Re-validate single values that might have been manually modified
-        if key in self.VALIDATION_SCHEMA:
-            try:
-                temp_config = {key: value}
-                validated = self._validate_config(temp_config)
-                return validated[key]
-            except Exception:
-                self.logger.warning(f"Validation failed for {key}, returning default")
-                return default
-
-        return value
+        return self.config.get(key, default)
 
     def set(self, key: str, value: Any) -> None:
-        """Set configuration value with validation and immediate save.
-
-        Updates a configuration setting, validates it, and immediately saves
-        the changes to the file.
+        """Set a configuration value and save the configuration.
 
         Args:
-            key (str): The key of the setting to update.
-            value (Any): The new value for the setting.
-
-        Raises:
-            ConfigError: If the value fails validation
+            key: The configuration key.
+            value: The value to set.
         """
-        # Validate the new value
-        if key in self.VALIDATION_SCHEMA:
-            temp_config = {**self.settings, key: value}
-            try:
-                validated_config = self._validate_config(temp_config)
-                validated_value = validated_config[key]
-            except Exception as e:
-                raise ConfigError(f"Invalid value for {key}: {e}")
+        if key not in self.VALIDATION_SCHEMA:
+            logger.warning(
+                f"Attempting to set an unknown configuration key: '{key}'. This key is not validated."
+            )
         else:
-            validated_value = value
-            self.logger.warning(f"Setting unknown config key: {key}")
+            # Basic validation before setting (more thorough in _validate_config)
+            rules = self.VALIDATION_SCHEMA[key]
+            if not isinstance(value, rules["type"]):
+                logger.error(
+                    f"Cannot set '{key}': Invalid type. Expected {rules['type']}, got {type(value)}."
+                )
+                # Or raise ConfigError("Invalid type...")
+                return
+            # Add other quick checks from VALIDATION_SCHEMA if desired before full save/validate cycle
 
-        self.settings[key] = validated_value
-        self.save_config()
+        self.config[key] = value
+        self.save_config()  # Save after every set operation
+        # Reload and re-validate after save to ensure integrity, or trust the set operation.
+        # For simplicity, we are not re-validating the entire config on each set here,
+        # but it might be safer in complex scenarios.
 
     def reset_to_defaults(self) -> None:
-        """Reset configuration to default values.
-
-        Resets all settings to their default values and saves the configuration.
-        """
-        self.logger.info("Resetting configuration to defaults")
-        self.settings = dict(self.DEFAULT_CONFIG)
+        """Reset the configuration to default values and save."""
+        self.config = self.DEFAULT_CONFIG.copy()
         self.save_config()
+        logger.info("Configuration has been reset to defaults.")
 
-    def get_window_geometry(self) -> tuple:
-        """Get window geometry as (width, height) tuple.
-
-        Returns:
-            tuple: (width, height) as integers
+    def get_window_geometry(self) -> Optional[tuple[int, int, int, int]]:
+        """Parse window_size and return as (width, height, x_offset, y_offset).
+           x_offset and y_offset are not in current config, returning 0,0 for them.
         """
-        size_str = self.get("window_size", "1200x800")
-        try:
-            width, height = map(int, size_str.split("x"))
-            return (width, height)
-        except ValueError:
-            self.logger.warning(f"Invalid window size format: {size_str}")
-            return (1200, 800)
+        size_str = self.get("window_size")
+        if size_str and isinstance(size_str, str) and "x" in size_str:
+            try:
+                width, height = map(int, size_str.split("x"))
+                # Assuming x_offset and y_offset are not stored, default to 0
+                # If they were stored, they'd be fetched similarly, e.g., self.get("window_position", "0,0").split(',')
+                return width, height, 0, 0
+            except ValueError:
+                logger.error(
+                    f"Invalid window_size format: '{size_str}'. Expected 'WIDTHxHEIGHT'."
+                )
+                return None
+        return None
 
-    def set_window_geometry(self, width: int, height: int) -> None:
-        """Set window geometry from width and height values.
 
-        Args:
-            width: Window width in pixels
-            height: Window height in pixels
-        """
-        if width < 400:
-            width = 400
-        if height < 300:
-            height = 300
+# Example usage (optional, for testing or direct script run)
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.DEBUG)
+    config_manager = Config(config_dir=".config_test")  # Use a test directory
+    print(f"Loaded config: {config_manager.config}")
 
-        self.set("window_size", f"{width}x{height}")
+    print(f"Window size: {config_manager.get('window_size')}")
+    config_manager.set("log_level", "DEBUG")
+    print(f"Log level after set: {config_manager.get('log_level')}")
 
-    def get_config_info(self) -> Dict[str, Any]:
-        """Get information about the configuration system.
+    # Test validation failure (example)
+    # config_manager.set("backup_count", 999) # This should log an error if validation on set is more robust or fail on next load
 
-        Returns:
-            dict: Information about config file paths, validation status, etc.
-        """
-        return {
-            "config_file": str(self.config_file),
-            "backup_file": str(self.backup_file),
-            "config_exists": self.config_file.exists(),
-            "backup_exists": self.backup_file.exists(),
-            "config_dir": str(self.config_dir),
-            "settings_count": len(self.settings),
-            "schema_keys": list(self.VALIDATION_SCHEMA.keys()),
-        }
+    geom = config_manager.get_window_geometry()
+    if geom:
+        print(f"Window geometry: width={geom[0]}, height={geom[1]}")
 
-    def _get_default_config(self) -> Dict[str, Any]:
-        """Get default configuration settings."""
-        return dict(self.DEFAULT_CONFIG)
+    config_manager.reset_to_defaults()
+    print(f"Config after reset: {config_manager.config}")
+
+    # Clean up test config file
+    # import shutil
+    # shutil.rmtree(".config_test", ignore_errors=True)

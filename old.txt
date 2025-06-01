@@ -1,0 +1,55 @@
+# Backup of gui.py end before inserting main()
+# --- Begin backup ---
+# Last lines of gui.py before main insertion:
+# (Auto-generated backup)
+# ...existing code...
+# End of backup
+# --- End backup ---
+
+# Standard boilerplate for Python main() entry point
+if __name__ == "__main__":
+    main()
+
+def main():
+    """
+    Main entry point for the Crew Manager GUI application.
+    Initializes the tkinter root window, creates the CrewGUI instance,
+    and starts the main event loop.
+    """
+    try:
+        root = tk.Tk()
+        root.title("Crew Manager")
+        root.geometry("1200x800")
+        root.minsize(800, 600)
+
+        app = CrewGUI(root)
+
+        def on_closing():
+            try:
+                app.save_window_state()
+            finally:
+                root.destroy()
+
+        root.protocol("WM_DELETE_WINDOW", on_closing)
+        root.mainloop()
+        return 0
+
+    except Exception as e:
+        logging.error(f"Error in main: {e}")
+        messagebox.showerror("Startup Error", f"Failed to start application: {e}")
+        return 1
+
+if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(levelname)s - %(message)s"
+    )
+    sys.exit(main())
+
+# --- Begin GitHub Entries for 2025-05-31 ---
+# * Added enhanced error handling module (`error_handler.py`)
+# * Enhanced `job2` and `job3` functions with comprehensive data analysis
+# * Optimized `auto_import_py_files` with caching and safety checks
+# * Created application launcher script (`launch_crew_manager.py`)
+# * Added comprehensive test suite (`test_enhancements.py`)
+# --- End GitHub Entries ---

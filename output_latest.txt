@@ -1,0 +1,40 @@
+
+CSV Data:
+            Name   Position Experience  Age  Salary   Department
+0     John Smith    Captain   15 years   45   85000   Navigation
+1   Mary Johnson   Engineer    8 years   32   65000  Engineering
+2  Robert Wilson   Mechanic   12 years   38   55000  Maintenance
+3    Sarah Davis  Navigator    6 years   29   50000   Navigation
+4  Michael Brown       Cook   10 years   35   40000      Kitchen
+Index(['Name', 'Position', 'Experience', 'Age', 'Salary', 'Department'], dtype='object')
+0      Captain
+1     Engineer
+2     Mechanic
+3    Navigator
+4         Cook
+5        Medic
+6      Officer
+7     Engineer
+Name: Position, dtype: object
+Name          John Smith
+Position         Captain
+Experience      15 years
+Age                   45
+Salary             85000
+Department    Navigation
+Name: 0, dtype: object
+
+----------------------------------------
+
+
+Data from sample_crew.csv:
+            Name   Position Experience  Age  Salary   Department
+0     John Smith    Captain   15 years   45   85000   Navigation
+1   Mary Johnson   Engineer    8 years   32   65000  Engineering
+2  Robert Wilson   Mechanic   12 years   38   55000  Maintenance
+3    Sarah Davis  Navigator    6 years   29   50000   Navigation
+4  Michael Brown       Cook   10 years   35   40000      Kitchen
+Index(['Name', 'Position', 'Experience', 'Age', 'Salary', 'Department'], dtype='object')
+
+----------------------------------------
+

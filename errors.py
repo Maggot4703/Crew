@@ -24,10 +24,15 @@ Version: 1.0.0
 Date: 2024
 """
 
-import functools
 import logging
 import traceback
-from typing import Any, Callable, Dict, Optional, Type, Union
+import functools
+from typing import Any, Callable, Dict, Optional, Type, Union, List
+
+# Setup logger for this module (assuming a global logger or pass one in)
+# If you have a central logging config, this might not be needed here.
+# For now, let's create a logger for this module.
+logger = logging.getLogger(__name__)
 
 """
 Defines custom exception classes for the application.
@@ -44,365 +49,126 @@ class CrewManagerError(Exception):
     exceptions including error context tracking and consistent formatting.
     """
 
-    def __init__(
-        self,
-        message: str,
-        error_code: Optional[str] = None,
-        context: Optional[Dict[str, Any]] = None,
-    ):
-        """Initialize the base error.
-
-        Args:
-            message: Human-readable error message
-            error_code: Optional error code for programmatic handling
-            context: Optional dictionary with additional error context
-        """
+    def __init__(self, message: str, context: Optional[Dict[str, Any]] = None):
         super().__init__(message)
         self.message = message
-        self.error_code = error_code
         self.context = context or {}
-        self.timestamp = None
-
-        # Capture the timestamp when error is created
-        try:
-            from datetime import datetime
-
-            self.timestamp = datetime.now()
-        except ImportError:
-            pass
-
-    def get_context(self) -> Dict[str, Any]:
-        """Get error context information.
-
-        Returns:
-            dict: Context information about the error
-        """
-        return {
-            "message": self.message,
-            "error_code": self.error_code,
-            "timestamp": self.timestamp.isoformat() if self.timestamp else None,
-            "context": self.context,
-        }
 
     def __str__(self) -> str:
-        """Return string representation of the error."""
-        if self.error_code:
-            return f"[{self.error_code}] {self.message}"
+        if self.context:
+            return f"{self.message} (Context: {self.context})"
         return self.message
 
 
 class DatabaseError(CrewManagerError):
-    """Raised for errors related to database operations.
-
-    This exception is used for database connection issues, query failures,
-    data corruption, and other database-related problems.
-    """
-
-    def __init__(self, message: str, query: Optional[str] = None, **kwargs):
-        """Initialize database error.
-
-        Args:
-            message: Error message
-            query: Optional SQL query that caused the error
-            **kwargs: Additional context passed to base class
-        """
-        super().__init__(message, error_code="DB_ERROR", **kwargs)
-        if query:
-            self.context["query"] = query
+    """Raised for database-related errors."""
+    pass # Inherits __init__ and __str__ from CrewManagerError
 
 
 class ConfigError(CrewManagerError):
-    """Raised for errors related to application configuration.
-
-    This exception is used for configuration file issues, invalid settings,
-    missing configuration values, and validation failures.
-    """
-
-    def __init__(self, message: str, config_key: Optional[str] = None, **kwargs):
-        """Initialize configuration error.
-
-        Args:
-            message: Error message
-            config_key: Optional configuration key that caused the error
-            **kwargs: Additional context passed to base class
-        """
-        super().__init__(message, error_code="CONFIG_ERROR", **kwargs)
-        if config_key:
-            self.context["config_key"] = config_key
+    """Raised for configuration-related errors."""
+    pass
 
 
 class CacheError(CrewManagerError):
-    """Raised for errors related to caching operations.
-
-    This exception is used for cache corruption, cache miss handling,
-    serialization issues, and cache storage problems.
-    """
-
-    def __init__(self, message: str, cache_key: Optional[str] = None, **kwargs):
-        """Initialize cache error.
-
-        Args:
-            message: Error message
-            cache_key: Optional cache key that caused the error
-            **kwargs: Additional context passed to base class
-        """
-        super().__init__(message, error_code="CACHE_ERROR", **kwargs)
-        if cache_key:
-            self.context["cache_key"] = cache_key
+    """Raised for cache-related errors."""
+    pass
 
 
 class ScraperError(CrewManagerError):
-    """Raised for errors encountered during web scraping.
-
-    This exception is used for network issues, parsing failures,
-    rate limiting, and authentication problems during scraping.
-    """
-
-    def __init__(
-        self,
-        message: str,
-        url: Optional[str] = None,
-        status_code: Optional[int] = None,
-        **kwargs,
-    ):
-        """Initialize scraper error.
-
-        Args:
-            message: Error message
-            url: Optional URL that caused the error
-            status_code: Optional HTTP status code
-            **kwargs: Additional context passed to base class
-        """
-        super().__init__(message, error_code="SCRAPER_ERROR", **kwargs)
-        if url:
-            self.context["url"] = url
-        if status_code:
-            self.context["status_code"] = status_code
+    """Raised for web scraping errors."""
+    pass
 
 
 class FileOperationError(CrewManagerError):
-    """Raised for errors related to file operations (read, write, etc.).
-
-    This exception is used for file permission issues, disk space problems,
-    format errors, and general I/O failures.
-    """
-
-    def __init__(
-        self,
-        message: str,
-        file_path: Optional[str] = None,
-        operation: Optional[str] = None,
-        **kwargs,
-    ):
-        """Initialize file operation error.
-
-        Args:
-            message: Error message
-            file_path: Optional file path that caused the error
-            operation: Optional operation type (read, write, delete, etc.)
-            **kwargs: Additional context passed to base class
-        """
-        super().__init__(message, error_code="FILE_ERROR", **kwargs)
-        if file_path:
-            self.context["file_path"] = file_path
-        if operation:
-            self.context["operation"] = operation
+    """Raised for file input/output errors."""
+    pass
 
 
 class GUIError(CrewManagerError):
-    """Raised for errors specific to the GUI components or operations.
-
-    This exception is used for widget initialization failures, layout problems,
-    event handling issues, and GUI-specific validation errors.
-    """
-
-    def __init__(self, message: str, component: Optional[str] = None, **kwargs):
-        """Initialize GUI error.
-
-        Args:
-            message: Error message
-            component: Optional GUI component that caused the error
-            **kwargs: Additional context passed to base class
-        """
-        super().__init__(message, error_code="GUI_ERROR", **kwargs)
-        if component:
-            self.context["component"] = component
+    """Raised for GUI-related errors."""
+    pass
 
 
 class ValidationError(CrewManagerError):
-    """Raised for data validation errors.
-
-    This exception is used for input validation failures, data format errors,
-    constraint violations, and schema validation problems.
-    """
-
-    def __init__(
-        self,
-        message: str,
-        field: Optional[str] = None,
-        value: Optional[Any] = None,
-        **kwargs,
-    ):
-        """Initialize validation error.
-
-        Args:
-            message: Error message
-            field: Optional field name that failed validation
-            value: Optional value that failed validation
-            **kwargs: Additional context passed to base class
-        """
-        super().__init__(message, error_code="VALIDATION_ERROR", **kwargs)
-        if field:
-            self.context["field"] = field
-        if value is not None:
-            self.context["value"] = str(value)
+    """Raised for data validation errors."""
+    pass
 
 
 class TravellerDataNotFoundError(ScraperError):
-    """Raised when specific Traveller data cannot be found by the scraper.
-
-    This is a specialized scraper error for Traveller RPG data retrieval.
-    """
-
-    def __init__(
-        self, message="Traveller data not found", item_searched=None, **kwargs
-    ):
-        """
-        Initialize the TravellerDataNotFoundError exception.
-
-        Args:
-            message (str): The error message.
-            item_searched (str, optional): The specific item that was being searched for.
-            **kwargs: Additional context passed to base class
-        """
-        super().__init__(message, error_code="TRAVELLER_NOT_FOUND", **kwargs)
-        if item_searched:
-            self.context["item_searched"] = item_searched
-
-    def __str__(self):
-        """Return a string representation of the exception."""
-        if "item_searched" in self.context:
-            return f"{self.message} (Item: {self.context['item_searched']})"
-        return self.message
+    """Raised when specific Traveller data is not found during scraping."""
+    pass
 
 
 # Error handling utilities
 
 
 def format_error_message(error: Exception, include_traceback: bool = False) -> str:
-    """Format an error message for display or logging.
-
-    Args:
-        error: The exception to format
-        include_traceback: Whether to include full traceback
-
-    Returns:
-        str: Formatted error message
-    """
-    if isinstance(error, CrewManagerError):
-        message = f"Error [{error.error_code or 'UNKNOWN'}]: {error.message}"
-        if error.context:
-            context_str = ", ".join(
-                f"{k}={v}" for k, v in error.context.items() if v is not None
-            )
-            if context_str:
-                message += f" (Context: {context_str})"
-    else:
-        message = f"Error [{type(error).__name__}]: {str(error)}"
-
+    """Formats an error message, optionally including the traceback."""
+    msg = f"{type(error).__name__}: {str(error)}"
     if include_traceback:
-        message += f"\n\nTraceback:\n{traceback.format_exc()}"
-
-    return message
+        tb_str = traceback.format_exc()
+        msg += f"\nTraceback:\n{tb_str}"
+    return msg
 
 
 def handle_errors(
     default_return: Any = None,
     exceptions: tuple = (Exception,),
     log_errors: bool = True,
-    logger: Optional[logging.Logger] = None,
+    # logger: Optional[logging.Logger] = None, # Use the module logger by default
     reraise: bool = False,
+    custom_message: Optional[str] = None,
 ):
-    """Decorator for automatic error handling.
-
+    """A decorator to handle exceptions in a function.
+    
     Args:
-        default_return: Default value to return on error
-        exceptions: Tuple of exception types to catch
-        log_errors: Whether to log caught errors
-        logger: Logger instance to use (creates one if None)
-        reraise: Whether to reraise the exception after handling
-
-    Returns:
-        Decorated function
+        default_return: Value to return if an exception occurs.
+        exceptions: A tuple of exception types to catch.
+        log_errors: Whether to log the caught error.
+        # logger: Specific logger instance to use. Defaults to module logger.
+        reraise: Whether to re-raise the exception after handling.
+        custom_message: A custom message to log or include in a new exception.
     """
-    if logger is None:
-        logger = logging.getLogger(__name__)
+    # local_logger = logger or module_logger # Use passed logger or default module logger
 
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args, **kwargs) -> Any:
             try:
                 return func(*args, **kwargs)
             except exceptions as e:
                 if log_errors:
-                    error_msg = format_error_message(e, include_traceback=True)
-                    logger.error(f"Error in {func.__name__}: {error_msg}")
-
+                    error_msg = custom_message or f"Error in {func.__name__}: {format_error_message(e)}"
+                    # local_logger.error(error_msg, exc_info=True) # exc_info=True adds traceback to log
+                    logger.error(error_msg, exc_info=True) # Use module logger
                 if reraise:
                     raise
-
                 return default_return
-
         return wrapper
-
     return decorator
 
 
+@handle_errors(default_return=None, log_errors=True)
 def safe_execute(
     func: Callable,
     *args,
-    default_return: Any = None,
-    exceptions: tuple = (Exception,),
-    log_errors: bool = True,
-    logger: Optional[logging.Logger] = None,
+    # default_return: Any = None, # Handled by decorator
+    # exceptions: tuple = (Exception,), # Handled by decorator
+    # log_errors: bool = True, # Handled by decorator
+    # logger: Optional[logging.Logger] = None, # Handled by decorator
     **kwargs,
 ) -> Any:
-    """Safely execute a function with error handling.
-
-    Args:
-        func: Function to execute
-        *args: Positional arguments for the function
-        default_return: Default value to return on error
-        exceptions: Tuple of exception types to catch
-        log_errors: Whether to log caught errors
-        logger: Logger instance to use
-        **kwargs: Keyword arguments for the function
-
-    Returns:
-        Function result or default_return on error
+    """Safely executes a function, catching specified exceptions.
+       The handle_errors decorator now manages the try-except block.
     """
-    if logger is None:
-        logger = logging.getLogger(__name__)
-
-    try:
-        return func(*args, **kwargs)
-    except exceptions as e:
-        if log_errors:
-            error_msg = format_error_message(e)
-            logger.error(f"Error executing {func.__name__}: {error_msg}")
-        return default_return
+    # The actual call is now directly here, decorator handles try/except
+    return func(*args, **kwargs)
 
 
 def create_error_context(**kwargs) -> Dict[str, Any]:
-    """Create an error context dictionary.
-
-    Args:
-        **kwargs: Key-value pairs for the context
-
-    Returns:
-        dict: Error context dictionary
-    """
-    return {k: v for k, v in kwargs.items() if v is not None}
+    """Creates a dictionary to be used as context for errors."""
+    return kwargs
 
 
 def convert_exception(
@@ -411,111 +177,71 @@ def convert_exception(
     message: Optional[str] = None,
     **context,
 ) -> CrewManagerError:
-    """Convert a standard exception to a CrewManager exception.
+    """Converts a given exception to a CrewManagerError (or subclass).
 
     Args:
-        source_exception: Original exception
-        target_exception_class: Target exception class
-        message: Optional custom message (uses original if None)
-        **context: Additional context for the new exception
+        source_exception: The original exception.
+        target_exception_class: The custom exception class to raise.
+        message: Optional new message. If None, uses original exception's message.
+        **context: Additional context for the new exception.
 
     Returns:
-        CrewManagerError: Converted exception
+        An instance of target_exception_class.
     """
-    if message is None:
-        message = str(source_exception)
-
-    # Add original exception info to context
-    context.update(
-        {
-            "original_exception": type(source_exception).__name__,
-            "original_message": str(source_exception),
-        }
+    new_message = message or str(source_exception)
+    # Add original exception type and message to context for clarity
+    error_context = create_error_context(
+        original_exception_type=type(source_exception).__name__,
+        original_message=str(source_exception),
+        **context
     )
-
-    return target_exception_class(message, context=context)
+    # Log the conversion
+    logger.debug(f"Converting {type(source_exception).__name__} to {target_exception_class.__name__} with message: '{new_message}'")
+    return target_exception_class(new_message, context=error_context)
 
 
 # Error reporting utilities
 
 
 class ErrorReporter:
-    """Centralized error reporting and logging."""
+    """A simple error reporter class (can be expanded for integrations like Sentry)."""
+    def __init__(self):
+        self.error_log: List[Dict[str, Any]] = []
+        # self.logger = logger or logging.getLogger(__name__ + ".ErrorReporter") # Use passed or new logger
+        self.logger = logging.getLogger(__name__ + ".ErrorReporter")
 
-    def __init__(self, logger: Optional[logging.Logger] = None):
-        """Initialize error reporter.
-
-        Args:
-            logger: Logger instance to use
-        """
-        self.logger = logger or logging.getLogger(__name__)
-        self.error_count = 0
-        self.error_history = []
-        self.max_history = 100
-
-    def report_error(
-        self,
-        error: Exception,
-        context: Optional[Dict[str, Any]] = None,
-        severity: str = "ERROR",
-    ) -> None:
-        """Report an error with context.
-
-        Args:
-            error: Exception to report
-            context: Additional context information
-            severity: Error severity level
-        """
-        self.error_count += 1
-
-        # Create error record
-        error_record = {
-            "error": error,
-            "context": context or {},
+    def report(self, error: Exception, context: Optional[Dict[str, Any]] = None, severity: str = "ERROR"):
+        """Reports an error, e.g., logs it and could send to an external service."""
+        report_details = {
+            "error_type": type(error).__name__,
+            "message": str(error),
+            "context": context or (error.context if isinstance(error, CrewManagerError) else {}),
             "severity": severity,
-            "count": self.error_count,
+            "traceback": traceback.format_exc() # Capture traceback string
         }
-
-        # Add to history
-        self.error_history.append(error_record)
-        if len(self.error_history) > self.max_history:
-            self.error_history.pop(0)
-
-        # Log the error
-        error_msg = format_error_message(error)
-        if context:
-            context_str = ", ".join(f"{k}={v}" for k, v in context.items())
-            error_msg += f" | Context: {context_str}"
-
-        if severity == "CRITICAL":
-            self.logger.critical(error_msg)
-        elif severity == "ERROR":
-            self.logger.error(error_msg)
-        elif severity == "WARNING":
-            self.logger.warning(error_msg)
+        self.error_log.append(report_details)
+        log_message = f"Reported Error ({severity}): {report_details['message']} | Context: {report_details['context']}"
+        
+        if severity.upper() == "CRITICAL":
+            self.logger.critical(log_message, exc_info=True)
+        elif severity.upper() == "ERROR":
+            self.logger.error(log_message, exc_info=True)
+        elif severity.upper() == "WARNING":
+            self.logger.warning(log_message, exc_info=True)
         else:
-            self.logger.info(error_msg)
+            self.logger.info(log_message) # Default to info for other severities
 
-    def get_error_summary(self) -> Dict[str, Any]:
-        """Get summary of reported errors.
-
-        Returns:
-            dict: Error summary with counts and recent errors
-        """
-        recent_errors = self.error_history[-10:]  # Last 10 errors
-
-        return {
-            "total_errors": self.error_count,
-            "history_length": len(self.error_history),
-            "recent_errors": [
-                {
-                    "type": type(record["error"]).__name__,
-                    "message": str(record["error"]),
-                    "severity": record["severity"],
-                }
-                for record in recent_errors
-            ],
+    def get_summary(self) -> Dict[str, Any]:
+        """Returns a summary of reported errors."""
+        summary = {
+            "total_errors": len(self.error_log),
+            "errors_by_type": {},
+            "recent_errors": self.error_log[-5:] # Last 5 errors for quick view
         }
+        for err_report in self.error_log:
+            err_type = err_report["error_type"]
+            summary["errors_by_type"][err_type] = summary["errors_by_type"].get(err_type, 0) + 1
+        return summary
 
 
 # Global error reporter instance
@@ -525,20 +251,56 @@ _global_error_reporter = ErrorReporter()
 def report_error(
     error: Exception, context: Optional[Dict[str, Any]] = None, severity: str = "ERROR"
 ) -> None:
-    """Report an error using the global error reporter.
-
-    Args:
-        error: Exception to report
-        context: Additional context information
-        severity: Error severity level
-    """
-    _global_error_reporter.report_error(error, context, severity)
+    """Global function to report an error using the global reporter."""
+    _global_error_reporter.report(error, context, severity)
 
 
 def get_error_summary() -> Dict[str, Any]:
-    """Get error summary from global error reporter.
+    """Global function to get an error summary from the global reporter."""
+    return _global_error_reporter.get_summary()
 
-    Returns:
-        dict: Error summary
-    """
-    return _global_error_reporter.get_error_summary()
+
+# Example Usage (can be removed or kept for testing)
+if __name__ == '__main__':
+    # Configure basic logging for the example
+    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+    @handle_errors(default_return="Handled!", reraise=False, custom_message="Something went wrong in test_func")
+    def test_func(x, y):
+        if y == 0:
+            raise ValueError("Division by zero in test_func")
+        return x / y
+
+    print(f"Test func (10, 2): {test_func(10, 2)}")
+    print(f"Test func (10, 0): {test_func(10, 0)}") # Will be handled
+
+    try:
+        # Example of converting an exception
+        num = int("abc")
+    except ValueError as ve:
+        app_error = convert_exception(ve, ValidationError, "Invalid number format provided.", input_value="abc")
+        # logger.error(f"Converted error: {app_error}")
+        report_error(app_error, severity="WARNING")
+    
+    try:
+        # Example of a custom error
+        raise DatabaseError("Failed to connect to the database.", context=create_error_context(db_host="localhost"))
+    except DatabaseError as de:
+        # logger.error(f"Caught DB error: {format_error_message(de, include_traceback=True)}")
+        report_error(de, severity="CRITICAL")
+
+    print("\nError Summary:")
+    summary = get_error_summary()
+    import json
+    print(json.dumps(summary, indent=2))
+
+    # Test safe_execute
+    def risky_operation(value):
+        if not isinstance(value, int):
+            raise TypeError("Value must be an integer for risky_operation")
+        return value * 2
+    
+    result_ok = safe_execute(risky_operation, 5)
+    print(f"Safe execute OK: {result_ok}")
+    result_fail = safe_execute(risky_operation, "text") # Will log error and return None
+    print(f"Safe execute FAIL: {result_fail}")

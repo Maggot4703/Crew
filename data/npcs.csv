@@ -1,17 +1,1 @@
-NPC,LIKENESS,ROLE,R-S,CLASS,RANK,COMPANY,PRIMUS,SECUNDUS,TERTIUS,AI,SQUAD,VEHICLE,SHIP,SYSTEM,MUSIC,QUOTE
-PC,,Captain,hm,Other-,O4,Sky Rig,Company,Care,Caress,Mother,Maid,Speeder A,SkyRig,,,
-Carl,,Pilot,hm,Navy-5,O4,Carl's Crew,Instruct,Planning,Contacts,Nancy,Alpha,APC A,Cutter A,Regina,,
-Terrii,,Navigator,hf,Scout-6,O3,Terri's Triangulation,Entertain,Comms,NIL,Sallii,Beta,APC B,Cutter B,Roup,,
-Andii,,Doctor,hf,Doctor-6,O5,Andii's Angels,Medical,Sisters,Smuggling,Debii,Gamma,APC C,Cutter C,Feri,,
-Raoul,,Chief,hm,Army-5,E6,Raoul's RoughRiders,Mechanic,213th,Bros,Amii,Delta,APC D,Cutter D,Boughene,,
-Betti,,SensOp,hf,Army-5,O4,Bettii's Bots,Spares,Brothels,Streetwise,Angii,Epsilon,APC E,Cutter E,Efate,,
-Teelan,,Technician,hm,Other-4,E5,Teelan's Troupe,Entertain,Computers,Droids,Oracle,Zeta,APC F,Cutter F,Lysen,,
-Max,,Gunner,hf,Marine-4,E3,Max's,Marine,Postman,213th,Marii,Bad Boys,GCarrier,Jump mod,Jewell,,
-,,,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,,,
-Fives,,,,,,,,,,,,,,,,
-Sevens,,,,,,,,,,,,,,,,
-Nines,,,,,,,,,,,,,,,,
-Elevens,,,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,,,
+NPC,ROLE,CLASS\nWarrior1,Fighter,Warrior\nMage1,Spellcaster,Mage\nRogue1,Thief,Rogue

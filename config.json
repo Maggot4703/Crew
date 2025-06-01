@@ -1,0 +1,17 @@
+{
+    "window_size": "1200x800",
+    "min_window_size": "800x600",
+    "column_widths": {},
+    "column_visibility": {},
+    "last_directory": "/home/me",
+    "last_file_path": "",
+    "data_dir": "data",
+    "log_level": "INFO",
+    "auto_save": true,
+    "theme": "default",
+    "backup_enabled": true,
+    "backup_count": 5,
+    "tts_enabled": true,
+    "import_timeout": 30,
+    "max_file_size": 100
+}
