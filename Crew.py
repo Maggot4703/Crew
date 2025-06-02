@@ -7,6 +7,8 @@ import os
 import pandas as pd
 from PIL import Image, ImageDraw
 import logging
+import tkinter as tk # Add this import
+from gui import CrewGUI # Add this import
 
 # Setup logging
 logging.basicConfig(
@@ -207,6 +209,11 @@ def job4():
 def main():
     logger.info("Main application script started.")
     
+    # Start the GUI
+    root = tk.Tk()
+    app = CrewGUI(root)
+    root.mainloop()
+
     # Example usage (replace with actual logic or CLI argument parsing)
     # Image processing example
     # Note: Ensure image_path and output_path are valid

@@ -1,0 +1,1 @@
+# Sample script for CrewGUI\nimport time\nprint('Hello from sample_script.py!')\nprint('This script will run for a few seconds.')\nfor i in range(1, 4):\n    print(f'Counting: {i}')\n    time.sleep(1)\nprint('Sample script finished.')\n

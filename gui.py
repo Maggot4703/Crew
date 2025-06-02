@@ -351,9 +351,43 @@ def auto_import_py_files() -> Tuple[List[str], List[Tuple[str, str]]]:
 
 class CrewGUI:
     def __init__(self, root: tk.Tk) -> None:
+        self.root = root  # Assign self.root immediately
         try:
-            self.root = root
-            self.root.title("Crew Manager")
+            self.root.title("Crew Manager") # Set title early
+
+            # Define scripts directory and create it if it doesn't exist
+            # Also create a sample script for testing if the directory is new
+            self.scripts_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "scripts")
+            if not os.path.exists(self.scripts_dir):
+                try: # Try to create directory
+                    os.makedirs(self.scripts_dir)
+                    logging.info(f"Created scripts directory: {self.scripts_dir}")
+                    
+                    # After successful directory creation, try to create sample script
+                    try:
+                        sample_script_path = os.path.join(self.scripts_dir, "sample_script.py")
+                        with open(sample_script_path, "w") as f:
+                            f.write("# Sample script for CrewGUI\\n")
+                            f.write("import time\\n")
+                            f.write("print('Hello from sample_script.py!')\\n")
+                            f.write("print('This script will run for a few seconds.')\\n")
+                            f.write("for i in range(1, 4):\\n")
+                            f.write("    print(f'Counting: {i}')\\n")
+                            f.write("    time.sleep(1)\\n")
+                            f.write("print('Sample script finished.')\\n")
+                        logging.info(f"Created sample script: {sample_script_path}")
+                    except Exception as e_script:
+                        logging.error(f"Failed to create sample script in {self.scripts_dir}: {e_script}")
+                        # Optionally, a very mild warning or just log for sample script failure. Currently just logging.
+
+                except Exception as e_dir: # This catches failure of os.makedirs
+                    logging.error(f"Failed to create scripts directory {self.scripts_dir}: {e_dir}")
+                    messagebox.showwarning(
+                        "Script Directory Error",
+                        f"Could not create the 'scripts' directory at:\\n{self.scripts_dir}\\n\\nReason: {e_dir}\\n\\nThe 'Run Script' feature requires this directory. Please create it manually or check permissions."
+                    )
+            # If directory already exists, one might consider creating sample_script if it's missing,
+            # but current logic only creates it if the directory itself is new.
 
             # Initialize TTS engine if available
             if TTS_AVAILABLE:
@@ -439,9 +473,13 @@ class CrewGUI:
         view_menu.add_cascade(label="Columns", menu=self.column_visibility_menu)
 
         # Add script selector submenu
-        self.script_menu = tk.Menu(view_menu, tearoff=0)
-        view_menu.add_cascade(label="Run Script", menu=self.script_menu)
-        # view_menu.add_command(label="Refresh Scripts", command=self._update_script_menu)
+        self.script_menu = tk.Menu(view_menu, tearoff=0, postcommand=self._update_script_menu)
+        view_menu.add_cascade(
+            label="Run Script", 
+            menu=self.script_menu
+            # Removed command=lambda from here
+        )
+        # view_menu.add_command(label="Refresh Scripts", command=self._update_script_menu) # Now part of self.script_menu
 
         # Add TTS menu if available
         if TTS_AVAILABLE:
@@ -918,7 +956,8 @@ class CrewGUI:
 
             # Bind selection event for table to update details
             if hasattr(self, "data_table"):
-                self.data_table.bind("<<TreeviewSelect>>", self._update_details_view)
+                # Ensure the TreeviewSelect event is bound to the intermediary handler
+                self.data_table.bind("<<TreeviewSelect>>", self._on_data_table_select)
 
             # Setup TTS functionality if available
             self._setup_details_tts()
@@ -1032,7 +1071,7 @@ class CrewGUI:
         except Exception as e:
             logging.error(f"Error stopping TTS: {e}")
 
-    def _update_details_view(self, item_data) -> None:  # Changed signature
+    def _update_details_view(self, item_data: Optional[Dict[str, Any]]) -> None:  # Updated signature with type hint
         try:
             if not hasattr(self, "details_text"):
                 return
@@ -1040,7 +1079,7 @@ class CrewGUI:
             # Clear current content
             self.details_text.delete("1.0", "end")
 
-            if item_data and "values" in item_data:
+            if item_data and "values" in item_data: # Check if item_data is not None
                 values = item_data["values"]
 
                 # Check if this is a text file (has Content column)
@@ -1064,13 +1103,193 @@ class CrewGUI:
 
                 self.details_text.insert("1.0", details_text)
             else:
-                self.details_text.insert("1.0", "No details available for this item.")
+                self.details_text.insert("1.0", "Select an item to view details or no data available for selected item.")
 
         except Exception as e:
-            logging.error(f"Error updating details view: {e}")
+            logging.error(f"Error updating details view: {e}", exc_info=True) # Added exc_info
             if hasattr(self, "details_text"):
                 self.details_text.delete("1.0", "end")
                 self.details_text.insert("1.0", f"Error displaying details: {e}")
+
+    def _on_data_table_select(self, event: tk.Event) -> None:
+        """Handles the TreeviewSelect event for the data_table."""
+        try:
+            if not hasattr(self, "data_table"):
+                return
+            
+            selection = self.data_table.selection() # Get current selection
+            if selection:
+                item_id = selection[0] # Get the first selected item ID
+                item_data = self.data_table.item(item_id) # Get item details
+                self._update_details_view(item_data) # Call with actual item data
+            else:
+                # Optionally, clear details view or show a default message if nothing is selected
+                self._update_details_view(None) 
+        except Exception as e:
+            logging.error(f"Error handling data table selection: {e}")
+            # Optionally, update details view with an error message
+            if hasattr(self, "details_text"):
+                self.details_text.delete("1.0", "end")
+                self.details_text.insert("1.0", f"Error processing selection: {e}")
+
+    def _update_script_menu(self) -> None:
+        logging.info("Updating script menu as it is about to be displayed...") # DIAGNOSTIC LOG
+        if not hasattr(self, 'script_menu') or not isinstance(self.script_menu, tk.Menu):
+            logging.error(
+                "self.script_menu is not initialized or is not a tk.Menu instance. "
+                "The 'Run Script' submenu cannot be populated. "
+                "Ensure create_menu_bar() correctly initializes self.script_menu and is called before _update_script_menu()."
+            )
+            # Optionally, display a user-facing error if this is critical for UI interaction
+            # messagebox.showerror("Menu Initialization Error", "The 'Run Script' submenu could not be prepared.")
+            return
+
+        self.script_menu.delete(0, tk.END) # Clear existing items
+
+        try:
+            if not hasattr(self, 'scripts_dir') or not self.scripts_dir:
+                logging.warning("Scripts directory (self.scripts_dir) is not defined.")
+                self.script_menu.add_command(label="(Scripts dir not configured)", state=tk.DISABLED)
+            elif not os.path.exists(self.scripts_dir):
+                logging.warning(f"Scripts directory '{self.scripts_dir}' not found.")
+                self.script_menu.add_command(label="(Scripts dir missing)", state=tk.DISABLED)
+                # Attempt to create it
+                try:
+                    os.makedirs(self.scripts_dir)
+                    logging.info(f"Re-created missing scripts directory: {self.scripts_dir}")
+                    # Optionally, create a sample script if the directory was just created
+                    sample_script_path = os.path.join(self.scripts_dir, "sample_script.py")
+                    if not os.path.exists(sample_script_path):
+                        with open(sample_script_path, "w") as f:
+                            f.write("# Sample script\\nprint('Hello from sample script!')")
+                        logging.info(f"Created sample script: {sample_script_path}")
+                except Exception as e_mkdir:
+                    logging.error(f"Failed to re-create scripts directory: {e_mkdir}")
+            
+            script_files = []
+            # Check again for scripts_dir existence in case it was just created
+            if hasattr(self, 'scripts_dir') and self.scripts_dir and os.path.exists(self.scripts_dir):
+                script_files = glob.glob(os.path.join(self.scripts_dir, "*.py"))
+            
+            if not script_files:
+                # This label will be added if scripts_dir existed but was empty,
+                # or if scripts_dir was missing/not configured and the specific messages above were already added.
+                # To avoid duplicate "missing" messages, we check if items were already added.
+                if self.script_menu.index(tk.END) is None: # No items added yet
+                    self.script_menu.add_command(label="(No scripts found)", state=tk.DISABLED)
+            else:
+                for script_path in sorted(script_files):
+                    script_name = os.path.basename(script_path)
+                    self.script_menu.add_command(
+                        label=script_name,
+                        command=lambda sp=script_path: self._run_selected_script(sp)
+                    )
+            
+            self.script_menu.add_separator()
+            self.script_menu.add_command(label="Refresh Scripts", command=self._update_script_menu)
+            self.script_menu.add_command(
+                label="Open Scripts Folder...",
+                command=self._open_scripts_folder
+            )
+            # Avoid updating status if scripts_dir was problematic initially, status might be confusing.
+            if hasattr(self, 'scripts_dir') and self.scripts_dir and os.path.exists(self.scripts_dir):
+                self.update_status(f"Scripts menu updated. Found {len(script_files)} scripts.")
+
+        except Exception as e:
+            logging.error(f"Error updating script menu: {e}", exc_info=True) # Added exc_info for more details
+            messagebox.showerror("Script Menu Error", f"Could not update script menu: {e}")
+            # Ensure self.script_menu is still valid before trying to add error items
+            if hasattr(self, 'script_menu') and isinstance(self.script_menu, tk.Menu):
+                 # Clear any partial items from the try block before adding error state
+                 self.script_menu.delete(0, tk.END)
+                 self.script_menu.add_command(label="(Error loading scripts)", state=tk.DISABLED)
+                 self.script_menu.add_separator()
+                 self.script_menu.add_command(label="Refresh Scripts", command=self._update_script_menu)
+                 self.script_menu.add_command(label="Open Scripts Folder...", command=self._open_scripts_folder)
+
+    def _run_selected_script(self, script_path: str) -> None:
+        try:
+            script_name = os.path.basename(script_path)
+            self.update_status(f"Running script: {script_name}...")
+            
+            def target():
+                process = None
+                try:
+                    logging.info(f"Executing script: python '{script_path}'")
+                    # For Windows, prevent console window, for others, 0 is fine.
+                    creation_flags = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
+                    process = subprocess.Popen(['python', script_path], 
+                                               stdout=subprocess.PIPE, 
+                                               stderr=subprocess.PIPE, 
+                                               text=True, 
+                                               creationflags=creation_flags,
+                                               cwd=self.scripts_dir) # Run script with its directory as CWD
+                    stdout, stderr = process.communicate() 
+                    
+                    if process.returncode == 0:
+                        logging.info(f"Script '{script_name}' finished successfully.")
+                        if stdout: logging.info(f"Stdout from '{script_name}':\\n{stdout}")
+                        self.root.after(0, lambda: self.update_status(f"Script '{script_name}' finished."))
+                        if stdout.strip():
+                             self.root.after(0, lambda: messagebox.showinfo(f"{script_name} Output", stdout[:1000] + ("..." if len(stdout) > 1000 else "")))
+                        elif not stderr.strip(): # No stdout and no stderr
+                             self.root.after(0, lambda: messagebox.showinfo(f"{script_name} Finished", f"Script '{script_name}' completed with no output."))
+                    else:
+                        logging.error(f"Script '{script_name}' failed with return code {process.returncode}.")
+                        if stdout: logging.error(f"Stdout from '{script_name}':\\n{stdout}")
+                        if stderr: logging.error(f"Stderr from '{script_name}':\\n{stderr}")
+                        error_message = f"Script '{script_name}' failed."
+                        if stderr:
+                            error_message += f"\\n\\nError:\\n{stderr[:500]}" + ("..." if len(stderr) > 500 else "")
+                        elif stdout: # If error but only stdout
+                             error_message += f"\\n\\nOutput:\\n{stdout[:500]}" + ("..." if len(stdout) > 500 else "")
+                        self.root.after(0, lambda: self.update_status(f"Script '{script_name}' failed.", error=True))
+                        self.root.after(0, lambda: messagebox.showerror(f"{script_name} Error", error_message))
+                except FileNotFoundError:
+                    logging.error(f"Python interpreter not found or script '{script_path}' not found.")
+                    self.root.after(0, lambda: messagebox.showerror("Script Error", f"Could not find Python or script: {script_name}"))
+                    self.root.after(0, lambda: self.update_status(f"Error running {script_name}: File not found.", error=True))
+                except Exception as e_thread:
+                    logging.error(f"Exception while running script {script_name} in thread: {e_thread}")
+                    self.root.after(0, lambda: messagebox.showerror("Script Execution Error", f"Error running {script_name}:\\n{e_thread}"))
+                    self.root.after(0, lambda: self.update_status(f"Error running {script_name}.", error=True))
+
+            threading.Thread(target=target, daemon=True).start()
+
+        except Exception as e:
+            logging.error(f"Error preparing to run script {script_path}: {e}")
+            messagebox.showerror("Script Error", f"Could not run script {os.path.basename(script_path)}: {e}")
+            self.update_status(f"Failed to start script {os.path.basename(script_path)}.", error=True)
+
+    def _open_scripts_folder(self) -> None:
+        if not hasattr(self, 'scripts_dir') or not self.scripts_dir:
+            messagebox.showwarning("Error", "Scripts directory path is not configured.")
+            logging.warning("Attempted to open scripts folder, but scripts_dir is not set.")
+            return
+
+        if not os.path.isdir(self.scripts_dir):
+            messagebox.showwarning(
+                "Error", 
+                f"Scripts directory does not exist:\\n{self.scripts_dir}\\n\\nIt should be created automatically. You can try refreshing scripts or restarting the application."
+            )
+            logging.warning(f"Attempted to open non-existent scripts folder: {self.scripts_dir}")
+            return
+
+        try:
+            # Using xdg-open for Linux, as per environment.
+            # For cross-platform, platform detection and different commands would be needed.
+            subprocess.run(['xdg-open', self.scripts_dir], check=True)
+            self.update_status(f"Opened scripts folder: {self.scripts_dir}")
+            logging.info(f"Opened scripts folder: {self.scripts_dir}")
+        except FileNotFoundError: # xdg-open not found
+            messagebox.showerror("Error", "Could not open folder. The 'xdg-open' command was not found on your system.")
+            logging.error("Failed to open scripts folder: 'xdg-open' command not found.")
+        except subprocess.CalledProcessError as e:
+            messagebox.showerror("Error", f"Failed to open scripts folder. The command 'xdg-open' exited with an error: {e}")
+            logging.error(f"Failed to open scripts folder {self.scripts_dir} using xdg-open: {e}")
+        except Exception as e:
+            messagebox.showerror("Error", f"An unexpected error occurred while trying to open the scripts folder: {e}")
+            logging.error(f"Unexpected error opening scripts folder {self.scripts_dir}: {e}")
 
     # Callback methods
     def _on_data_loaded(self, result: Tuple[List[List[Any]], List[str]]) -> None:
@@ -1572,6 +1791,10 @@ class CrewGUI:
     #     # ... (original _on_import_data content, to be reviewed/merged)
     #     pass
 
+    # def _on_import_data(self) -> None: # This will be superseded by _on_open_file
+    #     # ... (original _on_import_data content, to be reviewed/merged)
+    #     pass
+
     # def _on_load_text_content(self) -> None: # This will be superseded by _on_open_file
     #     # ... (original _on_load_text_content content, to be reviewed/merged)
     #     try:
@@ -1628,14 +1851,14 @@ class CrewGUI:
                 elif file_extension in [".txt", ".py", ".md"]: # Added .md
                     self.update_status(f"Opening text file: {os.path.basename(file_path)}...")
                     # Clear previous data/text specific states
-                    self.current_data = None 
+                    self.current_data = None
                     self.headers = []
                     if hasattr(self, 'data_table'): # Corrected: removed backslash
-                         self.data_table.delete(*self.data_table.get_children()) # Clear data table
+                        self.data_table.delete(*self.data_table.get_children()) # Clear data table
                     self.run_in_background(
                         self._load_text_background, file_path, callback=self._on_text_loaded_callback # Corrected callback
                     )
-                else:
+                else: # Ensure this 'else' has the same indentation as the 'elif' above
                     self.update_status(f"Unsupported file type: {file_extension}", error=True)
                     messagebox.showwarning(
                         "Unsupported File Type",
