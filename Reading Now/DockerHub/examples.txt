@@ -1,0 +1,920 @@
+# DockerHub - Container Registry Examples and Code Samples
+
+## Basic Examples
+
+### Example 1: Getting Started with DockerHub
+```bash
+# Create DockerHub account at https://hub.docker.com/
+
+# Login to DockerHub from command line
+docker login
+# Enter username and password when prompted
+
+# Alternative: Login with access token (recommended for security)
+echo "your_access_token" | docker login --username your_username --password-stdin
+
+# Check login status
+docker info | grep Username
+
+# Search for images on DockerHub
+docker search ubuntu
+docker search node
+docker search python --limit 10
+
+# Pull images from DockerHub
+docker pull ubuntu:latest
+docker pull python:3.11-slim
+docker pull nginx:alpine
+
+# List downloaded images
+docker images
+
+# Run container from DockerHub image
+docker run -it ubuntu:latest bash
+docker run -d -p 80:80 nginx:alpine
+docker run --rm python:3.11 python -c "print('Hello from DockerHub!')"
+```
+
+```bash
+# Basic image creation and push workflow
+# Create a simple Dockerfile
+cat > Dockerfile << 'EOF'
+FROM python:3.11-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+COPY . .
+
+EXPOSE 8000
+
+CMD ["python", "app.py"]
+EOF
+
+# Create requirements.txt
+echo "flask==2.3.3" > requirements.txt
+
+# Create simple Flask app
+cat > app.py << 'EOF'
+from flask import Flask
+
+app = Flask(__name__)
+
+@app.route('/')
+def hello():
+    return 'Hello from DockerHub!'
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=8000)
+EOF
+
+# Build the image
+docker build -t your_username/my-flask-app:v1.0.0 .
+
+# Test locally
+docker run -p 8000:8000 your_username/my-flask-app:v1.0.0
+
+# Push to DockerHub
+docker push your_username/my-flask-app:v1.0.0
+
+# Tag with multiple versions
+docker tag your_username/my-flask-app:v1.0.0 your_username/my-flask-app:latest
+docker push your_username/my-flask-app:latest
+```
+
+### Example 2: Repository Management
+```bash
+# Create repository via Docker CLI
+# Note: Repository is created automatically on first push
+
+# Repository naming conventions
+# Format: namespace/repository:tag
+# Examples:
+# - your_username/app-name:latest
+# - organization/service-name:v1.2.3
+# - company/project-backend:development
+
+# Managing repository visibility
+# Public repositories (free)
+docker push your_username/public-app:latest
+
+# Private repositories (requires subscription for multiple)
+# Same push command, but repository settings configured on DockerHub web interface
+
+# Repository management commands
+# List your repositories (via DockerHub CLI or API)
+curl -u "your_username:your_token" https://hub.docker.com/v2/repositories/your_username/
+
+# Delete image tag
+docker rmi your_username/my-app:old-version
+
+# Clean up local images
+docker image prune
+docker image prune -a  # Remove all unused images
+```
+
+### Example 3: Working with Tags and Versions
+```bash
+# Semantic versioning strategy
+VERSION="1.2.3"
+IMAGE_NAME="your_username/my-application"
+
+# Build with version tag
+docker build -t ${IMAGE_NAME}:${VERSION} .
+
+# Create additional tags
+docker tag ${IMAGE_NAME}:${VERSION} ${IMAGE_NAME}:latest
+docker tag ${IMAGE_NAME}:${VERSION} ${IMAGE_NAME}:1.2
+docker tag ${IMAGE_NAME}:${VERSION} ${IMAGE_NAME}:1
+
+# Push all tags
+docker push ${IMAGE_NAME}:${VERSION}
+docker push ${IMAGE_NAME}:latest
+docker push ${IMAGE_NAME}:1.2
+docker push ${IMAGE_NAME}:1
+
+# Environment-specific tags
+docker tag ${IMAGE_NAME}:${VERSION} ${IMAGE_NAME}:production
+docker tag ${IMAGE_NAME}:${VERSION} ${IMAGE_NAME}:staging
+docker tag ${IMAGE_NAME}:${VERSION} ${IMAGE_NAME}:development
+
+# Git-based tagging
+GIT_COMMIT=$(git rev-parse --short HEAD)
+GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
+docker tag ${IMAGE_NAME}:${VERSION} ${IMAGE_NAME}:${GIT_COMMIT}
+docker tag ${IMAGE_NAME}:${VERSION} ${IMAGE_NAME}:${GIT_BRANCH}
+
+# Date-based tagging
+DATE_TAG=$(date +%Y%m%d)
+docker tag ${IMAGE_NAME}:${VERSION} ${IMAGE_NAME}:${DATE_TAG}
+
+# List all tags for an image
+docker images ${IMAGE_NAME}
+
+# Remove specific tag
+docker rmi ${IMAGE_NAME}:old-tag
+```
+
+## Intermediate Examples
+
+### Example 4: Automated Building with GitHub Integration
+```yaml
+# .github/workflows/docker-build.yml
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches: [ main, develop ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  REGISTRY: docker.io
+  IMAGE_NAME: your_username/your_app
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=sha
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+
+    - name: Update Docker Hub description
+      uses: peter-evans/dockerhub-description@v3
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+        repository: ${{ env.IMAGE_NAME }}
+        readme-filepath: ./README.md
+```
+
+```dockerfile
+# Multi-stage Dockerfile for optimized builds
+# Stage 1: Build environment
+FROM node:18-alpine AS builder
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm ci --only=production
+
+# Copy source code
+COPY src/ ./src/
+COPY public/ ./public/
+
+# Build application
+RUN npm run build
+
+# Stage 2: Production environment
+FROM nginx:alpine AS production
+
+# Copy built assets from builder stage
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Copy nginx configuration
+COPY nginx.conf /etc/nginx/nginx.conf
+
+# Add labels for metadata
+LABEL maintainer="your.email@example.com"
+LABEL version="1.0.0"
+LABEL description="My awesome web application"
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost/ || exit 1
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
+```
+
+### Example 5: DockerHub API Integration
+```python
+# dockerhub_api.py - Python script for DockerHub API interaction
+import requests
+import json
+from typing import Dict, List, Optional
+
+class DockerHubAPI:
+    def __init__(self, username: str, password: str):
+        self.username = username
+        self.base_url = "https://hub.docker.com/v2"
+        self.token = self._login(username, password)
+    
+    def _login(self, username: str, password: str) -> str:
+        """Login and get JWT token"""
+        login_data = {
+            "username": username,
+            "password": password
+        }
+        
+        response = requests.post(
+            f"{self.base_url}/users/login/",
+            data=json.dumps(login_data),
+            headers={"Content-Type": "application/json"}
+        )
+        
+        if response.status_code == 200:
+            return response.json()["token"]
+        else:
+            raise Exception(f"Login failed: {response.text}")
+    
+    def _get_headers(self) -> Dict[str, str]:
+        """Get headers with authentication"""
+        return {
+            "Authorization": f"JWT {self.token}",
+            "Content-Type": "application/json"
+        }
+    
+    def get_repositories(self, page_size: int = 25) -> List[Dict]:
+        """Get list of repositories"""
+        response = requests.get(
+            f"{self.base_url}/repositories/{self.username}/",
+            headers=self._get_headers(),
+            params={"page_size": page_size}
+        )
+        
+        if response.status_code == 200:
+            return response.json()["results"]
+        else:
+            raise Exception(f"Failed to get repositories: {response.text}")
+    
+    def get_repository_tags(self, repository: str, page_size: int = 25) -> List[Dict]:
+        """Get tags for a repository"""
+        response = requests.get(
+            f"{self.base_url}/repositories/{self.username}/{repository}/tags/",
+            headers=self._get_headers(),
+            params={"page_size": page_size}
+        )
+        
+        if response.status_code == 200:
+            return response.json()["results"]
+        else:
+            raise Exception(f"Failed to get tags: {response.text}")
+    
+    def update_repository_description(self, repository: str, description: str, 
+                                    full_description: str = None) -> bool:
+        """Update repository description"""
+        data = {"description": description}
+        if full_description:
+            data["full_description"] = full_description
+        
+        response = requests.patch(
+            f"{self.base_url}/repositories/{self.username}/{repository}/",
+            data=json.dumps(data),
+            headers=self._get_headers()
+        )
+        
+        return response.status_code == 200
+    
+    def delete_tag(self, repository: str, tag: str) -> bool:
+        """Delete a specific tag"""
+        response = requests.delete(
+            f"{self.base_url}/repositories/{self.username}/{repository}/tags/{tag}/",
+            headers=self._get_headers()
+        )
+        
+        return response.status_code == 204
+
+# Usage example
+def main():
+    # Initialize API client
+    api = DockerHubAPI("your_username", "your_password_or_token")
+    
+    # List repositories
+    repos = api.get_repositories()
+    print("Your repositories:")
+    for repo in repos:
+        print(f"- {repo['name']}: {repo['description']}")
+    
+    # Get tags for a specific repository
+    if repos:
+        repo_name = repos[0]["name"]
+        tags = api.get_repository_tags(repo_name)
+        print(f"\nTags for {repo_name}:")
+        for tag in tags:
+            print(f"- {tag['name']}: {tag['full_size']} bytes")
+    
+    # Update repository description
+    # api.update_repository_description(
+    #     "my-app", 
+    #     "My awesome application",
+    #     "This is a comprehensive description of my application..."
+    # )
+
+if __name__ == "__main__":
+    main()
+```
+
+```bash
+# DockerHub CLI management script
+#!/bin/bash
+# dockerhub-manager.sh
+
+set -e
+
+DOCKERHUB_USERNAME="your_username"
+DOCKERHUB_REPO="your_repo"
+
+# Function to get repository information
+get_repo_info() {
+    echo "=== Repository Information ==="
+    curl -s "https://hub.docker.com/v2/repositories/${DOCKERHUB_USERNAME}/${DOCKERHUB_REPO}/" | jq '.'
+}
+
+# Function to list tags
+list_tags() {
+    echo "=== Repository Tags ==="
+    curl -s "https://hub.docker.com/v2/repositories/${DOCKERHUB_USERNAME}/${DOCKERHUB_REPO}/tags/" | jq '.results[] | {name: .name, last_updated: .last_updated, full_size: .full_size}'
+}
+
+# Function to get download statistics
+get_download_stats() {
+    echo "=== Download Statistics ==="
+    curl -s "https://hub.docker.com/v2/repositories/${DOCKERHUB_USERNAME}/${DOCKERHUB_REPO}/" | jq '{pull_count: .pull_count, star_count: .star_count}'
+}
+
+# Function to clean old tags (requires authentication)
+clean_old_tags() {
+    local days_old=${1:-30}
+    echo "Cleaning tags older than ${days_old} days..."
+    
+    # This would require authentication token
+    # Implementation depends on your specific needs
+    echo "Manual cleanup required - check DockerHub web interface"
+}
+
+# Main menu
+case "${1:-info}" in
+    info)
+        get_repo_info
+        ;;
+    tags)
+        list_tags
+        ;;
+    stats)
+        get_download_stats
+        ;;
+    clean)
+        clean_old_tags $2
+        ;;
+    *)
+        echo "Usage: $0 {info|tags|stats|clean [days]}"
+        exit 1
+        ;;
+esac
+```
+
+### Example 6: Organizations and Teams
+```bash
+# Organization repository management
+
+# Create organization repository
+# This is done through DockerHub web interface or API
+
+# Build and push to organization repository
+ORG_NAME="myorganization"
+REPO_NAME="backend-service"
+VERSION="1.0.0"
+
+docker build -t ${ORG_NAME}/${REPO_NAME}:${VERSION} .
+docker push ${ORG_NAME}/${REPO_NAME}:${VERSION}
+
+# Team permissions script (using API)
+```
+
+```python
+# dockerhub_org_manager.py - Organization management
+class DockerHubOrgManager(DockerHubAPI):
+    def __init__(self, username: str, password: str, org_name: str):
+        super().__init__(username, password)
+        self.org_name = org_name
+    
+    def get_org_repositories(self) -> List[Dict]:
+        """Get organization repositories"""
+        response = requests.get(
+            f"{self.base_url}/repositories/{self.org_name}/",
+            headers=self._get_headers()
+        )
+        
+        if response.status_code == 200:
+            return response.json()["results"]
+        else:
+            raise Exception(f"Failed to get org repositories: {response.text}")
+    
+    def get_team_members(self, team_name: str) -> List[Dict]:
+        """Get team members"""
+        response = requests.get(
+            f"{self.base_url}/orgs/{self.org_name}/teams/{team_name}/members/",
+            headers=self._get_headers()
+        )
+        
+        if response.status_code == 200:
+            return response.json()["results"]
+        else:
+            raise Exception(f"Failed to get team members: {response.text}")
+    
+    def add_team_member(self, team_name: str, username: str) -> bool:
+        """Add member to team"""
+        data = {"member": username}
+        
+        response = requests.post(
+            f"{self.base_url}/orgs/{self.org_name}/teams/{team_name}/members/",
+            data=json.dumps(data),
+            headers=self._get_headers()
+        )
+        
+        return response.status_code == 201
+
+# Usage for organization
+org_manager = DockerHubOrgManager("admin_user", "password", "myorg")
+org_repos = org_manager.get_org_repositories()
+```
+
+## Advanced Examples
+
+### Example 7: Security and Vulnerability Scanning
+```bash
+# Docker Scout security scanning (new DockerHub feature)
+
+# Enable Docker Scout
+docker scout
+
+# Scan local image
+docker scout cves your_username/your_app:latest
+
+# Scan and get recommendations
+docker scout recommendations your_username/your_app:latest
+
+# Compare images
+docker scout compare --to your_username/your_app:latest your_username/your_app:previous
+
+# Generate SBOM (Software Bill of Materials)
+docker scout sbom your_username/your_app:latest
+
+# Integration with CI/CD
+```
+
+```yaml
+# Security scanning in GitHub Actions
+name: Security Scan
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Build image
+      run: docker build -t test-image .
+    
+    - name: Docker Scout scan
+      uses: docker/scout-action@v1
+      with:
+        command: cves
+        image: test-image
+        sarif-file: scout-report.sarif
+    
+    - name: Upload SARIF result
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: scout-report.sarif
+```
+
+```dockerfile
+# Security-focused Dockerfile
+FROM python:3.11-slim as base
+
+# Create non-root user
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+
+# Set security-focused labels
+LABEL security.scan="enabled"
+LABEL maintainer="security@company.com"
+
+# Install security updates
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends \
+        ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy requirements first for better caching
+COPY requirements.txt .
+
+# Install Python dependencies with security focus
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY --chown=appuser:appuser . .
+
+# Switch to non-root user
+USER appuser
+
+# Use HTTPS for health checks
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f https://localhost:8443/health || exit 1
+
+EXPOSE 8443
+
+# Use specific command instead of shell form
+CMD ["python", "-m", "app"]
+```
+
+### Example 8: Multi-Architecture Builds
+```bash
+# Build for multiple architectures
+docker buildx create --use
+
+# Build and push multi-arch image
+docker buildx build \
+    --platform linux/amd64,linux/arm64,linux/arm/v7 \
+    -t your_username/multi-arch-app:latest \
+    --push .
+
+# Verify multi-arch manifest
+docker buildx imagetools inspect your_username/multi-arch-app:latest
+
+# Build with specific architecture
+docker buildx build \
+    --platform linux/arm64 \
+    -t your_username/app:arm64 \
+    --push .
+```
+
+```dockerfile
+# Multi-architecture Dockerfile
+FROM --platform=$BUILDPLATFORM node:18-alpine AS builder
+
+ARG TARGETPLATFORM
+ARG BUILDPLATFORM
+ARG TARGETOS
+ARG TARGETARCH
+
+RUN echo "Building on $BUILDPLATFORM for $TARGETPLATFORM"
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm ci
+
+COPY . .
+RUN npm run build
+
+# Production stage
+FROM node:18-alpine
+
+ARG TARGETARCH
+LABEL architecture=$TARGETARCH
+
+RUN addgroup -g 1001 -S nodejs
+RUN adduser -S nextjs -u 1001
+
+COPY --from=builder --chown=nextjs:nodejs /app/dist ./dist
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
+
+USER nextjs
+
+EXPOSE 3000
+
+CMD ["node", "dist/index.js"]
+```
+
+### Example 9: Content Trust and Image Signing
+```bash
+# Enable Docker Content Trust
+export DOCKER_CONTENT_TRUST=1
+
+# Generate signing keys
+docker trust key generate your_name
+
+# Sign and push image
+docker trust sign your_username/signed-app:v1.0.0
+
+# Verify signed image
+docker trust inspect --pretty your_username/signed-app:v1.0.0
+
+# Add additional signers
+docker trust signer add --key signer.pub signer_name your_username/signed-app
+
+# Remove signer
+docker trust signer remove signer_name your_username/signed-app
+
+# Disable content trust for specific command
+DOCKER_CONTENT_TRUST=0 docker pull untrusted_image:latest
+```
+
+```bash
+# Notary server integration (advanced)
+# Configure custom notary server
+export DOCKER_CONTENT_TRUST_SERVER=https://notary.company.com
+
+# Initialize repository with custom notary
+docker trust key generate root
+docker trust signer add --key delegation.pub delegation_role repo
+
+# Rotate keys
+docker trust key rotate repository your_username/app
+```
+
+### Example 10: Enterprise Integration and Mirroring
+```yaml
+# docker-compose.yml for local registry mirror
+version: '3.8'
+
+services:
+  registry-mirror:
+    image: registry:2
+    ports:
+      - "5000:5000"
+    environment:
+      REGISTRY_PROXY_REMOTEURL: https://registry-1.docker.io
+      REGISTRY_PROXY_USERNAME: your_dockerhub_username
+      REGISTRY_PROXY_PASSWORD: your_dockerhub_password
+    volumes:
+      - registry-data:/var/lib/registry
+      - ./config.yml:/etc/docker/registry/config.yml
+
+volumes:
+  registry-data:
+```
+
+```yaml
+# config.yml for registry mirror
+version: 0.1
+log:
+  fields:
+    service: registry
+storage:
+  cache:
+    blobdescriptor: inmemory
+  filesystem:
+    rootdirectory: /var/lib/registry
+proxy:
+  remoteurl: https://registry-1.docker.io
+  username: your_dockerhub_username
+  password: your_dockerhub_password
+http:
+  addr: :5000
+  headers:
+    X-Content-Type-Options: [nosniff]
+health:
+  storagedriver:
+    enabled: true
+    interval: 10s
+    threshold: 3
+```
+
+```bash
+# Corporate deployment script
+#!/bin/bash
+# enterprise-deploy.sh
+
+set -e
+
+# Configuration
+REGISTRY="your-company-registry.com"
+DOCKERHUB_REGISTRY="docker.io"
+NAMESPACE="company/project"
+VERSION="${1:-latest}"
+
+# Function to mirror image from DockerHub to corporate registry
+mirror_image() {
+    local image="$1"
+    local tag="$2"
+    
+    echo "Mirroring ${image}:${tag}..."
+    
+    # Pull from DockerHub
+    docker pull "${DOCKERHUB_REGISTRY}/${image}:${tag}"
+    
+    # Tag for corporate registry
+    docker tag "${DOCKERHUB_REGISTRY}/${image}:${tag}" "${REGISTRY}/${image}:${tag}"
+    
+    # Push to corporate registry
+    docker push "${REGISTRY}/${image}:${tag}"
+    
+    echo "✓ Mirrored ${image}:${tag}"
+}
+
+# Mirror base images
+mirror_image "python" "3.11-slim"
+mirror_image "node" "18-alpine"
+mirror_image "nginx" "alpine"
+
+# Build and deploy application
+echo "Building application..."
+docker build -t "${REGISTRY}/${NAMESPACE}:${VERSION}" .
+
+echo "Pushing to corporate registry..."
+docker push "${REGISTRY}/${NAMESPACE}:${VERSION}"
+
+echo "Deployment complete!"
+```
+
+## Additional Resources
+
+### DockerHub Webhooks and Automation
+```bash
+# Webhook integration example
+# Configure webhook in DockerHub repository settings
+# URL: https://your-api.com/webhook/dockerhub
+# JSON payload will be sent on push
+```
+
+```python
+# webhook_handler.py - Flask webhook handler
+from flask import Flask, request, jsonify
+import json
+import subprocess
+
+app = Flask(__name__)
+
+@app.route('/webhook/dockerhub', methods=['POST'])
+def handle_dockerhub_webhook():
+    payload = request.get_json()
+    
+    if payload:
+        repository = payload.get('repository', {})
+        push_data = payload.get('push_data', {})
+        
+        repo_name = repository.get('repo_name')
+        tag = push_data.get('tag')
+        
+        print(f"Received webhook for {repo_name}:{tag}")
+        
+        # Trigger deployment
+        if tag == 'latest':
+            trigger_deployment(repo_name, tag)
+        
+        return jsonify({"status": "success"})
+    
+    return jsonify({"status": "error"}), 400
+
+def trigger_deployment(repo_name, tag):
+    """Trigger deployment when new image is pushed"""
+    try:
+        # Example: Update Kubernetes deployment
+        subprocess.run([
+            'kubectl', 'set', 'image', 
+            f'deployment/{repo_name}',
+            f'{repo_name}={repo_name}:{tag}'
+        ], check=True)
+        
+        print(f"Deployment triggered for {repo_name}:{tag}")
+    except subprocess.CalledProcessError as e:
+        print(f"Deployment failed: {e}")
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=8080)
+```
+
+### Best Practices Summary
+```bash
+# DockerHub Best Practices Checklist
+
+# 1. Security
+# - Use official base images when possible
+# - Regularly update base images
+# - Enable vulnerability scanning
+# - Use content trust for critical images
+# - Don't store secrets in images
+
+# 2. Repository Management
+# - Use meaningful repository names
+# - Implement proper tagging strategy
+# - Clean up old/unused tags regularly
+# - Use private repositories for sensitive code
+
+# 3. Image Optimization
+# - Use multi-stage builds
+# - Minimize layer count
+# - Use .dockerignore files
+# - Choose appropriate base images (alpine, slim)
+
+# 4. CI/CD Integration
+# - Automate builds with GitHub Actions
+# - Use build caching effectively
+# - Implement proper testing before push
+# - Use webhooks for deployment automation
+
+# 5. Documentation
+# - Maintain good README.md files
+# - Use proper image labels
+# - Document image usage and environment variables
+# - Provide example docker-compose files
+
+# Example comprehensive tagging strategy
+IMAGE_NAME="your_username/your_app"
+VERSION="1.2.3"
+
+# Semantic versioning
+docker tag $IMAGE_NAME:$VERSION $IMAGE_NAME:latest
+docker tag $IMAGE_NAME:$VERSION $IMAGE_NAME:1.2
+docker tag $IMAGE_NAME:$VERSION $IMAGE_NAME:1
+
+# Environment tags
+docker tag $IMAGE_NAME:$VERSION $IMAGE_NAME:production
+docker tag $IMAGE_NAME:$VERSION $IMAGE_NAME:staging
+
+# Git-based tags
+GIT_SHA=$(git rev-parse --short HEAD)
+docker tag $IMAGE_NAME:$VERSION $IMAGE_NAME:$GIT_SHA
+
+# Build info tags
+BUILD_DATE=$(date +%Y%m%d)
+docker tag $IMAGE_NAME:$VERSION $IMAGE_NAME:build-$BUILD_DATE
+
+# Push all tags
+docker push $IMAGE_NAME --all-tags
+```
+
+Created: 2025-06-02 19:39:56
+
+Created: 2025-06-02 19:39:56

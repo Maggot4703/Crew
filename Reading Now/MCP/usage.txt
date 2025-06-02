@@ -1,0 +1,377 @@
+# MCP - Usage Guide
+
+## Getting Started
+
+### Installation
+```bash
+# Install MCP SDK for Python
+pip install mcp
+
+# Install MCP SDK for TypeScript/JavaScript
+npm install @modelcontextprotocol/sdk
+
+# Install MCP CLI tools
+pip install mcp-cli
+```
+
+### Basic Server Setup
+```python
+# Simple MCP server example
+import asyncio
+from mcp import create_server, types
+
+# Create server instance
+server = create_server("my-server")
+
+@server.list_resources()
+async def list_resources() -> list[types.Resource]:
+    return [
+        types.Resource(
+            uri="file://data.txt",
+            name="Sample Data",
+            mimeType="text/plain"
+        )
+    ]
+
+@server.read_resource()
+async def read_resource(uri: str) -> str:
+    if uri == "file://data.txt":
+        return "Sample content"
+    raise ValueError(f"Unknown resource: {uri}")
+
+# Run the server
+if __name__ == "__main__":
+    asyncio.run(server.run())
+```
+
+### Client Connection
+```python
+# Connect to MCP server
+from mcp import create_client
+
+async def main():
+    # Connect to server via stdio
+    client = create_client("stdio", ["python", "server.py"])
+    
+    # List available resources
+    resources = await client.list_resources()
+    print(f"Available resources: {resources}")
+    
+    # Read a resource
+    content = await client.read_resource("file://data.txt")
+    print(f"Content: {content}")
+
+asyncio.run(main())
+```
+
+## Common Operations
+
+### Resource Management
+```python
+# Define resources with metadata
+@server.list_resources()
+async def list_resources():
+    return [
+        types.Resource(
+            uri="db://users",
+            name="User Database",
+            description="Customer user data",
+            mimeType="application/json"
+        ),
+        types.Resource(
+            uri="api://weather",
+            name="Weather API",
+            description="Current weather data"
+        )
+    ]
+
+# Handle resource reading
+@server.read_resource()
+async def read_resource(uri: str):
+    if uri == "db://users":
+        return await get_user_data()
+    elif uri == "api://weather":
+        return await fetch_weather()
+    raise ValueError(f"Resource not found: {uri}")
+```
+
+### Tool Implementation
+```python
+# Define tools that AI can call
+@server.list_tools()
+async def list_tools():
+    return [
+        types.Tool(
+            name="send_email",
+            description="Send an email message",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "to": {"type": "string"},
+                    "subject": {"type": "string"},
+                    "body": {"type": "string"}
+                },
+                "required": ["to", "subject", "body"]
+            }
+        )
+    ]
+
+@server.call_tool()
+async def call_tool(name: str, arguments: dict):
+    if name == "send_email":
+        await send_email_function(
+            to=arguments["to"],
+            subject=arguments["subject"],
+            body=arguments["body"]
+        )
+        return "Email sent successfully"
+    raise ValueError(f"Unknown tool: {name}")
+```
+
+### Prompt Templates
+```python
+# Define reusable prompts
+@server.list_prompts()
+async def list_prompts():
+    return [
+        types.Prompt(
+            name="analyze_data",
+            description="Analyze dataset with specific criteria",
+            arguments=[
+                types.PromptArgument(
+                    name="dataset",
+                    description="Dataset to analyze",
+                    required=True
+                ),
+                types.PromptArgument(
+                    name="criteria",
+                    description="Analysis criteria"
+                )
+            ]
+        )
+    ]
+
+@server.get_prompt()
+async def get_prompt(name: str, arguments: dict):
+    if name == "analyze_data":
+        dataset = arguments.get("dataset")
+        criteria = arguments.get("criteria", "general")
+        
+        return types.GetPromptResult(
+            description=f"Analysis of {dataset}",
+            messages=[
+                types.PromptMessage(
+                    role="user",
+                    content=f"Analyze the {dataset} dataset using {criteria} criteria. Provide insights and recommendations."
+                )
+            ]
+        )
+```
+
+## Advanced Usage
+
+### Multi-Server Configuration
+```python
+# Client connecting to multiple servers
+async def multi_server_client():
+    # Connect to database server
+    db_client = create_client("stdio", ["python", "db_server.py"])
+    
+    # Connect to API server
+    api_client = create_client("http", "http://localhost:8000/mcp")
+    
+    # Coordinate between servers
+    users = await db_client.read_resource("db://users")
+    weather = await api_client.read_resource("api://weather")
+    
+    # Combine data from multiple sources
+    return combine_data(users, weather)
+```
+
+### Custom Transport
+```python
+# Custom WebSocket transport
+import websockets
+from mcp.transport import WebSocketTransport
+
+class CustomWebSocketTransport(WebSocketTransport):
+    async def connect(self, uri: str):
+        self.websocket = await websockets.connect(uri)
+        return self
+    
+    async def send(self, message: dict):
+        await self.websocket.send(json.dumps(message))
+    
+    async def receive(self):
+        raw_message = await self.websocket.recv()
+        return json.loads(raw_message)
+
+# Use custom transport
+transport = CustomWebSocketTransport()
+client = create_client(transport)
+```
+
+### Error Handling and Resilience
+```python
+# Robust error handling
+@server.call_tool()
+async def call_tool(name: str, arguments: dict):
+    try:
+        if name == "database_query":
+            result = await execute_query(arguments["query"])
+            return {"status": "success", "data": result}
+    
+    except DatabaseError as e:
+        return {
+            "status": "error",
+            "error_code": "DATABASE_ERROR",
+            "message": str(e)
+        }
+    
+    except ValidationError as e:
+        return {
+            "status": "error",
+            "error_code": "VALIDATION_ERROR",
+            "message": str(e)
+        }
+    
+    except Exception as e:
+        logger.error(f"Unexpected error in tool {name}: {e}")
+        return {
+            "status": "error",
+            "error_code": "INTERNAL_ERROR",
+            "message": "An unexpected error occurred"
+        }
+```
+
+### Performance Optimization
+```python
+# Caching and connection pooling
+import asyncio
+from functools import lru_cache
+
+class OptimizedServer:
+    def __init__(self):
+        self.resource_cache = {}
+        self.connection_pool = asyncio.Queue(maxsize=10)
+    
+    @lru_cache(maxsize=100)
+    async def cached_resource(self, uri: str):
+        # Cache frequently accessed resources
+        if uri in self.resource_cache:
+            return self.resource_cache[uri]
+        
+        data = await self.fetch_resource(uri)
+        self.resource_cache[uri] = data
+        return data
+    
+    async def batch_operations(self, operations: list):
+        # Process multiple operations concurrently
+        tasks = [self.process_operation(op) for op in operations]
+        return await asyncio.gather(*tasks)
+```
+
+## Configuration
+
+### Server Configuration
+```yaml
+# mcp-server.yaml
+server:
+  name: "my-mcp-server"
+  version: "1.0.0"
+  description: "Custom MCP server"
+  
+transport:
+  type: "stdio"
+  # Or for HTTP:
+  # type: "http"
+  # port: 8000
+  # host: "localhost"
+
+resources:
+  - name: "database"
+    uri_pattern: "db://*"
+    handler: "database_handler"
+  
+  - name: "files"
+    uri_pattern: "file://*"
+    handler: "file_handler"
+
+tools:
+  - name: "send_notification"
+    handler: "notification_handler"
+    rate_limit: 10  # per minute
+
+logging:
+  level: "INFO"
+  file: "mcp-server.log"
+```
+
+### Client Configuration
+```python
+# MCP client configuration
+config = {
+    "servers": [
+        {
+            "name": "database-server",
+            "command": ["python", "db_server.py"],
+            "timeout": 30
+        },
+        {
+            "name": "api-server",
+            "url": "http://localhost:8000/mcp",
+            "headers": {"Authorization": "Bearer token"}
+        }
+    ],
+    "retry": {
+        "max_attempts": 3,
+        "backoff_factor": 2
+    }
+}
+
+client = create_client(config)
+```
+
+## Tips and Tricks
+
+### Development Best Practices
+- Use clear, descriptive names for resources and tools
+- Implement comprehensive error handling
+- Add detailed logging for debugging
+- Use type hints and validation for parameters
+- Test with various AI clients for compatibility
+
+### Performance Tips
+- Cache frequently accessed resources
+- Use connection pooling for database connections
+- Implement rate limiting to prevent abuse
+- Consider async operations for I/O bound tasks
+- Monitor memory usage with large datasets
+
+### Security Considerations
+- Validate all input parameters
+- Implement proper authentication
+- Use environment variables for sensitive data
+- Log security-relevant events
+- Regularly update dependencies
+
+### Debugging
+```python
+# Enable debug logging
+import logging
+logging.basicConfig(level=logging.DEBUG)
+
+# Add request/response logging
+@server.middleware
+async def log_requests(request, call_next):
+    logger.debug(f"Request: {request}")
+    response = await call_next(request)
+    logger.debug(f"Response: {response}")
+    return response
+```
+- Productivity enhancements
+- Common pitfalls to avoid
+- Community recommendations
+- Workflow optimization
+
+Created: 2025-06-02 19:39:56

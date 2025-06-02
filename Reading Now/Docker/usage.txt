@@ -1,0 +1,377 @@
+# Docker - Usage Guide
+
+## Getting Started
+
+### Installation
+```bash
+# Ubuntu/Debian
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt update
+sudo apt install docker-ce docker-ce-cli containerd.io docker-compose-plugin
+
+# CentOS/RHEL
+sudo yum install -y yum-utils
+sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+sudo yum install docker-ce docker-ce-cli containerd.io docker-compose-plugin
+
+# macOS (using Homebrew)
+brew install --cask docker
+
+# Windows
+# Download Docker Desktop from https://docker.com/products/docker-desktop
+```
+
+### Initial Setup
+```bash
+# Start Docker service
+sudo systemctl start docker
+sudo systemctl enable docker
+
+# Add user to docker group (Linux)
+sudo usermod -aG docker $USER
+newgrp docker
+
+# Verify installation
+docker version
+docker run hello-world
+
+# Configure Docker daemon
+sudo mkdir -p /etc/docker
+sudo tee /etc/docker/daemon.json <<EOF
+{
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "10m",
+    "max-file": "3"
+  },
+  "storage-driver": "overlay2"
+}
+EOF
+
+sudo systemctl restart docker
+```
+
+### Basic Configuration
+```bash
+# Set up Docker Hub authentication
+docker login
+
+# Configure resource limits (Docker Desktop)
+# - Memory: 4GB minimum, 8GB recommended
+# - CPU: 2 cores minimum, 4 cores recommended
+# - Disk: 20GB minimum for images and containers
+
+# Environment variables
+export DOCKER_BUILDKIT=1
+export COMPOSE_DOCKER_CLI_BUILD=1
+```
+
+## Common Operations
+
+### Container Management
+```bash
+# Run containers
+docker run -it ubuntu:20.04 bash                    # Interactive container
+docker run -d -p 80:80 nginx                        # Detached with port mapping
+docker run --name myapp -d -v $(pwd):/app node:16   # Named with volume mount
+
+# List containers
+docker ps                    # Running containers
+docker ps -a                 # All containers
+docker ps -f "status=exited" # Filter by status
+
+# Container operations
+docker start container_name   # Start stopped container
+docker stop container_name    # Stop running container
+docker restart container_name # Restart container
+docker pause container_name   # Pause container
+docker unpause container_name # Unpause container
+
+# Execute commands in containers
+docker exec -it container_name bash              # Interactive shell
+docker exec container_name ls /app               # Single command
+docker exec -u root container_name apt update    # As different user
+
+# Container logs and monitoring
+docker logs container_name                       # View logs
+docker logs -f container_name                    # Follow logs
+docker logs --tail 100 container_name            # Last 100 lines
+docker stats container_name                      # Resource usage
+docker top container_name                        # Running processes
+
+# Remove containers
+docker rm container_name              # Remove stopped container
+docker rm -f container_name           # Force remove running container
+docker container prune                # Remove all stopped containers
+```
+
+### Image Management
+```bash
+# Build images
+docker build -t myapp:latest .                   # Build from Dockerfile
+docker build -t myapp:v1.0 -f custom.dockerfile . # Custom Dockerfile
+docker build --no-cache -t myapp:latest .        # No cache build
+
+# Manage images
+docker images                         # List images
+docker pull ubuntu:20.04            # Pull image
+docker push myregistry/myapp:latest  # Push image
+docker tag myapp:latest myapp:v1.0   # Tag image
+
+# Image inspection
+docker inspect image_name             # Detailed image info
+docker history image_name             # Image layers
+docker image ls --filter "dangling=true" # Unused images
+
+# Remove images
+docker rmi image_name                 # Remove image
+docker image prune                    # Remove unused images
+docker image prune -a                 # Remove all unused images
+```
+
+### Volume Management
+```bash
+# Create and manage volumes
+docker volume create myvolume         # Create named volume
+docker volume ls                      # List volumes
+docker volume inspect myvolume       # Volume details
+docker volume rm myvolume            # Remove volume
+
+# Use volumes
+docker run -v myvolume:/data ubuntu   # Named volume
+docker run -v $(pwd):/app ubuntu      # Bind mount
+docker run --mount type=volume,source=myvolume,target=/data ubuntu # Mount syntax
+
+# Volume operations
+docker volume prune                   # Remove unused volumes
+```
+
+### Network Management
+```bash
+# Network operations
+docker network ls                     # List networks
+docker network create mynetwork      # Create network
+docker network inspect bridge        # Network details
+docker network rm mynetwork          # Remove network
+
+# Connect containers to networks
+docker run --network mynetwork ubuntu
+docker network connect mynetwork container_name
+docker network disconnect mynetwork container_name
+```
+
+## Docker Compose Usage
+
+### Basic Compose Operations
+```bash
+# Compose commands
+docker-compose up                     # Start services
+docker-compose up -d                  # Start in background
+docker-compose down                   # Stop and remove
+docker-compose restart               # Restart services
+docker-compose pull                  # Pull latest images
+
+# Service management
+docker-compose start service_name     # Start specific service
+docker-compose stop service_name      # Stop specific service
+docker-compose logs service_name      # View service logs
+docker-compose exec service_name bash # Execute in service
+
+# Build and rebuild
+docker-compose build                  # Build services
+docker-compose build --no-cache       # Build without cache
+docker-compose up --build             # Build and start
+```
+
+### Compose File Examples
+```yaml
+# docker-compose.yml - Basic web application
+version: '3.8'
+services:
+  web:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      - db
+  
+  db:
+    image: postgres:13
+    environment:
+      POSTGRES_DB: myapp
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+volumes:
+  postgres_data:
+```
+
+## Advanced Usage
+
+### Multi-stage Builds
+```dockerfile
+# Dockerfile with multi-stage build
+FROM node:16-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production
+
+FROM node:16-alpine AS runtime
+WORKDIR /app
+COPY --from=builder /app/node_modules ./node_modules
+COPY . .
+EXPOSE 3000
+CMD ["node", "index.js"]
+```
+
+### Build Arguments and Secrets
+```bash
+# Build with arguments
+docker build --build-arg NODE_ENV=production -t myapp .
+
+# Using secrets (BuildKit)
+docker build --secret id=mysecret,src=./secret.txt -t myapp .
+```
+
+### Container Health Checks
+```dockerfile
+# Health check in Dockerfile
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:3000/health || exit 1
+```
+
+```bash
+# Health check commands
+docker inspect --format='{{.State.Health.Status}}' container_name
+docker ps --filter health=unhealthy
+```
+
+### Docker Registry Operations
+```bash
+# Private registry setup
+docker run -d -p 5000:5000 --name registry registry:2
+
+# Push to private registry
+docker tag myapp:latest localhost:5000/myapp:latest
+docker push localhost:5000/myapp:latest
+
+# Pull from private registry
+docker pull localhost:5000/myapp:latest
+```
+
+### Container Resource Management
+```bash
+# Resource constraints
+docker run --memory="512m" --cpus="1.5" ubuntu      # Memory and CPU limits
+docker run --memory="1g" --memory-swap="2g" ubuntu  # Memory with swap
+docker run --device=/dev/sda:/dev/xvda ubuntu       # Device access
+
+# Update running container resources
+docker update --memory="1g" --cpus="2" container_name
+```
+
+## Performance Optimization
+
+### Build Optimization
+```bash
+# Use .dockerignore
+echo -e "node_modules\n.git\n*.log" > .dockerignore
+
+# Optimize layer caching
+# Place frequently changing commands last
+# Combine RUN commands where appropriate
+```
+
+### Runtime Optimization
+```bash
+# Container optimization
+docker run --rm                      # Auto-remove on exit
+docker run --read-only               # Read-only filesystem
+docker run --tmpfs /tmp              # Temporary filesystem
+
+# Use specific tags
+docker pull node:16-alpine           # Instead of node:latest
+```
+
+### Monitoring and Debugging
+```bash
+# System information
+docker system df                     # Disk usage
+docker system events                 # Real-time events
+docker system prune                  # Clean up system
+
+# Container debugging
+docker exec -it container_name sh    # Debug shell
+docker cp container_name:/app/log.txt ./log.txt # Copy files
+docker inspect container_name        # Detailed info
+```
+
+## Tips and Tricks
+
+### Productivity Enhancements
+```bash
+# Useful aliases
+alias dps='docker ps'
+alias di='docker images'
+alias drm='docker rm $(docker ps -aq)'
+alias drmi='docker rmi $(docker images -q)'
+
+# Quick cleanup
+docker system prune -af              # Remove everything unused
+
+# Multi-platform builds
+docker buildx create --use
+docker buildx build --platform linux/amd64,linux/arm64 -t myapp .
+```
+
+### Common Pitfalls to Avoid
+- Don't run containers as root in production
+- Always use specific image tags, not 'latest'
+- Keep images small by using alpine variants
+- Don't store data in containers (use volumes)
+- Clean up unused resources regularly
+- Use .dockerignore to reduce build context
+- Don't expose unnecessary ports
+
+### Security Best Practices
+```bash
+# Run as non-root user
+USER 1001
+
+# Scan images for vulnerabilities
+docker scout cves myapp:latest
+
+# Use security policies
+docker run --security-opt no-new-privileges ubuntu
+```
+
+### Workflow Optimization
+```bash
+# Development workflow
+docker-compose -f docker-compose.dev.yml up
+
+# Production deployment
+docker-compose -f docker-compose.prod.yml up -d
+
+# Testing
+docker run --rm -v $(pwd):/app myapp npm test
+```
+
+### Environment-Specific Configurations
+```bash
+# Environment variables from file
+docker run --env-file .env myapp
+
+# Override compose file
+docker-compose -f docker-compose.yml -f docker-compose.override.yml up
+```

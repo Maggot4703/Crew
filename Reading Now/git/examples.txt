@@ -1,0 +1,337 @@
+# git - Examples and Code Samples
+
+## Basic Examples
+
+### Example 1: Repository Initialization and First Commit
+```bash
+# Initialize a new repository
+git init my-project
+cd my-project
+
+# Create initial files
+echo "# My Project" > README.md
+echo "*.log" > .gitignore
+echo "node_modules/" >> .gitignore
+
+# Stage and commit
+git add .
+git status
+git commit -m "Initial commit with README and .gitignore"
+
+# View commit history
+git log --oneline
+```
+
+### Example 2: Basic Workflow - Add, Commit, Push
+```bash
+# Check current status
+git status
+
+# Create new file
+echo "console.log('Hello World');" > app.js
+
+# Stage changes
+git add app.js
+git status
+
+# Commit changes
+git commit -m "Add Hello World application"
+
+# Set up remote repository
+git remote add origin https://github.com/username/my-project.git
+
+# Push to remote
+git push -u origin main
+
+# View remote information
+git remote -v
+```
+
+### Example 3: Basic Branching and Merging
+```bash
+# Create and switch to new branch
+git checkout -b feature/user-authentication
+
+# Make changes
+echo "// Authentication logic" > auth.js
+git add auth.js
+git commit -m "Add authentication module"
+
+# Switch back to main
+git checkout main
+
+# Merge feature branch
+git merge feature/user-authentication
+
+# Delete feature branch
+git branch -d feature/user-authentication
+
+# View all branches
+git branch -a
+```
+
+## Intermediate Examples
+
+### Example 4: Working with Remote Repositories
+```bash
+# Clone repository
+git clone https://github.com/username/project.git
+cd project
+
+# Create and push new branch
+git checkout -b feature/new-feature
+echo "// New feature code" > feature.js
+git add feature.js
+git commit -m "Implement new feature"
+git push origin feature/new-feature
+
+# Fetch latest changes
+git fetch origin
+
+# Pull changes from main
+git checkout main
+git pull origin main
+
+# Rebase feature branch
+git checkout feature/new-feature
+git rebase main
+
+# Force push after rebase
+git push --force-with-lease origin feature/new-feature
+```
+
+### Example 5: Stashing and Temporary Changes
+```bash
+# Start working on feature
+echo "// Work in progress" > wip.js
+git add wip.js
+
+# Urgent bug fix needed - stash current work
+git stash push -m "WIP: new feature implementation"
+
+# Switch to hotfix branch
+git checkout -b hotfix/critical-bug
+echo "// Bug fix" > bugfix.js
+git add bugfix.js
+git commit -m "Fix critical bug"
+
+# Merge hotfix
+git checkout main
+git merge hotfix/critical-bug
+git push origin main
+
+# Return to feature work
+git checkout feature/new-feature
+git stash pop
+
+# Continue working
+echo "// Continued work" >> wip.js
+git add wip.js
+git commit -m "Complete new feature implementation"
+```
+
+### Example 6: Handling Merge Conflicts
+```bash
+# Scenario: Two developers modify same file
+# Developer A changes
+git checkout -b feature/a
+echo "console.log('Feature A');" > shared.js
+git add shared.js
+git commit -m "Add feature A"
+
+# Developer B changes (simulate by switching branches)
+git checkout main
+git checkout -b feature/b
+echo "console.log('Feature B');" > shared.js
+git add shared.js
+git commit -m "Add feature B"
+
+# Merge A first
+git checkout main
+git merge feature/a
+
+# Try to merge B (will conflict)
+git merge feature/b
+# Conflict occurs!
+
+# View conflict
+cat shared.js
+# <<<<<<< HEAD
+# console.log('Feature A');
+# =======
+# console.log('Feature B');
+# >>>>>>> feature/b
+
+# Resolve conflict manually
+echo -e "console.log('Feature A');\nconsole.log('Feature B');" > shared.js
+
+# Complete merge
+git add shared.js
+git commit -m "Merge feature B with conflict resolution"
+
+# Clean up
+git branch -d feature/a feature/b
+```
+
+## Advanced Examples
+
+### Example 7: Interactive Rebase and Commit Squashing
+```bash
+# Create multiple commits
+echo "// Initial code" > app.js
+git add app.js
+git commit -m "Initial implementation"
+
+echo "// Add validation" >> app.js
+git add app.js
+git commit -m "Add input validation"
+
+echo "// Fix typo" >> app.js
+git add app.js
+git commit -m "Fix typo in validation"
+
+echo "// Add comments" >> app.js
+git add app.js
+git commit -m "Add code comments"
+
+# Interactive rebase to squash commits
+git rebase -i HEAD~4
+
+# In editor, change 'pick' to 'squash' for commits to combine:
+# pick abc1234 Initial implementation
+# squash def5678 Add input validation
+# squash ghi9012 Fix typo in validation
+# squash jkl3456 Add code comments
+
+# Edit commit message in next editor screen
+# Result: Single clean commit with meaningful message
+```
+
+### Example 8: Git Hooks for Automation
+```bash
+# Create pre-commit hook
+cat > .git/hooks/pre-commit << 'EOF'
+#!/bin/bash
+# Pre-commit hook to run tests and linting
+
+echo "Running pre-commit checks..."
+
+# Run tests
+npm test
+if [ $? -ne 0 ]; then
+    echo "Tests failed! Commit aborted."
+    exit 1
+fi
+
+# Run linter
+npm run lint
+if [ $? -ne 0 ]; then
+    echo "Linting failed! Commit aborted."
+    exit 1
+fi
+
+echo "Pre-commit checks passed!"
+exit 0
+EOF
+
+# Make hook executable
+chmod +x .git/hooks/pre-commit
+
+# Create commit-msg hook for message validation
+cat > .git/hooks/commit-msg << 'EOF'
+#!/bin/bash
+# Validate commit message format
+
+commit_regex='^(feat|fix|docs|style|refactor|test|chore)(\(.+\))?: .{1,50}'
+
+if ! grep -qE "$commit_regex" "$1"; then
+    echo "Invalid commit message format!"
+    echo "Format: type(scope): description"
+    echo "Types: feat, fix, docs, style, refactor, test, chore"
+    exit 1
+fi
+EOF
+
+chmod +x .git/hooks/commit-msg
+```
+
+## Production Examples
+
+### Example 9: Git Flow Workflow Implementation
+```bash
+# Initialize git flow
+git flow init
+
+# Start new feature
+git flow feature start user-dashboard
+
+# Work on feature
+echo "// Dashboard component" > dashboard.js
+git add dashboard.js
+git commit -m "Add user dashboard component"
+
+echo "// Dashboard styles" > dashboard.css
+git add dashboard.css
+git commit -m "Add dashboard styling"
+
+# Finish feature (merges to develop)
+git flow feature finish user-dashboard
+
+# Start release
+git flow release start 1.0.0
+
+# Release preparations
+echo "1.0.0" > VERSION
+git add VERSION
+git commit -m "Bump version to 1.0.0"
+
+# Finish release (merges to main and develop, creates tag)
+git flow release finish 1.0.0
+
+# Hotfix if needed
+git flow hotfix start 1.0.1
+echo "// Critical fix" > hotfix.js
+git add hotfix.js
+git commit -m "Fix critical security issue"
+git flow hotfix finish 1.0.1
+```
+
+## Troubleshooting Examples
+
+### Example 10: Common Issues and Solutions
+```bash
+# Problem: Accidentally committed to wrong branch
+git checkout correct-branch
+git cherry-pick commit-hash
+git checkout wrong-branch
+git reset --hard HEAD~1
+
+# Problem: Need to undo last commit but keep changes
+git reset --soft HEAD~1
+# Files remain staged, ready for new commit
+
+# Problem: Committed sensitive information
+git filter-branch --force --index-filter \
+  'git rm --cached --ignore-unmatch sensitive-file.txt' \
+  --prune-empty --tag-name-filter cat -- --all
+
+# Problem: Diverged branches
+git checkout feature-branch
+git rebase main
+# Or use merge if rebase not appropriate
+git merge main
+
+# Problem: Lost commits (use reflog)
+git reflog
+git checkout lost-commit-hash
+git checkout -b recover-branch
+
+# Problem: Large file accidentally committed
+git filter-branch --tree-filter 'rm -f large-file.zip' HEAD
+git push --force-with-lease origin main
+
+# Problem: Wrong commit message
+git commit --amend -m "Correct commit message"
+# For older commits, use interactive rebase
+git rebase -i HEAD~3
+```

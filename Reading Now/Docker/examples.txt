@@ -1,0 +1,706 @@
+# Docker - Examples and Code Samples
+
+## Basic Examples
+
+### Example 1: Simple Web Application
+```dockerfile
+# Dockerfile - Basic Node.js web app
+FROM node:16-alpine
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm ci --only=production
+
+# Copy application code
+COPY . .
+
+# Expose port
+EXPOSE 3000
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs
+RUN adduser -S nextjs -u 1001
+USER nextjs
+
+# Start application
+CMD ["node", "server.js"]
+```
+
+```bash
+# Build and run commands
+docker build -t my-web-app .
+docker run -d -p 3000:3000 --name webapp my-web-app
+docker logs webapp
+```
+
+### Example 2: Database Container Setup
+```yaml
+# docker-compose.yml - PostgreSQL database
+version: '3.8'
+services:
+  db:
+    image: postgres:13-alpine
+    container_name: postgres_db
+    environment:
+      POSTGRES_DB: myapp
+      POSTGRES_USER: dbuser
+      POSTGRES_PASSWORD: dbpass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dbuser -d myapp"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+volumes:
+  postgres_data:
+```
+
+```sql
+-- init.sql - Database initialization
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO users (username, email) VALUES 
+('admin', 'admin@example.com'),
+('user1', 'user1@example.com');
+```
+
+## Intermediate Examples
+
+### Example 3: Full-Stack Application
+```yaml
+# docker-compose.yml - Complete web application stack
+version: '3.8'
+
+services:
+  # Frontend React app
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000/api
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://dbuser:dbpass@db:5432/myapp
+      - REDIS_URL=redis://redis:6379
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - db
+      - redis
+    restart: unless-stopped
+
+  # Database
+  db:
+    image: postgres:13-alpine
+    environment:
+      POSTGRES_DB: myapp
+      POSTGRES_USER: dbuser
+      POSTGRES_PASSWORD: dbpass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  # Redis cache
+  redis:
+    image: redis:6-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+  # Nginx reverse proxy
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./ssl:/etc/nginx/ssl
+    depends_on:
+      - frontend
+      - backend
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  default:
+    driver: bridge
+```
+
+```dockerfile
+# backend/Dockerfile - Python FastAPI backend
+FROM python:3.9-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements first for better caching
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY . .
+
+# Create non-root user
+RUN useradd --create-home --shell /bin/bash app
+USER app
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:8000/health || exit 1
+
+# Start application
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+```
+
+### Example 4: Development Environment
+```yaml
+# docker-compose.dev.yml - Development setup
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+      - "9229:9229"  # Node.js debugger
+    environment:
+      - NODE_ENV=development
+      - DEBUG=*
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    command: npm run dev
+    stdin_open: true
+    tty: true
+
+  db:
+    image: postgres:13-alpine
+    environment:
+      POSTGRES_DB: myapp_dev
+      POSTGRES_USER: dev
+      POSTGRES_PASSWORD: dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+      - ./database/seed.sql:/docker-entrypoint-initdb.d/seed.sql
+
+  mailhog:
+    image: mailhog/mailhog
+    ports:
+      - "1025:1025"  # SMTP
+      - "8025:8025"  # Web UI
+
+volumes:
+  postgres_dev_data:
+```
+
+```dockerfile
+# Dockerfile.dev - Development Dockerfile
+FROM node:16-alpine
+
+WORKDIR /app
+
+# Install development tools
+RUN apk add --no-cache git
+
+# Copy package files
+COPY package*.json ./
+
+# Install all dependencies (including dev)
+RUN npm install
+
+# Copy source code
+COPY . .
+
+# Expose ports
+EXPOSE 3000 9229
+
+# Start with nodemon for hot reload
+CMD ["npm", "run", "dev"]
+```
+
+## Advanced Examples
+
+### Example 5: Multi-Stage Production Build
+```dockerfile
+# Dockerfile - Optimized production build
+# Build stage
+FROM node:16-alpine AS builder
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm ci --only=production && npm cache clean --force
+
+# Copy source code
+COPY . .
+
+# Build application
+RUN npm run build
+
+# Production stage
+FROM node:16-alpine AS runner
+
+WORKDIR /app
+
+# Create app user
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+# Copy only necessary files
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/build ./build
+COPY --from=builder /app/public ./public
+
+# Set permissions
+RUN chown -R nextjs:nodejs /app
+USER nextjs
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:3000/health || exit 1
+
+EXPOSE 3000
+
+CMD ["node", "build/server.js"]
+```
+
+### Example 6: Microservices Architecture
+```yaml
+# docker-compose.microservices.yml
+version: '3.8'
+
+services:
+  # API Gateway
+  api-gateway:
+    build: ./services/api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - USER_SERVICE_URL=http://user-service:3001
+      - ORDER_SERVICE_URL=http://order-service:3002
+      - PRODUCT_SERVICE_URL=http://product-service:3003
+    depends_on:
+      - user-service
+      - order-service
+      - product-service
+
+  # User Service
+  user-service:
+    build: ./services/user-service
+    environment:
+      - DATABASE_URL=postgresql://user:pass@user-db:5432/users
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - user-db
+      - redis
+
+  user-db:
+    image: postgres:13-alpine
+    environment:
+      POSTGRES_DB: users
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+    volumes:
+      - user_db_data:/var/lib/postgresql/data
+
+  # Order Service
+  order-service:
+    build: ./services/order-service
+    environment:
+      - DATABASE_URL=postgresql://order:pass@order-db:5432/orders
+      - MESSAGE_QUEUE_URL=amqp://rabbitmq:5672
+    depends_on:
+      - order-db
+      - rabbitmq
+
+  order-db:
+    image: postgres:13-alpine
+    environment:
+      POSTGRES_DB: orders
+      POSTGRES_USER: order
+      POSTGRES_PASSWORD: pass
+    volumes:
+      - order_db_data:/var/lib/postgresql/data
+
+  # Product Service
+  product-service:
+    build: ./services/product-service
+    environment:
+      - MONGODB_URI=mongodb://product-db:27017/products
+    depends_on:
+      - product-db
+
+  product-db:
+    image: mongo:4.4-focal
+    volumes:
+      - product_db_data:/data/db
+
+  # Message Queue
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    ports:
+      - "15672:15672"  # Management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
+
+  # Cache
+  redis:
+    image: redis:6-alpine
+    volumes:
+      - redis_data:/data
+
+  # Monitoring
+  prometheus:
+    image: prom/prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+
+volumes:
+  user_db_data:
+  order_db_data:
+  product_db_data:
+  redis_data:
+  grafana_data:
+```
+
+### Example 7: CI/CD Pipeline Integration
+```yaml
+# .github/workflows/docker-build.yml
+name: Docker Build and Deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Run tests
+        run: |
+          docker-compose -f docker-compose.test.yml up --build --abort-on-container-exit
+          docker-compose -f docker-compose.test.yml down
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      
+      - name: Build and push
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: |
+            myapp:latest
+            myapp:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Deploy to production
+        run: |
+          # Add deployment commands here
+          echo "Deploying to production..."
+```
+
+```dockerfile
+# Dockerfile.test - Testing environment
+FROM node:16-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm ci
+
+COPY . .
+
+CMD ["npm", "test"]
+```
+
+## Security Examples
+
+### Example 8: Secure Container Configuration
+```dockerfile
+# Dockerfile - Security best practices
+FROM node:16-alpine AS base
+
+# Create app directory
+WORKDIR /app
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nextjs -u 1001
+
+# Install dependencies as root
+COPY package*.json ./
+RUN npm ci --only=production && npm cache clean --force
+
+# Copy application files
+COPY --chown=nextjs:nodejs . .
+
+# Switch to non-root user
+USER nextjs
+
+# Use non-root port
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD node healthcheck.js
+
+# Run with read-only filesystem
+CMD ["node", "--experimental-modules", "server.js"]
+```
+
+```yaml
+# docker-compose.security.yml - Security-focused setup
+version: '3.8'
+
+services:
+  app:
+    build: .
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/run
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    user: "1001:1001"
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+```
+
+### Example 9: Docker Secrets Management
+```yaml
+# docker-compose.secrets.yml
+version: '3.8'
+
+services:
+  app:
+    image: myapp:latest
+    secrets:
+      - db_password
+      - api_key
+    environment:
+      - DB_PASSWORD_FILE=/run/secrets/db_password
+      - API_KEY_FILE=/run/secrets/api_key
+
+secrets:
+  db_password:
+    file: ./secrets/db_password.txt
+  api_key:
+    external: true
+```
+
+```bash
+# Create secrets
+echo "supersecretpassword" | docker secret create db_password -
+echo "apikey123" | docker secret create api_key -
+```
+
+## Performance Examples
+
+### Example 10: Optimized Build Context
+```dockerignore
+# .dockerignore - Reduce build context
+node_modules
+npm-debug.log
+.git
+.gitignore
+README.md
+.env
+.nyc_output
+coverage
+.nyc_output
+.cache
+dist
+.next
+.DS_Store
+*.log
+```
+
+```dockerfile
+# Dockerfile - Build optimization
+FROM node:16-alpine AS deps
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production
+
+FROM node:16-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+
+FROM node:16-alpine AS runner
+WORKDIR /app
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=builder /app/build ./build
+
+USER nextjs
+EXPOSE 3000
+CMD ["node", "build/server.js"]
+```
+
+## Additional Resources
+
+### Useful Docker Commands
+```bash
+# System maintenance
+docker system df                    # Check disk usage
+docker system prune -af            # Clean everything
+docker image prune -af             # Remove unused images
+docker volume prune                # Remove unused volumes
+
+# Container inspection
+docker inspect container_name      # Detailed container info
+docker stats --no-stream          # Resource usage snapshot
+docker top container_name          # Running processes
+
+# Networking
+docker network create mynetwork    # Create custom network
+docker run --network mynetwork     # Use custom network
+```
+
+### Monitoring and Logging
+```yaml
+# docker-compose.monitoring.yml
+version: '3.8'
+
+services:
+  app:
+    image: myapp:latest
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: localhost:24224
+        tag: myapp.logs
+
+  fluentd:
+    image: fluent/fluentd:latest
+    ports:
+      - "24224:24224"
+    volumes:
+      - ./fluentd:/fluentd/etc
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.0
+    environment:
+      - discovery.type=single-node
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.10.0
+    ports:
+      - "5601:5601"
+```
+
+### Best Practices Summary
+- Use specific image tags instead of 'latest'
+- Run containers as non-root users
+- Use multi-stage builds for smaller images
+- Implement proper health checks
+- Use .dockerignore to reduce build context
+- Keep containers stateless
+- Use secrets for sensitive data
+- Implement proper logging and monitoring
+- Regular security scanning of images
+- Clean up unused resources regularly
+
+Created: 2025-06-02 19:39:56

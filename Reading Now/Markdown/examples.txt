@@ -1,0 +1,1496 @@
+# Markdown - Examples and Code Samples
+
+## Example 1: Basic Markdown Syntax - Document Structure
+```markdown
+# Main Title (H1)
+
+## Section Title (H2)
+
+### Subsection Title (H3)
+
+#### Minor Heading (H4)
+
+##### Small Heading (H5)
+
+###### Smallest Heading (H6)
+
+## Text Formatting
+
+This is **bold text** and this is *italic text*.
+
+You can also use __bold__ and _italic_ with underscores.
+
+***Bold and italic together*** or **_mixed styles_**.
+
+~~Strikethrough text~~ is marked with double tildes.
+
+Here's a `inline code` example.
+
+> This is a blockquote.
+> 
+> It can span multiple lines and contain other markdown elements like **bold** text.
+
+## Paragraphs and Line Breaks
+
+This is the first paragraph. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+
+This is the second paragraph. To create a line break within a paragraph,  
+add two spaces at the end of the line.
+
+---
+
+The horizontal rule above is created with three or more hyphens, asterisks, or underscores.
+
+## Lists
+
+### Unordered Lists
+- First item
+- Second item
+  - Nested item
+  - Another nested item
+    - Deeply nested item
+- Third item
+
+### Ordered Lists
+1. First step
+2. Second step
+   1. Sub-step A
+   2. Sub-step B
+3. Third step
+
+### Task Lists (GitHub Flavored Markdown)
+- [x] Completed task
+- [ ] Incomplete task
+- [x] Another completed task
+  - [ ] Nested incomplete task
+  - [x] Nested completed task
+
+## Links and Images
+
+[Link text](https://example.com)
+
+[Link with title](https://example.com "This is a title")
+
+[Reference-style link][1]
+
+[1]: https://example.com "Reference link"
+
+![Alt text](https://via.placeholder.com/150 "Image title")
+
+![Reference-style image][image1]
+
+[image1]: https://via.placeholder.com/200 "Reference image"
+
+## Code
+
+Inline `code` with backticks.
+
+```
+Code block without syntax highlighting
+```
+
+```javascript
+// JavaScript code block with syntax highlighting
+function greet(name) {
+    return `Hello, ${name}!`;
+}
+
+console.log(greet("World"));
+```
+
+```python
+# Python code block
+def fibonacci(n):
+    if n <= 1:
+        return n
+    return fibonacci(n-1) + fibonacci(n-2)
+
+print(fibonacci(10))
+```
+```
+
+## Example 2: Advanced Formatting - Tables and Extended Syntax
+```markdown
+## Tables
+
+| Column 1 | Column 2 | Column 3 |
+|----------|----------|----------|
+| Row 1    | Data     | More data|
+| Row 2    | Data     | More data|
+
+### Table with Alignment
+
+| Left Aligned | Center Aligned | Right Aligned |
+|:-------------|:--------------:|--------------:|
+| Left         | Center         | Right         |
+| Text         | Text           | Text          |
+| More         | Content        | Here          |
+
+### Complex Table
+
+| Feature | Basic Plan | Pro Plan | Enterprise |
+|---------|:----------:|:--------:|:-----------:|
+| Users | 5 | 50 | Unlimited |
+| Storage | 10GB | 100GB | 1TB |
+| Support | Email | Email + Chat | 24/7 Phone |
+| Price | $9/mo | $29/mo | $99/mo |
+| API Access | ❌ | ✅ | ✅ |
+| Custom Domains | ❌ | ✅ | ✅ |
+| Analytics | Basic | Advanced | Enterprise |
+
+## Definition Lists (some parsers)
+
+Term 1
+: Definition for term 1
+
+Term 2
+: Definition for term 2
+: Another definition for term 2
+
+## Footnotes (GitHub Flavored Markdown)
+
+Here's a sentence with a footnote [^1].
+
+Here's another footnote [^note].
+
+[^1]: This is the first footnote.
+[^note]: This is a named footnote with more detailed information.
+
+## Abbreviations (some parsers)
+
+*[HTML]: Hyper Text Markup Language
+*[CSS]: Cascading Style Sheets
+
+The HTML specification is maintained by the W3C.
+CSS is used for styling web pages.
+
+## Emoji (GitHub Flavored Markdown)
+
+:smile: :heart: :thumbsup: :rocket: :octocat:
+
+You can also use Unicode emojis: 😄 ❤️ 👍 🚀 🐙
+
+## Highlighting (some parsers)
+
+I need to highlight these ==very important words==.
+
+## Keyboard Keys (some parsers)
+
+Press <kbd>Ctrl</kbd> + <kbd>C</kbd> to copy.
+Use <kbd>Cmd</kbd> + <kbd>V</kbd> on Mac to paste.
+
+## Math (with MathJax support)
+
+Inline math: $E = mc^2$
+
+Block math:
+$$
+\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}
+$$
+
+$$
+\begin{pmatrix}
+a & b \\
+c & d
+\end{pmatrix}
+\begin{pmatrix}
+x \\
+y
+\end{pmatrix}
+=
+\begin{pmatrix}
+ax + by \\
+cx + dy
+\end{pmatrix}
+$$
+```
+
+## Example 3: Technical Documentation - README Template
+```markdown
+# Project Name
+
+![Project Logo](https://via.placeholder.com/200x100 "Project Logo")
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Build Status](https://travis-ci.org/username/project.svg?branch=main)](https://travis-ci.org/username/project)
+[![Version](https://img.shields.io/badge/version-1.2.3-blue.svg)](https://github.com/username/project/releases)
+[![Downloads](https://img.shields.io/npm/dm/package-name.svg)](https://npmjs.com/package/package-name)
+
+> A brief, compelling description of your project. What problem does it solve? What makes it unique?
+
+## 🚀 Features
+
+- ✨ **Feature 1**: Detailed description of the first key feature
+- 🔧 **Feature 2**: Explanation of the second feature
+- 📊 **Feature 3**: Description of analytics or reporting capabilities
+- 🛡️ **Security**: Built-in security features and best practices
+- 🌐 **Cross-platform**: Works on Windows, macOS, and Linux
+- 📱 **Responsive**: Mobile-friendly design
+
+## 📋 Table of Contents
+
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Usage](#usage)
+- [API Reference](#api-reference)
+- [Configuration](#configuration)
+- [Examples](#examples)
+- [Testing](#testing)
+- [Contributing](#contributing)
+- [License](#license)
+- [Support](#support)
+
+## 🛠️ Installation
+
+### Prerequisites
+
+Before installing, ensure you have the following:
+
+- Node.js (v14.0 or higher)
+- npm or yarn
+- Git
+
+### Install via npm
+
+```bash
+npm install package-name
+```
+
+### Install via yarn
+
+```bash
+yarn add package-name
+```
+
+### Install from source
+
+```bash
+git clone https://github.com/username/project.git
+cd project
+npm install
+npm run build
+```
+
+## ⚡ Quick Start
+
+```javascript
+const ProjectName = require('package-name');
+
+// Initialize the project
+const project = new ProjectName({
+    apiKey: 'your-api-key',
+    environment: 'production'
+});
+
+// Basic usage
+project.doSomething()
+    .then(result => {
+        console.log('Success:', result);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+```
+
+## 📖 Usage
+
+### Basic Example
+
+```javascript
+// Import the library
+import { ProjectName, ConfigOptions } from 'package-name';
+
+// Configure options
+const options: ConfigOptions = {
+    timeout: 5000,
+    retries: 3,
+    debug: true
+};
+
+// Create instance
+const client = new ProjectName(options);
+
+// Use the API
+async function example() {
+    try {
+        const result = await client.getData('user-123');
+        console.log('User data:', result);
+    } catch (error) {
+        console.error('Failed to fetch data:', error);
+    }
+}
+
+example();
+```
+
+### Advanced Configuration
+
+```javascript
+const config = {
+    // Database settings
+    database: {
+        host: 'localhost',
+        port: 5432,
+        name: 'myapp'
+    },
+    
+    // API settings
+    api: {
+        baseUrl: 'https://api.example.com',
+        version: 'v2',
+        timeout: 10000
+    },
+    
+    // Feature flags
+    features: {
+        enableCaching: true,
+        enableLogging: true,
+        maxRetries: 3
+    }
+};
+
+const app = new ProjectName(config);
+```
+
+## 📚 API Reference
+
+### Class: ProjectName
+
+#### Constructor
+
+```javascript
+new ProjectName(options)
+```
+
+**Parameters:**
+- `options` (Object): Configuration options
+  - `apiKey` (string): Your API key
+  - `baseUrl` (string, optional): API base URL
+  - `timeout` (number, optional): Request timeout in ms (default: 5000)
+
+#### Methods
+
+##### `.getData(id)`
+
+Retrieves data by ID.
+
+**Parameters:**
+- `id` (string): The unique identifier
+
+**Returns:** Promise<Object>
+
+**Example:**
+```javascript
+const data = await client.getData('123');
+```
+
+##### `.createItem(data)`
+
+Creates a new item.
+
+**Parameters:**
+- `data` (Object): Item data
+  - `name` (string): Item name
+  - `description` (string, optional): Item description
+
+**Returns:** Promise<Object>
+
+**Example:**
+```javascript
+const newItem = await client.createItem({
+    name: 'New Item',
+    description: 'Item description'
+});
+```
+
+## ⚙️ Configuration
+
+### Environment Variables
+
+Create a `.env` file in your project root:
+
+```bash
+# API Configuration
+API_KEY=your-secret-api-key
+API_BASE_URL=https://api.example.com
+API_TIMEOUT=5000
+
+# Database Configuration
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=myapp
+DB_USER=admin
+DB_PASSWORD=secret
+
+# Feature Flags
+ENABLE_CACHING=true
+ENABLE_LOGGING=false
+DEBUG_MODE=development
+```
+
+### Configuration File
+
+Create `config.json`:
+
+```json
+{
+  "development": {
+    "apiUrl": "http://localhost:3000",
+    "debug": true,
+    "logLevel": "debug"
+  },
+  "production": {
+    "apiUrl": "https://api.example.com",
+    "debug": false,
+    "logLevel": "error"
+  }
+}
+```
+
+## 📝 Examples
+
+### Example 1: User Management
+
+```javascript
+// Create a new user
+const user = await client.createUser({
+    email: 'user@example.com',
+    name: 'John Doe',
+    role: 'admin'
+});
+
+// Update user
+await client.updateUser(user.id, {
+    name: 'Jane Doe',
+    role: 'user'
+});
+
+// Delete user
+await client.deleteUser(user.id);
+```
+
+### Example 2: Batch Operations
+
+```javascript
+// Process multiple items
+const items = ['item1', 'item2', 'item3'];
+const results = await Promise.all(
+    items.map(id => client.getData(id))
+);
+
+console.log('Batch results:', results);
+```
+
+### Example 3: Error Handling
+
+```javascript
+try {
+    const result = await client.riskyOperation();
+    console.log('Success:', result);
+} catch (error) {
+    if (error.code === 'RATE_LIMITED') {
+        console.log('Rate limited, retrying in 60 seconds...');
+        setTimeout(() => client.riskyOperation(), 60000);
+    } else {
+        console.error('Unexpected error:', error);
+    }
+}
+```
+
+## 🧪 Testing
+
+### Running Tests
+
+```bash
+# Run all tests
+npm test
+
+# Run tests with coverage
+npm run test:coverage
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run specific test file
+npm test -- user.test.js
+```
+
+### Writing Tests
+
+```javascript
+const { ProjectName } = require('../src/index');
+
+describe('ProjectName', () => {
+    let client;
+    
+    beforeEach(() => {
+        client = new ProjectName({
+            apiKey: 'test-key',
+            baseUrl: 'http://localhost:3000'
+        });
+    });
+    
+    test('should create new instance', () => {
+        expect(client).toBeInstanceOf(ProjectName);
+    });
+    
+    test('should fetch data', async () => {
+        const data = await client.getData('test-id');
+        expect(data).toBeDefined();
+        expect(data.id).toBe('test-id');
+    });
+});
+```
+
+## 🤝 Contributing
+
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+
+### Development Setup
+
+1. Fork the repository
+2. Clone your fork: `git clone https://github.com/your-username/project.git`
+3. Install dependencies: `npm install`
+4. Create a branch: `git checkout -b feature/amazing-feature`
+5. Make your changes
+6. Run tests: `npm test`
+7. Commit: `git commit -m 'Add amazing feature'`
+8. Push: `git push origin feature/amazing-feature`
+9. Open a Pull Request
+
+### Code Style
+
+We use ESLint and Prettier for code formatting:
+
+```bash
+npm run lint
+npm run format
+```
+
+### Commit Messages
+
+We follow the [Conventional Commits](https://conventionalcommits.org/) specification:
+
+```
+feat: add new feature
+fix: bug fix
+docs: documentation changes
+style: formatting changes
+refactor: code refactoring
+test: adding tests
+chore: maintenance tasks
+```
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🆘 Support
+
+- 📧 Email: support@example.com
+- 💬 Discord: [Join our server](https://discord.gg/example)
+- 📖 Documentation: [docs.example.com](https://docs.example.com)
+- 🐛 Issues: [GitHub Issues](https://github.com/username/project/issues)
+
+## 📈 Roadmap
+
+- [ ] **v1.3.0**: Add support for webhooks
+- [ ] **v1.4.0**: Implement caching layer
+- [ ] **v2.0.0**: Breaking changes for better API design
+- [ ] **v2.1.0**: Add GraphQL support
+
+## 🙏 Acknowledgments
+
+- Thanks to [contributor1](https://github.com/contributor1) for the initial idea
+- Inspired by [similar-project](https://github.com/similar-project)
+- Icons by [Feather Icons](https://feathericons.com/)
+
+---
+
+Made with ❤️ by [Your Name](https://github.com/username)
+```
+
+## Example 4: Blog Post - Technical Tutorial
+```markdown
+---
+title: "Building RESTful APIs with Node.js and Express"
+date: 2024-01-15
+author: "Jane Developer"
+tags: ["nodejs", "express", "api", "tutorial"]
+category: "Backend Development"
+description: "Learn how to build robust RESTful APIs using Node.js and Express with authentication, validation, and best practices."
+---
+
+# Building RESTful APIs with Node.js and Express
+
+![API Development](https://via.placeholder.com/800x400 "API Development")
+
+> **Difficulty Level:** Intermediate  
+> **Estimated Time:** 45 minutes  
+> **Prerequisites:** Basic JavaScript knowledge, Node.js installed
+
+## Table of Contents
+
+1. [Introduction](#introduction)
+2. [Project Setup](#project-setup)
+3. [Creating the Express Server](#creating-the-express-server)
+4. [Database Integration](#database-integration)
+5. [API Routes](#api-routes)
+6. [Authentication](#authentication)
+7. [Validation](#validation)
+8. [Error Handling](#error-handling)
+9. [Testing](#testing)
+10. [Deployment](#deployment)
+11. [Best Practices](#best-practices)
+12. [Conclusion](#conclusion)
+
+## Introduction
+
+REST (Representational State Transfer) APIs are the backbone of modern web applications. In this comprehensive tutorial, we'll build a complete RESTful API for a task management system using Node.js and Express.
+
+### What You'll Learn
+
+- ✅ Setting up an Express server
+- ✅ Implementing CRUD operations
+- ✅ Adding authentication with JWT
+- ✅ Input validation and sanitization
+- ✅ Error handling best practices
+- ✅ API testing strategies
+- ✅ Deployment considerations
+
+### What We'll Build
+
+A task management API with the following features:
+
+| Feature | Endpoint | Method | Description |
+|---------|----------|--------|-------------|
+| User Registration | `/api/auth/register` | POST | Create new user account |
+| User Login | `/api/auth/login` | POST | Authenticate user |
+| Get Tasks | `/api/tasks` | GET | Retrieve user's tasks |
+| Create Task | `/api/tasks` | POST | Create new task |
+| Update Task | `/api/tasks/:id` | PUT | Update existing task |
+| Delete Task | `/api/tasks/:id` | DELETE | Remove task |
+
+## Project Setup
+
+### 1. Initialize the Project
+
+```bash
+mkdir task-api
+cd task-api
+npm init -y
+```
+
+### 2. Install Dependencies
+
+```bash
+# Core dependencies
+npm install express mongoose bcryptjs jsonwebtoken cors helmet
+npm install express-rate-limit express-validator morgan
+
+# Development dependencies
+npm install --save-dev nodemon jest supertest eslint prettier
+```
+
+### 3. Project Structure
+
+```
+task-api/
+├── src/
+│   ├── controllers/
+│   │   ├── authController.js
+│   │   └── taskController.js
+│   ├── middleware/
+│   │   ├── auth.js
+│   │   ├── validation.js
+│   │   └── errorHandler.js
+│   ├── models/
+│   │   ├── User.js
+│   │   └── Task.js
+│   ├── routes/
+│   │   ├── auth.js
+│   │   └── tasks.js
+│   ├── utils/
+│   │   └── database.js
+│   └── app.js
+├── tests/
+│   ├── auth.test.js
+│   └── tasks.test.js
+├── .env
+├── .gitignore
+├── package.json
+└── server.js
+```
+
+## Creating the Express Server
+
+### Basic Server Setup
+
+```javascript
+// server.js
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const morgan = require('morgan');
+require('dotenv').config();
+
+const app = express();
+
+// Security middleware
+app.use(helmet());
+app.use(cors());
+
+// Rate limiting
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100 // limit each IP to 100 requests per windowMs
+});
+app.use(limiter);
+
+// Logging
+app.use(morgan('combined'));
+
+// Body parsing
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
+
+// Routes
+app.use('/api/auth', require('./src/routes/auth'));
+app.use('/api/tasks', require('./src/routes/tasks'));
+
+// Health check
+app.get('/health', (req, res) => {
+    res.status(200).json({
+        status: 'OK',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime()
+    });
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+});
+
+module.exports = app;
+```
+
+### Environment Configuration
+
+```bash
+# .env
+NODE_ENV=development
+PORT=3000
+MONGODB_URI=mongodb://localhost:27017/taskapi
+JWT_SECRET=your-super-secret-jwt-key
+JWT_EXPIRE=30d
+BCRYPT_ROUNDS=12
+```
+
+## Database Integration
+
+### User Model
+
+```javascript
+// src/models/User.js
+const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
+
+const userSchema = new mongoose.Schema({
+    name: {
+        type: String,
+        required: [true, 'Name is required'],
+        trim: true,
+        maxlength: [50, 'Name cannot exceed 50 characters']
+    },
+    email: {
+        type: String,
+        required: [true, 'Email is required'],
+        unique: true,
+        lowercase: true,
+        match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please enter a valid email']
+    },
+    password: {
+        type: String,
+        required: [true, 'Password is required'],
+        minlength: [6, 'Password must be at least 6 characters'],
+        select: false // Don't include password in queries by default
+    },
+    role: {
+        type: String,
+        enum: ['user', 'admin'],
+        default: 'user'
+    },
+    isActive: {
+        type: Boolean,
+        default: true
+    }
+}, {
+    timestamps: true
+});
+
+// Hash password before saving
+userSchema.pre('save', async function(next) {
+    if (!this.isModified('password')) return next();
+    
+    this.password = await bcrypt.hash(this.password, 12);
+    next();
+});
+
+// Compare password method
+userSchema.methods.comparePassword = async function(candidatePassword) {
+    return await bcrypt.compare(candidatePassword, this.password);
+};
+
+module.exports = mongoose.model('User', userSchema);
+```
+
+### Task Model
+
+```javascript
+// src/models/Task.js
+const mongoose = require('mongoose');
+
+const taskSchema = new mongoose.Schema({
+    title: {
+        type: String,
+        required: [true, 'Task title is required'],
+        trim: true,
+        maxlength: [100, 'Title cannot exceed 100 characters']
+    },
+    description: {
+        type: String,
+        trim: true,
+        maxlength: [500, 'Description cannot exceed 500 characters']
+    },
+    status: {
+        type: String,
+        enum: ['pending', 'in-progress', 'completed'],
+        default: 'pending'
+    },
+    priority: {
+        type: String,
+        enum: ['low', 'medium', 'high'],
+        default: 'medium'
+    },
+    dueDate: {
+        type: Date
+    },
+    user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+    },
+    tags: [{
+        type: String,
+        trim: true
+    }]
+}, {
+    timestamps: true
+});
+
+// Index for efficient queries
+taskSchema.index({ user: 1, status: 1 });
+taskSchema.index({ user: 1, dueDate: 1 });
+
+module.exports = mongoose.model('Task', taskSchema);
+```
+
+## API Routes
+
+### Authentication Routes
+
+```javascript
+// src/routes/auth.js
+const express = require('express');
+const { body } = require('express-validator');
+const authController = require('../controllers/authController');
+const validation = require('../middleware/validation');
+
+const router = express.Router();
+
+// Register user
+router.post('/register', [
+    body('name')
+        .trim()
+        .isLength({ min: 2, max: 50 })
+        .withMessage('Name must be between 2 and 50 characters'),
+    body('email')
+        .isEmail()
+        .normalizeEmail()
+        .withMessage('Please provide a valid email'),
+    body('password')
+        .isLength({ min: 6 })
+        .withMessage('Password must be at least 6 characters')
+        .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
+        .withMessage('Password must contain at least one lowercase letter, one uppercase letter, and one number')
+], validation.handleValidationErrors, authController.register);
+
+// Login user
+router.post('/login', [
+    body('email')
+        .isEmail()
+        .normalizeEmail()
+        .withMessage('Please provide a valid email'),
+    body('password')
+        .notEmpty()
+        .withMessage('Password is required')
+], validation.handleValidationErrors, authController.login);
+
+// Get current user
+router.get('/me', authController.protect, authController.getMe);
+
+// Logout user (if using token blacklisting)
+router.post('/logout', authController.protect, authController.logout);
+
+module.exports = router;
+```
+
+### Task Routes
+
+```javascript
+// src/routes/tasks.js
+const express = require('express');
+const { body, param, query } = require('express-validator');
+const taskController = require('../controllers/taskController');
+const authController = require('../controllers/authController');
+const validation = require('../middleware/validation');
+
+const router = express.Router();
+
+// Protect all routes
+router.use(authController.protect);
+
+// Get all tasks with filtering and pagination
+router.get('/', [
+    query('status').optional().isIn(['pending', 'in-progress', 'completed']),
+    query('priority').optional().isIn(['low', 'medium', 'high']),
+    query('page').optional().isInt({ min: 1 }),
+    query('limit').optional().isInt({ min: 1, max: 100 })
+], validation.handleValidationErrors, taskController.getTasks);
+
+// Create new task
+router.post('/', [
+    body('title')
+        .trim()
+        .isLength({ min: 1, max: 100 })
+        .withMessage('Title is required and must be less than 100 characters'),
+    body('description')
+        .optional()
+        .trim()
+        .isLength({ max: 500 })
+        .withMessage('Description must be less than 500 characters'),
+    body('status')
+        .optional()
+        .isIn(['pending', 'in-progress', 'completed']),
+    body('priority')
+        .optional()
+        .isIn(['low', 'medium', 'high']),
+    body('dueDate')
+        .optional()
+        .isISO8601()
+        .withMessage('Due date must be a valid date'),
+    body('tags')
+        .optional()
+        .isArray()
+        .withMessage('Tags must be an array')
+], validation.handleValidationErrors, taskController.createTask);
+
+// Get single task
+router.get('/:id', [
+    param('id').isMongoId().withMessage('Invalid task ID')
+], validation.handleValidationErrors, taskController.getTask);
+
+// Update task
+router.put('/:id', [
+    param('id').isMongoId().withMessage('Invalid task ID'),
+    body('title')
+        .optional()
+        .trim()
+        .isLength({ min: 1, max: 100 })
+        .withMessage('Title must be less than 100 characters'),
+    body('description')
+        .optional()
+        .trim()
+        .isLength({ max: 500 })
+        .withMessage('Description must be less than 500 characters'),
+    body('status')
+        .optional()
+        .isIn(['pending', 'in-progress', 'completed']),
+    body('priority')
+        .optional()
+        .isIn(['low', 'medium', 'high']),
+    body('dueDate')
+        .optional()
+        .isISO8601()
+        .withMessage('Due date must be a valid date')
+], validation.handleValidationErrors, taskController.updateTask);
+
+// Delete task
+router.delete('/:id', [
+    param('id').isMongoId().withMessage('Invalid task ID')
+], validation.handleValidationErrors, taskController.deleteTask);
+
+module.exports = router;
+```
+
+## Best Practices Summary
+
+### 🔐 Security
+- Always validate and sanitize input
+- Use HTTPS in production
+- Implement rate limiting
+- Hash passwords with bcrypt
+- Use JWT for stateless authentication
+
+### 🏗️ Architecture
+- Follow RESTful conventions
+- Use middleware for cross-cutting concerns
+- Implement proper error handling
+- Structure code modularly
+- Use environment variables for configuration
+
+### 📊 Performance
+- Implement database indexing
+- Use pagination for large datasets
+- Cache frequently accessed data
+- Compress responses
+- Monitor API performance
+
+### 🧪 Testing
+- Write unit tests for all functions
+- Test API endpoints with integration tests
+- Use test databases
+- Mock external dependencies
+- Achieve good test coverage
+
+## Conclusion
+
+You've successfully built a robust RESTful API with Node.js and Express! This API includes:
+
+- ✅ User authentication and authorization
+- ✅ CRUD operations for tasks
+- ✅ Input validation and sanitization
+- ✅ Proper error handling
+- ✅ Security best practices
+- ✅ Comprehensive testing
+
+### Next Steps
+
+- Add real-time features with WebSockets
+- Implement file upload functionality
+- Add API documentation with Swagger
+- Set up monitoring and logging
+- Deploy to cloud platforms like AWS or Heroku
+
+### Resources
+
+- [Express.js Documentation](https://expressjs.com/)
+- [Mongoose ODM](https://mongoosejs.com/)
+- [JWT.io](https://jwt.io/)
+- [Node.js Best Practices](https://github.com/goldbergyoni/nodebestpractices)
+
+---
+
+**Found this tutorial helpful?** Give it a ⭐ and share it with your fellow developers!
+
+*Questions or feedback? Feel free to reach out on [Twitter](https://twitter.com/yourhandle) or [LinkedIn](https://linkedin.com/in/yourprofile).*
+```
+
+## Example 5: Documentation - API Reference
+```markdown
+# Task Management API Reference
+
+## Base URL
+
+```
+https://api.taskmanager.com/v1
+```
+
+## Authentication
+
+This API uses JWT (JSON Web Tokens) for authentication. Include the token in the Authorization header:
+
+```
+Authorization: Bearer <your-jwt-token>
+```
+
+## Rate Limiting
+
+- **Rate Limit**: 100 requests per 15 minutes per IP
+- **Headers**: Rate limit info included in response headers
+  - `X-RateLimit-Limit`: Request limit
+  - `X-RateLimit-Remaining`: Remaining requests
+  - `X-RateLimit-Reset`: Time when limit resets
+
+## Response Format
+
+All API responses follow this structure:
+
+```json
+{
+  "success": true,
+  "data": { /* response data */ },
+  "message": "Success message",
+  "pagination": { /* pagination info if applicable */ }
+}
+```
+
+### Error Response
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "Error description",
+    "details": { /* additional error details */ }
+  }
+}
+```
+
+## Authentication Endpoints
+
+### Register User
+
+Creates a new user account.
+
+**Endpoint:** `POST /auth/register`
+
+**Request Body:**
+```json
+{
+  "name": "John Doe",
+  "email": "john@example.com",
+  "password": "SecurePass123"
+}
+```
+
+**Response:** `201 Created`
+```json
+{
+  "success": true,
+  "data": {
+    "user": {
+      "id": "60f7b2a5d1b2c3e4f5a6b7c8",
+      "name": "John Doe",
+      "email": "john@example.com",
+      "role": "user",
+      "createdAt": "2024-01-15T10:30:00Z"
+    },
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  },
+  "message": "User registered successfully"
+}
+```
+
+**Validation Rules:**
+- `name`: 2-50 characters, required
+- `email`: Valid email format, required, unique
+- `password`: Minimum 6 characters, must contain uppercase, lowercase, and number
+
+**Error Codes:**
+- `VALIDATION_ERROR`: Invalid input data
+- `EMAIL_EXISTS`: Email already registered
+
+---
+
+### Login User
+
+Authenticates a user and returns a JWT token.
+
+**Endpoint:** `POST /auth/login`
+
+**Request Body:**
+```json
+{
+  "email": "john@example.com",
+  "password": "SecurePass123"
+}
+```
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "user": {
+      "id": "60f7b2a5d1b2c3e4f5a6b7c8",
+      "name": "John Doe",
+      "email": "john@example.com",
+      "role": "user"
+    },
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  },
+  "message": "Login successful"
+}
+```
+
+**Error Codes:**
+- `INVALID_CREDENTIALS`: Wrong email or password
+- `USER_INACTIVE`: User account is deactivated
+
+## Task Endpoints
+
+### Get Tasks
+
+Retrieves a list of tasks for the authenticated user.
+
+**Endpoint:** `GET /tasks`
+
+**Query Parameters:**
+- `status` (optional): Filter by status (`pending`, `in-progress`, `completed`)
+- `priority` (optional): Filter by priority (`low`, `medium`, `high`)
+- `page` (optional): Page number (default: 1)
+- `limit` (optional): Items per page (default: 10, max: 100)
+- `sort` (optional): Sort field (`createdAt`, `dueDate`, `priority`)
+- `order` (optional): Sort order (`asc`, `desc`)
+
+**Example Request:**
+```
+GET /tasks?status=pending&priority=high&page=1&limit=20&sort=dueDate&order=asc
+```
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "tasks": [
+      {
+        "id": "60f7b2a5d1b2c3e4f5a6b7c9",
+        "title": "Complete API documentation",
+        "description": "Write comprehensive API docs",
+        "status": "pending",
+        "priority": "high",
+        "dueDate": "2024-01-20T12:00:00Z",
+        "tags": ["documentation", "api"],
+        "createdAt": "2024-01-15T10:30:00Z",
+        "updatedAt": "2024-01-15T10:30:00Z"
+      }
+    ]
+  },
+  "pagination": {
+    "currentPage": 1,
+    "totalPages": 3,
+    "totalItems": 25,
+    "itemsPerPage": 10,
+    "hasNext": true,
+    "hasPrev": false
+  },
+  "message": "Tasks retrieved successfully"
+}
+```
+
+---
+
+### Create Task
+
+Creates a new task for the authenticated user.
+
+**Endpoint:** `POST /tasks`
+
+**Request Body:**
+```json
+{
+  "title": "Complete project proposal",
+  "description": "Write and submit the Q1 project proposal",
+  "status": "pending",
+  "priority": "high",
+  "dueDate": "2024-01-25T17:00:00Z",
+  "tags": ["project", "proposal", "q1"]
+}
+```
+
+**Response:** `201 Created`
+```json
+{
+  "success": true,
+  "data": {
+    "task": {
+      "id": "60f7b2a5d1b2c3e4f5a6b7ca",
+      "title": "Complete project proposal",
+      "description": "Write and submit the Q1 project proposal",
+      "status": "pending",
+      "priority": "high",
+      "dueDate": "2024-01-25T17:00:00Z",
+      "tags": ["project", "proposal", "q1"],
+      "user": "60f7b2a5d1b2c3e4f5a6b7c8",
+      "createdAt": "2024-01-15T14:20:00Z",
+      "updatedAt": "2024-01-15T14:20:00Z"
+    }
+  },
+  "message": "Task created successfully"
+}
+```
+
+**Validation Rules:**
+- `title`: 1-100 characters, required
+- `description`: 0-500 characters, optional
+- `status`: Must be one of: `pending`, `in-progress`, `completed`
+- `priority`: Must be one of: `low`, `medium`, `high`
+- `dueDate`: Valid ISO 8601 date, optional
+- `tags`: Array of strings, optional
+
+---
+
+### Update Task
+
+Updates an existing task.
+
+**Endpoint:** `PUT /tasks/{id}`
+
+**Path Parameters:**
+- `id`: Task ID (MongoDB ObjectId)
+
+**Request Body:** (all fields optional)
+```json
+{
+  "title": "Updated task title",
+  "status": "in-progress",
+  "priority": "medium"
+}
+```
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "task": {
+      "id": "60f7b2a5d1b2c3e4f5a6b7ca",
+      "title": "Updated task title",
+      "status": "in-progress",
+      "priority": "medium",
+      "updatedAt": "2024-01-16T09:15:00Z"
+    }
+  },
+  "message": "Task updated successfully"
+}
+```
+
+**Error Codes:**
+- `TASK_NOT_FOUND`: Task doesn't exist or doesn't belong to user
+- `VALIDATION_ERROR`: Invalid input data
+
+---
+
+### Delete Task
+
+Deletes a task.
+
+**Endpoint:** `DELETE /tasks/{id}`
+
+**Path Parameters:**
+- `id`: Task ID (MongoDB ObjectId)
+
+**Response:** `204 No Content`
+
+**Error Codes:**
+- `TASK_NOT_FOUND`: Task doesn't exist or doesn't belong to user
+
+## HTTP Status Codes
+
+| Code | Description |
+|------|-------------|
+| 200 | OK - Request successful |
+| 201 | Created - Resource created |
+| 204 | No Content - Resource deleted |
+| 400 | Bad Request - Invalid input |
+| 401 | Unauthorized - Authentication required |
+| 403 | Forbidden - Insufficient permissions |
+| 404 | Not Found - Resource not found |
+| 429 | Too Many Requests - Rate limit exceeded |
+| 500 | Internal Server Error - Server error |
+
+## Error Codes
+
+| Code | Description |
+|------|-------------|
+| `VALIDATION_ERROR` | Input validation failed |
+| `AUTHENTICATION_REQUIRED` | Valid JWT token required |
+| `INVALID_TOKEN` | JWT token is invalid or expired |
+| `INSUFFICIENT_PERMISSIONS` | User lacks required permissions |
+| `RESOURCE_NOT_FOUND` | Requested resource doesn't exist |
+| `RATE_LIMIT_EXCEEDED` | Too many requests |
+| `EMAIL_EXISTS` | Email already registered |
+| `INVALID_CREDENTIALS` | Wrong email or password |
+| `USER_INACTIVE` | User account deactivated |
+| `TASK_NOT_FOUND` | Task not found or access denied |
+
+## SDKs and Libraries
+
+### JavaScript/Node.js
+
+```bash
+npm install @taskmanager/api-client
+```
+
+```javascript
+const TaskManagerAPI = require('@taskmanager/api-client');
+
+const client = new TaskManagerAPI({
+  baseUrl: 'https://api.taskmanager.com/v1',
+  apiKey: 'your-api-key'
+});
+
+// Create a task
+const task = await client.tasks.create({
+  title: 'New task',
+  priority: 'high'
+});
+```
+
+### Python
+
+```bash
+pip install taskmanager-api
+```
+
+```python
+from taskmanager_api import TaskManagerClient
+
+client = TaskManagerClient(
+    base_url='https://api.taskmanager.com/v1',
+    api_key='your-api-key'
+)
+
+# Create a task
+task = client.tasks.create(
+    title='New task',
+    priority='high'
+)
+```
+
+## Changelog
+
+### v1.2.0 (2024-01-15)
+- Added task tags functionality
+- Improved pagination performance
+- Added task filtering by multiple criteria
+
+### v1.1.0 (2024-01-01)
+- Added task priority field
+- Implemented task due dates
+- Added bulk operations for tasks
+
+### v1.0.0 (2023-12-01)
+- Initial API release
+- Basic CRUD operations for tasks
+- JWT authentication
+- User management
+
+---
+
+**Need help?** Contact our support team at api-support@taskmanager.com
+```
+
+## Usage Notes:
+- **Example 1**: Basic Markdown syntax covering all fundamental elements
+- **Example 2**: Advanced formatting with tables, footnotes, math, and extended syntax
+- **Example 3**: Complete README template for open source projects
+- **Example 4**: Technical blog post with detailed tutorial structure
+- **Example 5**: Comprehensive API documentation with endpoints and examples
+
+These examples demonstrate Markdown's versatility from simple text formatting to complex technical documentation used in professional software development.

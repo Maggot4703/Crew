@@ -1,0 +1,470 @@
+# VSCode - Examples and Code Samples
+
+## Basic Examples
+
+### Example 1: Basic Workspace Setup
+```json
+// .vscode/settings.json - Basic workspace configuration
+{
+    "editor.fontSize": 14,
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true,
+    "files.autoSave": "afterDelay",
+    "files.autoSaveDelay": 1000,
+    "workbench.colorTheme": "Dark+ (default dark)",
+    "terminal.integrated.defaultProfile.linux": "bash"
+}
+```
+
+```json
+// .vscode/launch.json - Debug configuration
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch Node.js",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceFolder}/app.js",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Launch Python",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal"
+        }
+    ]
+}
+```
+
+### Example 2: Custom Keybindings
+```json
+// keybindings.json - Custom keyboard shortcuts
+[
+    {
+        "key": "ctrl+shift+alt+f",
+        "command": "editor.action.formatDocument",
+        "when": "editorTextFocus"
+    },
+    {
+        "key": "ctrl+shift+c",
+        "command": "workbench.action.terminal.new"
+    },
+    {
+        "key": "ctrl+shift+t",
+        "command": "workbench.action.tasks.runTask"
+    },
+    {
+        "key": "f5",
+        "command": "workbench.action.debug.start",
+        "when": "!inDebugMode"
+    }
+]
+```
+
+## Intermediate Examples
+
+### Example 3: Task Configuration for Build Automation
+```json
+// .vscode/tasks.json - Build and test automation
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "npm install",
+            "type": "shell",
+            "command": "npm",
+            "args": ["install"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "npm start",
+            "type": "shell",
+            "command": "npm",
+            "args": ["start"],
+            "group": "build",
+            "dependsOn": "npm install",
+            "isBackground": true,
+            "problemMatcher": "$eslint-stylish"
+        },
+        {
+            "label": "run tests",
+            "type": "shell",
+            "command": "npm",
+            "args": ["test"],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always"
+            }
+        },
+        {
+            "label": "build production",
+            "type": "shell",
+            "command": "npm",
+            "args": ["run", "build"],
+            "group": "build",
+            "dependsOn": "npm install"
+        }
+    ]
+}
+```
+
+### Example 4: Multi-Language Project Setup
+```json
+// .vscode/settings.json - Multi-language configuration
+{
+    "files.associations": {
+        "*.env": "properties",
+        "*.config": "json",
+        "Dockerfile*": "dockerfile"
+    },
+    "emmet.includeLanguages": {
+        "javascript": "javascriptreact",
+        "typescript": "typescriptreact"
+    },
+    "[javascript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.codeActionsOnSave": {
+            "source.fixAll.eslint": true
+        }
+    },
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": true
+        }
+    },
+    "[html]": {
+        "editor.defaultFormatter": "vscode.html-language-features"
+    },
+    "[css]": {
+        "editor.defaultFormatter": "vscode.css-language-features"
+    }
+}
+```
+
+## Advanced Examples
+
+### Example 5: Custom Extension Development
+```json
+// package.json - Basic extension manifest
+{
+    "name": "my-custom-extension",
+    "displayName": "My Custom Extension",
+    "description": "A custom VSCode extension example",
+    "version": "0.0.1",
+    "engines": {
+        "vscode": "^1.74.0"
+    },
+    "categories": ["Other"],
+    "activationEvents": [],
+    "main": "./out/extension.js",
+    "contributes": {
+        "commands": [
+            {
+                "command": "myExtension.helloWorld",
+                "title": "Hello World"
+            }
+        ]
+    },
+    "scripts": {
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./"
+    },
+    "devDependencies": {
+        "@types/vscode": "^1.74.0",
+        "@types/node": "16.x",
+        "typescript": "^4.9.4"
+    }
+}
+```
+
+```typescript
+// src/extension.ts - Extension entry point
+import * as vscode from 'vscode';
+
+export function activate(context: vscode.ExtensionContext) {
+    console.log('Extension "my-custom-extension" is now active!');
+    
+    let disposable = vscode.commands.registerCommand('myExtension.helloWorld', () => {
+        vscode.window.showInformationMessage('Hello World from My Custom Extension!');
+    });
+    
+    context.subscriptions.push(disposable);
+    
+    // Register a status bar item
+    const statusBarItem = vscode.window.createStatusBarItem(
+        vscode.StatusBarAlignment.Right, 100
+    );
+    statusBarItem.text = "$(heart) My Extension";
+    statusBarItem.command = 'myExtension.helloWorld';
+    statusBarItem.show();
+    context.subscriptions.push(statusBarItem);
+}
+
+export function deactivate() {}
+```
+
+### Example 6: Advanced Debugging Configuration
+```json
+// .vscode/launch.json - Advanced debugging setup
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch Chrome",
+            "type": "chrome",
+            "request": "launch",
+            "url": "http://localhost:3000",
+            "webRoot": "${workspaceFolder}/src",
+            "sourceMaps": true,
+            "trace": true
+        },
+        {
+            "name": "Attach to Node",
+            "type": "node",
+            "request": "attach",
+            "port": 9229,
+            "restart": true,
+            "localRoot": "${workspaceFolder}",
+            "remoteRoot": "/app"
+        },
+        {
+            "name": "Python: Remote Debug",
+            "type": "python",
+            "request": "attach",
+            "connect": {
+                "host": "localhost",
+                "port": 5678
+            },
+            "pathMappings": [
+                {
+                    "localRoot": "${workspaceFolder}",
+                    "remoteRoot": "/app"
+                }
+            ]
+        },
+        {
+            "name": "Docker: Debug",
+            "type": "docker",
+            "request": "launch",
+            "preLaunchTask": "docker-run: debug",
+            "python": {
+                "pathMappings": [
+                    {
+                        "localRoot": "${workspaceFolder}",
+                        "remoteRoot": "/app"
+                    }
+                ],
+                "projectType": "fastapi"
+            }
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Launch Frontend & Backend",
+            "configurations": ["Launch Chrome", "Launch Node.js"]
+        }
+    ]
+}
+```
+
+### Example 7: Workspace Configuration for Teams
+```json
+// .vscode/extensions.json - Recommended extensions
+{
+    "recommendations": [
+        "ms-python.python",
+        "ms-vscode.vscode-typescript-next",
+        "esbenp.prettier-vscode",
+        "ms-vscode.vscode-eslint",
+        "bradlc.vscode-tailwindcss",
+        "ms-vscode.vscode-json",
+        "ms-vscode-remote.remote-containers",
+        "github.copilot"
+    ],
+    "unwantedRecommendations": [
+        "ms-vscode.vscode-typescript"
+    ]
+}
+```
+
+```json
+// .vscode/settings.json - Team workspace settings
+{
+    "editor.rulers": [80, 120],
+    "editor.trimAutoWhitespace": true,
+    "files.trimTrailingWhitespace": true,
+    "files.insertFinalNewline": true,
+    "search.exclude": {
+        "**/node_modules": true,
+        "**/dist": true,
+        "**/.git": true,
+        "**/coverage": true
+    },
+    "typescript.preferences.quoteStyle": "single",
+    "javascript.preferences.quoteStyle": "single",
+    "python.linting.enabled": true,
+    "python.linting.pylintEnabled": true,
+    "python.formatting.provider": "black",
+    "git.autofetch": true,
+    "git.confirmSync": false,
+    "workbench.editor.enablePreview": false
+}
+```
+
+## Integration Examples
+
+### Example 8: Docker Integration
+```dockerfile
+# .devcontainer/Dockerfile
+FROM node:18-alpine
+
+RUN apk add --no-cache git
+
+WORKDIR /workspace
+COPY package*.json ./
+RUN npm install
+
+USER node
+```
+
+```json
+// .devcontainer/devcontainer.json
+{
+    "name": "Node.js Dev Container",
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+    "settings": {
+        "terminal.integrated.shell.linux": "/bin/sh"
+    },
+    "extensions": [
+        "ms-vscode.vscode-typescript-next",
+        "esbenp.prettier-vscode"
+    ],
+    "forwardPorts": [3000],
+    "postCreateCommand": "npm install",
+    "remoteUser": "node"
+}
+```
+
+### Example 9: Git Integration and Workflow
+```json
+// .vscode/settings.json - Git configuration
+{
+    "git.enableSmartCommit": true,
+    "git.confirmSync": false,
+    "git.autofetch": true,
+    "git.pruneOnFetch": true,
+    "git.followTagsWhenSync": true,
+    "gitlens.advanced.messages": {
+        "suppressCommitHasNoPreviousCommitWarning": false,
+        "suppressCommitNotFoundWarning": false
+    },
+    "gitlens.statusBar.enabled": true,
+    "gitlens.currentLine.enabled": true,
+    "gitlens.hovers.enabled": true
+}
+```
+
+## Performance and Optimization Examples
+
+### Example 10: Large Project Optimization
+```json
+// .vscode/settings.json - Performance settings
+{
+    "search.followSymlinks": false,
+    "search.useIgnoreFiles": true,
+    "files.watcherExclude": {
+        "**/.git/objects/**": true,
+        "**/.git/subtree-cache/**": true,
+        "**/node_modules/**": true,
+        "**/dist/**": true,
+        "**/build/**": true,
+        "**/.cache/**": true
+    },
+    "typescript.disableAutomaticTypeAcquisition": true,
+    "typescript.suggest.autoImports": false,
+    "javascript.suggest.autoImports": false,
+    "editor.quickSuggestions": {
+        "other": true,
+        "comments": false,
+        "strings": false
+    },
+    "files.exclude": {
+        "**/node_modules": true,
+        "**/.git": true,
+        "**/.DS_Store": true,
+        "**/dist": true,
+        "**/coverage": true
+    }
+}
+```
+
+## Snippet Examples
+
+### Example 11: Custom Code Snippets
+```json
+// .vscode/snippets.code-snippets
+{
+    "React Functional Component": {
+        "prefix": "rfc",
+        "body": [
+            "import React from 'react';",
+            "",
+            "interface ${1:ComponentName}Props {",
+            "  $2",
+            "}",
+            "",
+            "const ${1:ComponentName}: React.FC<${1:ComponentName}Props> = ({ $3 }) => {",
+            "  return (",
+            "    <div>",
+            "      $4",
+            "    </div>",
+            "  );",
+            "};",
+            "",
+            "export default ${1:ComponentName};"
+        ],
+        "description": "Create a React functional component with TypeScript"
+    },
+    "Python Class": {
+        "prefix": "pyclass",
+        "body": [
+            "class ${1:ClassName}:",
+            "    \"\"\"${2:Class description}\"\"\"",
+            "    ",
+            "    def __init__(self, ${3:args}):",
+            "        \"\"\"Initialize ${1:ClassName}\"\"\"",
+            "        ${4:pass}",
+            "    ",
+            "    def ${5:method_name}(self):",
+            "        \"\"\"${6:Method description}\"\"\"",
+            "        ${7:pass}"
+        ],
+        "description": "Create a Python class with docstrings"
+    }
+}
+```
+
+## Additional Resources
+- **Official Documentation**: https://code.visualstudio.com/docs
+- **Extension Development**: https://code.visualstudio.com/api
+- **Community Extensions**: https://marketplace.visualstudio.com/
+- **GitHub Codespaces**: https://github.com/features/codespaces
+- **VSCode Tips**: https://code.visualstudio.com/docs/getstarted/tips-and-tricks
+- **Debugging Guide**: https://code.visualstudio.com/docs/editor/debugging
+- **Remote Development**: https://code.visualstudio.com/docs/remote/remote-overview
+
+Created: 2025-06-02 19:39:56

@@ -1,0 +1,891 @@
+# uv - Fast Python Package Manager Examples and Code Samples
+
+## Basic Examples
+
+### Example 1: Installation and Getting Started
+```bash
+# Install uv (multiple methods)
+
+# Method 1: Using pip
+pip install uv
+
+# Method 2: Using pipx (recommended)
+pipx install uv
+
+# Method 3: Using curl (Linux/macOS)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Method 4: Using PowerShell (Windows)
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+
+# Method 5: Using Homebrew (macOS)
+brew install uv
+
+# Check installation
+uv --version
+
+# Get help
+uv --help
+uv pip --help
+```
+
+```bash
+# Basic package installation
+uv pip install requests
+uv pip install pandas numpy matplotlib
+
+# Install specific versions
+uv pip install "django>=4.0,<5.0"
+uv pip install "fastapi==0.104.1"
+
+# Install from requirements file
+uv pip install -r requirements.txt
+
+# Install with extras
+uv pip install "fastapi[all]"
+uv pip install "jupyter[lab]"
+
+# Install development dependencies
+uv pip install -e ".[dev]"
+
+# Show installed packages
+uv pip list
+uv pip show requests
+
+# Uninstall packages
+uv pip uninstall requests
+uv pip uninstall -r requirements.txt
+```
+
+### Example 2: Virtual Environment Management
+```bash
+# Create virtual environment
+uv venv
+uv venv myproject
+uv venv --python 3.11
+uv venv --python python3.12
+
+# Create environment in specific directory
+uv venv /path/to/my/env
+
+# Activate virtual environment (traditional way)
+# Linux/macOS:
+source .venv/bin/activate
+# Windows:
+.venv\Scripts\activate
+
+# Use uv with automatic environment detection
+# uv automatically detects and uses .venv if it exists
+
+# Install packages in virtual environment
+uv pip install fastapi uvicorn
+
+# Create requirements.txt from current environment
+uv pip freeze > requirements.txt
+
+# Create requirements with version bounds
+uv pip freeze --exclude-editable > requirements.txt
+```
+
+### Example 3: Project Initialization and Management
+```bash
+# Initialize new Python project
+uv init my-project
+cd my-project
+
+# Initialize in current directory
+uv init
+
+# Create project with specific Python version
+uv init --python 3.11 my-project
+
+# Project structure created:
+# my-project/
+# ├── pyproject.toml
+# ├── README.md
+# ├── .python-version
+# └── src/
+#     └── my_project/
+#         └── __init__.py
+
+# Install project dependencies
+uv sync
+
+# Add new dependencies
+uv add requests
+uv add "fastapi>=0.100.0"
+uv add --dev pytest black mypy
+
+# Add from git repository
+uv add git+https://github.com/user/repo.git
+uv add git+https://github.com/user/repo.git@v1.0.0
+
+# Remove dependencies
+uv remove requests
+uv remove --dev pytest
+
+# Update all dependencies
+uv sync --upgrade
+
+# Update specific dependencies
+uv sync --upgrade-package requests
+```
+
+## Intermediate Examples
+
+### Example 4: Advanced Package Resolution and Constraints
+```bash
+# Pin dependencies with constraints
+uv pip install --constraint constraints.txt -r requirements.txt
+
+# Example constraints.txt:
+# numpy==1.24.0
+# pandas>=2.0.0,<3.0.0
+# scipy!=1.10.0
+
+# Install with index URL
+uv pip install --index-url https://pypi.org/simple/ requests
+
+# Install with extra index URLs
+uv pip install --extra-index-url https://download.pytorch.org/whl/cpu torch
+
+# Install with trusted hosts
+uv pip install --trusted-host pypi.org --trusted-host pypi.python.org requests
+
+# Dry run installation (show what would be installed)
+uv pip install --dry-run pandas scikit-learn
+
+# Force reinstall
+uv pip install --force-reinstall requests
+
+# Install without dependencies
+uv pip install --no-deps my-package
+
+# Install pre-release versions
+uv pip install --pre torch
+
+# Cache management
+uv cache dir      # Show cache directory
+uv cache clean    # Clean cache
+uv cache clean requests  # Clean specific package cache
+```
+
+### Example 5: Lock Files and Reproducible Builds
+```toml
+# pyproject.toml example
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "my-project"
+version = "0.1.0"
+description = "My awesome project"
+readme = "README.md"
+authors = [
+    {name = "Your Name", email = "your.email@example.com"},
+]
+license = {text = "MIT"}
+requires-python = ">=3.8"
+dependencies = [
+    "fastapi>=0.100.0",
+    "uvicorn[standard]>=0.20.0",
+    "pydantic>=2.0.0",
+    "sqlalchemy>=2.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "black>=23.0.0",
+    "mypy>=1.0.0",
+    "ruff>=0.1.0",
+]
+test = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "httpx>=0.24.0",
+]
+
+[project.scripts]
+my-cli = "my_project.cli:main"
+
+[tool.uv]
+dev-dependencies = [
+    "pre-commit>=3.0.0",
+]
+```
+
+```bash
+# Generate and use lock file
+uv lock
+
+# Install from lock file
+uv sync --frozen
+
+# Update lock file
+uv lock --upgrade
+
+# Install only production dependencies
+uv sync --no-dev
+
+# Install with specific groups
+uv sync --group test
+uv sync --group dev,test
+
+# Export lock file to requirements.txt format
+uv export --format requirements-txt > requirements.txt
+uv export --format requirements-txt --no-dev > requirements-prod.txt
+```
+
+### Example 6: Working with Multiple Python Versions
+```bash
+# List available Python versions
+uv python list
+
+# Install specific Python version
+uv python install 3.11
+uv python install 3.12.0
+
+# Pin Python version for project
+echo "3.11" > .python-version
+
+# Create environment with specific Python
+uv venv --python 3.11
+uv venv --python python3.12
+
+# Find Python installations
+uv python find
+uv python find 3.11
+
+# Use specific Python for commands
+uv --python 3.11 pip install requests
+uv --python python3.12 venv myenv
+
+# Run commands with specific Python
+uv run --python 3.11 python script.py
+uv run --python 3.12 pytest
+```
+
+## Advanced Examples
+
+### Example 7: CI/CD Integration and Docker
+```yaml
+# .github/workflows/test.yml - GitHub Actions
+name: Test
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v2
+      with:
+        version: "latest"
+    
+    - name: Set up Python
+      run: uv python install ${{ matrix.python-version }}
+    
+    - name: Create virtual environment
+      run: uv venv --python ${{ matrix.python-version }}
+    
+    - name: Install dependencies
+      run: uv sync --all-extras --dev
+    
+    - name: Run tests
+      run: uv run pytest
+    
+    - name: Run linting
+      run: |
+        uv run black --check .
+        uv run mypy .
+        uv run ruff check .
+```
+
+```dockerfile
+# Dockerfile with uv
+FROM python:3.11-slim
+
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
+
+# Set working directory
+WORKDIR /app
+
+# Copy dependency files
+COPY pyproject.toml uv.lock ./
+
+# Install dependencies
+RUN uv sync --frozen --no-cache --no-dev
+
+# Copy application code
+COPY . .
+
+# Install application
+RUN uv sync --frozen --no-cache --no-dev
+
+# Set the Python path
+ENV PATH="/app/.venv/bin:$PATH"
+
+# Run application
+CMD ["python", "-m", "my_project"]
+```
+
+```dockerfile
+# Multi-stage Docker build with uv
+FROM python:3.11-slim as builder
+
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
+# Set working directory
+WORKDIR /app
+
+# Copy dependency files
+COPY pyproject.toml uv.lock ./
+
+# Create virtual environment and install dependencies
+RUN uv sync --frozen --no-cache --no-dev
+
+# Production stage
+FROM python:3.11-slim
+
+# Copy virtual environment from builder
+COPY --from=builder /app/.venv /app/.venv
+
+# Copy application code
+COPY . /app
+
+# Set working directory and PATH
+WORKDIR /app
+ENV PATH="/app/.venv/bin:$PATH"
+
+# Run application
+CMD ["python", "-m", "my_project"]
+```
+
+### Example 8: Advanced Configuration and Scripting
+```toml
+# uv.toml - Global configuration
+[tool.uv]
+# Use different index
+index-url = "https://pypi.org/simple/"
+extra-index-url = ["https://download.pytorch.org/whl/cpu"]
+
+# Exclude newer package versions
+exclude-newer = "2024-01-01T00:00:00Z"
+
+# Configure cache behavior
+no-cache = false
+cache-dir = "/custom/cache/path"
+
+# Development dependencies
+dev-dependencies = [
+    "pytest>=7.0.0",
+    "black>=23.0.0",
+    "mypy>=1.0.0",
+]
+
+# Environment variables
+[tool.uv.env]
+UV_EXTRA_INDEX_URL = "https://download.pytorch.org/whl/cpu"
+```
+
+```bash
+# Advanced uv commands and scripting
+
+# Run Python scripts with dependencies
+uv run --with requests python -c "import requests; print(requests.get('https://httpbin.org/json').json())"
+
+# Run scripts with multiple dependencies
+uv run --with "fastapi uvicorn" python app.py
+
+# Run with dependency from git
+uv run --with "git+https://github.com/user/repo" python script.py
+
+# Tool management
+uv tool install black
+uv tool install mypy
+uv tool install ruff
+
+# Run tools
+uv tool run black .
+uv tool run mypy src/
+uv tool run ruff check .
+
+# Update tools
+uv tool upgrade black
+uv tool upgrade --all
+
+# List installed tools
+uv tool list
+
+# Uninstall tools
+uv tool uninstall black
+
+# Build and publish packages
+uv build
+uv build --wheel
+uv build --sdist
+
+# Development workflow script
+#!/bin/bash
+# dev-setup.sh
+
+set -e
+
+echo "Setting up development environment..."
+
+# Install uv if not present
+if ! command -v uv &> /dev/null; then
+    echo "Installing uv..."
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    source ~/.bashrc
+fi
+
+# Create virtual environment
+echo "Creating virtual environment..."
+uv venv
+
+# Install dependencies
+echo "Installing dependencies..."
+uv sync --all-extras
+
+# Install pre-commit hooks
+echo "Setting up pre-commit..."
+uv run pre-commit install
+
+echo "Development environment ready!"
+echo "Activate with: source .venv/bin/activate"
+```
+
+### Example 9: Performance Comparison and Benchmarks
+```bash
+# Performance comparison examples
+
+# Time package installation (uv vs pip)
+time uv pip install pandas numpy matplotlib
+# vs
+time pip install pandas numpy matplotlib
+
+# Dependency resolution speed test
+time uv pip install tensorflow
+# vs
+time pip install tensorflow
+
+# Virtual environment creation speed
+time uv venv test-env
+# vs
+time python -m venv test-env
+
+# Lock file generation benchmark
+time uv lock
+# vs
+time pip-tools compile requirements.in
+
+# Parallel installation test
+uv pip install \
+  requests aiohttp fastapi \
+  pandas numpy scipy \
+  django flask bottle \
+  pytest black mypy
+
+# Memory usage comparison script
+#!/bin/bash
+# benchmark.sh
+
+echo "=== UV Performance Test ==="
+
+echo "Testing package installation speed..."
+rm -rf test-env-uv test-env-pip
+
+# Test uv
+echo "UV: Creating environment and installing packages..."
+time (
+    uv venv test-env-uv
+    cd test-env-uv
+    uv pip install requests pandas fastapi uvicorn
+)
+
+# Test pip
+echo "PIP: Creating environment and installing packages..."
+time (
+    python -m venv test-env-pip
+    source test-env-pip/bin/activate
+    pip install requests pandas fastapi uvicorn
+)
+
+echo "Cleanup..."
+rm -rf test-env-uv test-env-pip
+```
+
+### Example 10: Enterprise and Team Workflows
+```toml
+# Corporate pyproject.toml with internal repositories
+[tool.uv]
+index-url = "https://pypi.company.com/simple/"
+extra-index-url = [
+    "https://pypi.org/simple/",
+    "https://internal-packages.company.com/simple/"
+]
+
+# Corporate CA certificates
+trusted-host = [
+    "pypi.company.com",
+    "internal-packages.company.com"
+]
+
+# Dependency groups for different teams
+[dependency-groups]
+data-science = [
+    "pandas>=2.0.0",
+    "numpy>=1.24.0",
+    "scikit-learn>=1.3.0",
+    "matplotlib>=3.7.0",
+    "seaborn>=0.12.0",
+]
+
+web-dev = [
+    "fastapi>=0.100.0",
+    "uvicorn[standard]>=0.20.0",
+    "sqlalchemy>=2.0.0",
+    "alembic>=1.12.0",
+]
+
+testing = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "pytest-mock>=3.10.0",
+    "factory-boy>=3.3.0",
+]
+```
+
+```bash
+# Team workflow automation scripts
+
+# setup-team-env.sh
+#!/bin/bash
+set -e
+
+PROJECT_NAME=${1:-"team-project"}
+PYTHON_VERSION=${2:-"3.11"}
+
+echo "Setting up team environment for $PROJECT_NAME"
+
+# Initialize project
+uv init $PROJECT_NAME --python $PYTHON_VERSION
+cd $PROJECT_NAME
+
+# Add team-specific dependencies based on project type
+read -p "Project type (web/data/cli): " PROJECT_TYPE
+
+case $PROJECT_TYPE in
+    web)
+        uv add fastapi uvicorn sqlalchemy alembic
+        uv add --group dev pytest black mypy ruff
+        ;;
+    data)
+        uv add pandas numpy matplotlib seaborn jupyter
+        uv add --group dev pytest black mypy ruff ipykernel
+        ;;
+    cli)
+        uv add click rich typer
+        uv add --group dev pytest black mypy ruff
+        ;;
+esac
+
+# Setup development tools
+uv add --group dev pre-commit
+
+# Generate lock file
+uv lock
+
+echo "Team environment setup complete!"
+echo "Next steps:"
+echo "  cd $PROJECT_NAME"
+echo "  uv sync"
+echo "  uv run pre-commit install"
+```
+
+```python
+# sync-dependencies.py - Team dependency synchronization
+#!/usr/bin/env python3
+"""
+Synchronize dependencies across team projects
+"""
+import subprocess
+import sys
+from pathlib import Path
+
+def run_uv_command(cmd: list[str], cwd: Path = None) -> bool:
+    """Run uv command and return success status"""
+    try:
+        result = subprocess.run(
+            ["uv"] + cmd, 
+            cwd=cwd, 
+            capture_output=True, 
+            text=True, 
+            check=True
+        )
+        print(f"✓ {' '.join(cmd)} - Success")
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"✗ {' '.join(cmd)} - Failed: {e.stderr}")
+        return False
+
+def sync_project(project_path: Path) -> bool:
+    """Sync a single project"""
+    print(f"\nSyncing {project_path.name}...")
+    
+    if not (project_path / "pyproject.toml").exists():
+        print(f"  Skipping {project_path.name} - no pyproject.toml")
+        return True
+    
+    # Update lock file
+    if not run_uv_command(["lock", "--upgrade"], cwd=project_path):
+        return False
+    
+    # Sync dependencies
+    if not run_uv_command(["sync"], cwd=project_path):
+        return False
+    
+    return True
+
+def main():
+    """Main function"""
+    if len(sys.argv) > 1:
+        projects_dir = Path(sys.argv[1])
+    else:
+        projects_dir = Path.cwd()
+    
+    if not projects_dir.is_dir():
+        print(f"Error: {projects_dir} is not a directory")
+        sys.exit(1)
+    
+    # Find all projects with pyproject.toml
+    projects = [
+        p for p in projects_dir.iterdir() 
+        if p.is_dir() and (p / "pyproject.toml").exists()
+    ]
+    
+    if not projects:
+        print("No projects found with pyproject.toml")
+        sys.exit(0)
+    
+    print(f"Found {len(projects)} projects to sync")
+    
+    failed_projects = []
+    for project in projects:
+        if not sync_project(project):
+            failed_projects.append(project.name)
+    
+    if failed_projects:
+        print(f"\n❌ Failed to sync: {', '.join(failed_projects)}")
+        sys.exit(1)
+    else:
+        print(f"\n✅ Successfully synced all {len(projects)} projects")
+
+if __name__ == "__main__":
+    main()
+```
+
+## Additional Resources
+
+### Useful Configuration Examples
+```toml
+# Complete pyproject.toml example for modern Python project
+[build-system]
+requires = ["hatchling>=1.13.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "my-awesome-project"
+dynamic = ["version"]
+description = "An awesome Python project"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.9"
+authors = [
+    { name = "Your Name", email = "your@email.com" },
+]
+keywords = ["python", "awesome", "project"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+dependencies = [
+    "click>=8.0.0",
+    "rich>=13.0.0",
+    "pydantic>=2.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "mypy>=1.0.0",
+    "ruff>=0.1.0",
+    "pre-commit>=3.0.0",
+]
+
+docs = [
+    "mkdocs>=1.5.0",
+    "mkdocs-material>=9.0.0",
+    "mkdocstrings[python]>=0.20.0",
+]
+
+[project.scripts]
+my-cli = "my_awesome_project.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/username/my-awesome-project"
+Documentation = "https://my-awesome-project.readthedocs.io"
+Repository = "https://github.com/username/my-awesome-project.git"
+"Bug Tracker" = "https://github.com/username/my-awesome-project/issues"
+
+[tool.hatch.version]
+path = "src/my_awesome_project/__init__.py"
+
+[tool.uv]
+dev-dependencies = [
+    "ipython>=8.0.0",
+    "jupyter>=1.0.0",
+]
+
+[tool.black]
+line-length = 88
+target-version = ["py39"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py39"
+
+[tool.mypy]
+python_version = "3.9"
+strict = true
+```
+
+### Migration from pip/pipenv/poetry
+```bash
+# Migrating from pip + requirements.txt
+# 1. Initialize uv project
+uv init
+
+# 2. Import existing requirements
+uv add $(cat requirements.txt | grep -v "^#" | tr '\n' ' ')
+
+# 3. Import dev requirements
+uv add --group dev $(cat requirements-dev.txt | grep -v "^#" | tr '\n' ' ')
+
+# Migrating from Pipenv
+# 1. Export from Pipfile
+pipenv requirements > requirements.txt
+pipenv requirements --dev > requirements-dev.txt
+
+# 2. Follow pip migration steps above
+
+# Migrating from Poetry
+# 1. Export from poetry
+poetry export -f requirements.txt > requirements.txt
+poetry export --group dev -f requirements.txt > requirements-dev.txt
+
+# 2. Convert pyproject.toml manually or use migration script
+
+# Migration script for poetry to uv
+#!/bin/bash
+# migrate-poetry-to-uv.sh
+
+echo "Migrating from Poetry to UV..."
+
+# Backup original files
+cp pyproject.toml pyproject.toml.backup
+cp poetry.lock poetry.lock.backup
+
+# Export current dependencies
+poetry export --without-hashes -f requirements.txt > requirements.txt
+poetry export --group dev --without-hashes -f requirements.txt > requirements-dev.txt
+
+# Initialize UV project (preserving existing pyproject.toml structure)
+uv init --no-readme .
+
+# Install dependencies from exported requirements
+uv add $(cat requirements.txt | sed 's/==.*//' | tr '\n' ' ')
+uv add --group dev $(cat requirements-dev.txt | sed 's/==.*//' | tr '\n' ' ')
+
+# Generate lock file
+uv lock
+
+# Cleanup
+rm requirements.txt requirements-dev.txt
+
+echo "Migration complete!"
+echo "Please review pyproject.toml and test your project"
+echo "Backup files: pyproject.toml.backup, poetry.lock.backup"
+```
+
+### Best Practices and Tips
+```bash
+# UV Best Practices Checklist
+
+# 1. Always use lock files for reproducible builds
+uv lock
+uv sync --frozen  # In CI/CD
+
+# 2. Pin Python version in .python-version
+echo "3.11" > .python-version
+
+# 3. Use dependency groups for different purposes
+uv add --group test pytest
+uv add --group dev black mypy
+uv add --group docs mkdocs
+
+# 4. Regular dependency updates
+uv lock --upgrade
+uv sync --upgrade
+
+# 5. Cache management in CI
+uv cache clean  # If cache issues occur
+
+# 6. Use uv run for one-off scripts
+uv run --with requests python script.py
+
+# 7. Configure index URLs in pyproject.toml for team consistency
+[tool.uv]
+index-url = "https://pypi.org/simple/"
+
+# 8. Use constraints for security/compliance
+uv add "requests>=2.28.0,<3.0.0"
+
+# 9. Export for environments without uv
+uv export --format requirements-txt > requirements.txt
+
+# 10. Use pre-commit with uv
+# .pre-commit-config.yaml
+repos:
+  - repo: local
+    hooks:
+      - id: uv-lock
+        name: uv lock
+        entry: uv lock
+        language: system
+        files: pyproject.toml
+        pass_filenames: false
+```
+
+Created: 2025-06-02 19:39:56
+
+Created: 2025-06-02 19:39:56

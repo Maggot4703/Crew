@@ -1,0 +1,520 @@
+# Git - Usage Guide
+
+## Getting Started
+
+### Installation
+```bash
+# Ubuntu/Debian
+sudo apt update
+sudo apt install git
+
+# CentOS/RHEL/Fedora
+sudo yum install git         # CentOS/RHEL
+sudo dnf install git         # Fedora
+
+# macOS
+brew install git             # Using Homebrew
+# Or download from https://git-scm.com/download/mac
+
+# Windows
+# Download from https://git-scm.com/download/win
+# Or use Windows Subsystem for Linux (WSL)
+
+# Verify installation
+git --version
+```
+
+### Initial Configuration
+```bash
+# Set global user information
+git config --global user.name "Your Name"
+git config --global user.email "your.email@example.com"
+
+# Set default branch name
+git config --global init.defaultBranch main
+
+# Set default editor
+git config --global core.editor "code --wait"  # VS Code
+git config --global core.editor "vim"          # Vim
+git config --global core.editor "nano"         # Nano
+
+# Configure line endings (Windows)
+git config --global core.autocrlf true
+
+# Configure line endings (Linux/macOS)
+git config --global core.autocrlf input
+
+# View configuration
+git config --list
+git config --global --list
+git config user.name
+```
+
+### SSH Key Setup
+```bash
+# Generate SSH key
+ssh-keygen -t ed25519 -C "your.email@example.com"
+# Or for older systems
+ssh-keygen -t rsa -b 4096 -C "your.email@example.com"
+
+# Start SSH agent
+eval "$(ssh-agent -s)"
+
+# Add SSH key to agent
+ssh-add ~/.ssh/id_ed25519
+
+# Copy public key to clipboard
+cat ~/.ssh/id_ed25519.pub
+
+# Test SSH connection (GitHub)
+ssh -T git@github.com
+```
+
+## Repository Initialization
+
+### Creating a New Repository
+```bash
+# Initialize new repository
+mkdir my-project
+cd my-project
+git init
+
+# Initialize with specific branch name
+git init --initial-branch=main
+
+# Clone existing repository
+git clone https://github.com/user/repo.git
+git clone git@github.com:user/repo.git          # SSH
+git clone https://github.com/user/repo.git my-folder  # Custom folder name
+
+# Clone specific branch
+git clone -b feature-branch https://github.com/user/repo.git
+
+# Shallow clone (recent commits only)
+git clone --depth 1 https://github.com/user/repo.git
+```
+
+### Repository Setup
+```bash
+# Add remote origin
+git remote add origin https://github.com/user/repo.git
+
+# Verify remotes
+git remote -v
+
+# Change remote URL
+git remote set-url origin git@github.com:user/repo.git
+
+# Add additional remotes
+git remote add upstream https://github.com/original/repo.git
+```
+
+## Common Operations
+
+### Basic Workflow
+```bash
+# Check repository status
+git status
+git status -s               # Short format
+
+# Add files to staging area
+git add file.txt            # Add specific file
+git add .                   # Add all files in current directory
+git add -A                  # Add all files in repository
+git add *.js               # Add all JavaScript files
+git add -p                  # Interactive staging
+
+# Commit changes
+git commit -m "Add feature X"
+git commit -am "Update and commit all tracked files"
+git commit --amend          # Amend last commit
+git commit --amend -m "New commit message"
+
+# Push to remote repository
+git push origin main        # Push to main branch
+git push -u origin main     # Push and set upstream
+git push --all             # Push all branches
+git push --tags            # Push all tags
+
+# Pull from remote repository
+git pull origin main        # Pull from main branch
+git pull --rebase          # Pull with rebase
+git fetch origin           # Fetch without merging
+git fetch --all            # Fetch from all remotes
+```
+
+### Branch Management
+```bash
+# List branches
+git branch                  # Local branches
+git branch -r              # Remote branches
+git branch -a              # All branches
+
+# Create new branch
+git branch feature-branch
+git checkout -b feature-branch          # Create and switch
+git switch -c feature-branch            # Modern syntax
+
+# Switch branches
+git checkout main
+git switch main                         # Modern syntax
+
+# Rename branch
+git branch -m old-name new-name         # Rename local branch
+git branch -M new-name                  # Rename current branch
+
+# Delete branch
+git branch -d feature-branch            # Safe delete
+git branch -D feature-branch            # Force delete
+git push origin --delete feature-branch # Delete remote branch
+
+# Track remote branch
+git branch -u origin/main main
+git checkout --track origin/feature-branch
+```
+
+### Viewing History
+```bash
+# View commit history
+git log
+git log --oneline           # Compact format
+git log --graph            # ASCII graph
+git log --graph --oneline --all  # Visual branch history
+git log -p                 # Show patches
+git log -n 5              # Last 5 commits
+git log --since="2 weeks ago"
+git log --author="John Doe"
+git log --grep="fix"       # Search commit messages
+
+# Show specific commit
+git show commit-hash
+git show HEAD              # Latest commit
+git show HEAD~1            # Previous commit
+
+# Show file history
+git log -- filename.txt
+git log -p -- filename.txt # With changes
+
+# Blame (line-by-line history)
+git blame filename.txt
+git blame -L 10,20 filename.txt  # Specific lines
+```
+
+## Advanced Usage
+
+### Merging and Rebasing
+```bash
+# Merge branches
+git checkout main
+git merge feature-branch
+git merge --no-ff feature-branch        # Force merge commit
+git merge --squash feature-branch       # Squash merge
+
+# Rebase
+git checkout feature-branch
+git rebase main                         # Rebase onto main
+git rebase -i HEAD~3                    # Interactive rebase (last 3 commits)
+git rebase --continue                   # Continue after resolving conflicts
+git rebase --abort                      # Abort rebase
+
+# Cherry-pick commits
+git cherry-pick commit-hash
+git cherry-pick commit1..commit3        # Range of commits
+```
+
+### Conflict Resolution
+```bash
+# When merge conflicts occur
+git status                              # See conflicted files
+# Edit files to resolve conflicts
+git add resolved-file.txt
+git commit                              # Complete merge
+
+# Merge tools
+git mergetool                           # Use configured merge tool
+git config --global merge.tool vimdiff  # Set merge tool
+
+# Abort merge
+git merge --abort
+git rebase --abort
+```
+
+### Stashing Changes
+```bash
+# Stash changes
+git stash                               # Stash working directory
+git stash -u                           # Include untracked files
+git stash save "Work in progress"       # With message
+git stash push -m "Message" file.txt    # Stash specific file
+
+# List stashes
+git stash list
+
+# Apply stashes
+git stash apply                         # Apply latest stash
+git stash apply stash@{2}              # Apply specific stash
+git stash pop                          # Apply and remove stash
+
+# Drop stashes
+git stash drop stash@{1}               # Drop specific stash
+git stash clear                        # Drop all stashes
+```
+
+### Tags
+```bash
+# Create tags
+git tag v1.0.0                         # Lightweight tag
+git tag -a v1.0.0 -m "Version 1.0.0"  # Annotated tag
+git tag -a v1.0.0 commit-hash          # Tag specific commit
+
+# List tags
+git tag
+git tag -l "v1.*"                      # Pattern matching
+
+# Push tags
+git push origin v1.0.0                 # Push specific tag
+git push origin --tags                 # Push all tags
+
+# Delete tags
+git tag -d v1.0.0                      # Delete local tag
+git push origin --delete v1.0.0        # Delete remote tag
+```
+
+### Undoing Changes
+```bash
+# Unstage files
+git reset HEAD file.txt                # Unstage specific file
+git reset HEAD                         # Unstage all files
+
+# Discard changes
+git checkout -- file.txt               # Discard working directory changes
+git checkout .                         # Discard all changes
+git clean -f                           # Remove untracked files
+git clean -fd                          # Remove untracked files and directories
+
+# Reset commits
+git reset --soft HEAD~1                # Keep changes in staging
+git reset --mixed HEAD~1               # Keep changes in working directory
+git reset --hard HEAD~1                # Discard all changes
+
+# Revert commits (safe)
+git revert commit-hash                 # Create new commit that undoes changes
+git revert HEAD                        # Revert last commit
+git revert --no-commit HEAD~3..HEAD    # Revert range without committing
+```
+
+### Remote Operations
+```bash
+# Manage remotes
+git remote add upstream https://github.com/original/repo.git
+git remote rename origin old-origin
+git remote remove upstream
+
+# Fetch and merge
+git fetch origin                       # Fetch from origin
+git fetch --all                        # Fetch from all remotes
+git merge origin/main                  # Merge fetched changes
+
+# Push with options
+git push -f origin main                # Force push (dangerous)
+git push --force-with-lease origin main # Safer force push
+git push -u origin feature-branch      # Set upstream tracking
+```
+
+## Workflow Patterns
+
+### Git Flow
+```bash
+# Feature development
+git checkout -b feature/new-feature main
+# ... work on feature ...
+git checkout main
+git merge --no-ff feature/new-feature
+git branch -d feature/new-feature
+
+# Release preparation
+git checkout -b release/1.0.0 develop
+# ... prepare release ...
+git checkout main
+git merge --no-ff release/1.0.0
+git tag -a v1.0.0 -m "Release version 1.0.0"
+git checkout develop
+git merge --no-ff release/1.0.0
+```
+
+### GitHub Flow
+```bash
+# Simple feature workflow
+git checkout -b feature-branch
+# ... work on feature ...
+git push -u origin feature-branch
+# Create pull request on GitHub
+# After approval, merge and delete branch
+```
+
+## Configuration and Customization
+
+### Aliases
+```bash
+# Useful Git aliases
+git config --global alias.st status
+git config --global alias.co checkout
+git config --global alias.br branch
+git config --global alias.ci commit
+git config --global alias.unstage 'reset HEAD --'
+git config --global alias.last 'log -1 HEAD'
+git config --global alias.visual '!gitk'
+git config --global alias.lg "log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit"
+
+# Use aliases
+git st                                 # Same as git status
+git lg                                 # Pretty log format
+```
+
+### Global Gitignore
+```bash
+# Create global gitignore
+touch ~/.gitignore_global
+
+# Configure Git to use it
+git config --global core.excludesfile ~/.gitignore_global
+
+# Add common patterns
+echo ".DS_Store" >> ~/.gitignore_global
+echo "*.log" >> ~/.gitignore_global
+echo "node_modules/" >> ~/.gitignore_global
+echo ".env" >> ~/.gitignore_global
+```
+
+### Hooks
+```bash
+# Navigate to hooks directory
+cd .git/hooks
+
+# Create pre-commit hook (example)
+cat > pre-commit << 'EOF'
+#!/bin/sh
+# Run tests before commit
+npm test
+if [ $? -ne 0 ]; then
+    echo "Tests failed. Commit aborted."
+    exit 1
+fi
+EOF
+
+chmod +x pre-commit
+```
+
+## Tips and Tricks
+
+### Productivity Enhancements
+```bash
+# Search in code
+git grep "search term"
+git grep -n "search term"              # Show line numbers
+git grep -i "search term"              # Case insensitive
+
+# Find commits that changed a line
+git log -S "function_name" --source --all
+
+# Find when a file was deleted
+git log --all --full-history -- path/to/file
+
+# Diff tools
+git diff                               # Working directory vs staging
+git diff --staged                      # Staging vs last commit
+git diff HEAD~1 HEAD                   # Between commits
+git diff branch1..branch2              # Between branches
+git diff --word-diff                   # Word-level diff
+
+# Archive repository
+git archive --format=zip --output=project.zip HEAD
+
+# Bundle repository
+git bundle create repo.bundle HEAD main
+```
+
+### Troubleshooting
+```bash
+# Check repository integrity
+git fsck
+
+# Garbage collection
+git gc
+git gc --aggressive                    # More thorough cleanup
+
+# Recover deleted commits
+git reflog                             # Show reference log
+git checkout commit-hash               # Checkout deleted commit
+git cherry-pick commit-hash            # Apply deleted commit
+
+# Find large files
+git rev-list --objects --all | git cat-file --batch-check='%(objecttype) %(objectname) %(objectsize) %(rest)' | sed -n 's/^blob //p' | sort --numeric-sort --key=2 | tail -10
+
+# Reset author information
+git rebase -i --root
+# Change 'pick' to 'edit' for commits to modify
+git commit --amend --author="New Author <new.email@example.com>"
+git rebase --continue
+```
+
+### Best Practices
+```bash
+# Commit message conventions
+# Type: Subject (50 chars max)
+# 
+# Body (72 chars per line)
+# 
+# Footer
+
+# Examples:
+git commit -m "feat: add user authentication"
+git commit -m "fix: resolve login validation bug"
+git commit -m "docs: update API documentation"
+
+# Atomic commits
+# Make small, focused commits
+# Each commit should represent one logical change
+
+# Branch naming conventions
+feature/user-auth
+bugfix/login-error
+hotfix/security-patch
+release/v1.2.0
+
+# Keep history clean
+git rebase -i HEAD~3                   # Clean up last 3 commits
+git commit --fixup commit-hash         # Create fixup commit
+git rebase -i --autosquash HEAD~5      # Auto-squash fixup commits
+```
+
+### Security Considerations
+```bash
+# Sign commits with GPG
+git config --global user.signingkey YOUR_GPG_KEY_ID
+git config --global commit.gpgsign true
+git commit -S -m "Signed commit"
+
+# Verify signatures
+git log --show-signature
+
+# Remove sensitive data
+git filter-branch --force --index-filter 'git rm --cached --ignore-unmatch path/to/file' --prune-empty --tag-name-filter cat -- --all
+# Or use BFG Repo-Cleaner (recommended)
+java -jar bfg.jar --delete-files "*.passwords" my-repo.git
+```
+
+### Integration with Other Tools
+```bash
+# VS Code integration
+code .                                 # Open repository in VS Code
+git config --global core.editor "code --wait"
+
+# GitHub CLI
+gh repo create                         # Create GitHub repository
+gh pr create                           # Create pull request
+gh issue create                        # Create issue
+
+# Git with Docker
+docker run --rm -v $(pwd):/git alpine/git status
+```

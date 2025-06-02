@@ -1,0 +1,502 @@
+# uv - Usage Guide
+
+## Getting Started
+
+### Installation
+```bash
+# Install uv via pip
+pip install uv
+
+# Install via curl (Unix/Linux/macOS)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Install via PowerShell (Windows)
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+
+# Install via Homebrew (macOS)
+brew install uv
+
+# Install via cargo (Rust)
+cargo install uv
+
+# Verify installation
+uv --version
+```
+
+### Basic Setup
+```bash
+# Initialize a new Python project
+uv init my-project
+cd my-project
+
+# Or work with existing project
+cd existing-project
+uv init  # Creates pyproject.toml if it doesn't exist
+```
+
+### Virtual Environment Creation
+```bash
+# Create virtual environment
+uv venv
+
+# Create with specific Python version
+uv venv --python 3.11
+
+# Create in custom location
+uv venv .venv-custom
+
+# Create with specific name
+uv venv my-env
+```
+
+## Common Operations
+
+### Package Installation
+```bash
+# Install packages (replaces pip install)
+uv pip install requests
+uv pip install "django>=4.0"
+uv pip install -e .  # Install current project in editable mode
+
+# Install from requirements file
+uv pip install -r requirements.txt
+
+# Install with extras
+uv pip install "fastapi[all]"
+
+# Install development dependencies
+uv pip install -r requirements-dev.txt
+```
+
+### Package Management
+```bash
+# List installed packages
+uv pip list
+
+# Show package information
+uv pip show requests
+
+# Freeze current environment
+uv pip freeze > requirements.txt
+
+# Uninstall packages
+uv pip uninstall requests
+uv pip uninstall -r requirements.txt
+
+# Upgrade packages
+uv pip install --upgrade requests
+uv pip install --upgrade-package requests  # Upgrade specific package
+```
+
+### Dependency Resolution
+```bash
+# Generate lock file
+uv pip compile requirements.in -o requirements.txt
+
+# Compile with specific Python version
+uv pip compile requirements.in --python-version 3.11
+
+# Update dependencies
+uv pip compile requirements.in --upgrade
+
+# Compile development dependencies
+uv pip compile requirements-dev.in -o requirements-dev.txt
+
+# Sync environment with lock file
+uv pip sync requirements.txt
+```
+
+### Virtual Environment Management
+```bash
+# Activate virtual environment
+source .venv/bin/activate  # Linux/macOS
+.venv\Scripts\activate     # Windows
+
+# Run command in virtual environment
+uv run python script.py
+uv run pytest
+uv run python -m module
+
+# Install and run in one command
+uv run --with requests python -c "import requests; print(requests.__version__)"
+
+# Run with specific Python version
+uv run --python 3.11 python script.py
+```
+
+## Advanced Usage
+
+### Project Management
+```bash
+# Add dependency to project
+uv add requests
+uv add "django>=4.0"
+uv add pytest --dev  # Add as development dependency
+
+# Remove dependency
+uv remove requests
+
+# Update dependencies
+uv update
+uv update requests  # Update specific package
+
+# Lock dependencies
+uv lock
+
+# Install from lock file
+uv sync
+uv sync --dev  # Include development dependencies
+```
+
+### Custom Index Configuration
+```bash
+# Use custom index
+uv pip install --index-url https://custom.pypi.org/simple/ package
+
+# Use extra index
+uv pip install --extra-index-url https://extra.pypi.org/simple/ package
+
+# Install from local index
+uv pip install --find-links ./wheels/ package
+
+# Configure in pyproject.toml
+cat >> pyproject.toml << EOF
+[[tool.uv.index]]
+name = "custom"
+url = "https://custom.pypi.org/simple/"
+default = true
+EOF
+```
+
+### Build and Publish
+```bash
+# Build package
+uv build
+
+# Build specific formats
+uv build --wheel
+uv build --sdist
+
+# Build with specific backend
+uv build --backend setuptools
+
+# Publish to PyPI (requires twine or similar)
+twine upload dist/*
+```
+
+### Performance Optimization
+```bash
+# Use cache directory
+export UV_CACHE_DIR=/path/to/cache
+uv pip install requests
+
+# Parallel installations
+uv pip install package1 package2 package3
+
+# Pre-compile dependencies
+uv pip compile requirements.in --generate-hashes
+
+# Use system packages when possible
+uv pip install --system requests
+```
+
+## Configuration
+
+### pyproject.toml Configuration
+```toml
+# pyproject.toml
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "my-project"
+version = "0.1.0"
+description = "My awesome project"
+dependencies = [
+    "requests>=2.25.0",
+    "click>=8.0.0"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=6.0.0",
+    "black>=22.0.0",
+    "flake8>=4.0.0"
+]
+test = [
+    "pytest>=6.0.0",
+    "pytest-cov>=3.0.0"
+]
+
+[tool.uv]
+dev-dependencies = [
+    "mypy>=1.0.0",
+    "pre-commit>=2.20.0"
+]
+
+[tool.uv.sources]
+my-local-package = { path = "../my-local-package", editable = true }
+my-git-package = { git = "https://github.com/user/repo.git" }
+
+[[tool.uv.index]]
+name = "my-index"
+url = "https://my-index.com/simple/"
+```
+
+### Environment Variables
+```bash
+# Cache configuration
+export UV_CACHE_DIR=/path/to/cache
+export UV_NO_CACHE=1  # Disable caching
+
+# Index configuration
+export UV_INDEX_URL=https://custom.pypi.org/simple/
+export UV_EXTRA_INDEX_URL=https://extra.pypi.org/simple/
+
+# Resolution configuration
+export UV_RESOLUTION=highest  # or "lowest-direct"
+export UV_PRERELEASE=allow   # or "disallow", "if-necessary"
+
+# System configuration
+export UV_SYSTEM_PYTHON=1    # Allow system Python
+export UV_PYTHON=/path/to/python  # Specific Python path
+```
+
+### Global Configuration
+```bash
+# Create global config directory
+mkdir -p ~/.config/uv
+
+# Global configuration file
+cat > ~/.config/uv/uv.toml << EOF
+[pip]
+index-url = "https://custom.pypi.org/simple/"
+trusted-host = ["custom.pypi.org"]
+timeout = 60
+
+[resolution]
+strategy = "highest"
+prerelease = "if-necessary"
+
+[cache]
+dir = "~/.cache/uv"
+size-limit = "1GB"
+EOF
+```
+
+## Workflow Integration
+
+### CI/CD Integration
+```yaml
+# GitHub Actions example
+name: CI
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install uv
+      run: pip install uv
+    
+    - name: Create virtual environment
+      run: uv venv
+    
+    - name: Install dependencies
+      run: uv pip sync requirements.txt
+    
+    - name: Run tests
+      run: uv run pytest
+```
+
+### Docker Integration
+```dockerfile
+# Dockerfile
+FROM python:3.11-slim
+
+# Install uv
+RUN pip install uv
+
+# Set working directory
+WORKDIR /app
+
+# Copy dependency files
+COPY requirements.txt .
+COPY pyproject.toml .
+
+# Create virtual environment and install dependencies
+RUN uv venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+RUN uv pip sync requirements.txt
+
+# Copy application
+COPY . .
+
+# Install application
+RUN uv pip install -e .
+
+CMD ["python", "-m", "myapp"]
+```
+
+### Development Scripts
+```bash
+#!/bin/bash
+# dev-setup.sh - Development environment setup
+
+set -e
+
+echo "Setting up development environment..."
+
+# Create virtual environment
+echo "Creating virtual environment..."
+uv venv
+
+# Activate environment
+source .venv/bin/activate
+
+# Install dependencies
+echo "Installing dependencies..."
+uv pip sync requirements.txt requirements-dev.txt
+
+# Install pre-commit hooks
+echo "Setting up pre-commit..."
+uv run pre-commit install
+
+echo "Development environment ready!"
+echo "Activate with: source .venv/bin/activate"
+```
+
+## Tips and Tricks
+
+### Performance Tips
+```bash
+# Use binary wheels when available
+uv pip install --only-binary=all package
+
+# Parallel dependency resolution
+uv pip install package1 package2 package3
+
+# Cache optimization
+export UV_CACHE_DIR=/tmp/uv-cache  # Use fast storage
+
+# Skip dependency checks for speed
+uv pip install --no-deps package  # Skip dependency installation
+```
+
+### Debugging and Troubleshooting
+```bash
+# Verbose output
+uv pip install -v package
+uv pip install -vv package  # Extra verbose
+
+# Dry run (see what would be installed)
+uv pip install --dry-run package
+
+# Show dependency tree
+uv pip install --report package
+
+# Force reinstall
+uv pip install --force-reinstall package
+
+# Check for conflicts
+uv pip check
+```
+
+### Migration from pip
+```bash
+# Convert requirements.txt to pyproject.toml
+uv init --name my-project
+
+# Add existing requirements
+cat requirements.txt | while read requirement; do
+    uv add "$requirement"
+done
+
+# Generate lock file from existing environment
+uv pip freeze | uv pip compile - -o requirements.txt
+```
+
+### Working with Multiple Environments
+```bash
+# Create environments for different Python versions
+uv venv --python 3.9 .venv-py39
+uv venv --python 3.10 .venv-py310
+uv venv --python 3.11 .venv-py311
+
+# Test against multiple Python versions
+for version in 3.9 3.10 3.11; do
+    echo "Testing with Python $version"
+    uv venv --python $version .venv-test-$version
+    source .venv-test-$version/bin/activate
+    uv pip install -e .
+    python -m pytest
+    deactivate
+done
+```
+
+### Package Development Workflow
+```bash
+# Development workflow for package maintainers
+
+# 1. Set up development environment
+uv venv
+source .venv/bin/activate
+
+# 2. Install package in editable mode
+uv pip install -e .
+
+# 3. Install development dependencies
+uv pip install -e ".[dev]"
+
+# 4. Run tests
+uv run pytest
+
+# 5. Build package
+uv build
+
+# 6. Test installation from built package
+uv pip install dist/*.whl
+
+# 7. Clean up
+rm -rf dist/ build/ *.egg-info/
+```
+
+### Reproducible Environments
+```bash
+# Create exact reproducible environment
+uv pip compile requirements.in --generate-hashes -o requirements.txt
+
+# Install with hash checking
+uv pip install -r requirements.txt --require-hashes
+
+# Export complete environment state
+uv pip freeze --all > complete-requirements.txt
+
+# Recreate exact environment
+uv venv fresh-env
+source fresh-env/bin/activate
+uv pip install -r complete-requirements.txt
+```
+- Best practices for daily use
+- Troubleshooting common issues
+
+## Advanced Usage
+- Advanced features and capabilities
+- Integration with other tools
+- Automation and scripting
+- Performance optimization
+
+## Tips and Tricks
+- Productivity enhancements
+- Common pitfalls to avoid
+- Community recommendations
+- Workflow optimization
+
+Created: 2025-06-02 19:39:56

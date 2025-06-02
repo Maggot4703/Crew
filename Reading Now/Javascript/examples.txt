@@ -1,0 +1,1017 @@
+# JavaScript - Examples and Code Samples
+
+## Basic Examples
+
+### Example 1: Hello World and Basic Syntax
+```javascript
+// Basic JavaScript syntax
+console.log("Hello, World!");
+
+// Variables and data types
+let message = "Welcome to JavaScript";
+const year = 2024;
+let isActive = true;
+
+// Simple function
+function greet(name) {
+    return `Hello, ${name}!`;
+}
+
+console.log(greet("Alice")); // Output: Hello, Alice!
+
+// Basic arithmetic
+function calculator(a, b, operation) {
+    switch (operation) {
+        case 'add':
+            return a + b;
+        case 'subtract':
+            return a - b;
+        case 'multiply':
+            return a * b;
+        case 'divide':
+            return b !== 0 ? a / b : 'Cannot divide by zero';
+        default:
+            return 'Invalid operation';
+    }
+}
+
+console.log(calculator(10, 5, 'add'));      // 15
+console.log(calculator(10, 5, 'multiply')); // 50
+```
+
+### Example 2: Working with Arrays and Objects
+```javascript
+// Array operations
+const fruits = ['apple', 'banana', 'orange'];
+
+// Adding elements
+fruits.push('grape');
+fruits.unshift('mango');
+
+// Array methods
+const numbers = [1, 2, 3, 4, 5];
+const doubled = numbers.map(n => n * 2);
+const evens = numbers.filter(n => n % 2 === 0);
+const sum = numbers.reduce((total, n) => total + n, 0);
+
+console.log('Doubled:', doubled);  // [2, 4, 6, 8, 10]
+console.log('Evens:', evens);      // [2, 4]
+console.log('Sum:', sum);          // 15
+
+// Object manipulation
+const person = {
+    name: 'John Doe',
+    age: 30,
+    email: 'john@example.com',
+    address: {
+        street: '123 Main St',
+        city: 'New York',
+        zip: '10001'
+    }
+};
+
+// Object destructuring
+const { name, age, address: { city } } = person;
+console.log(`${name} is ${age} years old and lives in ${city}`);
+
+// Object methods
+const user = {
+    firstName: 'Jane',
+    lastName: 'Smith',
+    fullName() {
+        return `${this.firstName} ${this.lastName}`;
+    },
+    updateName(first, last) {
+        this.firstName = first;
+        this.lastName = last;
+    }
+};
+
+console.log(user.fullName()); // Jane Smith
+user.updateName('Janet', 'Brown');
+console.log(user.fullName()); // Janet Brown
+```
+
+## Intermediate Examples
+
+### Example 3: Asynchronous Programming with Promises
+```javascript
+// Promise-based API simulation
+function fetchUserData(userId) {
+    return new Promise((resolve, reject) => {
+        // Simulate API delay
+        setTimeout(() => {
+            const users = {
+                1: { id: 1, name: 'Alice', role: 'admin' },
+                2: { id: 2, name: 'Bob', role: 'user' },
+                3: { id: 3, name: 'Charlie', role: 'moderator' }
+            };
+            
+            const user = users[userId];
+            if (user) {
+                resolve(user);
+            } else {
+                reject(new Error(`User with ID ${userId} not found`));
+            }
+        }, 1000);
+    });
+}
+
+// Using Promises
+fetchUserData(1)
+    .then(user => {
+        console.log('User found:', user);
+        return fetchUserData(2); // Chain another request
+    })
+    .then(user => {
+        console.log('Second user:', user);
+    })
+    .catch(error => {
+        console.error('Error:', error.message);
+    });
+
+// Using async/await
+async function getUserInfo(userId) {
+    try {
+        const user = await fetchUserData(userId);
+        console.log('User info:', user);
+        
+        // Multiple async operations
+        const users = await Promise.all([
+            fetchUserData(1),
+            fetchUserData(2),
+            fetchUserData(3)
+        ]);
+        
+        console.log('All users:', users);
+        return user;
+    } catch (error) {
+        console.error('Failed to get user info:', error.message);
+        throw error;
+    }
+}
+
+getUserInfo(1);
+```
+
+### Example 4: DOM Manipulation and Event Handling
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>JavaScript DOM Example</title>
+    <style>
+        .highlight { background-color: yellow; }
+        .hidden { display: none; }
+        .todo-item { margin: 10px 0; }
+        .completed { text-decoration: line-through; }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <h1>Todo List</h1>
+        <input type="text" id="todoInput" placeholder="Enter a task">
+        <button id="addBtn">Add Task</button>
+        <ul id="todoList"></ul>
+        <button id="clearBtn">Clear Completed</button>
+    </div>
+
+    <script>
+        class TodoApp {
+            constructor() {
+                this.todos = [];
+                this.todoInput = document.getElementById('todoInput');
+                this.addBtn = document.getElementById('addBtn');
+                this.todoList = document.getElementById('todoList');
+                this.clearBtn = document.getElementById('clearBtn');
+                
+                this.init();
+            }
+            
+            init() {
+                // Event listeners
+                this.addBtn.addEventListener('click', () => this.addTodo());
+                this.todoInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.addTodo();
+                });
+                this.clearBtn.addEventListener('click', () => this.clearCompleted());
+                
+                // Load saved todos
+                this.loadTodos();
+            }
+            
+            addTodo() {
+                const text = this.todoInput.value.trim();
+                if (!text) return;
+                
+                const todo = {
+                    id: Date.now(),
+                    text: text,
+                    completed: false
+                };
+                
+                this.todos.push(todo);
+                this.todoInput.value = '';
+                this.render();
+                this.saveTodos();
+            }
+            
+            toggleTodo(id) {
+                const todo = this.todos.find(t => t.id === id);
+                if (todo) {
+                    todo.completed = !todo.completed;
+                    this.render();
+                    this.saveTodos();
+                }
+            }
+            
+            deleteTodo(id) {
+                this.todos = this.todos.filter(t => t.id !== id);
+                this.render();
+                this.saveTodos();
+            }
+            
+            clearCompleted() {
+                this.todos = this.todos.filter(t => !t.completed);
+                this.render();
+                this.saveTodos();
+            }
+            
+            render() {
+                this.todoList.innerHTML = '';
+                
+                this.todos.forEach(todo => {
+                    const li = document.createElement('li');
+                    li.className = 'todo-item';
+                    li.innerHTML = `
+                        <input type="checkbox" ${todo.completed ? 'checked' : ''} 
+                               onchange="app.toggleTodo(${todo.id})">
+                        <span class="${todo.completed ? 'completed' : ''}">${todo.text}</span>
+                        <button onclick="app.deleteTodo(${todo.id})">Delete</button>
+                    `;
+                    this.todoList.appendChild(li);
+                });
+            }
+            
+            saveTodos() {
+                localStorage.setItem('todos', JSON.stringify(this.todos));
+            }
+            
+            loadTodos() {
+                const saved = localStorage.getItem('todos');
+                if (saved) {
+                    this.todos = JSON.parse(saved);
+                    this.render();
+                }
+            }
+        }
+        
+        // Initialize the app
+        const app = new TodoApp();
+    </script>
+</body>
+</html>
+```
+
+## Advanced Examples
+
+### Example 5: Custom Event System and Observer Pattern
+```javascript
+// Custom Event Emitter
+class EventEmitter {
+    constructor() {
+        this.events = {};
+    }
+    
+    on(event, listener) {
+        if (!this.events[event]) {
+            this.events[event] = [];
+        }
+        this.events[event].push(listener);
+        
+        // Return unsubscribe function
+        return () => {
+            this.events[event] = this.events[event].filter(l => l !== listener);
+        };
+    }
+    
+    emit(event, ...args) {
+        if (this.events[event]) {
+            this.events[event].forEach(listener => listener(...args));
+        }
+    }
+    
+    once(event, listener) {
+        const unsubscribe = this.on(event, (...args) => {
+            listener(...args);
+            unsubscribe();
+        });
+        return unsubscribe;
+    }
+}
+
+// Shopping Cart with Events
+class ShoppingCart extends EventEmitter {
+    constructor() {
+        super();
+        this.items = [];
+        this.total = 0;
+    }
+    
+    addItem(item) {
+        this.items.push(item);
+        this.updateTotal();
+        this.emit('itemAdded', item, this.items.length);
+    }
+    
+    removeItem(itemId) {
+        const index = this.items.findIndex(item => item.id === itemId);
+        if (index > -1) {
+            const removedItem = this.items.splice(index, 1)[0];
+            this.updateTotal();
+            this.emit('itemRemoved', removedItem, this.items.length);
+        }
+    }
+    
+    updateTotal() {
+        this.total = this.items.reduce((sum, item) => sum + item.price, 0);
+        this.emit('totalUpdated', this.total);
+    }
+    
+    clear() {
+        const itemCount = this.items.length;
+        this.items = [];
+        this.total = 0;
+        this.emit('cartCleared', itemCount);
+        this.emit('totalUpdated', this.total);
+    }
+}
+
+// Usage
+const cart = new ShoppingCart();
+
+// Subscribe to events
+cart.on('itemAdded', (item, count) => {
+    console.log(`Added ${item.name}. Cart now has ${count} items.`);
+});
+
+cart.on('totalUpdated', (total) => {
+    console.log(`Cart total: $${total.toFixed(2)}`);
+});
+
+cart.on('cartCleared', (itemCount) => {
+    console.log(`Cleared ${itemCount} items from cart`);
+});
+
+// Add items
+cart.addItem({ id: 1, name: 'Laptop', price: 999.99 });
+cart.addItem({ id: 2, name: 'Mouse', price: 29.99 });
+cart.addItem({ id: 3, name: 'Keyboard', price: 79.99 });
+
+// Remove item
+cart.removeItem(2);
+
+// Clear cart
+cart.clear();
+```
+
+### Example 6: Advanced Async Patterns and Error Handling
+```javascript
+// Retry mechanism with exponential backoff
+async function retryOperation(operation, maxRetries = 3, baseDelay = 1000) {
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+            return await operation();
+        } catch (error) {
+            const isLastAttempt = attempt === maxRetries - 1;
+            
+            if (isLastAttempt) {
+                throw new Error(`Operation failed after ${maxRetries} attempts: ${error.message}`);
+            }
+            
+            const delay = baseDelay * Math.pow(2, attempt);
+            console.log(`Attempt ${attempt + 1} failed, retrying in ${delay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+        }
+    }
+}
+
+// Circuit breaker pattern
+class CircuitBreaker {
+    constructor(threshold = 5, timeout = 60000) {
+        this.threshold = threshold;
+        this.timeout = timeout;
+        this.failures = 0;
+        this.state = 'CLOSED'; // CLOSED, OPEN, HALF_OPEN
+        this.nextAttempt = 0;
+    }
+    
+    async execute(operation) {
+        if (this.state === 'OPEN') {
+            if (Date.now() < this.nextAttempt) {
+                throw new Error('Circuit breaker is OPEN');
+            }
+            this.state = 'HALF_OPEN';
+        }
+        
+        try {
+            const result = await operation();
+            this.onSuccess();
+            return result;
+        } catch (error) {
+            this.onFailure();
+            throw error;
+        }
+    }
+    
+    onSuccess() {
+        this.failures = 0;
+        this.state = 'CLOSED';
+    }
+    
+    onFailure() {
+        this.failures++;
+        if (this.failures >= this.threshold) {
+            this.state = 'OPEN';
+            this.nextAttempt = Date.now() + this.timeout;
+        }
+    }
+}
+
+// Rate limiter
+class RateLimiter {
+    constructor(limit, windowMs) {
+        this.limit = limit;
+        this.windowMs = windowMs;
+        this.requests = [];
+    }
+    
+    async execute(operation) {
+        const now = Date.now();
+        
+        // Clean old requests
+        this.requests = this.requests.filter(time => now - time < this.windowMs);
+        
+        if (this.requests.length >= this.limit) {
+            const oldestRequest = Math.min(...this.requests);
+            const waitTime = this.windowMs - (now - oldestRequest);
+            throw new Error(`Rate limit exceeded. Try again in ${waitTime}ms`);
+        }
+        
+        this.requests.push(now);
+        return await operation();
+    }
+}
+
+// API client with advanced error handling
+class APIClient {
+    constructor(baseURL) {
+        this.baseURL = baseURL;
+        this.circuitBreaker = new CircuitBreaker(3, 30000);
+        this.rateLimiter = new RateLimiter(10, 60000);
+    }
+    
+    async request(endpoint, options = {}) {
+        const operation = async () => {
+            return await this.rateLimiter.execute(async () => {
+                const response = await fetch(`${this.baseURL}${endpoint}`, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    },
+                    ...options
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                return response.json();
+            });
+        };
+        
+        return await retryOperation(
+            () => this.circuitBreaker.execute(operation),
+            3,
+            1000
+        );
+    }
+    
+    async get(endpoint) {
+        return this.request(endpoint, { method: 'GET' });
+    }
+    
+    async post(endpoint, data) {
+        return this.request(endpoint, {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    }
+}
+
+// Usage example
+async function demonstrateAPIClient() {
+    const api = new APIClient('https://jsonplaceholder.typicode.com');
+    
+    try {
+        // This will work
+        const posts = await api.get('/posts');
+        console.log(`Fetched ${posts.length} posts`);
+        
+        // This will trigger retry logic (invalid endpoint)
+        try {
+            await api.get('/invalid-endpoint');
+        } catch (error) {
+            console.log('Expected error:', error.message);
+        }
+        
+    } catch (error) {
+        console.error('API Error:', error.message);
+    }
+}
+
+// demonstrateAPIClient();
+```
+
+### Example 7: Functional Programming Patterns
+```javascript
+// Functional utility functions
+const pipe = (...fns) => (value) => fns.reduce((acc, fn) => fn(acc), value);
+const compose = (...fns) => (value) => fns.reduceRight((acc, fn) => fn(acc), value);
+
+// Currying
+const curry = (fn) => {
+    return function curried(...args) {
+        if (args.length >= fn.length) {
+            return fn.apply(this, args);
+        } else {
+            return function(...args2) {
+                return curried.apply(this, args.concat(args2));
+            };
+        }
+    };
+};
+
+// Example functions
+const add = curry((a, b) => a + b);
+const multiply = curry((a, b) => a * b);
+const subtract = curry((a, b) => a - b);
+
+// Data transformation pipeline
+const users = [
+    { id: 1, name: 'Alice', age: 30, department: 'Engineering', salary: 80000 },
+    { id: 2, name: 'Bob', age: 25, department: 'Marketing', salary: 60000 },
+    { id: 3, name: 'Charlie', age: 35, department: 'Engineering', salary: 90000 },
+    { id: 4, name: 'Diana', age: 28, department: 'Sales', salary: 70000 },
+    { id: 5, name: 'Eve', age: 32, department: 'Engineering', salary: 85000 }
+];
+
+// Functional data processing
+const processUsers = pipe(
+    // Filter engineers
+    users => users.filter(user => user.department === 'Engineering'),
+    // Sort by salary
+    users => users.sort((a, b) => b.salary - a.salary),
+    // Add bonus calculation
+    users => users.map(user => ({
+        ...user,
+        bonus: user.salary * 0.1,
+        totalCompensation: user.salary * 1.1
+    })),
+    // Create summary
+    users => ({
+        engineers: users,
+        totalCount: users.length,
+        averageSalary: users.reduce((sum, u) => sum + u.salary, 0) / users.length,
+        totalCompensation: users.reduce((sum, u) => sum + u.totalCompensation, 0)
+    })
+);
+
+const engineeringReport = processUsers(users);
+console.log('Engineering Report:', engineeringReport);
+
+// Monads (Maybe pattern for null safety)
+class Maybe {
+    constructor(value) {
+        this.value = value;
+    }
+    
+    static of(value) {
+        return new Maybe(value);
+    }
+    
+    static nothing() {
+        return new Maybe(null);
+    }
+    
+    isNothing() {
+        return this.value === null || this.value === undefined;
+    }
+    
+    map(fn) {
+        return this.isNothing() ? Maybe.nothing() : Maybe.of(fn(this.value));
+    }
+    
+    flatMap(fn) {
+        return this.isNothing() ? Maybe.nothing() : fn(this.value);
+    }
+    
+    filter(predicate) {
+        return this.isNothing() || !predicate(this.value) ? Maybe.nothing() : this;
+    }
+    
+    getOrElse(defaultValue) {
+        return this.isNothing() ? defaultValue : this.value;
+    }
+}
+
+// Usage of Maybe monad
+function getUserById(id) {
+    const user = users.find(u => u.id === id);
+    return user ? Maybe.of(user) : Maybe.nothing();
+}
+
+const userSalary = getUserById(1)
+    .map(user => user.salary)
+    .map(salary => salary * 1.1) // Add 10% raise
+    .filter(salary => salary > 50000)
+    .getOrElse(0);
+
+console.log('User salary with raise:', userSalary);
+```
+
+## Performance and Memory Examples
+
+### Example 8: Performance Optimization Techniques
+```javascript
+// Debouncing for search input
+function debounce(func, wait, immediate = false) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            timeout = null;
+            if (!immediate) func(...args);
+        };
+        const callNow = immediate && !timeout;
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+        if (callNow) func(...args);
+    };
+}
+
+// Throttling for scroll events
+function throttle(func, limit) {
+    let lastFunc;
+    let lastRan;
+    return function(...args) {
+        if (!lastRan) {
+            func(...args);
+            lastRan = Date.now();
+        } else {
+            clearTimeout(lastFunc);
+            lastFunc = setTimeout(() => {
+                if ((Date.now() - lastRan) >= limit) {
+                    func(...args);
+                    lastRan = Date.now();
+                }
+            }, limit - (Date.now() - lastRan));
+        }
+    };
+}
+
+// Memoization for expensive calculations
+function memoize(fn, getKey = (...args) => JSON.stringify(args)) {
+    const cache = new Map();
+    
+    return function memoized(...args) {
+        const key = getKey(...args);
+        
+        if (cache.has(key)) {
+            return cache.get(key);
+        }
+        
+        const result = fn.apply(this, args);
+        cache.set(key, result);
+        return result;
+    };
+}
+
+// Example: Expensive Fibonacci calculation
+const fibonacci = memoize(function(n) {
+    if (n < 2) return n;
+    return fibonacci(n - 1) + fibonacci(n - 2);
+});
+
+console.time('Fibonacci 40');
+console.log('Fibonacci 40:', fibonacci(40));
+console.timeEnd('Fibonacci 40');
+
+// Virtual scrolling for large lists
+class VirtualList {
+    constructor(container, itemHeight, items) {
+        this.container = container;
+        this.itemHeight = itemHeight;
+        this.items = items;
+        this.visibleStart = 0;
+        this.visibleEnd = 0;
+        
+        this.init();
+    }
+    
+    init() {
+        this.containerHeight = this.container.clientHeight;
+        this.visibleCount = Math.ceil(this.containerHeight / this.itemHeight);
+        
+        this.render();
+        this.container.addEventListener('scroll', 
+            throttle(() => this.onScroll(), 16)); // 60fps
+    }
+    
+    onScroll() {
+        const scrollTop = this.container.scrollTop;
+        const newVisibleStart = Math.floor(scrollTop / this.itemHeight);
+        
+        if (newVisibleStart !== this.visibleStart) {
+            this.visibleStart = newVisibleStart;
+            this.visibleEnd = Math.min(
+                this.visibleStart + this.visibleCount + 1,
+                this.items.length
+            );
+            this.render();
+        }
+    }
+    
+    render() {
+        const fragment = document.createDocumentFragment();
+        
+        // Create spacer for items above viewport
+        const topSpacer = document.createElement('div');
+        topSpacer.style.height = `${this.visibleStart * this.itemHeight}px`;
+        fragment.appendChild(topSpacer);
+        
+        // Render visible items
+        for (let i = this.visibleStart; i < this.visibleEnd; i++) {
+            const item = document.createElement('div');
+            item.style.height = `${this.itemHeight}px`;
+            item.textContent = this.items[i];
+            fragment.appendChild(item);
+        }
+        
+        // Create spacer for items below viewport
+        const bottomSpacer = document.createElement('div');
+        const remainingItems = this.items.length - this.visibleEnd;
+        bottomSpacer.style.height = `${remainingItems * this.itemHeight}px`;
+        fragment.appendChild(bottomSpacer);
+        
+        this.container.innerHTML = '';
+        this.container.appendChild(fragment);
+    }
+}
+
+// Usage
+// const items = Array.from({length: 10000}, (_, i) => `Item ${i + 1}`);
+// const virtualList = new VirtualList(document.getElementById('list'), 50, items);
+```
+
+## Real-World Integration Examples
+
+### Example 9: Complete Web Application with API Integration
+```javascript
+// Modern JavaScript application structure
+class App {
+    constructor() {
+        this.apiClient = new APIClient('https://jsonplaceholder.typicode.com');
+        this.state = {
+            posts: [],
+            loading: false,
+            error: null,
+            currentPage: 1,
+            postsPerPage: 10
+        };
+        
+        this.init();
+    }
+    
+    async init() {
+        this.setupEventListeners();
+        await this.loadPosts();
+    }
+    
+    setupEventListeners() {
+        // Search with debouncing
+        const searchInput = document.getElementById('search');
+        if (searchInput) {
+            searchInput.addEventListener('input', 
+                debounce((e) => this.handleSearch(e.target.value), 300)
+            );
+        }
+        
+        // Pagination
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('page-btn')) {
+                const page = parseInt(e.target.dataset.page);
+                this.loadPage(page);
+            }
+        });
+    }
+    
+    async loadPosts() {
+        try {
+            this.setState({ loading: true, error: null });
+            
+            const posts = await this.apiClient.get('/posts');
+            
+            this.setState({ 
+                posts: posts,
+                loading: false 
+            });
+            
+            this.render();
+        } catch (error) {
+            this.setState({ 
+                loading: false, 
+                error: error.message 
+            });
+        }
+    }
+    
+    setState(newState) {
+        this.state = { ...this.state, ...newState };
+        this.render();
+    }
+    
+    handleSearch(query) {
+        const filteredPosts = this.state.posts.filter(post =>
+            post.title.toLowerCase().includes(query.toLowerCase()) ||
+            post.body.toLowerCase().includes(query.toLowerCase())
+        );
+        
+        this.renderPosts(filteredPosts);
+    }
+    
+    loadPage(page) {
+        this.setState({ currentPage: page });
+    }
+    
+    getPaginatedPosts() {
+        const start = (this.state.currentPage - 1) * this.state.postsPerPage;
+        const end = start + this.state.postsPerPage;
+        return this.state.posts.slice(start, end);
+    }
+    
+    render() {
+        const container = document.getElementById('app');
+        if (!container) return;
+        
+        if (this.state.loading) {
+            container.innerHTML = '<div class="loading">Loading...</div>';
+            return;
+        }
+        
+        if (this.state.error) {
+            container.innerHTML = `<div class="error">Error: ${this.state.error}</div>`;
+            return;
+        }
+        
+        this.renderPosts(this.getPaginatedPosts());
+        this.renderPagination();
+    }
+    
+    renderPosts(posts) {
+        const postsContainer = document.getElementById('posts');
+        if (!postsContainer) return;
+        
+        postsContainer.innerHTML = posts.map(post => `
+            <article class="post">
+                <h3>${post.title}</h3>
+                <p>${post.body}</p>
+                <small>Post ID: ${post.id}</small>
+            </article>
+        `).join('');
+    }
+    
+    renderPagination() {
+        const totalPages = Math.ceil(this.state.posts.length / this.state.postsPerPage);
+        const paginationContainer = document.getElementById('pagination');
+        
+        if (!paginationContainer) return;
+        
+        paginationContainer.innerHTML = Array.from({ length: totalPages }, (_, i) => {
+            const page = i + 1;
+            const isActive = page === this.state.currentPage;
+            return `
+                <button class="page-btn ${isActive ? 'active' : ''}" 
+                        data-page="${page}">
+                    ${page}
+                </button>
+            `;
+        }).join('');
+    }
+}
+
+// Initialize the application
+document.addEventListener('DOMContentLoaded', () => {
+    new App();
+});
+```
+
+## Additional Resources
+
+### Useful Libraries and Frameworks
+```javascript
+// Lodash utility functions
+import _ from 'lodash';
+
+const users = [
+    { name: 'Alice', age: 30 },
+    { name: 'Bob', age: 25 },
+    { name: 'Charlie', age: 35 }
+];
+
+// Group by age range
+const groupedByAge = _.groupBy(users, user => 
+    user.age < 30 ? 'young' : 'mature'
+);
+
+// Date manipulation with date-fns
+import { format, addDays, isAfter } from 'date-fns';
+
+const today = new Date();
+const futureDate = addDays(today, 7);
+const formattedDate = format(futureDate, 'yyyy-MM-dd');
+
+// Validation with Joi
+import Joi from 'joi';
+
+const userSchema = Joi.object({
+    name: Joi.string().min(2).max(50).required(),
+    email: Joi.string().email().required(),
+    age: Joi.number().integer().min(18).max(120)
+});
+
+const { error, value } = userSchema.validate({
+    name: 'John',
+    email: 'john@example.com',
+    age: 30
+});
+```
+
+### Testing Examples
+```javascript
+// Jest testing examples
+import { sum, fetchUser } from './utils.js';
+
+describe('Utils', () => {
+    test('sum adds numbers correctly', () => {
+        expect(sum(2, 3)).toBe(5);
+        expect(sum(-1, 1)).toBe(0);
+    });
+    
+    test('fetchUser returns user data', async () => {
+        const user = await fetchUser(1);
+        expect(user).toHaveProperty('id', 1);
+        expect(user).toHaveProperty('name');
+    });
+    
+    test('handles user not found', async () => {
+        await expect(fetchUser(999)).rejects.toThrow('User not found');
+    });
+});
+
+// Mock functions
+const mockCallback = jest.fn();
+mockCallback('arg1', 'arg2');
+expect(mockCallback).toHaveBeenCalledWith('arg1', 'arg2');
+```
+
+### Modern JavaScript Features
+```javascript
+// Optional chaining
+const user = { profile: { address: { street: '123 Main St' } } };
+const street = user?.profile?.address?.street; // Safe navigation
+
+// Nullish coalescing
+const username = user.name ?? 'Guest'; // Only null/undefined, not falsy
+
+// Dynamic imports
+const module = await import('./feature.js');
+module.default();
+
+// Top-level await (in modules)
+const data = await fetch('/api/data').then(r => r.json());
+
+// Private class fields
+class MyClass {
+    #privateField = 'secret';
+    
+    #privateMethod() {
+        return this.#privateField;
+    }
+    
+    getSecret() {
+        return this.#privateMethod();
+    }
+}
+```
+
+Created: 2025-06-02 19:39:56

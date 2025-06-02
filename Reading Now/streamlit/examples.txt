@@ -1,0 +1,457 @@
+# streamlit - Examples and Code Samples
+
+# Streamlit - Examples and Code Samples
+
+## Basic Examples
+
+### Example 1: Hello World App
+```python
+import streamlit as st
+
+# Title
+st.title('Hello World Streamlit App')
+
+# Header
+st.header('Welcome to Streamlit!')
+
+# Subheader
+st.subheader('This is a subheader')
+
+# Text
+st.write('Hello, World!')
+st.text('This is some text.')
+st.markdown('**This is bold text** and *this is italic*.')
+
+# Simple interaction
+name = st.text_input('What is your name?')
+if name:
+    st.write(f'Hello, {name}!')
+    
+# Button
+if st.button('Click me!'):
+    st.write('Button was clicked!')
+```
+
+### Example 2: Data Display App
+```python
+import streamlit as st
+import pandas as pd
+import numpy as np
+
+st.title('Data Display Demo')
+
+# Create sample data
+data = pd.DataFrame({
+    'Name': ['Alice', 'Bob', 'Charlie', 'Diana'],
+    'Age': [25, 30, 35, 28],
+    'City': ['New York', 'London', 'Tokyo', 'Paris'],
+    'Salary': [50000, 60000, 70000, 55000]
+})
+
+# Display data
+st.header('Employee Data')
+st.dataframe(data)
+
+# Display as table
+st.header('Static Table')
+st.table(data)
+
+# Show statistics
+st.header('Data Statistics')
+st.write(data.describe())
+
+# Charts
+st.header('Salary Distribution')
+st.bar_chart(data.set_index('Name')['Salary'])
+```
+
+## Intermediate Examples
+
+### Example 3: Interactive Dashboard
+```python
+import streamlit as st
+import pandas as pd
+import numpy as np
+import plotly.express as px
+
+st.set_page_config(page_title='Sales Dashboard', layout='wide')
+
+st.title('Sales Analytics Dashboard')
+
+# Sidebar for filters
+st.sidebar.header('Filters')
+date_range = st.sidebar.date_input('Select Date Range', 
+                                   value=[pd.Timestamp('2023-01-01'), 
+                                          pd.Timestamp('2023-12-31')])
+
+# Generate sample sales data
+np.random.seed(42)
+dates = pd.date_range('2023-01-01', '2023-12-31', freq='D')
+sales_data = pd.DataFrame({
+    'Date': dates,
+    'Sales': np.random.randint(1000, 5000, len(dates)),
+    'Region': np.random.choice(['North', 'South', 'East', 'West'], len(dates)),
+    'Product': np.random.choice(['A', 'B', 'C', 'D'], len(dates))
+})
+
+# Filter data based on sidebar selection
+filtered_data = sales_data[
+    (sales_data['Date'] >= pd.Timestamp(date_range[0])) & 
+    (sales_data['Date'] <= pd.Timestamp(date_range[1]))
+]
+
+# Metrics
+col1, col2, col3, col4 = st.columns(4)
+with col1:
+    total_sales = filtered_data['Sales'].sum()
+    st.metric('Total Sales', f'${total_sales:,}')
+with col2:
+    avg_sales = filtered_data['Sales'].mean()
+    st.metric('Average Daily Sales', f'${avg_sales:,.0f}')
+with col3:
+    max_sales = filtered_data['Sales'].max()
+    st.metric('Highest Daily Sales', f'${max_sales:,}')
+with col4:
+    days_count = len(filtered_data)
+    st.metric('Days in Period', days_count)
+
+# Charts
+col1, col2 = st.columns(2)
+
+with col1:
+    st.subheader('Sales Trend')
+    fig = px.line(filtered_data, x='Date', y='Sales', title='Daily Sales')
+    st.plotly_chart(fig, use_container_width=True)
+
+with col2:
+    st.subheader('Sales by Region')
+    region_sales = filtered_data.groupby('Region')['Sales'].sum()
+    fig = px.pie(values=region_sales.values, names=region_sales.index)
+    st.plotly_chart(fig, use_container_width=True)
+
+# Detailed data
+st.subheader('Detailed Data')
+if st.checkbox('Show raw data'):
+    st.dataframe(filtered_data)
+```
+
+### Example 4: File Upload and Processing
+```python
+import streamlit as st
+import pandas as pd
+import io
+
+st.title('File Upload and Processing')
+
+# File uploader
+uploaded_file = st.file_uploader('Choose a CSV file', type='csv')
+
+if uploaded_file is not None:
+    # Read the file
+    df = pd.read_csv(uploaded_file)
+    
+    st.success(f'File uploaded successfully! Shape: {df.shape}')
+    
+    # Show basic info
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.subheader('Data Preview')
+        st.dataframe(df.head())
+    
+    with col2:
+        st.subheader('Data Info')
+        buffer = io.StringIO()
+        df.info(buf=buffer)
+        s = buffer.getvalue()
+        st.text(s)
+    
+    # Data processing options
+    st.subheader('Data Processing Options')
+    
+    if st.checkbox('Remove missing values'):
+        df = df.dropna()
+        st.write(f'Data shape after removing missing values: {df.shape}')
+    
+    if st.checkbox('Show summary statistics'):
+        st.write(df.describe())
+    
+    # Column selection for visualization
+    numeric_columns = df.select_dtypes(include=[np.number]).columns.tolist()
+    
+    if len(numeric_columns) >= 2:
+        st.subheader('Quick Visualization')
+        x_col = st.selectbox('Select X axis', numeric_columns)
+        y_col = st.selectbox('Select Y axis', numeric_columns)
+        
+        if st.button('Create Scatter Plot'):
+            fig = px.scatter(df, x=x_col, y=y_col)
+            st.plotly_chart(fig)
+    
+    # Download processed data
+    csv = df.to_csv(index=False)
+    st.download_button(
+        label='Download processed data as CSV',
+        data=csv,
+        file_name='processed_data.csv',
+        mime='text/csv'
+    )
+```
+
+## Advanced Examples
+
+### Example 5: Machine Learning App
+```python
+import streamlit as st
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, classification_report
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+st.title('Machine Learning Model Builder')
+
+# Load sample dataset
+@st.cache_data
+def load_data():
+    # Using Iris dataset as example
+    from sklearn.datasets import load_iris
+    iris = load_iris()
+    df = pd.DataFrame(iris.data, columns=iris.feature_names)
+    df['target'] = iris.target
+    df['species'] = df['target'].map({0: 'setosa', 1: 'versicolor', 2: 'virginica'})
+    return df
+
+df = load_data()
+
+st.sidebar.header('Model Configuration')
+
+# Feature selection
+features = st.sidebar.multiselect(
+    'Select Features',
+    df.columns[:-2].tolist(),
+    default=df.columns[:-2].tolist()
+)
+
+# Model parameters
+n_estimators = st.sidebar.slider('Number of Trees', 10, 200, 100)
+max_depth = st.sidebar.slider('Max Depth', 1, 20, 5)
+test_size = st.sidebar.slider('Test Size', 0.1, 0.5, 0.3)
+
+# Data exploration
+st.header('Data Exploration')
+col1, col2 = st.columns(2)
+
+with col1:
+    st.subheader('Dataset Overview')
+    st.dataframe(df.head())
+    st.write(f'Dataset shape: {df.shape}')
+
+with col2:
+    st.subheader('Target Distribution')
+    fig, ax = plt.subplots()
+    df['species'].value_counts().plot(kind='bar', ax=ax)
+    st.pyplot(fig)
+
+# Model training
+if st.button('Train Model'):
+    if len(features) > 0:
+        X = df[features]
+        y = df['target']
+        
+        # Split data
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, test_size=test_size, random_state=42
+        )
+        
+        # Train model
+        model = RandomForestClassifier(
+            n_estimators=n_estimators,
+            max_depth=max_depth,
+            random_state=42
+        )
+        
+        with st.spinner('Training model...'):
+            model.fit(X_train, y_train)
+        
+        # Make predictions
+        y_pred = model.predict(X_test)
+        accuracy = accuracy_score(y_test, y_pred)
+        
+        # Display results
+        st.success(f'Model trained successfully!')
+        st.write(f'**Accuracy: {accuracy:.3f}**')
+        
+        # Feature importance
+        st.subheader('Feature Importance')
+        importance_df = pd.DataFrame({
+            'feature': features,
+            'importance': model.feature_importances_
+        }).sort_values('importance', ascending=False)
+        
+        fig, ax = plt.subplots()
+        importance_df.plot(x='feature', y='importance', kind='bar', ax=ax)
+        plt.xticks(rotation=45)
+        st.pyplot(fig)
+        
+        # Classification report
+        st.subheader('Classification Report')
+        report = classification_report(y_test, y_pred, output_dict=True)
+        st.json(report)
+        
+        # Store model in session state for predictions
+        st.session_state.trained_model = model
+        st.session_state.feature_names = features
+    else:
+        st.error('Please select at least one feature!')
+
+# Prediction interface
+if 'trained_model' in st.session_state:
+    st.header('Make Predictions')
+    
+    prediction_data = {}
+    for feature in st.session_state.feature_names:
+        min_val = float(df[feature].min())
+        max_val = float(df[feature].max())
+        mean_val = float(df[feature].mean())
+        
+        prediction_data[feature] = st.slider(
+            f'{feature}',
+            min_val, max_val, mean_val
+        )
+    
+    if st.button('Predict'):
+        input_df = pd.DataFrame([prediction_data])
+        prediction = st.session_state.trained_model.predict(input_df)[0]
+        species_map = {0: 'setosa', 1: 'versicolor', 2: 'virginica'}
+        
+        st.success(f'Predicted species: **{species_map[prediction]}**')
+```
+
+### Example 6: Multi-page App with Navigation
+```python
+# app.py
+import streamlit as st
+
+# Page configuration
+st.set_page_config(
+    page_title='Multi-page App',
+    page_icon='🚀',
+    layout='wide',
+    initial_sidebar_state='expanded'
+)
+
+# Initialize session state
+if 'current_page' not in st.session_state:
+    st.session_state.current_page = 'Home'
+
+# Navigation
+def show_navigation():
+    st.sidebar.title('Navigation')
+    pages = ['Home', 'Data Analysis', 'Visualization', 'Settings']
+    
+    for page in pages:
+        if st.sidebar.button(page, key=f'nav_{page}'):
+            st.session_state.current_page = page
+
+# Page functions
+def show_home():
+    st.title('🏠 Home Page')
+    st.write('Welcome to our multi-page Streamlit application!')
+    
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.info('📊 Data Analysis\n\nExplore your data with our analysis tools.')
+    with col2:
+        st.info('📈 Visualization\n\nCreate beautiful charts and graphs.')
+    with col3:
+        st.info('⚙️ Settings\n\nConfigure your preferences.')
+
+def show_data_analysis():
+    st.title('📊 Data Analysis')
+    
+    # Sample data
+    data = pd.DataFrame(np.random.randn(100, 4), columns=['A', 'B', 'C', 'D'])
+    
+    st.subheader('Dataset Overview')
+    st.dataframe(data.head())
+    
+    st.subheader('Statistical Summary')
+    st.write(data.describe())
+
+def show_visualization():
+    st.title('📈 Visualization')
+    
+    # Sample charts
+    data = pd.DataFrame(np.random.randn(20, 3), columns=['A', 'B', 'C'])
+    
+    chart_type = st.selectbox('Select Chart Type', ['Line', 'Bar', 'Area'])
+    
+    if chart_type == 'Line':
+        st.line_chart(data)
+    elif chart_type == 'Bar':
+        st.bar_chart(data)
+    else:
+        st.area_chart(data)
+
+def show_settings():
+    st.title('⚙️ Settings')
+    
+    st.subheader('User Preferences')
+    theme = st.selectbox('Theme', ['Light', 'Dark'])
+    notifications = st.checkbox('Enable notifications')
+    
+    st.subheader('Data Settings')
+    auto_refresh = st.checkbox('Auto-refresh data')
+    refresh_interval = st.slider('Refresh interval (seconds)', 5, 60, 30)
+    
+    if st.button('Save Settings'):
+        st.success('Settings saved successfully!')
+
+# Main app logic
+show_navigation()
+
+# Route to appropriate page
+if st.session_state.current_page == 'Home':
+    show_home()
+elif st.session_state.current_page == 'Data Analysis':
+    show_data_analysis()
+elif st.session_state.current_page == 'Visualization':
+    show_visualization()
+elif st.session_state.current_page == 'Settings':
+    show_settings()
+```
+
+Created: 2025-06-02 (Updated with comprehensive examples)
+# Includes error handling and optimization
+```
+
+### Example 4: Integration Example
+```
+# Shows how to integrate streamlit with other tools
+# Demonstrates common integration patterns
+```
+
+## Advanced Examples
+
+### Example 5: Performance Optimization
+```
+# Advanced techniques for optimizing streamlit
+# Best practices for production environments
+```
+
+### Example 6: Custom Configuration
+```
+# Advanced configuration example
+# Shows customization options and techniques
+```
+
+## Additional Resources
+- Official code repositories
+- Interactive tutorials and demos
+- Community-contributed examples
+- Sample projects and templates
+
+Created: 2025-06-02 19:39:56

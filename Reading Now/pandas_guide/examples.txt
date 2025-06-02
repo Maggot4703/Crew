@@ -1,0 +1,1170 @@
+# Pandas Guide - Comprehensive Examples and Code Samples
+
+## Basic Examples
+
+### Example 1: Installation and Setup
+```python
+# Installation
+# pip install pandas numpy matplotlib seaborn
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from datetime import datetime, timedelta
+
+# Display settings
+pd.set_option('display.max_columns', None)
+pd.set_option('display.width', None)
+pd.set_option('display.max_colwidth', None)
+
+# Check pandas version
+print(f"Pandas version: {pd.__version__}")
+
+# Create basic Series
+data = [1, 2, 3, 4, 5]
+series = pd.Series(data, index=['a', 'b', 'c', 'd', 'e'])
+print("Basic Series:")
+print(series)
+
+# Create basic DataFrame
+data_dict = {
+    'Name': ['Alice', 'Bob', 'Charlie', 'Diana'],
+    'Age': [25, 30, 35, 28],
+    'City': ['New York', 'London', 'Paris', 'Tokyo'],
+    'Salary': [50000, 60000, 75000, 55000]
+}
+df = pd.DataFrame(data_dict)
+print("\nBasic DataFrame:")
+print(df)
+
+# Basic info about DataFrame
+print(f"\nDataFrame shape: {df.shape}")
+print(f"Column names: {df.columns.tolist()}")
+print(f"Data types:\n{df.dtypes}")
+```
+
+### Example 2: Reading and Writing Data
+```python
+# Reading various file formats
+import pandas as pd
+
+# Read CSV file
+df_csv = pd.read_csv('data.csv')
+
+# Read with custom parameters
+df_custom = pd.read_csv(
+    'data.csv',
+    sep=',',
+    header=0,
+    index_col=0,
+    parse_dates=['date_column'],
+    na_values=['N/A', 'missing'],
+    encoding='utf-8'
+)
+
+# Read Excel file
+df_excel = pd.read_excel('data.xlsx', sheet_name='Sheet1')
+
+# Read JSON file
+df_json = pd.read_json('data.json')
+
+# Read from URL
+url = 'https://raw.githubusercontent.com/datasets/covid-19/master/data/countries-aggregated.csv'
+df_web = pd.read_csv(url)
+
+# Create sample data for writing examples
+sample_data = {
+    'Product': ['Laptop', 'Mouse', 'Keyboard', 'Monitor', 'Headphones'],
+    'Price': [999.99, 29.99, 79.99, 299.99, 149.99],
+    'Category': ['Electronics', 'Accessories', 'Accessories', 'Electronics', 'Audio'],
+    'Stock': [15, 100, 50, 8, 25],
+    'Date': pd.date_range('2024-01-01', periods=5, freq='D')
+}
+df_sample = pd.DataFrame(sample_data)
+
+# Writing to different formats
+df_sample.to_csv('output.csv', index=False)
+df_sample.to_excel('output.xlsx', index=False, sheet_name='Products')
+df_sample.to_json('output.json', orient='records', date_format='iso')
+
+# Writing with custom parameters
+df_sample.to_csv(
+    'output_custom.csv',
+    index=False,
+    sep='|',
+    na_rep='NULL',
+    date_format='%Y-%m-%d'
+)
+
+print("Sample data for file operations:")
+print(df_sample)
+```
+
+### Example 3: Data Exploration and Inspection
+```python
+import pandas as pd
+import numpy as np
+
+# Create sample dataset for exploration
+np.random.seed(42)
+dates = pd.date_range('2023-01-01', periods=1000, freq='D')
+df = pd.DataFrame({
+    'date': dates,
+    'sales': np.random.normal(1000, 200, 1000),
+    'customers': np.random.poisson(50, 1000),
+    'product_category': np.random.choice(['Electronics', 'Clothing', 'Books', 'Home'], 1000),
+    'region': np.random.choice(['North', 'South', 'East', 'West'], 1000),
+    'rating': np.random.uniform(1, 5, 1000),
+    'discount': np.random.choice([0, 5, 10, 15, 20], 1000, p=[0.4, 0.3, 0.15, 0.1, 0.05])
+})
+
+# Add some missing values
+df.loc[np.random.choice(df.index, 50), 'rating'] = np.nan
+df.loc[np.random.choice(df.index, 30), 'customers'] = np.nan
+
+print("Dataset Overview:")
+print(f"Shape: {df.shape}")
+print(f"Memory usage: {df.memory_usage(deep=True).sum() / 1024**2:.2f} MB")
+
+# Basic information
+print("\n--- Basic Info ---")
+print(df.info())
+
+# First and last few rows
+print("\n--- First 5 rows ---")
+print(df.head())
+
+print("\n--- Last 5 rows ---")
+print(df.tail())
+
+# Statistical summary
+print("\n--- Statistical Summary ---")
+print(df.describe())
+
+# Check for missing values
+print("\n--- Missing Values ---")
+print(df.isnull().sum())
+print(f"Total missing values: {df.isnull().sum().sum()}")
+
+# Unique values in categorical columns
+print("\n--- Unique Values ---")
+categorical_cols = ['product_category', 'region']
+for col in categorical_cols:
+    print(f"{col}: {df[col].nunique()} unique values")
+    print(f"Values: {df[col].unique()}")
+    print(f"Value counts:\n{df[col].value_counts()}\n")
+
+# Data types and memory optimization
+print("\n--- Data Types ---")
+print(df.dtypes)
+
+# Convert to more efficient types
+df['product_category'] = df['product_category'].astype('category')
+df['region'] = df['region'].astype('category')
+df['discount'] = df['discount'].astype('int8')
+
+print("\nAfter optimization:")
+print(df.dtypes)
+print(f"New memory usage: {df.memory_usage(deep=True).sum() / 1024**2:.2f} MB")
+```
+
+## Intermediate Examples
+
+### Example 4: Data Selection and Filtering
+```python
+import pandas as pd
+import numpy as np
+
+# Create sample dataset
+df = pd.DataFrame({
+    'employee_id': range(1, 101),
+    'name': [f'Employee_{i}' for i in range(1, 101)],
+    'department': np.random.choice(['IT', 'HR', 'Finance', 'Marketing', 'Operations'], 100),
+    'salary': np.random.normal(60000, 15000, 100),
+    'experience': np.random.randint(0, 20, 100),
+    'performance_score': np.random.uniform(1, 5, 100),
+    'join_date': pd.date_range('2020-01-01', periods=100, freq='10D'),
+    'is_remote': np.random.choice([True, False], 100, p=[0.3, 0.7])
+})
+
+print("Employee Dataset:")
+print(df.head())
+
+# Column selection
+print("\n--- Column Selection ---")
+# Single column
+names = df['name']
+print(f"Single column type: {type(names)}")
+
+# Multiple columns
+subset = df[['name', 'department', 'salary']]
+print(f"Multiple columns shape: {subset.shape}")
+
+# All columns except some
+exclude_cols = df.drop(['employee_id', 'join_date'], axis=1)
+print(f"Excluding columns shape: {exclude_cols.shape}")
+
+# Row selection
+print("\n--- Row Selection ---")
+# By index
+first_10 = df.iloc[:10]
+print(f"First 10 rows: {first_10.shape}")
+
+# By condition
+high_salary = df[df['salary'] > 70000]
+print(f"High salary employees: {len(high_salary)}")
+
+# Multiple conditions
+experienced_high_performers = df[
+    (df['experience'] > 10) & 
+    (df['performance_score'] > 4.0) & 
+    (df['salary'] > 65000)
+]
+print(f"Experienced high performers: {len(experienced_high_performers)}")
+
+# Using query method
+query_result = df.query('department == "IT" and salary > 60000')
+print(f"IT employees with high salary: {len(query_result)}")
+
+# String operations
+finance_employees = df[df['department'].str.contains('Finance')]
+print(f"Finance employees: {len(finance_employees)}")
+
+# Date filtering
+recent_hires = df[df['join_date'] >= '2022-01-01']
+print(f"Recent hires: {len(recent_hires)}")
+
+# Advanced filtering
+print("\n--- Advanced Filtering ---")
+# Using isin()
+dept_filter = df[df['department'].isin(['IT', 'Finance'])]
+print(f"IT and Finance employees: {len(dept_filter)}")
+
+# Using between()
+mid_salary = df[df['salary'].between(50000, 80000)]
+print(f"Mid-range salary employees: {len(mid_salary)}")
+
+# Null filtering
+df.loc[np.random.choice(df.index, 10), 'performance_score'] = np.nan
+has_performance_data = df[df['performance_score'].notna()]
+print(f"Employees with performance data: {len(has_performance_data)}")
+
+# Complex conditions with functions
+def is_high_performer(row):
+    return (row['performance_score'] > 4.0 and 
+            row['experience'] > 5 and 
+            row['salary'] > df['salary'].median())
+
+high_performers = df[df.apply(is_high_performer, axis=1)]
+print(f"High performers (custom function): {len(high_performers)}")
+```
+
+### Example 5: Data Cleaning and Transformation
+```python
+import pandas as pd
+import numpy as np
+from datetime import datetime
+
+# Create messy dataset for cleaning
+np.random.seed(42)
+messy_data = {
+    'customer_id': [f'CUST_{i:03d}' for i in range(1, 201)] + ['CUST_150', 'CUST_175'],  # Duplicates
+    'name': ['John Doe', 'jane smith', 'BOB JOHNSON', '  Alice Brown  ', 'Charlie Wilson', None] * 33 + ['Mike Davis', 'Sarah Connor'],
+    'email': ['john@email.com', 'JANE@EMAIL.COM', 'bob@invalid', 'alice@email.com', 'charlie@email.com', ''] * 33 + ['mike@email.com', 'sarah@email.com'],
+    'age': list(np.random.randint(18, 80, 195)) + [150, -5, None, 25, 30, 35, 28],  # Invalid ages
+    'income': list(np.random.normal(50000, 20000, 190)) + [None, -10000, 1000000, 45000, 60000, 55000, 70000, 80000, 90000, 85000, 75000, 65000],
+    'purchase_date': pd.date_range('2023-01-01', periods=180).tolist() + ['2023-13-01', '2023-02-30', 'invalid_date'] * 6 + pd.date_range('2023-06-01', periods=4).tolist()
+}
+
+# Ensure all lists have the same length
+max_len = max(len(v) for v in messy_data.values())
+for key, value in messy_data.items():
+    if len(value) < max_len:
+        messy_data[key].extend([None] * (max_len - len(value)))
+
+df_messy = pd.DataFrame(messy_data)
+
+print("Original messy dataset:")
+print(f"Shape: {df_messy.shape}")
+print(df_messy.head(10))
+print(f"Missing values:\n{df_messy.isnull().sum()}")
+
+# Step 1: Handle duplicates
+print("\n--- Handling Duplicates ---")
+print(f"Duplicate rows: {df_messy.duplicated().sum()}")
+print(f"Duplicate customer_ids: {df_messy['customer_id'].duplicated().sum()}")
+
+# Remove duplicate customer_ids, keep first occurrence
+df_clean = df_messy.drop_duplicates(subset=['customer_id'], keep='first')
+print(f"After removing duplicates: {df_clean.shape}")
+
+# Step 2: Clean text data
+print("\n--- Cleaning Text Data ---")
+# Clean names
+df_clean['name'] = df_clean['name'].str.strip()  # Remove whitespace
+df_clean['name'] = df_clean['name'].str.title()  # Proper case
+
+# Clean emails
+df_clean['email'] = df_clean['email'].str.lower().str.strip()
+df_clean['email'] = df_clean['email'].replace('', np.nan)
+
+# Validate email format
+email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+df_clean['email_valid'] = df_clean['email'].str.match(email_pattern, na=False)
+print(f"Invalid emails: {(~df_clean['email_valid']).sum()}")
+
+# Step 3: Handle missing values
+print("\n--- Handling Missing Values ---")
+# Fill missing names with 'Unknown'
+df_clean['name'] = df_clean['name'].fillna('Unknown Customer')
+
+# For income, use median by age group
+age_groups = pd.cut(df_clean['age'], bins=[0, 30, 50, 100], labels=['Young', 'Middle', 'Senior'])
+df_clean['age_group'] = age_groups
+
+# Calculate median income by age group
+income_medians = df_clean.groupby('age_group')['income'].median()
+print(f"Income medians by age group:\n{income_medians}")
+
+# Fill missing income values
+for age_group in income_medians.index:
+    mask = (df_clean['age_group'] == age_group) & (df_clean['income'].isna())
+    df_clean.loc[mask, 'income'] = income_medians[age_group]
+
+# Step 4: Handle outliers and invalid values
+print("\n--- Handling Outliers and Invalid Values ---")
+# Fix invalid ages
+df_clean.loc[df_clean['age'] < 0, 'age'] = np.nan
+df_clean.loc[df_clean['age'] > 120, 'age'] = np.nan
+
+# Fill missing ages with median
+median_age = df_clean['age'].median()
+df_clean['age'] = df_clean['age'].fillna(median_age)
+
+# Handle income outliers using IQR method
+Q1 = df_clean['income'].quantile(0.25)
+Q3 = df_clean['income'].quantile(0.75)
+IQR = Q3 - Q1
+lower_bound = Q1 - 1.5 * IQR
+upper_bound = Q3 + 1.5 * IQR
+
+print(f"Income bounds: {lower_bound:.2f} to {upper_bound:.2f}")
+outliers = (df_clean['income'] < lower_bound) | (df_clean['income'] > upper_bound)
+print(f"Income outliers: {outliers.sum()}")
+
+# Cap outliers instead of removing
+df_clean.loc[df_clean['income'] < lower_bound, 'income'] = lower_bound
+df_clean.loc[df_clean['income'] > upper_bound, 'income'] = upper_bound
+
+# Step 5: Handle dates
+print("\n--- Handling Dates ---")
+# Convert purchase_date to datetime, invalid dates become NaT
+df_clean['purchase_date'] = pd.to_datetime(df_clean['purchase_date'], errors='coerce')
+invalid_dates = df_clean['purchase_date'].isna().sum()
+print(f"Invalid dates: {invalid_dates}")
+
+# Fill invalid dates with a default date or interpolate
+df_clean['purchase_date'] = df_clean['purchase_date'].fillna(pd.Timestamp('2023-01-01'))
+
+# Step 6: Data validation and final cleanup
+print("\n--- Final Validation ---")
+print(f"Final dataset shape: {df_clean.shape}")
+print(f"Missing values after cleaning:\n{df_clean[['name', 'email', 'age', 'income', 'purchase_date']].isnull().sum()}")
+
+# Create data quality report
+quality_report = {
+    'total_records': len(df_clean),
+    'valid_emails': df_clean['email_valid'].sum(),
+    'complete_records': df_clean[['name', 'email', 'age', 'income']].notna().all(axis=1).sum(),
+    'age_range': f"{df_clean['age'].min():.0f} - {df_clean['age'].max():.0f}",
+    'income_range': f"${df_clean['income'].min():.2f} - ${df_clean['income'].max():.2f}"
+}
+
+print("\nData Quality Report:")
+for key, value in quality_report.items():
+    print(f"{key}: {value}")
+
+print("\nCleaned dataset sample:")
+print(df_clean[['customer_id', 'name', 'email', 'age', 'income', 'email_valid']].head())
+```
+
+### Example 6: Grouping and Aggregation
+```python
+import pandas as pd
+import numpy as np
+
+# Create comprehensive sales dataset
+np.random.seed(42)
+dates = pd.date_range('2023-01-01', '2023-12-31', freq='D')
+sales_data = []
+
+for date in dates:
+    n_transactions = np.random.poisson(15)  # Average 15 transactions per day
+    for _ in range(n_transactions):
+        sales_data.append({
+            'date': date,
+            'product': np.random.choice(['Laptop', 'Mouse', 'Keyboard', 'Monitor', 'Headphones', 'Webcam', 'Speaker']),
+            'category': np.random.choice(['Electronics', 'Accessories', 'Audio']),
+            'region': np.random.choice(['North', 'South', 'East', 'West']),
+            'salesperson': np.random.choice([f'Sales_{i}' for i in range(1, 11)]),
+            'customer_type': np.random.choice(['Individual', 'Business'], p=[0.7, 0.3]),
+            'quantity': np.random.randint(1, 5),
+            'unit_price': np.random.uniform(20, 1200),
+            'discount': np.random.choice([0, 5, 10, 15, 20], p=[0.5, 0.2, 0.15, 0.1, 0.05])
+        })
+
+df_sales = pd.DataFrame(sales_data)
+df_sales['total_amount'] = df_sales['quantity'] * df_sales['unit_price'] * (1 - df_sales['discount']/100)
+df_sales['month'] = df_sales['date'].dt.to_period('M')
+df_sales['quarter'] = df_sales['date'].dt.to_period('Q')
+
+print(f"Sales dataset shape: {df_sales.shape}")
+print("Sample data:")
+print(df_sales.head())
+
+# Basic grouping and aggregation
+print("\n--- Basic Grouping ---")
+
+# Group by single column
+monthly_sales = df_sales.groupby('month')['total_amount'].sum()
+print("Monthly sales:")
+print(monthly_sales.head())
+
+# Group by multiple columns
+category_region_sales = df_sales.groupby(['category', 'region'])['total_amount'].sum()
+print("\nSales by category and region:")
+print(category_region_sales.head(10))
+
+# Multiple aggregations
+sales_summary = df_sales.groupby('product').agg({
+    'total_amount': ['sum', 'mean', 'count'],
+    'quantity': 'sum',
+    'discount': 'mean'
+})
+print("\nProduct sales summary:")
+print(sales_summary.head())
+
+# Custom aggregation functions
+def coefficient_of_variation(x):
+    return x.std() / x.mean() if x.mean() != 0 else 0
+
+custom_agg = df_sales.groupby('salesperson').agg({
+    'total_amount': ['sum', 'mean', 'std', coefficient_of_variation],
+    'quantity': 'sum'
+}).round(2)
+print("\nSalesperson performance (with custom CV):")
+print(custom_agg.head())
+
+# Advanced grouping techniques
+print("\n--- Advanced Grouping ---")
+
+# Time-based grouping
+daily_metrics = df_sales.groupby(df_sales['date'].dt.date).agg({
+    'total_amount': 'sum',
+    'quantity': 'sum',
+    'salesperson': 'nunique'  # Number of unique salespeople per day
+}).rename(columns={'salesperson': 'active_salespeople'})
+
+print("Daily metrics sample:")
+print(daily_metrics.head())
+
+# Conditional aggregation
+def top_customer_type_sales(group):
+    return group.groupby('customer_type')['total_amount'].sum().max()
+
+def dominant_customer_type(group):
+    return group.groupby('customer_type')['total_amount'].sum().idxmax()
+
+regional_analysis = df_sales.groupby('region').apply(
+    lambda x: pd.Series({
+        'total_sales': x['total_amount'].sum(),
+        'avg_transaction': x['total_amount'].mean(),
+        'top_customer_type_sales': top_customer_type_sales(x),
+        'dominant_customer_type': dominant_customer_type(x),
+        'unique_products': x['product'].nunique()
+    })
+)
+print("\nRegional analysis:")
+print(regional_analysis)
+
+# Rolling and expanding aggregations
+daily_sales = df_sales.groupby('date')['total_amount'].sum().sort_index()
+
+# 7-day rolling average
+daily_sales_with_ma = daily_sales.to_frame()
+daily_sales_with_ma['7_day_ma'] = daily_sales.rolling(window=7).mean()
+daily_sales_with_ma['30_day_ma'] = daily_sales.rolling(window=30).mean()
+daily_sales_with_ma['cumulative_sales'] = daily_sales.expanding().sum()
+
+print("\nDaily sales with moving averages (sample):")
+print(daily_sales_with_ma.head(10))
+
+# Pivot tables
+print("\n--- Pivot Tables ---")
+pivot_table = df_sales.pivot_table(
+    values='total_amount',
+    index='product',
+    columns='quarter',
+    aggfunc='sum',
+    fill_value=0,
+    margins=True
+)
+print("Sales by product and quarter:")
+print(pivot_table)
+
+# Cross-tabulation
+cross_tab = pd.crosstab(
+    df_sales['region'],
+    df_sales['customer_type'],
+    values=df_sales['total_amount'],
+    aggfunc='mean',
+    normalize='index'  # Normalize by row
+)
+print("\nAverage sales by region and customer type (normalized):")
+print(cross_tab.round(2))
+
+# Group transforms and filtering
+print("\n--- Group Transforms ---")
+
+# Add group statistics as new columns
+df_sales['category_avg_price'] = df_sales.groupby('category')['unit_price'].transform('mean')
+df_sales['salesperson_total_sales'] = df_sales.groupby('salesperson')['total_amount'].transform('sum')
+df_sales['monthly_sales_rank'] = df_sales.groupby('month')['total_amount'].rank(method='dense', ascending=False)
+
+print("Dataset with group transforms (sample):")
+print(df_sales[['product', 'category', 'salesperson', 'total_amount', 
+                'category_avg_price', 'salesperson_total_sales', 'monthly_sales_rank']].head())
+
+# Filter groups based on criteria
+high_volume_salespeople = df_sales.groupby('salesperson').filter(
+    lambda x: x['total_amount'].sum() > df_sales['total_amount'].sum() / 10  # Top 10% by sales
+)
+print(f"\nHigh-volume salespeople transactions: {len(high_volume_salespeople)}")
+print(f"Unique high-volume salespeople: {high_volume_salespeople['salesperson'].nunique()}")
+```
+
+## Advanced Examples
+
+### Example 7: Time Series Analysis
+```python
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from datetime import datetime, timedelta
+
+# Create comprehensive time series dataset
+np.random.seed(42)
+start_date = datetime(2022, 1, 1)
+end_date = datetime(2024, 12, 31)
+dates = pd.date_range(start_date, end_date, freq='H')
+
+# Simulate realistic time series with trends, seasonality, and noise
+n_points = len(dates)
+trend = np.linspace(100, 150, n_points)  # Linear trend
+seasonal_yearly = 20 * np.sin(2 * np.pi * np.arange(n_points) / (365.25 * 24))  # Yearly seasonality
+seasonal_daily = 10 * np.sin(2 * np.pi * np.arange(n_points) / 24)  # Daily seasonality
+seasonal_weekly = 15 * np.sin(2 * np.pi * np.arange(n_points) / (7 * 24))  # Weekly seasonality
+noise = np.random.normal(0, 5, n_points)
+
+# Combine components
+values = trend + seasonal_yearly + seasonal_daily + seasonal_weekly + noise
+
+# Add some outliers and missing values
+outlier_indices = np.random.choice(n_points, size=50, replace=False)
+values[outlier_indices] = values[outlier_indices] * np.random.uniform(2, 4, 50)
+
+missing_indices = np.random.choice(n_points, size=100, replace=False)
+values[missing_indices] = np.nan
+
+# Create DataFrame
+df_ts = pd.DataFrame({
+    'timestamp': dates,
+    'value': values,
+    'day_of_week': dates.day_name(),
+    'hour': dates.hour,
+    'month': dates.month,
+    'year': dates.year
+})
+
+df_ts.set_index('timestamp', inplace=True)
+
+print(f"Time series dataset shape: {df_ts.shape}")
+print(f"Date range: {df_ts.index.min()} to {df_ts.index.max()}")
+print(f"Missing values: {df_ts['value'].isna().sum()}")
+print("\nSample data:")
+print(df_ts.head(10))
+
+# Basic time series operations
+print("\n--- Basic Time Series Operations ---")
+
+# Resampling to different frequencies
+daily_avg = df_ts['value'].resample('D').mean()
+weekly_sum = df_ts['value'].resample('W').sum()
+monthly_stats = df_ts['value'].resample('M').agg(['mean', 'std', 'min', 'max', 'count'])
+
+print("Daily averages (first 10 days):")
+print(daily_avg.head(10))
+
+print("\nMonthly statistics (first 6 months):")
+print(monthly_stats.head(6))
+
+# Time-based indexing and slicing
+print("\n--- Time-based Indexing ---")
+
+# Select specific time periods
+jan_2023 = df_ts['2023-01']
+q1_2023 = df_ts['2023-01':'2023-03']
+business_hours = df_ts.between_time('09:00', '17:00')
+
+print(f"January 2023 data points: {len(jan_2023)}")
+print(f"Q1 2023 data points: {len(q1_2023)}")
+print(f"Business hours data points: {len(business_hours)}")
+
+# Time shifts and lags
+df_ts['value_lag1'] = df_ts['value'].shift(1)
+df_ts['value_lag24'] = df_ts['value'].shift(24)  # 24 hours ago
+df_ts['value_lead1'] = df_ts['value'].shift(-1)
+
+# Calculate returns/changes
+df_ts['hourly_change'] = df_ts['value'].diff()
+df_ts['hourly_pct_change'] = df_ts['value'].pct_change()
+df_ts['daily_change'] = df_ts['value'].diff(24)
+
+print("\nTime series with lags and changes (sample):")
+print(df_ts[['value', 'value_lag1', 'hourly_change', 'hourly_pct_change']].head(10))
+
+# Rolling statistics
+print("\n--- Rolling Statistics ---")
+
+# Various rolling windows
+df_ts['ma_24h'] = df_ts['value'].rolling(window=24).mean()  # 24-hour moving average
+df_ts['ma_7d'] = df_ts['value'].rolling(window=24*7).mean()  # 7-day moving average
+df_ts['std_24h'] = df_ts['value'].rolling(window=24).std()
+df_ts['min_24h'] = df_ts['value'].rolling(window=24).min()
+df_ts['max_24h'] = df_ts['value'].rolling(window=24).max()
+
+# Exponential moving average
+df_ts['ema_24h'] = df_ts['value'].ewm(span=24).mean()
+
+# Bollinger Bands
+df_ts['bb_upper'] = df_ts['ma_24h'] + (2 * df_ts['std_24h'])
+df_ts['bb_lower'] = df_ts['ma_24h'] - (2 * df_ts['std_24h'])
+
+print("Rolling statistics (sample):")
+print(df_ts[['value', 'ma_24h', 'std_24h', 'bb_upper', 'bb_lower']].dropna().head())
+
+# Handle missing values in time series
+print("\n--- Handling Missing Values ---")
+
+# Forward fill
+df_ts['value_ffill'] = df_ts['value'].fillna(method='ffill')
+
+# Backward fill
+df_ts['value_bfill'] = df_ts['value'].fillna(method='bfill')
+
+# Interpolation methods
+df_ts['value_linear'] = df_ts['value'].interpolate(method='linear')
+df_ts['value_time'] = df_ts['value'].interpolate(method='time')
+df_ts['value_spline'] = df_ts['value'].interpolate(method='spline', order=2)
+
+print("Missing value handling comparison:")
+sample_with_missing = df_ts[df_ts['value'].isna()][:5]
+if not sample_with_missing.empty:
+    cols_to_show = ['value', 'value_ffill', 'value_linear', 'value_time']
+    print(sample_with_missing[cols_to_show])
+
+# Seasonal decomposition (simplified)
+print("\n--- Seasonal Analysis ---")
+
+# Extract seasonal patterns
+hourly_pattern = df_ts.groupby('hour')['value'].mean()
+daily_pattern = df_ts.groupby(df_ts.index.day_name())['value'].mean()
+monthly_pattern = df_ts.groupby('month')['value'].mean()
+
+print("Average value by hour of day:")
+print(hourly_pattern)
+
+print("\nAverage value by day of week:")
+print(daily_pattern)
+
+print("\nAverage value by month:")
+print(monthly_pattern)
+
+# Anomaly detection using statistical methods
+print("\n--- Anomaly Detection ---")
+
+# Z-score method
+z_scores = np.abs((df_ts['value'] - df_ts['value'].mean()) / df_ts['value'].std())
+anomalies_zscore = df_ts[z_scores > 3]
+
+# IQR method
+Q1 = df_ts['value'].quantile(0.25)
+Q3 = df_ts['value'].quantile(0.75)
+IQR = Q3 - Q1
+anomalies_iqr = df_ts[
+    (df_ts['value'] < Q1 - 1.5 * IQR) | 
+    (df_ts['value'] > Q3 + 1.5 * IQR)
+]
+
+print(f"Anomalies detected (Z-score): {len(anomalies_zscore)}")
+print(f"Anomalies detected (IQR): {len(anomalies_iqr)}")
+
+# Time series correlation and autocorrelation
+print("\n--- Correlation Analysis ---")
+
+# Create lagged versions for correlation analysis
+for lag in [1, 6, 12, 24, 168]:  # 1h, 6h, 12h, 1d, 1w
+    df_ts[f'lag_{lag}'] = df_ts['value'].shift(lag)
+
+# Calculate correlations
+lag_columns = [col for col in df_ts.columns if col.startswith('lag_')]
+correlations = df_ts[['value'] + lag_columns].corr()['value'].drop('value')
+
+print("Autocorrelations at different lags:")
+for lag, corr in correlations.items():
+    if not pd.isna(corr):
+        print(f"{lag}: {corr:.3f}")
+
+# Performance metrics for time series
+print("\n--- Performance Metrics ---")
+
+# Calculate various performance metrics using actual vs predicted (using MA as simple forecast)
+actual = df_ts['value'].dropna()
+predicted = df_ts['ma_24h'].dropna()
+
+# Align the series
+common_index = actual.index.intersection(predicted.index)
+actual_aligned = actual.loc[common_index]
+predicted_aligned = predicted.loc[common_index]
+
+# Calculate metrics
+mae = np.mean(np.abs(actual_aligned - predicted_aligned))
+mse = np.mean((actual_aligned - predicted_aligned) ** 2)
+rmse = np.sqrt(mse)
+mape = np.mean(np.abs((actual_aligned - predicted_aligned) / actual_aligned)) * 100
+
+print(f"Forecast Performance (24h MA vs Actual):")
+print(f"MAE: {mae:.2f}")
+print(f"MSE: {mse:.2f}")
+print(f"RMSE: {rmse:.2f}")
+print(f"MAPE: {mape:.2f}%")
+```
+
+### Example 8: Performance Optimization and Best Practices
+```python
+import pandas as pd
+import numpy as np
+import time
+import memory_profiler
+from functools import wraps
+
+# Performance monitoring decorator
+def monitor_performance(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        start_time = time.time()
+        start_memory = memory_profiler.memory_usage()[0]
+        
+        result = func(*args, **kwargs)
+        
+        end_time = time.time()
+        end_memory = memory_profiler.memory_usage()[0]
+        
+        print(f"{func.__name__}:")
+        print(f"  Time: {end_time - start_time:.4f} seconds")
+        print(f"  Memory: {end_memory - start_memory:.2f} MB")
+        return result
+    return wrapper
+
+# Create large dataset for performance testing
+print("Creating large dataset for performance testing...")
+n_rows = 1_000_000
+np.random.seed(42)
+
+large_dataset = {
+    'id': range(n_rows),
+    'category': np.random.choice(['A', 'B', 'C', 'D', 'E'], n_rows),
+    'value1': np.random.randn(n_rows),
+    'value2': np.random.randint(1, 100, n_rows),
+    'date': pd.date_range('2020-01-01', periods=n_rows, freq='T'),
+    'text': [f'text_{i%1000}' for i in range(n_rows)]
+}
+
+df_large = pd.DataFrame(large_dataset)
+print(f"Dataset created: {df_large.shape}")
+print(f"Memory usage: {df_large.memory_usage(deep=True).sum() / 1024**2:.2f} MB")
+
+# Memory optimization techniques
+print("\n--- Memory Optimization ---")
+
+@monitor_performance
+def optimize_dtypes(df):
+    """Optimize data types to reduce memory usage"""
+    optimized_df = df.copy()
+    
+    # Optimize integer columns
+    for col in optimized_df.select_dtypes(include=['int64']).columns:
+        col_min = optimized_df[col].min()
+        col_max = optimized_df[col].max()
+        
+        if col_min >= 0:  # Unsigned integers
+            if col_max < 255:
+                optimized_df[col] = optimized_df[col].astype('uint8')
+            elif col_max < 65535:
+                optimized_df[col] = optimized_df[col].astype('uint16')
+            elif col_max < 4294967295:
+                optimized_df[col] = optimized_df[col].astype('uint32')
+        else:  # Signed integers
+            if col_min > -128 and col_max < 127:
+                optimized_df[col] = optimized_df[col].astype('int8')
+            elif col_min > -32768 and col_max < 32767:
+                optimized_df[col] = optimized_df[col].astype('int16')
+            elif col_min > -2147483648 and col_max < 2147483647:
+                optimized_df[col] = optimized_df[col].astype('int32')
+    
+    # Optimize float columns
+    for col in optimized_df.select_dtypes(include=['float64']).columns:
+        optimized_df[col] = optimized_df[col].astype('float32')
+    
+    # Convert to categorical where appropriate
+    for col in optimized_df.select_dtypes(include=['object']).columns:
+        if optimized_df[col].nunique() / len(optimized_df) < 0.5:  # Less than 50% unique
+            optimized_df[col] = optimized_df[col].astype('category')
+    
+    return optimized_df
+
+df_optimized = optimize_dtypes(df_large)
+print(f"Optimized memory usage: {df_optimized.memory_usage(deep=True).sum() / 1024**2:.2f} MB")
+print(f"Memory reduction: {(1 - df_optimized.memory_usage(deep=True).sum() / df_large.memory_usage(deep=True).sum()) * 100:.1f}%")
+
+# Efficient data loading and processing
+print("\n--- Efficient Data Processing ---")
+
+@monitor_performance
+def inefficient_groupby(df):
+    """Inefficient groupby operation"""
+    result = []
+    for category in df['category'].unique():
+        subset = df[df['category'] == category]
+        result.append({
+            'category': category,
+            'mean_value1': subset['value1'].mean(),
+            'sum_value2': subset['value2'].sum(),
+            'count': len(subset)
+        })
+    return pd.DataFrame(result)
+
+@monitor_performance
+def efficient_groupby(df):
+    """Efficient groupby operation"""
+    return df.groupby('category').agg({
+        'value1': 'mean',
+        'value2': 'sum',
+        'id': 'count'
+    }).rename(columns={'id': 'count'}).reset_index()
+
+print("Comparing groupby performance:")
+result1 = inefficient_groupby(df_large.head(10000))  # Smaller sample for demo
+result2 = efficient_groupby(df_large.head(10000))
+
+# Vectorized operations vs loops
+print("\n--- Vectorized Operations ---")
+
+@monitor_performance
+def loop_calculation(df):
+    """Calculate using loops (inefficient)"""
+    result = []
+    for _, row in df.iterrows():
+        if row['value1'] > 0:
+            result.append(row['value1'] * row['value2'])
+        else:
+            result.append(0)
+    return result
+
+@monitor_performance
+def vectorized_calculation(df):
+    """Calculate using vectorized operations (efficient)"""
+    return np.where(df['value1'] > 0, df['value1'] * df['value2'], 0)
+
+print("Comparing calculation methods (on 10k rows):")
+sample_df = df_large.head(10000)
+loop_result = loop_calculation(sample_df)
+vectorized_result = vectorized_calculation(sample_df)
+
+# Chunked processing for large datasets
+print("\n--- Chunked Processing ---")
+
+@monitor_performance
+def process_in_chunks(df, chunk_size=50000):
+    """Process large DataFrame in chunks"""
+    results = []
+    
+    for i in range(0, len(df), chunk_size):
+        chunk = df.iloc[i:i+chunk_size]
+        
+        # Process chunk
+        chunk_result = chunk.groupby('category').agg({
+            'value1': ['mean', 'std'],
+            'value2': ['sum', 'max'],
+            'id': 'count'
+        })
+        
+        results.append(chunk_result)
+    
+    # Combine results
+    combined = pd.concat(results).groupby(level=[0, 1]).sum()
+    return combined
+
+chunked_result = process_in_chunks(df_large)
+
+# Efficient string operations
+print("\n--- String Operations Optimization ---")
+
+# Create string data for testing
+string_data = pd.DataFrame({
+    'text': [f'prefix_{i%100}_suffix' for i in range(100000)],
+    'numbers': [f'{i:06d}' for i in range(100000)]
+})
+
+@monitor_performance
+def inefficient_string_ops(df):
+    """Inefficient string operations"""
+    result = []
+    for text in df['text']:
+        if 'prefix' in text:
+            parts = text.split('_')
+            result.append(f"processed_{parts[1]}")
+        else:
+            result.append("unknown")
+    return result
+
+@monitor_performance
+def efficient_string_ops(df):
+    """Efficient string operations using vectorized methods"""
+    mask = df['text'].str.contains('prefix')
+    result = df['text'].str.extract(r'prefix_(\d+)_suffix')[0]
+    result = 'processed_' + result
+    result = result.fillna('unknown')
+    return result
+
+print("Comparing string operations:")
+inefficient_result = inefficient_string_ops(string_data.head(1000))
+efficient_result = efficient_string_ops(string_data.head(1000))
+
+# Query optimization
+print("\n--- Query Optimization ---")
+
+@monitor_performance
+def multiple_filters_inefficient(df):
+    """Multiple separate filter operations"""
+    result = df[df['value1'] > 0]
+    result = result[result['value2'] < 50]
+    result = result[result['category'].isin(['A', 'B'])]
+    return result
+
+@monitor_performance
+def multiple_filters_efficient(df):
+    """Single combined filter operation"""
+    return df[
+        (df['value1'] > 0) & 
+        (df['value2'] < 50) & 
+        (df['category'].isin(['A', 'B']))
+    ]
+
+@monitor_performance
+def query_method(df):
+    """Using query method"""
+    return df.query('value1 > 0 and value2 < 50 and category in ["A", "B"]')
+
+print("Comparing filter methods:")
+sample_large = df_large.head(100000)
+result1 = multiple_filters_inefficient(sample_large)
+result2 = multiple_filters_efficient(sample_large)
+result3 = query_method(sample_large)
+
+# Index optimization
+print("\n--- Index Optimization ---")
+
+@monitor_performance
+def without_index(df):
+    """Lookup without index"""
+    results = []
+    for cat in ['A', 'B', 'C']:
+        subset = df[df['category'] == cat]
+        results.append(subset['value1'].mean())
+    return results
+
+@monitor_performance
+def with_index(df):
+    """Lookup with index"""
+    df_indexed = df.set_index('category')
+    results = []
+    for cat in ['A', 'B', 'C']:
+        results.append(df_indexed.loc[cat, 'value1'].mean())
+    return results
+
+print("Comparing index usage:")
+sample_df = df_large.head(50000)
+result1 = without_index(sample_df)
+result2 = with_index(sample_df)
+
+# Best practices summary
+print("\n--- Performance Best Practices Summary ---")
+best_practices = {
+    "Memory Optimization": [
+        "Use appropriate data types (int8, int16, float32 vs int64, float64)",
+        "Convert to categorical for repeated string values",
+        "Use sparse arrays for data with many zeros/NaNs"
+    ],
+    "Processing Optimization": [
+        "Use vectorized operations instead of loops",
+        "Process data in chunks for very large datasets",
+        "Use query() method for complex filtering",
+        "Combine multiple filter conditions in single operation"
+    ],
+    "I/O Optimization": [
+        "Use parquet format for faster I/O",
+        "Read only necessary columns with usecols parameter",
+        "Use appropriate chunk size for large files",
+        "Consider using Dask for out-of-core processing"
+    ],
+    "Index Optimization": [
+        "Set appropriate index for frequent lookups",
+        "Use MultiIndex for hierarchical data",
+        "Reset index when no longer needed",
+        "Sort index for better performance"
+    ]
+}
+
+for category, tips in best_practices.items():
+    print(f"\n{category}:")
+    for tip in tips:
+        print(f"  • {tip}")
+```
+
+## Additional Resources
+
+### Popular Pandas Extensions and Libraries
+```python
+# Example of useful pandas extensions
+import pandas as pd
+
+# pandas-profiling for automatic EDA
+# pip install pandas-profiling
+# from pandas_profiling import ProfileReport
+# profile = ProfileReport(df, title="Pandas Profiling Report")
+# profile.to_file("report.html")
+
+# modin for faster pandas operations
+# pip install modin[ray]
+# import modin.pandas as mpd
+# df_modin = mpd.read_csv('large_file.csv')
+
+# Dask for out-of-core processing
+# pip install dask
+# import dask.dataframe as dd
+# df_dask = dd.read_csv('very_large_file.csv')
+
+# Useful utility functions
+def quick_stats(df):
+    """Generate quick statistics summary"""
+    stats = {
+        'shape': df.shape,
+        'memory_usage_mb': df.memory_usage(deep=True).sum() / 1024**2,
+        'missing_values': df.isnull().sum().sum(),
+        'numeric_columns': len(df.select_dtypes(include=[np.number]).columns),
+        'categorical_columns': len(df.select_dtypes(include=['object', 'category']).columns),
+        'datetime_columns': len(df.select_dtypes(include=['datetime64']).columns)
+    }
+    return pd.Series(stats)
+
+def detect_outliers(df, columns=None, method='iqr', threshold=1.5):
+    """Detect outliers using IQR or Z-score method"""
+    if columns is None:
+        columns = df.select_dtypes(include=[np.number]).columns
+    
+    outliers = pd.DataFrame()
+    
+    for col in columns:
+        if method == 'iqr':
+            Q1 = df[col].quantile(0.25)
+            Q3 = df[col].quantile(0.75)
+            IQR = Q3 - Q1
+            lower_bound = Q1 - threshold * IQR
+            upper_bound = Q3 + threshold * IQR
+            outlier_mask = (df[col] < lower_bound) | (df[col] > upper_bound)
+        elif method == 'zscore':
+            z_scores = np.abs((df[col] - df[col].mean()) / df[col].std())
+            outlier_mask = z_scores > threshold
+        
+        outliers[col] = outlier_mask
+    
+    return outliers
+
+# Example usage of utility functions
+sample_df = pd.DataFrame({
+    'A': np.random.randn(1000),
+    'B': np.random.randint(1, 100, 1000),
+    'C': np.random.choice(['X', 'Y', 'Z'], 1000),
+    'D': pd.date_range('2023-01-01', periods=1000, freq='D')
+})
+
+print("Quick statistics:")
+print(quick_stats(sample_df))
+
+print("\nOutlier detection:")
+outliers = detect_outliers(sample_df, ['A', 'B'])
+print(f"Outliers found: {outliers.sum().sum()}")
+```
+
+### Common Pandas Patterns and Recipes
+```python
+# Collection of common pandas patterns
+
+# 1. Create date ranges with business days only
+business_days = pd.bdate_range('2023-01-01', '2023-12-31')
+print(f"Business days in 2023: {len(business_days)}")
+
+# 2. Resample time series to business quarters
+ts_data = pd.DataFrame({
+    'date': pd.date_range('2023-01-01', '2023-12-31', freq='D'),
+    'value': np.random.randn(365)
+}).set_index('date')
+
+quarterly_biz = ts_data.resample('BQ').mean()  # Business quarter end
+print("Business quarterly averages:")
+print(quarterly_biz.head())
+
+# 3. Create dummy variables efficiently
+categorical_data = pd.DataFrame({
+    'category': ['A', 'B', 'C', 'A', 'B'],
+    'value': [1, 2, 3, 4, 5]
+})
+dummies = pd.get_dummies(categorical_data, columns=['category'], prefix='cat')
+print("Dummy variables:")
+print(dummies)
+
+# 4. Binning continuous variables
+continuous_data = pd.DataFrame({'value': np.random.uniform(0, 100, 1000)})
+continuous_data['binned'] = pd.cut(continuous_data['value'], 
+                                 bins=5, 
+                                 labels=['Very Low', 'Low', 'Medium', 'High', 'Very High'])
+print("Binning results:")
+print(continuous_data['binned'].value_counts())
+
+# 5. Conditional column creation with np.select
+conditions = [
+    continuous_data['value'] < 20,
+    continuous_data['value'] < 40,
+    continuous_data['value'] < 60,
+    continuous_data['value'] < 80
+]
+choices = ['Low', 'Medium-Low', 'Medium-High', 'High']
+continuous_data['category'] = np.select(conditions, choices, default='Very High')
+
+print("Conditional categorization:")
+print(continuous_data['category'].value_counts())
+```
+
+Created: 2025-06-02 19:39:56

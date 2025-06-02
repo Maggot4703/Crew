@@ -1,0 +1,441 @@
+# HTML - Examples and Code Samples
+
+## Basic Examples
+
+### Example 1: Basic HTML Document Structure
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My First Website</title>
+    <meta name="description" content="A basic HTML page example">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>Welcome to My Website</h1>
+        <nav>
+            <ul>
+                <li><a href="#home">Home</a></li>
+                <li><a href="#about">About</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+    
+    <main>
+        <section id="home">
+            <h2>Home Section</h2>
+            <p>This is the main content area of the webpage.</p>
+        </section>
+    </main>
+    
+    <footer>
+        <p>&copy; 2024 My Website. All rights reserved.</p>
+    </footer>
+    
+    <script src="script.js"></script>
+</body>
+</html>
+```
+
+### Example 2: Text Formatting and Content Elements
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Text Formatting Examples</title>
+</head>
+<body>
+    <h1>Main Heading</h1>
+    <h2>Secondary Heading</h2>
+    <h3>Third Level Heading</h3>
+    
+    <p>This is a <strong>strongly emphasized</strong> paragraph with 
+    <em>emphasized text</em> and a <mark>highlighted section</mark>.</p>
+    
+    <p>Here's some <small>fine print</small> and 
+    <del>deleted text</del> with <ins>inserted text</ins>.</p>
+    
+    <blockquote cite="https://example.com">
+        <p>"This is a blockquote with proper citation."</p>
+        <footer>— <cite>Famous Author</cite></footer>
+    </blockquote>
+    
+    <pre><code>function hello() {
+    console.log("Hello, World!");
+}</code></pre>
+    
+    <p>Chemical formula: H<sub>2</sub>O</p>
+    <p>Mathematical expression: E = mc<sup>2</sup></p>
+    
+    <address>
+        Contact: <a href="mailto:example@email.com">example@email.com</a><br>
+        Phone: <a href="tel:+1234567890">+1 (234) 567-890</a>
+    </address>
+</body>
+</html>
+```
+
+### Example 3: Forms and Input Elements
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Contact Form</title>
+</head>
+<body>
+    <form action="/submit" method="POST">
+        <fieldset>
+            <legend>Personal Information</legend>
+            
+            <label for="firstName">First Name *</label>
+            <input type="text" id="firstName" name="firstName" required>
+            
+            <label for="email">Email Address *</label>
+            <input type="email" id="email" name="email" required>
+            
+            <label for="phone">Phone Number</label>
+            <input type="tel" id="phone" name="phone">
+            
+            <label for="country">Country</label>
+            <select id="country" name="country">
+                <option value="">Select a country</option>
+                <option value="us">United States</option>
+                <option value="ca">Canada</option>
+                <option value="uk">United Kingdom</option>
+            </select>
+            
+            <label for="message">Message</label>
+            <textarea id="message" name="message" rows="5"></textarea>
+            
+            <label>
+                <input type="checkbox" name="newsletter" value="yes">
+                Subscribe to newsletter
+            </label>
+            
+            <button type="submit">Submit</button>
+        </fieldset>
+    </form>
+</body>
+</html>
+```
+
+## Intermediate Examples
+
+### Example 4: Tables and Data Display
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Data Tables</title>
+</head>
+<body>
+    <table>
+        <caption>Quarterly Sales Data 2024</caption>
+        <thead>
+            <tr>
+                <th scope="col">Product</th>
+                <th scope="col">Q1</th>
+                <th scope="col">Q2</th>
+                <th scope="col">Q3</th>
+                <th scope="col">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <th scope="row">Laptops</th>
+                <td>$125,000</td>
+                <td>$150,000</td>
+                <td>$175,000</td>
+                <td><strong>$450,000</strong></td>
+            </tr>
+            <tr>
+                <th scope="row">Tablets</th>
+                <td>$75,000</td>
+                <td>$80,000</td>
+                <td>$85,000</td>
+                <td><strong>$240,000</strong></td>
+            </tr>
+        </tbody>
+        <tfoot>
+            <tr>
+                <th scope="row">Total</th>
+                <td><strong>$200,000</strong></td>
+                <td><strong>$230,000</strong></td>
+                <td><strong>$260,000</strong></td>
+                <td><strong>$690,000</strong></td>
+            </tr>
+        </tfoot>
+    </table>
+</body>
+</html>
+```
+
+### Example 5: Media and Multimedia Elements
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Media Elements</title>
+</head>
+<body>
+    <h1>Media Gallery</h1>
+    
+    <!-- Responsive Images -->
+    <figure>
+        <picture>
+            <source media="(min-width: 800px)" srcset="images/hero-large.webp">
+            <source media="(min-width: 400px)" srcset="images/hero-medium.webp">
+            <img src="images/hero-small.jpg" alt="Hero image" loading="lazy">
+        </picture>
+        <figcaption>Responsive hero image</figcaption>
+    </figure>
+    
+    <!-- Audio Element -->
+    <figure>
+        <audio controls preload="metadata">
+            <source src="audio/podcast.mp3" type="audio/mpeg">
+            <source src="audio/podcast.ogg" type="audio/ogg">
+            Your browser does not support the audio element.
+        </audio>
+        <figcaption>Weekly Tech Podcast</figcaption>
+    </figure>
+    
+    <!-- Video Element -->
+    <figure>
+        <video controls width="640" height="360" poster="images/video-poster.jpg">
+            <source src="videos/tutorial.mp4" type="video/mp4">
+            <source src="videos/tutorial.webm" type="video/webm">
+            <track kind="subtitles" src="videos/tutorial-en.vtt" srclang="en" label="English">
+            Your browser does not support the video tag.
+        </video>
+        <figcaption>HTML5 Tutorial</figcaption>
+    </figure>
+    
+    <!-- SVG Graphics -->
+    <figure>
+        <svg width="300" height="200" viewBox="0 0 300 200">
+            <rect x="10" y="10" width="280" height="180" 
+                  fill="none" stroke="black" stroke-width="2"/>
+            <circle cx="150" cy="100" r="50" 
+                    fill="lightblue" stroke="darkblue" stroke-width="3"/>
+            <text x="150" y="105" text-anchor="middle" 
+                  font-family="Arial" font-size="16" fill="darkblue">
+                SVG Circle
+            </text>
+        </svg>
+        <figcaption>Simple SVG illustration</figcaption>
+    </figure>
+</body>
+</html>
+```
+
+## Advanced Examples
+
+### Example 6: Semantic HTML5 and Accessibility
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accessible Blog Article</title>
+</head>
+<body>
+    <!-- Skip Navigation -->
+    <a href="#main" class="skip-link">Skip to main content</a>
+    
+    <!-- Header with Navigation -->
+    <header role="banner">
+        <h1>Tech Blog</h1>
+        <nav role="navigation" aria-label="Main navigation">
+            <ul>
+                <li><a href="/" aria-current="page">Home</a></li>
+                <li><a href="/articles">Articles</a></li>
+                <li><a href="/about">About</a></li>
+                <li><a href="/contact">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+    
+    <!-- Main Content -->
+    <main id="main" role="main">
+        <!-- Breadcrumb Navigation -->
+        <nav aria-label="Breadcrumb">
+            <ol>
+                <li><a href="/">Home</a></li>
+                <li><a href="/articles">Articles</a></li>
+                <li aria-current="page">Getting Started with HTML5</li>
+            </ol>
+        </nav>
+        
+        <!-- Article -->
+        <article>
+            <header>
+                <h1>Getting Started with HTML5 Semantic Elements</h1>
+                <p>Published on <time datetime="2024-01-15">January 15, 2024</time> 
+                   by <span itemprop="author">Jane Developer</span></p>
+            </header>
+            
+            <section>
+                <h2>Introduction</h2>
+                <p>HTML5 introduced many semantic elements that help create more accessible and meaningful web content.</p>
+                
+                <!-- Content Warning -->
+                <aside role="note" aria-labelledby="warning-heading">
+                    <h3 id="warning-heading">⚠️ Browser Compatibility Note</h3>
+                    <p>Some older browsers may not fully support HTML5 semantic elements.</p>
+                </aside>
+            </section>
+            
+            <section>
+                <h2>Interactive Content</h2>
+                
+                <!-- Disclosure Widget -->
+                <details>
+                    <summary>Click to expand: Advanced Tips</summary>
+                    <ul>
+                        <li>Use headings in proper hierarchical order</li>
+                        <li>Include alternative text for all images</li>
+                        <li>Ensure sufficient color contrast</li>
+                        <li>Test with screen readers</li>
+                    </ul>
+                </details>
+                
+                <!-- Progress Indicator -->
+                <p>Article progress: <progress value="75" max="100">75%</progress></p>
+            </section>
+            
+            <footer>
+                <p>Tags: 
+                    <a href="/tags/html5" rel="tag">#HTML5</a>, 
+                    <a href="/tags/semantic" rel="tag">#Semantic</a>, 
+                    <a href="/tags/accessibility" rel="tag">#Accessibility</a>
+                </p>
+            </footer>
+        </article>
+    </main>
+    
+    <!-- Footer -->
+    <footer role="contentinfo">
+        <p>&copy; 2024 Tech Blog. All rights reserved.</p>
+    </footer>
+</body>
+</html>
+```
+
+### Example 7: Modern HTML Features
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern HTML Features</title>
+    <meta name="theme-color" content="#007bff">
+</head>
+<body>
+    <h1>Modern HTML Features Demo</h1>
+    
+    <!-- Dialog element -->
+    <section>
+        <h2>Dialog Element</h2>
+        <button onclick="document.getElementById('myDialog').showModal()">Open Dialog</button>
+        
+        <dialog id="myDialog">
+            <form method="dialog">
+                <h3>Modal Dialog</h3>
+                <p>This is a native HTML dialog element.</p>
+                <button value="cancel">Cancel</button>
+                <button value="confirm">Confirm</button>
+            </form>
+        </dialog>
+    </section>
+    
+    <!-- Advanced Form Controls -->
+    <section>
+        <h2>Advanced Form Controls</h2>
+        <form>
+            <!-- Color picker -->
+            <label for="theme-color">Theme Color:</label>
+            <input type="color" id="theme-color" value="#007bff">
+            
+            <!-- Date and time -->
+            <label for="appointment">Appointment:</label>
+            <input type="datetime-local" id="appointment">
+            
+            <!-- Range slider -->
+            <label for="volume">Volume:</label>
+            <input type="range" id="volume" min="0" max="100" value="50">
+            
+            <!-- Data list for autocomplete -->
+            <label for="browser">Choose a browser:</label>
+            <input list="browsers" id="browser">
+            <datalist id="browsers">
+                <option value="Chrome">
+                <option value="Firefox">
+                <option value="Safari">
+                <option value="Edge">
+            </datalist>
+            
+            <!-- Search input -->
+            <label for="search">Search:</label>
+            <input type="search" id="search" placeholder="Search products...">
+        </form>
+    </section>
+    
+    <!-- Drag and Drop -->
+    <section>
+        <h2>Drag and Drop File Upload</h2>
+        <div id="dropZone" style="border: 2px dashed #ccc; padding: 20px;">
+            <p>Drag and drop files here</p>
+            <input type="file" id="fileInput" multiple>
+            <div id="fileList"></div>
+        </div>
+    </section>
+    
+    <script>
+        // Drag and Drop functionality
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const fileList = document.getElementById('fileList');
+        
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.style.backgroundColor = '#f0f0f0';
+        });
+        
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.style.backgroundColor = '';
+        });
+        
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.style.backgroundColor = '';
+            const files = e.dataTransfer.files;
+            handleFiles(files);
+        });
+        
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+        
+        function handleFiles(files) {
+            fileList.innerHTML = '';
+            for (let file of files) {
+                const div = document.createElement('div');
+                div.textContent = `${file.name} (${file.size} bytes)`;
+                fileList.appendChild(div);
+            }
+        }
+    </script>
+</body>
+</html>
+```

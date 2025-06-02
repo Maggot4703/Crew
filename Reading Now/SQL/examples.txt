@@ -1,0 +1,742 @@
+# SQL - Examples and Code Samples
+
+## Example 1: Basic SQL Operations - Database Setup and CRUD
+```sql
+-- Create database and tables
+CREATE DATABASE company_db;
+USE company_db;
+
+-- Create employees table
+CREATE TABLE employees (
+    employee_id INT PRIMARY KEY AUTO_INCREMENT,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    phone VARCHAR(20),
+    hire_date DATE NOT NULL,
+    salary DECIMAL(10,2),
+    department_id INT,
+    manager_id INT,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Create departments table
+CREATE TABLE departments (
+    department_id INT PRIMARY KEY AUTO_INCREMENT,
+    department_name VARCHAR(50) NOT NULL UNIQUE,
+    budget DECIMAL(15,2),
+    location VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create projects table
+CREATE TABLE projects (
+    project_id INT PRIMARY KEY AUTO_INCREMENT,
+    project_name VARCHAR(100) NOT NULL,
+    description TEXT,
+    start_date DATE,
+    end_date DATE,
+    budget DECIMAL(12,2),
+    status ENUM('planning', 'active', 'completed', 'on_hold') DEFAULT 'planning',
+    department_id INT
+);
+
+-- Add foreign key constraints
+ALTER TABLE employees 
+ADD CONSTRAINT fk_emp_dept 
+FOREIGN KEY (department_id) REFERENCES departments(department_id);
+
+ALTER TABLE employees 
+ADD CONSTRAINT fk_emp_manager 
+FOREIGN KEY (manager_id) REFERENCES employees(employee_id);
+
+ALTER TABLE projects 
+ADD CONSTRAINT fk_proj_dept 
+FOREIGN KEY (department_id) REFERENCES departments(department_id);
+
+-- Insert sample data
+INSERT INTO departments (department_name, budget, location) VALUES
+('Human Resources', 500000.00, 'New York'),
+('Engineering', 2000000.00, 'San Francisco'),
+('Marketing', 800000.00, 'Los Angeles'),
+('Sales', 1200000.00, 'Chicago'),
+('Finance', 600000.00, 'New York');
+
+INSERT INTO employees (first_name, last_name, email, phone, hire_date, salary, department_id) VALUES
+('John', 'Smith', 'john.smith@company.com', '555-0101', '2022-01-15', 75000.00, 2),
+('Sarah', 'Johnson', 'sarah.johnson@company.com', '555-0102', '2021-03-20', 85000.00, 2),
+('Mike', 'Brown', 'mike.brown@company.com', '555-0103', '2023-05-10', 65000.00, 3),
+('Emily', 'Davis', 'emily.davis@company.com', '555-0104', '2020-08-05', 90000.00, 4),
+('David', 'Wilson', 'david.wilson@company.com', '555-0105', '2022-11-12', 70000.00, 1);
+
+-- Update manager relationships
+UPDATE employees SET manager_id = 2 WHERE employee_id = 1;
+UPDATE employees SET manager_id = 4 WHERE employee_id = 3;
+```
+
+## Example 2: Advanced Queries - Joins, Subqueries, and Aggregations
+```sql
+-- Complex JOIN query with multiple tables
+SELECT 
+    e.first_name,
+    e.last_name,
+    e.email,
+    e.salary,
+    d.department_name,
+    d.location,
+    m.first_name AS manager_first_name,
+    m.last_name AS manager_last_name,
+    CASE 
+        WHEN e.salary > 80000 THEN 'Senior'
+        WHEN e.salary > 60000 THEN 'Mid-level'
+        ELSE 'Junior'
+    END AS salary_grade
+FROM employees e
+LEFT JOIN departments d ON e.department_id = d.department_id
+LEFT JOIN employees m ON e.manager_id = m.employee_id
+WHERE e.is_active = TRUE
+ORDER BY d.department_name, e.salary DESC;
+
+-- Subquery examples
+-- Find employees earning more than department average
+SELECT 
+    e.first_name,
+    e.last_name,
+    e.salary,
+    d.department_name,
+    (SELECT AVG(salary) FROM employees WHERE department_id = e.department_id) AS dept_avg_salary
+FROM employees e
+JOIN departments d ON e.department_id = d.department_id
+WHERE e.salary > (
+    SELECT AVG(salary) 
+    FROM employees e2 
+    WHERE e2.department_id = e.department_id
+);
+
+-- Correlated subquery - find highest paid employee in each department
+SELECT 
+    e1.first_name,
+    e1.last_name,
+    e1.salary,
+    d.department_name
+FROM employees e1
+JOIN departments d ON e1.department_id = d.department_id
+WHERE e1.salary = (
+    SELECT MAX(e2.salary)
+    FROM employees e2
+    WHERE e2.department_id = e1.department_id
+);
+
+-- Window functions for ranking and analytics
+SELECT 
+    first_name,
+    last_name,
+    salary,
+    department_id,
+    ROW_NUMBER() OVER (PARTITION BY department_id ORDER BY salary DESC) as salary_rank,
+    RANK() OVER (ORDER BY salary DESC) as overall_rank,
+    DENSE_RANK() OVER (PARTITION BY department_id ORDER BY salary DESC) as dense_rank,
+    LAG(salary) OVER (PARTITION BY department_id ORDER BY salary) as prev_salary,
+    LEAD(salary) OVER (PARTITION BY department_id ORDER BY salary) as next_salary,
+    AVG(salary) OVER (PARTITION BY department_id) as dept_avg_salary,
+    SUM(salary) OVER (PARTITION BY department_id) as dept_total_salary
+FROM employees
+WHERE is_active = TRUE;
+
+-- Common Table Expressions (CTE)
+WITH department_stats AS (
+    SELECT 
+        d.department_id,
+        d.department_name,
+        COUNT(e.employee_id) as employee_count,
+        AVG(e.salary) as avg_salary,
+        MAX(e.salary) as max_salary,
+        MIN(e.salary) as min_salary,
+        SUM(e.salary) as total_salary
+    FROM departments d
+    LEFT JOIN employees e ON d.department_id = e.department_id 
+    WHERE e.is_active = TRUE
+    GROUP BY d.department_id, d.department_name
+),
+salary_grades AS (
+    SELECT 
+        department_id,
+        COUNT(CASE WHEN salary > 80000 THEN 1 END) as senior_count,
+        COUNT(CASE WHEN salary BETWEEN 60000 AND 80000 THEN 1 END) as mid_count,
+        COUNT(CASE WHEN salary < 60000 THEN 1 END) as junior_count
+    FROM employees
+    WHERE is_active = TRUE
+    GROUP BY department_id
+)
+SELECT 
+    ds.department_name,
+    ds.employee_count,
+    ds.avg_salary,
+    ds.max_salary,
+    ds.min_salary,
+    sg.senior_count,
+    sg.mid_count,
+    sg.junior_count,
+    ROUND((ds.total_salary / ds.employee_count), 2) as calculated_avg
+FROM department_stats ds
+JOIN salary_grades sg ON ds.department_id = sg.department_id
+ORDER BY ds.avg_salary DESC;
+```
+
+## Example 3: Data Manipulation - Advanced INSERT, UPDATE, DELETE
+```sql
+-- Bulk insert with ON DUPLICATE KEY UPDATE
+INSERT INTO employees (first_name, last_name, email, hire_date, salary, department_id)
+VALUES 
+    ('Alice', 'Cooper', 'alice.cooper@company.com', '2024-01-15', 72000, 2),
+    ('Bob', 'Martin', 'bob.martin@company.com', '2024-01-20', 68000, 3),
+    ('Carol', 'White', 'carol.white@company.com', '2024-02-01', 85000, 4)
+ON DUPLICATE KEY UPDATE
+    salary = VALUES(salary),
+    updated_at = CURRENT_TIMESTAMP;
+
+-- Conditional updates with CASE
+UPDATE employees 
+SET 
+    salary = CASE 
+        WHEN department_id = 2 AND salary < 80000 THEN salary * 1.10  -- 10% raise for Engineering
+        WHEN department_id = 4 AND salary < 90000 THEN salary * 1.08  -- 8% raise for Sales
+        WHEN DATEDIFF(CURRENT_DATE, hire_date) > 365 THEN salary * 1.05  -- 5% for tenure
+        ELSE salary
+    END,
+    updated_at = CURRENT_TIMESTAMP
+WHERE is_active = TRUE;
+
+-- Update with JOIN (update based on related table data)
+UPDATE employees e
+JOIN departments d ON e.department_id = d.department_id
+SET e.salary = e.salary * 1.03
+WHERE d.department_name = 'Engineering' 
+  AND e.hire_date < '2023-01-01';
+
+-- Delete with conditions and logging
+-- First, create an audit table
+CREATE TABLE employee_audit (
+    audit_id INT PRIMARY KEY AUTO_INCREMENT,
+    employee_id INT,
+    action VARCHAR(20),
+    old_values JSON,
+    new_values JSON,
+    changed_by VARCHAR(50),
+    changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Soft delete (marking as inactive instead of physical delete)
+UPDATE employees 
+SET 
+    is_active = FALSE,
+    updated_at = CURRENT_TIMESTAMP
+WHERE hire_date < '2020-01-01' 
+  AND department_id IN (
+      SELECT department_id 
+      FROM departments 
+      WHERE budget < 600000
+  );
+
+-- Physical delete with backup
+INSERT INTO employee_audit (employee_id, action, old_values, changed_by)
+SELECT 
+    employee_id,
+    'DELETE',
+    JSON_OBJECT(
+        'first_name', first_name,
+        'last_name', last_name,
+        'email', email,
+        'salary', salary,
+        'department_id', department_id
+    ),
+    'SYSTEM_CLEANUP'
+FROM employees 
+WHERE is_active = FALSE AND updated_at < DATE_SUB(NOW(), INTERVAL 1 YEAR);
+
+-- Then delete the records
+DELETE FROM employees 
+WHERE is_active = FALSE 
+  AND updated_at < DATE_SUB(NOW(), INTERVAL 1 YEAR);
+```
+
+## Example 4: Database Design - Indexes, Views, and Stored Procedures
+```sql
+-- Create indexes for performance
+CREATE INDEX idx_emp_department ON employees(department_id);
+CREATE INDEX idx_emp_hire_date ON employees(hire_date);
+CREATE INDEX idx_emp_salary ON employees(salary);
+CREATE INDEX idx_emp_email ON employees(email);
+CREATE UNIQUE INDEX idx_emp_email_unique ON employees(email);
+
+-- Composite index for common query patterns
+CREATE INDEX idx_emp_dept_salary ON employees(department_id, salary);
+CREATE INDEX idx_emp_active_hire ON employees(is_active, hire_date);
+
+-- Create views for common queries
+CREATE VIEW employee_summary AS
+SELECT 
+    e.employee_id,
+    CONCAT(e.first_name, ' ', e.last_name) AS full_name,
+    e.email,
+    e.salary,
+    d.department_name,
+    d.location,
+    CONCAT(m.first_name, ' ', m.last_name) AS manager_name,
+    DATEDIFF(CURRENT_DATE, e.hire_date) AS days_employed,
+    CASE 
+        WHEN e.salary > 80000 THEN 'Senior'
+        WHEN e.salary > 60000 THEN 'Mid-level'
+        ELSE 'Junior'
+    END AS level
+FROM employees e
+LEFT JOIN departments d ON e.department_id = d.department_id
+LEFT JOIN employees m ON e.manager_id = m.employee_id
+WHERE e.is_active = TRUE;
+
+-- Create materialized view (if supported)
+CREATE VIEW department_analytics AS
+SELECT 
+    d.department_id,
+    d.department_name,
+    d.budget,
+    COUNT(e.employee_id) as employee_count,
+    AVG(e.salary) as avg_salary,
+    MAX(e.salary) as max_salary,
+    MIN(e.salary) as min_salary,
+    SUM(e.salary) as total_salary,
+    (SUM(e.salary) / d.budget * 100) as budget_utilization_percent
+FROM departments d
+LEFT JOIN employees e ON d.department_id = e.department_id AND e.is_active = TRUE
+GROUP BY d.department_id, d.department_name, d.budget;
+
+-- Stored procedure for employee management
+DELIMITER //
+
+CREATE PROCEDURE GetEmployeesByDepartment(
+    IN dept_name VARCHAR(50),
+    IN min_salary DECIMAL(10,2),
+    OUT employee_count INT
+)
+BEGIN
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+    
+    SELECT 
+        e.employee_id,
+        CONCAT(e.first_name, ' ', e.last_name) AS full_name,
+        e.email,
+        e.salary,
+        e.hire_date
+    FROM employees e
+    JOIN departments d ON e.department_id = d.department_id
+    WHERE d.department_name = dept_name
+      AND e.salary >= min_salary
+      AND e.is_active = TRUE
+    ORDER BY e.salary DESC;
+    
+    SELECT COUNT(*) INTO employee_count
+    FROM employees e
+    JOIN departments d ON e.department_id = d.department_id
+    WHERE d.department_name = dept_name
+      AND e.salary >= min_salary
+      AND e.is_active = TRUE;
+END //
+
+-- Function to calculate bonus
+CREATE FUNCTION CalculateBonus(emp_salary DECIMAL(10,2), years_employed INT) 
+RETURNS DECIMAL(10,2)
+READS SQL DATA
+DETERMINISTIC
+BEGIN
+    DECLARE bonus DECIMAL(10,2);
+    
+    SET bonus = CASE 
+        WHEN years_employed >= 5 THEN emp_salary * 0.15
+        WHEN years_employed >= 3 THEN emp_salary * 0.10
+        WHEN years_employed >= 1 THEN emp_salary * 0.05
+        ELSE 0
+    END;
+    
+    RETURN bonus;
+END //
+
+DELIMITER ;
+
+-- Trigger for audit logging
+DELIMITER //
+
+CREATE TRIGGER employee_audit_trigger
+AFTER UPDATE ON employees
+FOR EACH ROW
+BEGIN
+    IF OLD.salary != NEW.salary OR OLD.department_id != NEW.department_id THEN
+        INSERT INTO employee_audit (
+            employee_id, 
+            action, 
+            old_values, 
+            new_values,
+            changed_by
+        ) VALUES (
+            NEW.employee_id,
+            'UPDATE',
+            JSON_OBJECT(
+                'salary', OLD.salary,
+                'department_id', OLD.department_id
+            ),
+            JSON_OBJECT(
+                'salary', NEW.salary,
+                'department_id', NEW.department_id
+            ),
+            USER()
+        );
+    END IF;
+END //
+
+DELIMITER ;
+```
+
+## Example 5: Advanced Analytics - Statistical Functions and Reporting
+```sql
+-- Advanced analytics queries
+-- Employee salary distribution analysis
+WITH salary_stats AS (
+    SELECT 
+        department_id,
+        salary,
+        NTILE(4) OVER (PARTITION BY department_id ORDER BY salary) as quartile,
+        PERCENT_RANK() OVER (PARTITION BY department_id ORDER BY salary) as percentile,
+        CUME_DIST() OVER (PARTITION BY department_id ORDER BY salary) as cumulative_dist
+    FROM employees 
+    WHERE is_active = TRUE
+),
+quartile_analysis AS (
+    SELECT 
+        d.department_name,
+        ss.quartile,
+        COUNT(*) as employee_count,
+        AVG(ss.salary) as avg_salary,
+        MIN(ss.salary) as min_salary,
+        MAX(ss.salary) as max_salary
+    FROM salary_stats ss
+    JOIN departments d ON ss.department_id = d.department_id
+    GROUP BY d.department_name, ss.quartile
+)
+SELECT 
+    department_name,
+    quartile,
+    employee_count,
+    ROUND(avg_salary, 2) as avg_salary,
+    min_salary,
+    max_salary,
+    ROUND((avg_salary / SUM(avg_salary) OVER (PARTITION BY department_name)) * 100, 2) as pct_of_dept_avg
+FROM quartile_analysis
+ORDER BY department_name, quartile;
+
+-- Time series analysis - hiring trends
+SELECT 
+    YEAR(hire_date) as hire_year,
+    MONTH(hire_date) as hire_month,
+    COUNT(*) as new_hires,
+    AVG(salary) as avg_starting_salary,
+    LAG(COUNT(*)) OVER (ORDER BY YEAR(hire_date), MONTH(hire_date)) as prev_month_hires,
+    COUNT(*) - LAG(COUNT(*)) OVER (ORDER BY YEAR(hire_date), MONTH(hire_date)) as hiring_trend
+FROM employees
+WHERE hire_date >= '2020-01-01'
+GROUP BY YEAR(hire_date), MONTH(hire_date)
+ORDER BY hire_year, hire_month;
+
+-- Cohort analysis - retention by hire year
+WITH hire_cohorts AS (
+    SELECT 
+        employee_id,
+        YEAR(hire_date) as hire_year,
+        is_active,
+        DATEDIFF(CURRENT_DATE, hire_date) as days_employed
+    FROM employees
+),
+retention_analysis AS (
+    SELECT 
+        hire_year,
+        COUNT(*) as total_hired,
+        COUNT(CASE WHEN is_active = TRUE THEN 1 END) as still_active,
+        COUNT(CASE WHEN is_active = TRUE AND days_employed >= 365 THEN 1 END) as retained_1_year,
+        COUNT(CASE WHEN is_active = TRUE AND days_employed >= 730 THEN 1 END) as retained_2_years
+    FROM hire_cohorts
+    GROUP BY hire_year
+)
+SELECT 
+    hire_year,
+    total_hired,
+    still_active,
+    ROUND((still_active / total_hired * 100), 2) as current_retention_rate,
+    ROUND((retained_1_year / total_hired * 100), 2) as one_year_retention_rate,
+    ROUND((retained_2_years / total_hired * 100), 2) as two_year_retention_rate
+FROM retention_analysis
+WHERE hire_year >= 2020
+ORDER BY hire_year;
+
+-- Performance ranking and comparison
+SELECT 
+    e.employee_id,
+    CONCAT(e.first_name, ' ', e.last_name) as full_name,
+    d.department_name,
+    e.salary,
+    ROUND(AVG(e2.salary), 2) as dept_avg_salary,
+    ROUND((e.salary - AVG(e2.salary)), 2) as salary_vs_avg,
+    RANK() OVER (PARTITION BY e.department_id ORDER BY e.salary DESC) as dept_rank,
+    RANK() OVER (ORDER BY e.salary DESC) as company_rank,
+    ROUND(PERCENT_RANK() OVER (PARTITION BY e.department_id ORDER BY e.salary), 3) as dept_percentile
+FROM employees e
+JOIN departments d ON e.department_id = d.department_id
+JOIN employees e2 ON e.department_id = e2.department_id AND e2.is_active = TRUE
+WHERE e.is_active = TRUE
+GROUP BY e.employee_id, e.first_name, e.last_name, d.department_name, e.salary, e.department_id
+ORDER BY d.department_name, dept_rank;
+```
+
+## Example 6: Data Migration and ETL Operations
+```sql
+-- Data migration example
+-- Create staging table for data import
+CREATE TABLE employees_staging (
+    staging_id INT PRIMARY KEY AUTO_INCREMENT,
+    first_name VARCHAR(50),
+    last_name VARCHAR(50),
+    email VARCHAR(100),
+    phone VARCHAR(20),
+    hire_date VARCHAR(20),  -- String initially for validation
+    salary VARCHAR(20),     -- String initially for validation
+    department_name VARCHAR(50),
+    status VARCHAR(20) DEFAULT 'pending',
+    error_message TEXT,
+    processed_at TIMESTAMP NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Data validation and cleaning stored procedure
+DELIMITER //
+
+CREATE PROCEDURE ProcessStagingData()
+BEGIN
+    DECLARE done INT DEFAULT FALSE;
+    DECLARE staging_id INT;
+    DECLARE v_first_name, v_last_name, v_email, v_phone VARCHAR(100);
+    DECLARE v_hire_date_str, v_salary_str, v_department_name VARCHAR(100);
+    DECLARE v_hire_date DATE;
+    DECLARE v_salary DECIMAL(10,2);
+    DECLARE v_department_id INT;
+    DECLARE v_error_msg TEXT DEFAULT '';
+    
+    DECLARE cur CURSOR FOR 
+        SELECT staging_id, first_name, last_name, email, phone, hire_date, salary, department_name
+        FROM employees_staging 
+        WHERE status = 'pending';
+    
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+    
+    OPEN cur;
+    
+    read_loop: LOOP
+        FETCH cur INTO staging_id, v_first_name, v_last_name, v_email, v_phone, 
+                      v_hire_date_str, v_salary_str, v_department_name;
+        
+        IF done THEN
+            LEAVE read_loop;
+        END IF;
+        
+        SET v_error_msg = '';
+        
+        -- Validate and convert hire_date
+        IF v_hire_date_str IS NULL OR v_hire_date_str = '' THEN
+            SET v_error_msg = CONCAT(v_error_msg, 'Hire date is required. ');
+        ELSE
+            SET v_hire_date = STR_TO_DATE(v_hire_date_str, '%Y-%m-%d');
+            IF v_hire_date IS NULL THEN
+                SET v_error_msg = CONCAT(v_error_msg, 'Invalid hire date format. ');
+            END IF;
+        END IF;
+        
+        -- Validate and convert salary
+        IF v_salary_str IS NULL OR v_salary_str = '' THEN
+            SET v_error_msg = CONCAT(v_error_msg, 'Salary is required. ');
+        ELSE
+            SET v_salary = CAST(v_salary_str AS DECIMAL(10,2));
+            IF v_salary <= 0 THEN
+                SET v_error_msg = CONCAT(v_error_msg, 'Salary must be positive. ');
+            END IF;
+        END IF;
+        
+        -- Validate department
+        SELECT department_id INTO v_department_id
+        FROM departments 
+        WHERE department_name = v_department_name;
+        
+        IF v_department_id IS NULL THEN
+            SET v_error_msg = CONCAT(v_error_msg, 'Invalid department name. ');
+        END IF;
+        
+        -- Validate email uniqueness
+        IF EXISTS (SELECT 1 FROM employees WHERE email = v_email) THEN
+            SET v_error_msg = CONCAT(v_error_msg, 'Email already exists. ');
+        END IF;
+        
+        -- Process record
+        IF v_error_msg = '' THEN
+            -- Insert valid record
+            INSERT INTO employees (first_name, last_name, email, phone, hire_date, salary, department_id)
+            VALUES (v_first_name, v_last_name, v_email, v_phone, v_hire_date, v_salary, v_department_id);
+            
+            UPDATE employees_staging 
+            SET status = 'processed', processed_at = CURRENT_TIMESTAMP
+            WHERE employees_staging.staging_id = staging_id;
+        ELSE
+            -- Mark as error
+            UPDATE employees_staging 
+            SET status = 'error', error_message = v_error_msg, processed_at = CURRENT_TIMESTAMP
+            WHERE employees_staging.staging_id = staging_id;
+        END IF;
+        
+    END LOOP;
+    
+    CLOSE cur;
+END //
+
+DELIMITER ;
+
+-- ETL Summary reporting
+SELECT 
+    status,
+    COUNT(*) as record_count,
+    MIN(created_at) as first_record,
+    MAX(processed_at) as last_processed
+FROM employees_staging
+GROUP BY status
+ORDER BY 
+    CASE status
+        WHEN 'processed' THEN 1
+        WHEN 'pending' THEN 2
+        WHEN 'error' THEN 3
+    END;
+
+-- Error analysis
+SELECT 
+    error_message,
+    COUNT(*) as error_count,
+    GROUP_CONCAT(CONCAT(first_name, ' ', last_name) SEPARATOR ', ') as affected_records
+FROM employees_staging 
+WHERE status = 'error'
+GROUP BY error_message
+ORDER BY error_count DESC;
+```
+
+## Example 7: Performance Optimization and Monitoring
+```sql
+-- Query performance analysis
+-- Enable query profiling
+SET profiling = 1;
+
+-- Example of a slow query to optimize
+SELECT 
+    e.first_name,
+    e.last_name,
+    e.salary,
+    d.department_name,
+    (SELECT AVG(salary) FROM employees WHERE department_id = e.department_id) as dept_avg
+FROM employees e
+JOIN departments d ON e.department_id = d.department_id
+WHERE e.salary > (
+    SELECT AVG(salary) * 1.2 
+    FROM employees 
+    WHERE department_id = e.department_id
+)
+ORDER BY e.salary DESC;
+
+-- Show query execution profile
+SHOW PROFILES;
+SHOW PROFILE FOR QUERY 1;
+
+-- Optimized version using window functions
+SELECT 
+    e.first_name,
+    e.last_name,
+    e.salary,
+    d.department_name,
+    dept_avg
+FROM (
+    SELECT 
+        employee_id,
+        first_name,
+        last_name,
+        salary,
+        department_id,
+        AVG(salary) OVER (PARTITION BY department_id) as dept_avg
+    FROM employees
+) e
+JOIN departments d ON e.department_id = d.department_id
+WHERE e.salary > e.dept_avg * 1.2
+ORDER BY e.salary DESC;
+
+-- Index analysis
+SHOW INDEX FROM employees;
+
+-- Explain query execution plan
+EXPLAIN SELECT 
+    e.first_name,
+    e.last_name,
+    d.department_name
+FROM employees e
+JOIN departments d ON e.department_id = d.department_id
+WHERE e.salary > 75000
+  AND d.location = 'New York';
+
+-- Create optimized indexes based on analysis
+CREATE INDEX idx_emp_salary_location ON employees(salary, department_id);
+CREATE INDEX idx_dept_location ON departments(location, department_id);
+
+-- Database maintenance queries
+-- Table statistics
+SELECT 
+    table_name,
+    table_rows,
+    data_length,
+    index_length,
+    data_free,
+    (data_length + index_length) as total_size
+FROM information_schema.tables 
+WHERE table_schema = 'company_db'
+ORDER BY (data_length + index_length) DESC;
+
+-- Check for unused indexes
+SELECT 
+    s.table_schema,
+    s.table_name,
+    s.index_name,
+    s.column_name,
+    s.cardinality
+FROM information_schema.statistics s
+LEFT JOIN information_schema.key_column_usage k 
+    ON s.table_schema = k.table_schema 
+    AND s.table_name = k.table_name 
+    AND s.index_name = k.constraint_name
+WHERE s.table_schema = 'company_db'
+  AND k.constraint_name IS NULL
+  AND s.index_name != 'PRIMARY'
+ORDER BY s.table_name, s.index_name;
+```
+
+## Usage Notes:
+- **Example 1**: Basic database setup with tables, constraints, and fundamental CRUD operations
+- **Example 2**: Advanced querying techniques including JOINs, subqueries, window functions, and CTEs
+- **Example 3**: Sophisticated data manipulation with conditional updates, bulk operations, and audit trails
+- **Example 4**: Database design elements including indexes, views, stored procedures, functions, and triggers
+- **Example 5**: Analytics and reporting with statistical functions, time series analysis, and cohort studies
+- **Example 6**: Data migration and ETL processes with staging tables, validation, and error handling
+- **Example 7**: Performance optimization techniques, query analysis, and database maintenance
+
+These examples demonstrate SQL's capabilities from basic operations to enterprise-level database management and analytics.
