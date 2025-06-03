@@ -17,16 +17,23 @@ try:
 except ImportError:
     print("pyttsx3 library is not installed. Installing it now...")
     import subprocess
-
-    subprocess.call([sys.executable, "-m", "pip", "install", "pyttsx3"])
+    import os
+    
+    # Get the path to the virtual environment's Python interpreter if available
+    venv_python = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.venv', 'bin', 'python')
+    if os.path.exists(venv_python):
+        python_executable = venv_python
+    else:
+        python_executable = sys.executable
+    
     try:
+        subprocess.check_call([python_executable, "-m", "pip", "install", "pyttsx3"])
         import pyttsx3
-
         print("pyttsx3 installed successfully!")
-    except ImportError:
-        print(
-            "Failed to install pyttsx3. Please install it manually: pip install pyttsx3"
-        )
+    except (subprocess.CalledProcessError, ImportError) as e:
+        print(f"Failed to install pyttsx3: {e}")
+        print("Please install it manually: pip install pyttsx3")
+        print("If using a virtual environment: source .venv/bin/activate && pip install pyttsx3")
         sys.exit(1)
 
 

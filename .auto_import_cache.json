@@ -1,6 +1,7 @@
 {
   "workspace_root": "/home/me/BACKUP/PROJECTS/Crew",
   "imported_modules": [
+    "ReadMine_completion_report",
     "bmp2png",
     "cache",
     "data.HTML.html",
@@ -19,16 +20,16 @@
     "database_manager (cached)",
     "error_handler",
     "errors (cached)",
-    "final_implementation_report",
-    "gui.test",
+    "fetch_docs",
+    "get_pip",
     "log_analyzer",
     "mcp",
     "mcp_service",
     "read_use_file",
     "storySearch",
     "traveller5_scraper",
-    "verify_script_loading"
+    "xgui"
   ],
   "failed_imports": [],
-  "timestamp": 1748888201.9114478
+  "timestamp": 1748972313.7499866
 }

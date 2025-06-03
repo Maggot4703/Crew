@@ -1,0 +1,8 @@
+# Sabbat - Advanced Usage Guide
+Generated stub content for Sabbat advanced usage instructions.
+
+## Further Reading
+- https://www.w3schools.com/search/search.php?search=Sabbat+usage
+- https://stackoverflow.com/questions/tagged/sabbat
+
+Generated on: 2025-06-03 17:13:45

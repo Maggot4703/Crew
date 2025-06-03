@@ -1,0 +1,8 @@
+# PDFs - Beginner Usage Guide
+Generated stub content for PDFs beginner usage instructions.
+
+## Further Reading
+- https://www.w3schools.com/search/search.php?search=PDFs+usage
+- https://stackoverflow.com/questions/tagged/pdfs
+
+Generated on: 2025-06-03 16:23:43

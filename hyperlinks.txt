@@ -1,0 +1,5 @@
+w3Schools
+GeeksforGeeks
+TutorialsPoint
+Real Python
+python.org
