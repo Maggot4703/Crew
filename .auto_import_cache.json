@@ -22,14 +22,14 @@
     "errors (cached)",
     "fetch_docs",
     "get_pip",
+    "gui_copy",
     "log_analyzer",
     "mcp",
     "mcp_service",
     "read_use_file",
     "storySearch",
-    "traveller5_scraper",
-    "xgui"
+    "traveller5_scraper"
   ],
   "failed_imports": [],
-  "timestamp": 1748972313.7499866
+  "timestamp": 1748983024.2166395
 }

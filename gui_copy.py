@@ -613,32 +613,34 @@ class CrewGUI:
         self.main_frame.grid_rowconfigure(0, weight=1)
         self.main_frame.grid_columnconfigure(0, weight=1)
 
-        # Create main vertical PanedWindow for left/right
-        self.paned_main = ttk.PanedWindow(self.main_frame, orient="horizontal")
-        self.paned_main.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
+        # Create PanedWindow for resizable divider between left and right sections
+        self.paned_window = ttk.PanedWindow(self.main_frame, orient="horizontal")
+        self.paned_window.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
 
         # Left panel with fixed narrow width
-        self.left_frame = ttk.Frame(self.paned_main, width=280)
-        self.left_frame.grid_propagate(False)
+        self.left_frame = ttk.Frame(self.paned_window, width=280)
+        self.left_frame.grid_propagate(False)  # Prevent frame from shrinking
 
         # Right panel
-        self.right_frame = ttk.Frame(self.paned_main)
+        self.right_frame = ttk.Frame(self.paned_window)
 
-        # Add frames to main paned window and configure sizing
-        self.paned_main.add(self.left_frame)
-        self.paned_main.add(self.right_frame)
-        self.paned_main.paneconfigure(self.left_frame, weight=1, minsize=200)
-        self.paned_main.paneconfigure(self.right_frame, weight=3, minsize=400)
+        # Add frames to paned window
+        self.paned_window.add(self.left_frame, weight=0)  # Left: narrow, not expandable
+        self.paned_window.add(self.right_frame, weight=1)  # Right: expandable
 
-        # Inside right_frame, create horizontal PanedWindow for top/bottom split
-        self.paned_sub = ttk.PanedWindow(self.right_frame, orient="vertical")
-        self.paned_sub.grid(row=0, column=0, sticky="nsew")
-        self.top_view = ttk.Frame(self.paned_sub)
-        self.bottom_view = ttk.Frame(self.paned_sub)
-        self.paned_sub.add(self.top_view)
-        self.paned_sub.add(self.bottom_view)
-        self.paned_sub.paneconfigure(self.top_view, weight=2, minsize=150)
-        self.paned_sub.paneconfigure(self.bottom_view, weight=1, minsize=100)
+        # Split left panel into Controls/Groups/Filters
+        self.paned_left = ttk.PanedWindow(self.left_frame, orient="vertical")
+        self.paned_left.grid(row=0, column=0, sticky="nsew")
+        # Ensure the left_frame fills the area for its PanedWindow
+        self.left_frame.grid_rowconfigure(0, weight=1)
+        self.left_frame.grid_columnconfigure(0, weight=1)
+
+        # Split right panel into Data/Details
+        self.paned_right = ttk.PanedWindow(self.right_frame, orient="vertical")
+        self.paned_right.grid(row=0, column=0, sticky="nsew")
+        # Ensure the right_frame fills the area for its PanedWindow
+        self.right_frame.grid_rowconfigure(0, weight=1)
+        self.right_frame.grid_columnconfigure(0, weight=1)
 
     def create_all_widgets(self) -> None:
         try:
@@ -725,10 +727,8 @@ class CrewGUI:
 
     def create_control_section(self) -> None:
         try:
-            control_frame = ttk.LabelFrame(
-                self.left_frame, text="Controls", padding="5"
-            )
-            control_frame.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
+            control_frame = ttk.LabelFrame(self.paned_left, text="Controls", padding="5")
+            self.paned_left.add(control_frame, weight=0)
 
             # Add control buttons
             ttk.Button(
@@ -743,8 +743,8 @@ class CrewGUI:
 
     def create_group_section(self) -> None:
         try:
-            group_frame = ttk.LabelFrame(self.left_frame, text="Groups", padding="5")
-            group_frame.grid(row=1, column=0, sticky="nsew", padx=5, pady=5)
+            group_frame = ttk.LabelFrame(self.paned_left, text="Groups", padding="5")
+            self.paned_left.add(group_frame, weight=1)
 
             # Group list
             self.group_list = ttk.Treeview(group_frame, selectmode="browse", height=10)
@@ -809,8 +809,8 @@ class CrewGUI:
 
     def create_filter_section(self) -> None:
         try:
-            filter_frame = ttk.LabelFrame(self.left_frame, text="Filters", padding="5")
-            filter_frame.grid(row=2, column=0, sticky="ew", padx=5, pady=5)
+            filter_frame = ttk.LabelFrame(self.paned_left, text="Filters", padding="5")
+            self.paned_left.add(filter_frame, weight=0)
             self.filter_frame = filter_frame
 
             # Filter controls
@@ -836,8 +836,8 @@ class CrewGUI:
 
     def create_data_section(self) -> None:
         try:
-            data_frame = ttk.LabelFrame(self.top_view, text="Data View", padding="5")
-            data_frame.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
+            data_frame = ttk.LabelFrame(self.paned_right, text="Data View", padding="5")
+            self.paned_right.add(data_frame, weight=3)
 
             # Create container frame for table and scrollbars
             table_frame = ttk.Frame(data_frame)
@@ -909,11 +909,10 @@ class CrewGUI:
 
     def create_details_section(self) -> None:
         try:
-            # Create details frame in right panel row 1
             details_frame = ttk.LabelFrame(
-                self.bottom_view, text="Details View", padding="5"
+                self.paned_right, text="Details View", padding="5"
             )
-            details_frame.grid(row=1, column=0, sticky="nsew", padx=5, pady=5)
+            self.paned_right.add(details_frame, weight=1)
 
             # Create container frame for text and scrollbar
             text_frame = ttk.Frame(details_frame)
@@ -1849,11 +1848,12 @@ class CrewGUI:
                     )
                 elif file_extension in [".txt", ".py", ".md"]: # Added .md
                     self.update_status(f"Opening text file: {os.path.basename(file_path)}...")
-                    # Clear previous data/text specific states
-                    self.current_data = None
+                    # Clear previous data/text specific states                    self.current_data = None
                     self.headers = []
                     if hasattr(self, 'data_table'): # Corrected: removed backslash
                         self.data_table.delete(*self.data_table.get_children()) # Clear data table
+                   
+
                     self.run_in_background(
                         self._load_text_background, file_path, callback=self._on_text_loaded_callback # Corrected callback
                     )

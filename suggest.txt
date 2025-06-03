@@ -1,0 +1,37 @@
+1) In create_main_layout():
+   - After adding self.left_frame and self.right_frame to self.paned_window, insert:
+
+       self.paned_left = ttk.PanedWindow(self.left_frame, orient="vertical")
+       self.paned_left.grid(row=0, column=0, sticky="nsew")
+       self.left_frame.grid_rowconfigure(0, weight=1)
+       self.left_frame.grid_columnconfigure(0, weight=1)
+
+       self.paned_right = ttk.PanedWindow(self.right_frame, orient="vertical")
+       self.paned_right.grid(row=0, column=0, sticky="nsew")
+       self.right_frame.grid_rowconfigure(0, weight=1)
+       self.right_frame.grid_columnconfigure(0, weight=1)
+
+   - Remove the old grid_rowconfigure calls on self.left_frame rows 0–2 and self.right_frame rows 0–1.
+
+2) In create_control_section(), create_group_section(), create_filter_section():
+   - Change parent from self.left_frame to self.paned_left.
+   - Replace frame.grid(...) with:
+
+         self.paned_left.add(frame, weight=<0 or 1>, minsize=<px>)
+       e.g.: 
+         self.paned_left.add(control_frame, weight=0, minsize=60)
+         self.paned_left.add(group_frame,   weight=1, minsize=100)
+         self.paned_left.add(filter_frame,  weight=0, minsize=60)
+
+3) In create_data_section() and create_details_section():
+   - Change parent from self.right_frame to self.paned_right.
+   - Replace frame.grid(...) with:
+
+         self.paned_right.add(frame, weight=<3 or 1>, minsize=<px>)
+       e.g.:
+         self.paned_right.add(data_frame,    weight=3, minsize=200)
+         self.paned_right.add(details_frame, weight=1, minsize=100)
+
+4) Run on Linux:
+       python3 gui_copy.py
+   - Verify draggable sashes: one left/right, two on the left, one on the right.
