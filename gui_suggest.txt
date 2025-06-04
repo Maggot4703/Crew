@@ -24,7 +24,7 @@
 - Optionally announce errors or important status messages via TTS for accessibility.
 
 ## 7. Add Option to Use Female Voice by Default
-- Use the `setup_female_voice` logic (see read_use_file.py, read_use.sh, test_tts.py) to set a female voice if available.
+- Use the `setup_female_voice` logic (see read_use_file.py, read_use_file.sh, test_tts.py) to set a female voice if available.
 - Make this configurable in the Speech Settings dialog.
 
 ## 8. Add TTS Test Button
