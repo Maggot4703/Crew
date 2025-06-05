@@ -7,11 +7,13 @@ import importlib.util  # Dynamic module importing
 import json  # JSON file handling for caching
 import logging  # Application logging
 import os  # Operating system interface
+import re  # Needed for TTS text preprocessing
 import subprocess  # Process execution
 import sys  # System-specific parameters
 import threading  # Background thread support
 import time  # Time-related functions for caching
 import tkinter as tk  # Core GUI framework
+from tkinter import filedialog  # File dialog functionality
 
 # Remove deprecated tix import, use ttk tooltips instead
 from pathlib import Path  # Cross-platform file handling
@@ -485,16 +487,15 @@ class CrewGUI:
         if TTS_AVAILABLE:
             tts_menu = tk.Menu(self.menu_bar, tearoff=0)
             self.menu_bar.add_cascade(label="🔊 Speech", menu=tts_menu)
-            tts_menu.add_command(label="Read Status", command=self._read_status)
-            tts_menu.add_command(
-                label="Read Selected Item", command=self._read_selected_item
-            )
+            tts_menu.add_command(label="Read Selection (Ctrl+Shift+R)", command=self._read_selected_item)
+            tts_menu.add_command(label="Read All Details (Ctrl+Shift+A)", command=self._read_all_details)
+            tts_menu.add_command(label="Read Status (Ctrl+Shift+S)", command=self._read_status)
+            tts_menu.add_command(label="Read Item Type (Ctrl+Shift+T)", command=self._read_item_type)
             tts_menu.add_separator()
             tts_menu.add_command(label="Stop Reading", command=self._stop_reading)
             tts_menu.add_separator()
-            # settings_menu.add_command(
-            #     label="Speech Settings...", command=self._show_speech_settings
-            # )
+            tts_menu.add_command(label="Save Speech to File...", command=self._save_speech_to_file)
+            tts_menu.add_command(label="Speech Settings...", command=self._show_speech_settings)
 
     def bind_events(self) -> None:
         try:
@@ -516,6 +517,13 @@ class CrewGUI:
                     self._refresh_views() if hasattr(self, "_refresh_views") else None
                 ),
             )
+
+            # TTS keyboard shortcuts
+            if TTS_AVAILABLE:
+                self.root.bind("<Control-Shift-R>", lambda event: self._read_selected_item())
+                self.root.bind("<Control-Shift-A>", lambda event: self._read_all_details())
+                self.root.bind("<Control-Shift-S>", lambda event: self._read_status())
+                self.root.bind("<Control-Shift-T>", lambda event: self._read_item_type())
 
         except Exception as e:
             logging.error(f"Error setting up event bindings: {e}")
@@ -1069,6 +1077,260 @@ class CrewGUI:
         except Exception as e:
             logging.error(f"Error stopping TTS: {e}")
 
+    def preprocess_text_for_speech(self, text: str) -> str:
+        """Clean and prepare text for better TTS pronunciation"""
+        import re
+        
+        # Remove excessive whitespace
+        text = re.sub(r'\s+', ' ', text.strip())
+        
+        # Handle common abbreviations and technical terms
+        replacements = {
+            'CSV': 'C S V', 'JSON': 'Jason', 'XML': 'X M L', 'HTML': 'H T M L',
+            'URL': 'U R L', 'API': 'A P I', 'GUI': 'G U I', 'CLI': 'C L I',
+            'DB': 'database', 'SQL': 'S Q L', 'ID': 'I D', 'UUID': 'U U I D',
+            'HTTP': 'H T T P', 'HTTPS': 'H T T P S', 'FTP': 'F T P', 'SSH': 'S S H',
+            'TCP': 'T C P', 'UDP': 'U D P', 'IP': 'I P', 'DNS': 'D N S',
+            'CPU': 'C P U', 'GPU': 'G P U', 'RAM': 'ram', 'ROM': 'rom',
+            'USB': 'U S B', 'PDF': 'P D F', 'JPG': 'J P G', 'PNG': 'P N G',
+            'GIF': 'gif', 'MP3': 'M P 3', 'MP4': 'M P 4', 'WAV': 'wave',
+            'ZIP': 'zip', 'RAR': 'rar', 'TAR': 'tar', 'GZ': 'G Z',
+            'EXE': 'executable', 'DLL': 'D L L', 'SO': 'S O', 'LIB': 'library',
+        }
+        
+        for abbrev, replacement in replacements.items():
+            text = re.sub(r'\b' + re.escape(abbrev) + r'\b', replacement, text, flags=re.IGNORECASE)
+        
+        return text
+
+    def chunk_text(self, text: str, max_length: int = 500) -> List[str]:
+        """Split long text into smaller chunks for better TTS handling"""
+        if len(text) <= max_length:
+            return [text]
+        
+        chunks = []
+        sentences = text.split('. ')
+        current_chunk = ""
+        
+        for sentence in sentences:
+            if len(current_chunk + sentence) <= max_length:
+                current_chunk += sentence + ". "
+            else:
+                if current_chunk:
+                    chunks.append(current_chunk.strip())
+                current_chunk = sentence + ". "
+        
+        if current_chunk:
+            chunks.append(current_chunk.strip())
+        
+        return chunks
+
+    def setup_female_voice(self, engine) -> bool:
+        """Attempt to set up a female voice if available"""
+        try:
+            voices = engine.getProperty('voices')
+            if not voices:
+                return False
+            
+            # Look for female voices
+            female_indicators = ['female', 'zira', 'hazel', 'susan', 'anna', 'catherine']
+            
+            for voice in voices:
+                voice_name = voice.name.lower() if voice.name else ''
+                voice_id = voice.id.lower() if voice.id else ''
+                
+                if any(indicator in voice_name or indicator in voice_id for indicator in female_indicators):
+                    engine.setProperty('voice', voice.id)
+                    return True
+            
+            # If no female voice found, use the second voice if available
+            if len(voices) > 1:
+                engine.setProperty('voice', voices[1].id)
+                return True
+                
+            return False
+        except Exception as e:
+            logging.error(f"Error setting up female voice: {e}")
+            return False
+
+    def _read_item_type(self) -> None:
+        """Read the type or category of the selected item"""
+        if not TTS_AVAILABLE or not self.tts_engine:
+            return
+
+        try:
+            if hasattr(self, "data_table"):
+                selection = self.data_table.selection()
+                if selection:
+                    item_id = selection[0]
+                    item_values = self.data_table.item(item_id, "values")
+                    
+                    # Try to determine item type from headers/values
+                    if item_values and hasattr(self, 'headers'):
+                        # Look for type-related columns
+                        type_info = []
+                        for i, header in enumerate(self.headers):
+                            if i < len(item_values) and header.lower() in ['type', 'category', 'kind', 'class']:
+                                type_info.append(f"{header}: {item_values[i]}")
+                        
+                        if type_info:
+                            text_to_read = f"Item type: {', '.join(type_info)}"
+                        else:
+                            # Fallback to first column as identifier
+                            text_to_read = f"Item: {item_values[0] if item_values else 'Unknown'}"
+                        
+                        cleaned_text = self.preprocess_text_for_speech(text_to_read)
+                        chunks = self.chunk_text(cleaned_text)
+                        
+                        for chunk in chunks:
+                            self.tts_engine.say(chunk)
+                        self.tts_engine.runAndWait()
+                    else:
+                        self.tts_engine.say("No item selected or no type information available")
+                        self.tts_engine.runAndWait()
+                else:
+                    self.tts_engine.say("No item selected")
+                    self.tts_engine.runAndWait()
+            else:
+                self.tts_engine.say("Data table not available")
+                self.tts_engine.runAndWait()
+                
+        except Exception as e:
+            logging.error(f"Error reading item type: {e}")
+
+    def _show_speech_settings(self) -> None:
+        """Show TTS configuration dialog"""
+        if not TTS_AVAILABLE or not self.tts_engine:
+            messagebox.showinfo("TTS Not Available", "Text-to-speech functionality is not available.")
+            return
+        
+        try:
+            import tkinter.ttk as ttk
+            
+            settings_window = tk.Toplevel(self.root)
+            settings_window.title("Speech Settings")
+            settings_window.geometry("400x300")
+            settings_window.transient(self.root)
+            settings_window.grab_set()
+            
+            # Voice selection
+            ttk.Label(settings_window, text="Voice:").pack(pady=5)
+            voices = self.tts_engine.getProperty('voices')
+            voice_names = [voice.name for voice in voices] if voices else ['Default']
+            
+            voice_var = tk.StringVar()
+            current_voice = self.tts_engine.getProperty('voice')
+            for voice in voices:
+                if voice.id == current_voice:
+                    voice_var.set(voice.name)
+                    break
+            else:
+                voice_var.set(voice_names[0] if voice_names else 'Default')
+            
+            voice_combo = ttk.Combobox(settings_window, textvariable=voice_var, values=voice_names, state="readonly")
+            voice_combo.pack(pady=5, padx=20, fill="x")
+            
+            # Female voice option
+            female_voice_var = tk.BooleanVar()
+            ttk.Checkbutton(settings_window, text="Prefer female voice", variable=female_voice_var).pack(pady=5)
+            
+            # Speed control
+            ttk.Label(settings_window, text="Speaking Speed:").pack(pady=(10,5))
+            speed_var = tk.IntVar(value=self.tts_engine.getProperty('rate'))
+            speed_scale = tk.Scale(settings_window, from_=50, to=300, orient="horizontal", variable=speed_var)
+            speed_scale.pack(pady=5, padx=20, fill="x")
+            
+            # Volume control
+            ttk.Label(settings_window, text="Volume:").pack(pady=(10,5))
+            volume_var = tk.DoubleVar(value=self.tts_engine.getProperty('volume'))
+            volume_scale = tk.Scale(settings_window, from_=0.0, to=1.0, resolution=0.1, orient="horizontal", variable=volume_var)
+            volume_scale.pack(pady=5, padx=20, fill="x")
+            
+            # Test button
+            def test_voice():
+                self.tts_engine.setProperty("rate", speed_var.get())
+                self.tts_engine.setProperty("volume", volume_var.get())
+                self.tts_engine.say("This is a test of the speech settings.")
+                self.tts_engine.runAndWait()
+            
+            ttk.Button(settings_window, text="Test Voice", command=test_voice).pack(pady=5)
+
+            # Apply button
+            def apply_settings():
+                try:
+                    # Set voice
+                    selected_voice = voice_var.get()
+                    for voice in voices:
+                        if voice.name == selected_voice:
+                            voice_id = voice.id
+                            if female_voice_var.get():
+                                self.setup_female_voice(self.tts_engine)
+                            else:
+                                self.tts_engine.setProperty("voice", voice_id)
+                            break
+
+                    # Set speed and volume
+                    self.tts_engine.setProperty("rate", speed_var.get())
+                    self.tts_engine.setProperty("volume", volume_var.get())
+                    
+                    settings_window.destroy()
+                    self.update_status("Speech settings applied")
+                    
+                except Exception as e:
+                    logging.error(f"Error applying speech settings: {e}")
+                    messagebox.showerror("Error", f"Failed to apply settings: {e}")
+            
+            # Buttons
+            buttons_frame = ttk.Frame(settings_window)
+            buttons_frame.pack(pady=10)
+            ttk.Button(buttons_frame, text="Apply", command=apply_settings).pack(side="left", padx=5)
+            ttk.Button(buttons_frame, text="Cancel", command=settings_window.destroy).pack(side="left", padx=5)
+
+        except Exception as e:
+            logging.error(f"Error showing speech settings: {e}")
+            messagebox.showerror("Error", f"Failed to open speech settings: {e}")
+
+    def _save_speech_to_file(self) -> None:
+        """Save current text content as audio file"""
+        if not TTS_AVAILABLE or not self.tts_engine:
+            messagebox.showinfo("TTS Not Available", "Text-to-speech functionality is not available.")
+            return
+        
+        try:
+            # Get text to convert
+            text_content = ""
+            if hasattr(self, 'details_text'):
+                if self.details_text.tag_ranges(tk.SEL):
+                    text_content = self.details_text.get(tk.SEL_FIRST, tk.SEL_LAST)
+                else:
+                    text_content = self.details_text.get("1.0", tk.END)
+            
+            if not text_content.strip():
+                messagebox.showwarning("No Text", "No text available to convert to speech.")
+                return
+            
+            # Ask for save location
+            file_path = filedialog.asksaveasfilename(
+                defaultextension=".wav",
+                filetypes=[("WAV files", "*.wav"), ("All files", "*.*")],
+                title="Save Speech As"
+            )
+            
+            if file_path:
+                # Preprocess text
+                cleaned_text = self.preprocess_text_for_speech(text_content)
+                
+                # Save to file
+                self.tts_engine.save_to_file(cleaned_text, file_path)
+                self.tts_engine.runAndWait()
+                
+                self.update_status(f"Speech saved to: {os.path.basename(file_path)}")
+                messagebox.showinfo("Success", f"Speech saved to:\n{file_path}")
+        
+        except Exception as e:
+            logging.error(f"Error saving speech to file: {e}")
+            messagebox.showerror("Save Error", f"Failed to save speech: {e}")
+
     def _update_details_view(self, item_data: Optional[Dict[str, Any]]) -> None:  # Updated signature with type hint
         try:
             if not hasattr(self, "details_text"):
@@ -1081,459 +1343,32 @@ class CrewGUI:
                 values = item_data["values"]
 
                 # Check if this is a text file (has Content column)
-                if (
-                    hasattr(self, "headers")
-                    and len(self.headers) >= 2
-                    and self.headers[1] == "Content"
-                ):
-                    # Display filename and content for text files
-                    details_text = f"File: {values[0]}\n\n{values[1]}"
+                if hasattr(self, "headers") and "Content" in self.headers:
+                    content_index = self.headers.index("Content")
+                    if content_index < len(values):
+                        content = values[content_index]
+                        self.details_text.insert("1.0", content)
+                        return
+
+                # For non-text files, display structured information
+                details = []
+                if hasattr(self, "headers"):
+                    for i, header in enumerate(self.headers):
+                        if i < len(values):
+                            details.append(f"{header}: {values[i]}")
+
+                if details:
+                    self.details_text.insert("1.0", "\n".join(details))
                 else:
-                    # Display all headers and values for other data
-                    details_text = ""
-                    if hasattr(self, "headers"):
-                        for header, value in zip(self.headers, values):
-                            details_text += f"{header}: {value}\n"
-
-                # Add Item ID if available in item_data (Treeview item's internal ID)
-                if "text" in item_data: # Check if 'text' key exists
-                    details_text += f"\nItem ID: {item_data['text']}\n"
-
-                self.details_text.insert("1.0", details_text)
+                    self.details_text.insert("1.0", str(values))
             else:
-                self.details_text.insert("1.0", "Select an item to view details or no data available for selected item.")
+                self.details_text.delete("1.0", tk.END)
+                self.details_text.insert("1.0", "Error displaying details after selection.")
 
         except Exception as e:
-            logging.error(f"Error updating details view: {e}", exc_info=True) # Added exc_info
+            logging.error(f"Error updating details view: {e}")
             if hasattr(self, "details_text"):
                 self.details_text.delete("1.0", "end")
-                self.details_text.insert("1.0", f"Error displaying details: {e}")
-
-    def _on_data_table_select(self, event: tk.Event) -> None:
-        """Handles the TreeviewSelect event for the data_table."""
-        try:
-            if not hasattr(self, "data_table"):
-                return
-            
-            selection = self.data_table.selection() # Get current selection
-            if selection:
-                item_id = selection[0] # Get the first selected item ID
-                item_data = self.data_table.item(item_id) # Get item details
-                self._update_details_view(item_data) # Call with actual item data
-            else:
-                # Optionally, clear details view or show a default message if nothing is selected
-                self._update_details_view(None) 
-        except Exception as e:
-            logging.error(f"Error handling data table selection: {e}")
-            # Optionally, update details view with an error message
-            if hasattr(self, "details_text"):
-                self.details_text.delete("1.0", "end")
-                self.details_text.insert("1.0", f"Error processing selection: {e}")
-
-    def _update_script_menu(self) -> None:
-        logging.info("Updating script menu as it is about to be displayed...") # DIAGNOSTIC LOG
-        if not hasattr(self, 'script_menu') or not isinstance(self.script_menu, tk.Menu):
-            logging.error(
-                "self.script_menu is not initialized or is not a tk.Menu instance. "
-                "The 'Run Script' submenu cannot be populated. "
-                "Ensure create_menu_bar() correctly initializes self.script_menu and is called before _update_script_menu()."
-            )
-            # Optionally, display a user-facing error if this is critical for UI interaction
-            # messagebox.showerror("Menu Initialization Error", "The 'Run Script' submenu could not be prepared.")
-            return
-
-        self.script_menu.delete(0, tk.END) # Clear existing items
-
-        try:
-            if not hasattr(self, 'scripts_dir') or not self.scripts_dir:
-                logging.warning("Scripts directory (self.scripts_dir) is not defined.")
-                self.script_menu.add_command(label="(Scripts dir not configured)", state=tk.DISABLED)
-            elif not os.path.exists(self.scripts_dir):
-                logging.warning(f"Scripts directory '{self.scripts_dir}' not found.")
-                self.script_menu.add_command(label="(Scripts dir missing)", state=tk.DISABLED)
-                # Attempt to create it
-                try:
-                    os.makedirs(self.scripts_dir)
-                    logging.info(f"Re-created missing scripts directory: {self.scripts_dir}")
-                    # Optionally, create a sample script if the directory was just created
-                    sample_script_path = os.path.join(self.scripts_dir, "sample_script.py")
-                    if not os.path.exists(sample_script_path):
-                        with open(sample_script_path, "w") as f:
-                            f.write("# Sample script\\nprint('Hello from sample script!')")
-                        logging.info(f"Created sample script: {sample_script_path}")
-                except Exception as e_mkdir:
-                    logging.error(f"Failed to re-create scripts directory: {e_mkdir}")
-            
-            script_files = []
-            # Check again for scripts_dir existence in case it was just created
-            if hasattr(self, 'scripts_dir') and self.scripts_dir and os.path.exists(self.scripts_dir):
-                script_files = glob.glob(os.path.join(self.scripts_dir, "*.py"))
-            
-            if not script_files:
-                # This label will be added if scripts_dir existed but was empty,
-                # or if scripts_dir was missing/not configured and the specific messages above were already added.
-                # To avoid duplicate "missing" messages, we check if items were already added.
-                if self.script_menu.index(tk.END) is None: # No items added yet
-                    self.script_menu.add_command(label="(No scripts found)", state=tk.DISABLED)
-            else:
-                for script_path in sorted(script_files):
-                    script_name = os.path.basename(script_path)
-                    self.script_menu.add_command(
-                        label=script_name,
-                        command=lambda sp=script_path: self._run_selected_script(sp)
-                    )
-            
-            self.script_menu.add_separator()
-            self.script_menu.add_command(label="Refresh Scripts", command=self._update_script_menu)
-            self.script_menu.add_command(
-                label="Open Scripts Folder...",
-                command=self._open_scripts_folder
-            )
-            # Avoid updating status if scripts_dir was problematic initially, status might be confusing.
-            if hasattr(self, 'scripts_dir') and self.scripts_dir and os.path.exists(self.scripts_dir):
-                self.update_status(f"Scripts menu updated. Found {len(script_files)} scripts.")
-
-        except Exception as e:
-            logging.error(f"Error updating script menu: {e}", exc_info=True) # Added exc_info for more details
-            messagebox.showerror("Script Menu Error", f"Could not update script menu: {e}")
-            # Ensure self.script_menu is still valid before trying to add error items
-            if hasattr(self, 'script_menu') and isinstance(self.script_menu, tk.Menu):
-                 # Clear any partial items from the try block before adding error state
-                 self.script_menu.delete(0, tk.END)
-                 self.script_menu.add_command(label="(Error loading scripts)", state=tk.DISABLED)
-                 self.script_menu.add_separator()
-                 self.script_menu.add_command(label="Refresh Scripts", command=self._update_script_menu)
-                 self.script_menu.add_command(label="Open Scripts Folder...", command=self._open_scripts_folder)
-
-    def _run_selected_script(self, script_path: str) -> None:
-        try:
-            script_name = os.path.basename(script_path)
-            self.update_status(f"Running script: {script_name}...")
-            
-            def target():
-                process = None
-                try:
-                    logging.info(f"Executing script: python '{script_path}'")
-                    # For Windows, prevent console window, for others, 0 is fine.
-                    creation_flags = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
-                    process = subprocess.Popen(['python', script_path], 
-                                               stdout=subprocess.PIPE, 
-                                               stderr=subprocess.PIPE, 
-                                               text=True, 
-                                               creationflags=creation_flags,
-                                               cwd=self.scripts_dir) # Run script with its directory as CWD
-                    stdout, stderr = process.communicate() 
-                    
-                    if process.returncode == 0:
-                        logging.info(f"Script '{script_name}' finished successfully.")
-                        if stdout: logging.info(f"Stdout from '{script_name}':\\n{stdout}")
-                        self.root.after(0, lambda: self.update_status(f"Script '{script_name}' finished."))
-                        if stdout.strip():
-                             self.root.after(0, lambda: messagebox.showinfo(f"{script_name} Output", stdout[:1000] + ("..." if len(stdout) > 1000 else "")))
-                        elif not stderr.strip(): # No stdout and no stderr
-                             self.root.after(0, lambda: messagebox.showinfo(f"{script_name} Finished", f"Script '{script_name}' completed with no output."))
-                    else:
-                        logging.error(f"Script '{script_name}' failed with return code {process.returncode}.")
-                        if stdout: logging.error(f"Stdout from '{script_name}':\\n{stdout}")
-                        if stderr: logging.error(f"Stderr from '{script_name}':\\n{stderr}")
-                        error_message = f"Script '{script_name}' failed."
-                        if stderr:
-                            error_message += f"\\n\\nError:\\n{stderr[:500]}" + ("..." if len(stderr) > 500 else "")
-                        elif stdout: # If error but only stdout
-                             error_message += f"\\n\\nOutput:\\n{stdout[:500]}" + ("..." if len(stdout) > 500 else "")
-                        self.root.after(0, lambda: self.update_status(f"Script '{script_name}' failed.", error=True))
-                        self.root.after(0, lambda: messagebox.showerror(f"{script_name} Error", error_message))
-                except FileNotFoundError:
-                    logging.error(f"Python interpreter not found or script '{script_path}' not found.")
-                    self.root.after(0, lambda: messagebox.showerror("Script Error", f"Could not find Python or script: {script_name}"))
-                    self.root.after(0, lambda: self.update_status(f"Error running {script_name}: File not found.", error=True))
-                except Exception as e_thread:
-                    logging.error(f"Exception while running script {script_name} in thread: {e_thread}")
-                    self.root.after(0, lambda: messagebox.showerror("Script Execution Error", f"Error running {script_name}:\\n{e_thread}"))
-                    self.root.after(0, lambda: self.update_status(f"Error running {script_name}.", error=True))
-
-            threading.Thread(target=target, daemon=True).start()
-
-        except Exception as e:
-            logging.error(f"Error preparing to run script {script_path}: {e}")
-            messagebox.showerror("Script Error", f"Could not run script {os.path.basename(script_path)}: {e}")
-            self.update_status(f"Failed to start script {os.path.basename(script_path)}.", error=True)
-
-    def _open_scripts_folder(self) -> None:
-        if not hasattr(self, 'scripts_dir') or not self.scripts_dir:
-            messagebox.showwarning("Error", "Scripts directory path is not configured.")
-            logging.warning("Attempted to open scripts folder, but scripts_dir is not set.")
-            return
-
-        if not os.path.isdir(self.scripts_dir):
-            messagebox.showwarning(
-                "Error", 
-                f"Scripts directory does not exist:\\n{self.scripts_dir}\\n\\nIt should be created automatically. You can try refreshing scripts or restarting the application."
-            )
-            logging.warning(f"Attempted to open non-existent scripts folder: {self.scripts_dir}")
-            return
-
-        try:
-            # Using xdg-open for Linux, as per environment.
-            # For cross-platform, platform detection and different commands would be needed.
-            subprocess.run(['xdg-open', self.scripts_dir], check=True)
-            self.update_status(f"Opened scripts folder: {self.scripts_dir}")
-            logging.info(f"Opened scripts folder: {self.scripts_dir}")
-        except FileNotFoundError: # xdg-open not found
-            messagebox.showerror("Error", "Could not open folder. The 'xdg-open' command was not found on your system.")
-            logging.error("Failed to open scripts folder: 'xdg-open' command not found.")
-        except subprocess.CalledProcessError as e:
-            messagebox.showerror("Error", f"Failed to open scripts folder. The command 'xdg-open' exited with an error: {e}")
-            logging.error(f"Failed to open scripts folder {self.scripts_dir} using xdg-open: {e}")
-        except Exception as e:
-            messagebox.showerror("Error", f"An unexpected error occurred while trying to open the scripts folder: {e}")
-            logging.error(f"Unexpected error opening scripts folder {self.scripts_dir}: {e}")
-
-    # Callback methods
-    def _on_data_loaded(self, result: Tuple[List[List[Any]], List[str]]) -> None:
-        try:
-            data, headers = result
-            self.current_data = data
-            self.headers = headers
-            self._update_data_view(data)
-            self._update_column_menu()
-            self.update_status(f"Loaded {len(data)} records")
-        except Exception as e:
-            logging.error(f"Error processing loaded data: {e}")
-            messagebox.showerror("Error", f"Failed to process loaded data: {e}")
-
-    def _on_text_loaded_callback(self, content: str) -> None:
-        """Callback for when text content has been loaded by _load_text_background."""
-        try:
-            # Ensure content is a string; if not, it might be an error indicator or unexpected type
-            if not isinstance(content, str):
-                logging.error(f"Failed to load text content. Received type: {type(content)}")
-                messagebox.showerror("Error", "Failed to load text content: Invalid data received.")
-                self.update_status("Failed to load text.", error=True)
-                if hasattr(self, 'details_text'):
-                    self.details_text.delete("1.0", tk.END)
-                    self.details_text.insert("1.0", "Error: Failed to load text content.")
-                return
-
-            if hasattr(self, 'details_text'):
-                self.details_text.delete("1.0", tk.END)
-                self.details_text.insert("1.0", content)
-                
-                status_message = "Text content loaded."
-                if hasattr(self, 'current_file_path') and self.current_file_path:
-                    status_message = f"Loaded: {os.path.basename(self.current_file_path)}"
-                self.update_status(status_message)
-                
-                # Ensure data view is cleared and its state reset, as text is now primary.
-                # _on_open_file attempts this, but this ensures consistency.
-                if hasattr(self, 'data_table'):
-                    self.data_table.delete(*self.data_table.get_children())
-                self.current_data = None
-                self.headers = []
-                if hasattr(self, '_update_column_menu'):
-                    self._update_column_menu() # Update column menu (likely to be empty or hide)
-            else:
-                logging.error("Details text widget ('details_text') not found when trying to load text.")
-                messagebox.showerror("GUI Error", "Details view component is missing. Cannot display text.")
-                self.update_status("Error: Could not display text.", error=True)
-
-        except Exception as e:
-            logging.error(f"Error in _on_text_loaded_callback: {e}")
-            messagebox.showerror("Error", f"An error occurred while displaying the text content: {e}")
-            self.update_status("Error displaying text.", error=True)
-            if hasattr(self, 'details_text'):
-                try:
-                    self.details_text.delete("1.0", tk.END)
-                    self.details_text.insert("1.0", f"Error displaying content: {e}")
-                except Exception as e_inner:
-                    logging.error(f"Further error trying to update details_text with error message: {e_inner}")
-
-    def _on_column_click(self, event: tk.Event) -> None:
-        try:
-            region = self.data_table.identify_region(event.x, event.y)
-            if region == "heading":
-                column_id_str = self.data_table.identify_column(event.x)
-                # column_id_str is like '#1', '#2', etc. We need the actual header text.
-                # The Treeview column identifiers are usually the header texts themselves if set during setup.
-                # Or, they can be numeric strings if not explicitly set.
-                # Let's assume header texts are used as column identifiers.
-                # If not, this needs adjustment based on how columns are added.
-                
-                # Find the header text corresponding to the clicked column
-                # This is a bit indirect. A better way would be to store header texts with their column IDs.
-                clicked_header = ""
-                for col_header in self.data_table["columns"]:
-                    # Check if the x-coordinate of the event is within the column's bounds
-                    # This is a more robust way to identify the clicked column header
-                    x, y, width, height = self.data_table.bbox(item=None, column=col_header)
-                    if x <= event.x < x + width:
-                        clicked_header = col_header
-                        break
-                
-                if not clicked_header:
-                    logging.warning("Could not identify clicked column header.")
-                    return
-
-                # Get current items from the Treeview
-                items = [(self.data_table.set(item_id, clicked_header), item_id) for item_id in self.data_table.get_children('')]
-
-                # Determine sort direction
-                if not hasattr(self, "_last_sort_column") or self._last_sort_column != clicked_header:
-                    self._last_sort_column = clicked_header
-                    self._last_sort_reverse = False
-                else:
-                    self._last_sort_reverse = not self._last_sort_reverse
-
-                # Sort items
-                # Attempt to sort numerically if possible, otherwise sort as strings
-                try:
-                    items.sort(key=lambda x: float(x[0]), reverse=self._last_sort_reverse)
-                except ValueError:
-                    items.sort(key=lambda x: str(x[0]).lower(), reverse=self._last_sort_reverse)
-
-
-                # Re-insert items in sorted order
-                for index, (value, item_id) in enumerate(items):
-                    self.data_table.move(item_id, '', index)
-
-                # Update column header to show sort direction (optional visual cue)
-                for col_header in self.data_table["columns"]:
-                    current_heading = self.data_table.heading(col_header, "text")
-                    # Remove old sort indicators
-                    current_heading = current_heading.replace(" \u25B2", "").replace(" \u25BC", "")
-                    if col_header == clicked_header:
-                        indicator = " \u25B2" if not self._last_sort_reverse else " \u25BC" # Up/Down arrows
-                        self.data_table.heading(col_header, text=current_heading + indicator)
-                    else:
-                        self.data_table.heading(col_header, text=current_heading)
-
-
-        except Exception as e:
-            logging.error(f"Error handling column click: {e}")
-
-    def _apply_filter(
-        self, data: List[List[Any]], filter_text: str, column_name: str = "All Columns"
-    ) -> List[List[Any]]:
-        filter_text = filter_text.lower().strip()
-        if not filter_text:
-            return data # No filter text, return original data
-
-        filtered_data = []
-        
-        # Determine the index of the column to filter
-        column_index = -1
-        if column_name != "All Columns":
-            try:
-                column_index = self.headers.index(column_name)
-            except ValueError:
-                logging.warning(f"Filter column '{column_name}' not found in headers.")
-                return data # Column not found, return original data
-
-        for row in data:
-            if column_index != -1: # Filter specific column
-                if column_index < len(row): # Ensure row has this column
-                    cell_value = str(row[column_index]).lower()
-                    if filter_text in cell_value:
-                        filtered_data.append(row)
-            else: # Filter all columns
-                for cell in row:
-                    if filter_text in str(cell).lower():
-                        filtered_data.append(row)
-                        break # Found in one cell, add row and move to next row
-        return filtered_data
-
-    def _update_groups_view(self) -> None:
-        """Populates the groups list with unique group names from the data."""
-        self.logger.debug("Updating groups view")
-        try:
-            if self.data_handler and hasattr(self.data_handler, 'get_all_data'):
-                all_data = self.data_handler.get_all_data()
-                if not all_data:
-                    self.logger.warning("No data available to update groups view.")
-                    self.groups_list.delete(0, tk.END)
-                    return
-
-                groups = sorted(list(set(item.get("group", "Uncategorized") for item in all_data if item.get("group"))))
-                if not groups:
-                    groups = ["Uncategorized"] # Ensure there's at least one entry if data exists but no groups
-                
-                self.groups_list.delete(0, tk.END)
-                for group_name in groups:
-                    self.groups_list.insert(tk.END, group_name)
-                self.logger.info(f"Groups view updated with {len(groups)} groups.")
-            else:
-                self.logger.error("Data handler not available or does not have get_all_data method.")
-                self.groups_list.delete(0, tk.END)
-        except Exception as e:
-            self.logger.error(f"Error updating groups view: {e}")
-            self.show_status_message(f"Error updating groups: {e}", error=True)
-            # Optionally, re-raise if it's critical, or handle more gracefully
-            # raise
-
-    def _on_group_select(self, event=None) -> None:
-        """Handles group selection events to filter the data table."""
-        self.logger.debug("Group selection changed")
-        try:
-            selected_indices = self.groups_list.curselection()
-            if not selected_indices:
-                self.logger.debug("No group selected, clearing filter.")
-                # self._apply_filter(filter_text="", filter_column=None) # Clear filter if no group selected
-                # Or, display all items if that's the desired behavior
-                self.populate_data_table(self.data_handler.get_all_data() if self.data_handler else [])
-                self.show_status_message("Filter cleared. Showing all items.")
-                return
-
-            selected_group = self.groups_list.get(selected_indices[0])
-            self.logger.info(f"Group selected: {selected_group}")
-
-            if selected_group == "Uncategorized" and not any(item.get("group") for item in self.data_handler.get_all_data()):
-                 # If "Uncategorized" is selected and there are no actual groups, show all data
-                self.populate_data_table(self.data_handler.get_all_data())
-                self.show_status_message("Showing all items (no specific groups defined).")
-                return
-            
-            # Apply filter using the group name. Assuming "group" is a column in your data.
-            # The _apply_filter method might need adjustment if it doesn't directly support this.
-            # For now, let's assume direct filtering by the "group" key.
-            if self.data_handler:
-                all_data = self.data_handler.get_all_data()
-                if selected_group == "Uncategorized":
-                    # Items with no group or group explicitly set to "Uncategorized"
-                    # This logic might need refinement based on how "Uncategorized" is handled in data
-                    filtered_data = [item for item in all_data if not item.get("group") or item.get("group") == "Uncategorized"]
-                else:
-                    filtered_data = [item for item in all_data if item.get("group") == selected_group]
-                
-                self.populate_data_table(filtered_data)
-                self.show_status_message(f"Filtered by group: {selected_group}. {len(filtered_data)} items found.")
-                self._clear_filter_input() # Clear the text filter input
-            else:
-                self.logger.warning("Data handler not available for group filtering.")
-        except Exception as e:
-            self.logger.error(f"Error in _on_group_select: {e}")
-            self.show_status_message(f"Error selecting group: {e}", error=True)
-            # raise # Consider if re-raising is appropriate
-
-    def _on_data_select(self, event: tk.Event = None) -> None:
-        """Handles data selection events to update the details view."""
-        try:
-            if not hasattr(self, "data_table"):
-                return
-
-            selected_item_id = self.data_table.focus()  # Get the ID of the selected/focused item
-            if selected_item_id:
-                item_data = self.data_table.item(selected_item_id)
-                # item_data is a dictionary like {'text': 'iid', 'image': '', 'values': [], 'open': 0, 'tags': ''}
-                # We need to pass this dictionary to _update_details_view
-                self._update_details_view(item_data)
-            else:
-                # No item selected, clear details view or show a default message
-                self._update_details_view(None) 
-        except Exception as e:
-            logging.error(f"Error in _on_data_select: {e}")
-            # Optionally, update status or show an error message
-            if hasattr(self, "details_text"):
-                self.details_text.delete("1.0", tk.END)
                 self.details_text.insert("1.0", "Error displaying details after selection.")
 
     def _on_apply_filter(self) -> None:
@@ -1599,10 +1434,6 @@ class CrewGUI:
             # Refresh groups view
             if hasattr(self, "groups") and self.groups:
                 self._update_groups_view()
-
-            # Update script menu
-            # if hasattr(self, "_update_script_menu"):
-            #     self._update_script_menu()
 
             # Update column menu
             if hasattr(self, "_update_column_menu"):
@@ -1746,347 +1577,132 @@ class CrewGUI:
             # Calculate total of original widths
             total_original = sum(original_widths.values())
 
-            if total_original > 0:
-                # Scale each column proportionally
-                scale_factor = available_width / total_original
-                min_col_width = 50
+            if total_original == 0:
+                return
 
-                for i, original_width in enumerate(original_widths.values()):
-                    # Calculate new width, ensuring it's not less than min_col_width
-                    new_width = max(int(original_width * scale_factor), min_col_width)
-                    # Apply new width to column (assuming self.data_table exists and has columns)
-                    if hasattr(self, "data_table") and i < len(self.data_table["columns"]):
-                        col_id = self.data_table["columns"][i]
-                        self.data_table.column(col_id, width=new_width)
+            # Proportionally adjust column widths
+            for col_index, original_width in original_widths.items():
+                if col_index < len(self.data_table["columns"]):
+                    col_id = self.data_table["columns"][col_index]
+                    new_width = max(
+                        50, int((original_width / total_original) * available_width)
+                    )
+                    self.data_table.column(col_id, width=new_width)
 
         except Exception as e:
-            logging.error(f"Error handling treeview configure: {e}")
-            # Dont raise - we dont want to crash on resize events
+            logging.error(f"Error during treeview configure: {e}")
 
-    # Event handler methods for menu operations
-    # def _on_load_data(self) -> None:
-    #     # This method will be replaced or refactored by _on_open_file
-    #     try:
-    #         # ... (original _on_load_data content, to be reviewed/merged)
-    #         file_path = filedialog.askopenfilename(
-    #             defaultextension=".csv",
-    #             filetypes=[
-    #                 ("CSV files", "*.csv"),
-    #                 ("Excel files", "*.xlsx *.xls"),
-    #                 ("All files", "*.*"),
-    #             ],
-    #         )
-    #         if file_path:
-    #             self.current_file_path = file_path
-    #             self.run_in_background(
-    #                 self._load_data_background, file_path, callback=self._on_data_loaded
-    #             )
-    #     except Exception as e:
-    #         logging.error(f"Error in _on_load_data: {e}")
-    #         messagebox.showerror("Error", f"Failed to open data file: {e}")
+    def _apply_filter(
+        self, data: List[List[Any]], filter_text: str, column_name: str
+    ) -> List[List[Any]]:
+        if not filter_text:
+            return data
 
-    # def _on_import_data(self) -> None: # This will be superseded by _on_open_file
-    #     # ... (original _on_import_data content, to be reviewed/merged)
-    #     pass
+        filtered_data = []
+        for row in data:
+            if column_name == "All Columns":
+                # Search in all columns
+                if any(
+                    filter_text.lower() in str(cell).lower() for cell in row
+                ):
+                    filtered_data.append(row)
+            else:
+                # Search in specific column
+                if hasattr(self, "headers") and column_name in self.headers:
+                    col_index = self.headers.index(column_name)
+                    if col_index < len(row) and filter_text.lower() in str(
+                        row[col_index]
+                    ).lower():
+                        filtered_data.append(row)
 
-    # def _on_import_data(self) -> None: # This will be superseded by _on_open_file
-    #     # ... (original _on_import_data content, to be reviewed/merged)
-    #     pass
+        return filtered_data
 
-    # def _on_load_text_content(self) -> None: # This will be superseded by _on_open_file
-    #     # ... (original _on_load_text_content content, to be reviewed/merged)
-    #     try:
-    #         file_path = filedialog.askopenfilename(
-    #             defaultextension=".txt",
-    #             filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
-    #         )
-    #         if file_path:
-    #             self.current_text_file_path = file_path # Store path if needed
-    #             self.run_in_background(
-    #                 self._load_text_background, file_path, callback=self._on_text_loaded
-    #             )
-    #     except Exception as e:
-    #         logging.error(f"Error loading text content: {e}")
-    #         messagebox.showerror("Error", f"Failed to load text content: {e}")
-
-    # def _on_save(self) -> None: # This will be superseded by _on_save_file
-    #     # ... (original _on_save content, to be reviewed/merged)
-    #     pass
-
-    # def _on_export(self) -> None: # This will be superseded by _on_save_file
-    #     # ... (original _on_export content, to be reviewed/merged)
-    #     pass
-
-    def _on_open_file(self) -> None:
-        """Handles opening different file types."""
+    def _on_column_click(self, event: tk.Event) -> None:
         try:
-            file_types = [
-                ("Supported Files", ("*.csv", "*.xlsx", "*.xls", "*.txt", "*.py", "*.md")),
-                ("Data Files", ("*.csv", "*.xlsx", "*.xls")),
-                ("Text Files", ("*.txt", "*.py", "*.md")),
-                ("All Files", "*.*"),
-            ]
-            file_path = filedialog.askopenfilename(
-                defaultextension=".txt", # Default to .txt if no specific type chosen
-                filetypes=file_types,
+            region = self.data_table.identify_region(event.x, event.y)
+            if region == "heading":
+                col = self.data_table.identify_column(event.x, event.y)
+                col_index = int(col.replace("#", "")) - 1
+
+                if hasattr(self, "headers") and col_index < len(self.headers):
+                    header = self.headers[col_index]
+                    self._sort_by_column(col_index, header)
+
+        except Exception as e:
+            logging.error(f"Error handling column click: {e}")
+
+    def _sort_by_column(self, col_index: int, header: str) -> None:
+        try:
+            # Toggle sort direction
+            if not hasattr(self, "_sort_column") or self._sort_column != col_index:
+                self._sort_reverse = False
+            else:
+                self._sort_reverse = not self._sort_reverse
+
+            self._sort_column = col_index
+
+            # Get current data
+            data = []
+            for item in self.data_table.get_children():
+                values = self.data_table.item(item, "values")
+                data.append(list(values))
+
+            # Sort data
+            try:
+                # Try numeric sort first
+                data.sort(
+                    key=lambda x: float(x[col_index]) if x[col_index] else 0,
+                    reverse=self._sort_reverse,
+                )
+            except (ValueError, TypeError):
+                # Fall back to string sort
+                data.sort(
+                    key=lambda x: str(x[col_index]).lower(),
+                    reverse=self._sort_reverse,
+                )
+
+            # Update view
+            self._update_data_view(data)
+
+            # Update status
+            direction = "descending" if self._sort_reverse else "ascending"
+            self.update_status(f"Sorted by {header} ({direction})")
+
+        except Exception as e:
+            logging.error(f"Error sorting by column {header}: {e}")
+
+    def _on_save_file(self) -> None:
+        try:
+            # Get current data
+            data = []
+            for item in self.data_table.get_children():
+                values = self.data_table.item(item, "values")
+                data.append(list(values))
+
+            if not data:
+                messagebox.showwarning("No Data", "No data available to save.")
+                return
+
+            # Ask for save location
+            file_path = filedialog.asksaveasfilename(
+                defaultextension=".csv",
+                filetypes=[
+                    ("CSV files", "*.csv"),
+                    ("Excel files", "*.xlsx") if PANDAS_AVAILABLE else None,
+                    ("All files", "*.*"),
+                ],
+                title="Save Data As",
             )
 
             if file_path:
-                self.current_file_path = file_path
-                _, file_extension = os.path.splitext(file_path)
-                file_extension = file_extension.lower()
-
-                if file_extension in [".csv", ".xlsx", ".xls"]:
-                    self.update_status(f"Opening data file: {os.path.basename(file_path)}...")
-                    # Clear previous data/text specific states
-                    self.current_data = None
-                    self.headers = []
-                    if hasattr(self, 'details_text'): # Corrected: removed backslash
-                        self.details_text.delete("1.0", tk.END) # Clear details view
-                    self.run_in_background(
-                        self._load_data_background, file_path, callback=self._on_data_loaded
-                    )
-                elif file_extension in [".txt", ".py", ".md"]: # Added .md
-                    self.update_status(f"Opening text file: {os.path.basename(file_path)}...")
-                    # Clear previous data/text specific states                    self.current_data = None
-                    self.headers = []
-                    if hasattr(self, 'data_table'): # Corrected: removed backslash
-                        self.data_table.delete(*self.data_table.get_children()) # Clear data table
-                   
-
-                    self.run_in_background(
-                        self._load_text_background, file_path, callback=self._on_text_loaded_callback # Corrected callback
-                    )
-                else: # Ensure this 'else' has the same indentation as the 'elif' above
-                    self.update_status(f"Unsupported file type: {file_extension}", error=True)
-                    messagebox.showwarning(
-                        "Unsupported File Type",
-                        f"The file type '{file_extension}' is not directly supported for automatic display. You can try opening it as 'All Files'.",
-                    )
-        except Exception as e:
-            logging.error(f"Error in _on_open_file: {e}")
-            messagebox.showerror("Error", f"Failed to open file: {e}")
-
-    def _on_save_file(self) -> None:
-        """Handles saving data or text content based on active view."""
-        try:
-            content_to_save = None  # Will be 'data' or 'text'
-            save_action = None
-
-            # Check if Data View has substantial content
-            if hasattr(self, 'current_data') and self.current_data and hasattr(self, 'headers'):
-                # Make sure current_data is not just empty lists or similar
-                if any(self.current_data): 
-                    content_to_save = 'data'
-
-            # If no substantial data content, check Details View
-            if not content_to_save and hasattr(self, 'details_text'):
-                details_content = self.details_text.get("1.0", tk.END).strip()
-                # Avoid saving placeholder or error text
-                placeholders = [
-                    "Select an item from the table above to view details here.",
-                    "Error displaying details after selection.",
-                    "No details available for this item.",
-                    "Error displaying details:" # Partial match for error messages
-                ]
-                if details_content and not any(details_content.startswith(p) for p in placeholders) and details_content != "Error displaying details.":
-                    content_to_save = 'text'
-                    current_text_content = self.details_text.get("1.0", tk.END) # Get full content with EOL
-
-            if content_to_save == 'data':
-                file_path = filedialog.asksaveasfilename(
-                    defaultextension=".csv",
-                    filetypes=[
-                        ("CSV files", "*.csv"),
-                        ("Excel files", "*.xlsx"),
-                        ("All files", "*.*"),
-                    ],
-                    title="Save Data As"
-                )
-                if file_path:
-                    _, file_extension = os.path.splitext(file_path)
-                    file_extension = file_extension.lower()
-                    if file_extension == ".csv":
-                        self.update_status(f"Saving data to CSV: {os.path.basename(file_path)}...")
-                        self.run_in_background(self._save_csv_background, file_path, self.current_data, self.headers)
-                    elif file_extension == ".xlsx":
-                        self.update_status(f"Exporting data to Excel: {os.path.basename(file_path)}...")
-                        self.run_in_background(self._export_to_excel_background, file_path, self.current_data, self.headers)
-                    else:
-                        messagebox.showwarning("Unsupported Type", f"Cannot save data to '{file_extension}'. Please use .csv or .xlsx.")
-                        self.update_status(f"Save cancelled for {os.path.basename(file_path)}", error=True)
-
-            elif content_to_save == 'text':
-                file_path = filedialog.asksaveasfilename(
-                    defaultextension=".txt",
-                    filetypes=[
-                        ("Text files", "*.txt"),
-                        ("Python files", "*.py"),
-                        ("Markdown files", "*.md"),
-                        ("All files", "*.*"),
-                    ],
-                    title="Save Text As"
-                )
-                if file_path:
-                    self.update_status(f"Saving text to: {os.path.basename(file_path)}...")
-                    self.run_in_background(self._save_text_content_background, file_path, current_text_content)
-            
-            else:
-                messagebox.showinfo("Nothing to Save", "There is no active content to save.")
-                self.update_status("Nothing to save.")
+                self._save_data_to_file(data, file_path)
 
         except Exception as e:
-            logging.error(f"Error in _on_save_file: {e}")
-            messagebox.showerror("Save Error", f"An unexpected error occurred during save: {e}")
-            self.update_status("Save operation failed", error=True)
+            logging.error(f"Error in save file dialog: {e}")
+            messagebox.showerror("Error", f"Failed to save file: {e}")
 
-    def _save_text_content_background(self, file_path: str, content: str) -> None:
-        """Saves text content to a file in a background thread."""
+    def _save_data_to_file(self, data: List[List[Any]], file_path: str) -> None:
         try:
-            with open(file_path, "w", encoding="utf-8") as f:
-                f.write(content)
-            self.root.after(0, lambda: self.update_status(f"Text content saved to {os.path.basename(file_path)}"))
-            self.root.after(0, lambda: setattr(self, 'current_file_path', file_path)) # Update current file path
-            # Optionally, if you maintain a separate current_text_file_path:
-            # self.root.after(0, lambda: setattr(self, 'current_text_file_path', file_path))
-        except Exception as e:
-            logging.error(f"Error saving text content to {file_path}: {e}")
-            self.root.after(0, lambda: messagebox.showerror("Save Error", f"Failed to save text file: {e}"))
-            self.root.after(0, lambda: self.update_status(f"Error saving text to {os.path.basename(file_path)}", error=True))
-
-    def _save_csv_background(self, file_path: str, data: List[List[Any]], headers: List[str]) -> None:
-        """Saves data to a CSV file in a background thread."""
-        try:
-            with open(file_path, "w", newline="", encoding="utf-8") as f:
-                writer = csv.writer(f)
-                if headers:
-                    writer.writerow(headers)
-                writer.writerows(data)
-            self.root.after(0, lambda: self.update_status(f"Data saved to CSV: {os.path.basename(file_path)}"))
-            self.root.after(0, lambda: setattr(self, 'current_file_path', file_path)) # Update current file path
-        except Exception as e:
-            logging.error(f"Error saving CSV to {file_path}: {e}")
-            self.root.after(0, lambda: messagebox.showerror("Save Error", f"Failed to save CSV file: {e}"))
-            self.root.after(0, lambda: self.update_status(f"Error saving CSV to {os.path.basename(file_path)}", error=True))
-
-    def _export_to_excel_background(self, file_path: str, data: List[List[Any]], headers: List[str]) -> None:
-        """Exports data to an Excel file in a background thread."""
-        try:
-            if not PANDAS_AVAILABLE:
-                self.root.after(0, lambda: messagebox.showerror("Export Error", "Pandas library is not available for Excel export."))
-                self.root.after(0, lambda: self.update_status("Excel export failed: Pandas missing", error=True))
-                return
-
-            df = pd.DataFrame(data, columns=headers if headers else None)
-            df.to_excel(file_path, index=False)
-            self.root.after(0, lambda: self.update_status(f"Data exported to Excel: {os.path.basename(file_path)}"))
-            self.root.after(0, lambda: setattr(self, 'current_file_path', file_path)) # Update current file path
-        except Exception as e:
-            logging.error(f"Error exporting to Excel: {e}")
-            self.root.after(0, lambda: messagebox.showerror("Export Error", f"Failed to export Excel file: {e}"))
-            self.root.after(0, lambda: self.update_status(f"Error exporting Excel to {os.path.basename(file_path)}", error=True))
-
-    def _load_data_background(
-        self, file_path: str
-    ) -> None:
-        """Load data from a file in a background thread."""
-        try:
-            logger.info(f"Attempting to load data from {file_path}")
-            if not PANDAS_AVAILABLE:
-                raise ImportError("Pandas library is not available. Please install it to load data.")
-
-            _, file_extension = os.path.splitext(file_path)
-            file_extension = file_extension.lower()
-
-            if file_extension == ".csv":
-                try:
-                    data = pd.read_csv(file_path)
-                except Exception as e:
-                    logger.error(f"Error reading CSV file {file_path}: {e}")
-                    raise ValueError(f"Failed to read CSV file: {e}") from e
-            elif file_extension in [".xlsx", ".xls"]:
-                try:
-                    # Try with default engine first
-                    data = pd.read_excel(file_path, engine=None)
-                except Exception as e_default:
-                    logger.warning(f"Failed to load Excel {file_path} with default engine: {e_default}")
-                    if file_extension == ".xlsx":
-                        try:
-                            logger.info(f"Trying to load Excel {file_path} with openpyxl engine")
-                            data = pd.read_excel(file_path, engine="openpyxl")
-                        except Exception as e_openpyxl:
-                            logger.error(f"Error reading Excel file {file_path} with openpyxl: {e_openpyxl}")
-                            raise ValueError(f"Failed to read Excel file (openpyxl): {e_openpyxl}") from e_openpyxl
-                    elif file_extension == ".xls":
-                        try:
-                            logger.info(f"Trying to load Excel {file_path} with xlrd engine")
-                            data = pd.read_excel(file_path, engine="xlrd")
-                        except Exception as e_xlrd:
-                            logger.error(f"Error reading Excel file {file_path} with xlrd: {e_xlrd}")
-                            raise ValueError(f"Failed to read Excel file (xlrd): {e_xlrd}") from e_xlrd
-                    else: # Should not happen given the outer if
-                        raise ValueError(f"Unsupported Excel file extension: {file_extension}")
-
-            elif file_extension == ".txt":
-                # Assuming simple text file loading for now, adjust if complex parsing is needed
-                with open(file_path, "r", encoding="utf-8") as f:
-                    # Reading lines and creating a DataFrame; adjust as per actual text structure
-                    lines = [line.strip() for line in f if line.strip()]
-                    if not lines:
-                        data = pd.DataFrame() # Empty DataFrame for empty or whitespace-only file
-                    else:
-                        # Attempt to create a single-column DataFrame
-                        # This might need adjustment based on how text files should be represented
-                        data = pd.DataFrame(lines, columns=["text_data"])
-                logger.info(f"Successfully loaded text file {file_path} into a DataFrame.")
-
-            else:
-                logger.error(f"Unsupported file type: {file_extension} for file {file_path}")
-                raise ValueError(f"Unsupported file type: {file_extension}")
-
-            self.data_frame = data
-            self.root.event_generate("<<DataLoaded>>")  # Changed to use self.root
-            logger.info(f"Successfully loaded data from {file_path}")
-            # Return data and headers for the callback
-            if self.data_frame is not None:
-                data_list = self.data_frame.values.tolist()
-                headers_list = self.data_frame.columns.tolist()
-                return data_list, headers_list
-            return None, None  # Should not happen if loading was successful
-        except Exception as e:
-            logger.exception(f"An error occurred during data loading from {file_path}")
-            # Store the exception to be raised in the main thread
-            self.background_exception = e
-            self.root.event_generate("<<TaskFailed>>")  # Changed to use self.root
-
-    def _load_text_background(self, file_path: str) -> str:
-        try:
-            with open(file_path, "r", encoding="utf-8") as f:
-                return f.read()
-        except Exception as e:
-            logging.error(f"Error loading text from {file_path}: {e}")
-            raise
-
-    def _export_to_excel(self, file_path: str, data: List[List[Any]]) -> None:
-        try:
-            if not PANDAS_AVAILABLE:
-                raise ImportError("pandas required for Excel export")
-
-            if data and hasattr(self, "headers"):
-                df = pd.DataFrame(data, columns=self.headers)
-                df.to_excel(file_path, index=False)
-                self.root.after(
-                    0, lambda: self.update_status(f"Exported to {file_path}")
-                )
-            else:
-                raise ValueError("No data to export")
-        except Exception as e:
-            logging.error(f"Error exporting to Excel: {e}")
-            self.root.after(0, lambda: messagebox.showerror("Export Error", str(e)))
-
-    def _save_to_file(self, file_path: str, data: List[List[Any]]) -> None:
-        try:
-            self.update_status(f"Saving to {file_path}...") # Added status update
             if PANDAS_AVAILABLE and file_path.endswith(".xlsx"):
                 df = pd.DataFrame(data, columns=self.headers if hasattr(self, 'headers') else None)
                 df.to_excel(file_path, index=False)
@@ -2100,9 +1716,9 @@ class CrewGUI:
                 # Basic text save for other types or if pandas/csv is not appropriate
                 with open(file_path, "w", encoding="utf-8") as f:
                     if hasattr(self, 'headers'):
-                        f.write(",".join(map(str, self.headers)) + "\\n")
+                        f.write(",".join(map(str, self.headers)) + "\n")
                     for row in data:
-                        f.write(",".join(map(str, row)) + "\\n")
+                        f.write(",".join(map(str, row)) + "\n")
             self.update_status(f"Saved to {file_path}")
         except Exception as e:
             logging.error(f"Error saving to file {file_path}: {e}") # Log error
@@ -2123,8 +1739,269 @@ class CrewGUI:
         #     self.update_status("No default data file found.")
         pass
 
+    def _on_open_file(self) -> None:
+        """Handles opening different file types."""
+        try:
+            file_types = [
+                ("Supported Files", ("*.csv", "*.xlsx", "*.xls", "*.txt", "*.py", "*.md")),
+                ("Data Files", ("*.csv", "*.xlsx", "*.xls")),
+                ("Text Files", ("*.txt", "*.py", "*.md")),
+                ("All Files", "*.*"),
+            ]
+            file_path = filedialog.askopenfilename(
+                defaultextension=".txt",  # Default to .txt if no specific type chosen
+                filetypes=file_types,
+            )
 
-# Add a main execution block to launch the GUI directly if this file is run
+            if file_path:
+                self.current_file_path = file_path
+                _, file_extension = os.path.splitext(file_path)
+                file_extension = file_extension.lower()
+
+                if file_extension in [".csv", ".xlsx", ".xls"]:
+                    self.update_status(f"Opening data file: {os.path.basename(file_path)}...")
+                    # Clear previous data/text specific states
+                    self.current_data = None
+                    self.headers = []
+                    if hasattr(self, 'details_text'):
+                        self.details_text.delete("1.0", tk.END)  # Clear details view
+                    self.run_in_background(
+                        self._load_data_background, file_path, callback=self._on_data_loaded
+                    )
+                elif file_extension in [".txt", ".py", ".md"]:  # Added .md
+                    self.update_status(f"Opening text file: {os.path.basename(file_path)}...")
+                    # Clear previous data/text specific states
+                    self.current_data = None
+                    self.headers = []
+                    if hasattr(self, 'data_table'):
+                        self.data_table.delete(*self.data_table.get_children())  # Clear data table
+                    self.run_in_background(
+                        self._load_text_background, file_path, callback=self._on_text_loaded_callback
+                    )
+                else:
+                    self.update_status(f"Unsupported file type: {file_extension}", error=True)
+                    messagebox.showwarning(
+                        "Unsupported File Type",
+                        f"The file type '{file_extension}' is not directly supported for automatic display. You can try opening it as 'All Files'.",
+                    )
+        except Exception as e:
+            logging.error(f"Error in _on_open_file: {e}")
+            messagebox.showerror("Error", f"Failed to open file: {e}")
+
+    def _on_data_table_select(self, event: tk.Event) -> None:
+        """Handles the TreeviewSelect event for the data_table."""
+        try:
+            if not hasattr(self, "data_table"):
+                return
+            
+            selection = self.data_table.selection()  # Get current selection
+            if selection:
+                item_id = selection[0]  # Get the first selected item ID
+                item_data = self.data_table.item(item_id)  # Get item details
+                self._update_details_view(item_data)  # Call with actual item data
+            else:
+                # Optionally, clear details view or show a default message if nothing is selected
+                self._update_details_view(None) 
+        except Exception as e:
+            logging.error(f"Error handling data table selection: {e}")
+            # Optionally, update details view with an error message
+            if hasattr(self, "details_text"):
+                self.details_text.delete("1.0", "end")
+                self.details_text.insert("1.0", f"Error processing selection: {e}")
+
+    def _update_script_menu(self) -> None:
+        logging.info("Updating script menu as it is about to be displayed...")
+        if not hasattr(self, 'script_menu') or not isinstance(self.script_menu, tk.Menu):
+            logging.error(
+                "self.script_menu is not initialized or is not a tk.Menu instance. "
+                "The 'Run Script' submenu cannot be populated. "
+                "Ensure create_menu_bar() correctly initializes self.script_menu and is called before _update_script_menu()."
+            )
+            return
+
+        self.script_menu.delete(0, tk.END)  # Clear existing items
+
+        try:
+            if not hasattr(self, 'scripts_dir') or not self.scripts_dir:
+                logging.warning("Scripts directory (self.scripts_dir) is not defined.")
+                self.script_menu.add_command(label="(Scripts dir not configured)", state=tk.DISABLED)
+            elif not os.path.exists(self.scripts_dir):
+                logging.warning(f"Scripts directory '{self.scripts_dir}' not found.")
+                self.script_menu.add_command(label="(Scripts dir missing)", state=tk.DISABLED)
+                # Attempt to create it
+                try:
+                    os.makedirs(self.scripts_dir)
+                    logging.info(f"Re-created missing scripts directory: {self.scripts_dir}")
+                    # Optionally, create a sample script if the directory was just created
+                    sample_script_path = os.path.join(self.scripts_dir, "sample_script.py")
+                    if not os.path.exists(sample_script_path):
+                        with open(sample_script_path, "w") as f:
+                            f.write("# Sample script\nprint('Hello from sample script!')")
+                        logging.info(f"Created sample script: {sample_script_path}")
+                except Exception as e_mkdir:
+                    logging.error(f"Failed to re-create scripts directory: {e_mkdir}")
+            
+            script_files = []
+            # Check again for scripts_dir existence in case it was just created
+            if hasattr(self, 'scripts_dir') and self.scripts_dir and os.path.exists(self.scripts_dir):
+                script_files = glob.glob(os.path.join(self.scripts_dir, "*.py"))
+            
+            if not script_files:
+                # This label will be added if scripts_dir existed but was empty,
+                # or if scripts_dir was missing/not configured and the specific messages above were already added.
+                # To avoid duplicate "missing" messages, we check if items were already added.
+                if self.script_menu.index(tk.END) is None:  # No items added yet
+                    self.script_menu.add_command(label="(No scripts found)", state=tk.DISABLED)
+            else:
+                for script_path in sorted(script_files):
+                    script_name = os.path.basename(script_path)
+                    self.script_menu.add_command(
+                        label=script_name,
+                        command=lambda sp=script_path: self._run_selected_script(sp)
+                    )
+            
+            self.script_menu.add_separator()
+            self.script_menu.add_command(label="Refresh Scripts", command=self._update_script_menu)
+            self.script_menu.add_command(
+                label="Open Scripts Folder...",
+                command=self._open_scripts_folder
+            )
+            # Avoid updating status if scripts_dir was problematic initially, status might be confusing.
+            if hasattr(self, 'scripts_dir') and self.scripts_dir and os.path.exists(self.scripts_dir):
+                self.update_status(f"Scripts menu updated. Found {len(script_files)} scripts.")
+
+        except Exception as e:
+            logging.error(f"Error updating script menu: {e}", exc_info=True)
+            messagebox.showerror("Script Menu Error", f"Could not update script menu: {e}")
+            # Ensure self.script_menu is still valid before trying to add error items
+            if hasattr(self, 'script_menu') and isinstance(self.script_menu, tk.Menu):
+                 # Clear any partial items from the try block before adding error state
+                 self.script_menu.delete(0, tk.END)
+                 self.script_menu.add_command(label="(Error loading scripts)", state=tk.DISABLED)
+                 self.script_menu.add_separator()
+                 self.script_menu.add_command(label="Refresh Scripts", command=self._update_script_menu)
+                 self.script_menu.add_command(label="Open Scripts Folder...", command=self._open_scripts_folder)
+
+    def _run_selected_script(self, script_path: str) -> None:
+        try:
+            script_name = os.path.basename(script_path)
+            self.update_status(f"Running script: {script_name}...")
+            def target():
+                try:
+                    logging.info(f"Executing script: python '{script_path}'")
+                    flags = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
+                    proc = subprocess.Popen(
+                        ['python', script_path], stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE, text=True,
+                        creationflags=flags, cwd=self.scripts_dir
+                    )
+                    out, err = proc.communicate()
+                    if proc.returncode == 0:
+                        self.root.after(0, lambda: self.update_status(f"Script '{script_name}' finished."))
+                        if out.strip():
+                            self.root.after(0, lambda: messagebox.showinfo(f"{script_name} Output", out))
+                        else:
+                            self.root.after(0, lambda: messagebox.showinfo(f"{script_name} Finished", f"Script '{script_name}' completed with no output."))
+                    else:
+                        msg = f"Script '{script_name}' failed." + (f"\n\nError:\n{err}" if err.strip() else '')
+                        self.root.after(0, lambda: messagebox.showerror(f"{script_name} Error", msg))
+                        self.root.after(0, lambda: self.update_status(f"Script '{script_name}' failed.", error=True))
+                except Exception as e_thread:
+                    logging.error(f"Exception while running script {script_name}: {e_thread}")
+                    self.root.after(0, lambda: messagebox.showerror("Script Execution Error", str(e_thread)))
+                    self.root.after(0, lambda: self.update_status(f"Error running {script_name}.", error=True))
+            threading.Thread(target=target, daemon=True).start()
+        except Exception as e:
+            logging.error(f"Error preparing to run script {script_path}: {e}")
+            messagebox.showerror("Script Error", f"Could not run script {script_name}: {e}")
+            self.update_status(f"Failed to start script {script_name}.", error=True)
+
+    def _open_scripts_folder(self) -> None:
+        if not hasattr(self, 'scripts_dir') or not self.scripts_dir:
+            messagebox.showwarning("Error", "Scripts directory path is not configured.")
+            logging.warning("scripts_dir not set when opening folder.")
+            return
+        if not os.path.isdir(self.scripts_dir):
+            messagebox.showwarning(
+                "Error", f"Scripts directory does not exist:\n{self.scripts_dir}")
+            logging.warning(f"Non-existent scripts_dir: {self.scripts_dir}")
+            return
+        try:
+            subprocess.run(['xdg-open', self.scripts_dir], check=True)
+            self.update_status(f"Opened scripts folder: {self.scripts_dir}")
+        except Exception as e:
+            logging.error(f"Failed to open scripts folder: {e}")
+            messagebox.showerror("Error", f"Could not open scripts folder: {e}")
+
+    def _on_data_loaded(self, result: Tuple[List[List[Any]], List[str]]) -> None:
+        try:
+            data, headers = result
+            self.current_data = data
+            self.headers = headers
+            self._update_data_view(data)
+            self._update_column_menu()
+            self.update_status(f"Loaded {len(data)} records")
+        except Exception as e:
+            logging.error(f"Error processing loaded data: {e}")
+            messagebox.showerror("Error", f"Failed to process loaded data: {e}")
+
+    def _on_text_loaded_callback(self, content: str) -> None:
+        try:
+            if not isinstance(content, str):
+                logging.error(f"Invalid text load result: {type(content)}")
+                messagebox.showerror("Error", "Failed to load text content.")
+                self.update_status("Failed to load text.", error=True)
+                if hasattr(self, 'details_text'):
+                    self.details_text.delete("1.0", tk.END)
+                    self.details_text.insert("1.0", "Error: Failed to load text content.")
+                return
+            if hasattr(self, 'details_text'):
+                self.details_text.delete("1.0", tk.END)
+                self.details_text.insert("1.0", content)
+                status = f"Loaded: {os.path.basename(self.current_file_path)}" if hasattr(self, 'current_file_path') else "Text content loaded."
+                self.update_status(status)
+            if hasattr(self, 'data_table'):
+                self.data_table.delete(*self.data_table.get_children())
+            self.current_data = None
+            self.headers = []
+        except Exception as e:
+            logging.error(f"Error in text loaded callback: {e}")
+            messagebox.showerror("Error", f"Failed to load text: {e}")
+            self.update_status("Failed to load text.", error=True)
+
+    def _load_data_background(self, file_path: str) -> Tuple[List[List[Any]], List[str]]:
+        try:
+            if not PANDAS_AVAILABLE:
+                raise ImportError("Pandas is required to load data.")
+            _, ext = os.path.splitext(file_path)
+            ext = ext.lower()
+            if ext == '.csv':
+                df = pd.read_csv(file_path)
+            elif ext in ['.xlsx', '.xls']:
+                try:
+                    df = pd.read_excel(file_path)
+                except:
+                    engine = 'openpyxl' if ext == '.xlsx' else 'xlrd'
+                    df = pd.read_excel(file_path, engine=engine)
+            elif ext == '.txt':
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    lines = [l.strip() for l in f if l.strip()]
+                df = pd.DataFrame(lines, columns=['text_data'])
+            else:
+                raise ValueError(f"Unsupported extension: {ext}")
+            return df.values.tolist(), df.columns.tolist()
+        except Exception as e:
+            logging.error(f"Error loading data in background: {e}")
+            raise
+
+    def _load_text_background(self, file_path: str) -> str:
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                return f.read()
+        except Exception as e:
+            logging.error(f"Error loading text in background: {e}")
+            raise
+
 if __name__ == "__main__":
     try:
         root = tk.Tk()
@@ -2132,8 +2009,6 @@ if __name__ == "__main__":
         root.mainloop()
     except Exception as e:
         logging.critical(f"Failed to launch Crew GUI: {e}", exc_info=True)
-        # Fallback to a simple error message if logging or messagebox fails
-        try:
-            messagebox.showerror("Fatal Error", f"Could not start the application: {e}")
-        except tk.TclError:
-            print(f"FATAL ERROR: Could not start the application: {e}")
+        # Fallback to a simple error message if GUI initialization fails
+        print(f"Error: {e}")
+        input("Press Enter to exit...")

@@ -1,0 +1,15 @@
+3. Thread and UI Synchronization
+   - Consolidate background thread management using `concurrent.futures.ThreadPoolExecutor`.
+   - Use thread-safe queues or `root.after()` exclusively for GUI updates to avoid race conditions.
+
+---
+
+# Detailed Implementation Guidance (Appended)
+
+- Use `concurrent.futures.ThreadPoolExecutor` for all background tasks.
+- For GUI updates from threads, use `root.after()` or a thread-safe queue.
+- Avoid direct widget updates from non-main threads.
+- Refactor thread creation to use a single `ThreadPoolExecutor`.
+- Replace direct widget updates in threads with `root.after()` calls.
+- No changes to TTS setup or configuration.
+

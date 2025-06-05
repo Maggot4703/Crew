@@ -1,0 +1,11 @@
+4. Robust Path Handling
+   - Switch from `os.path` to `pathlib.Path` throughout to simplify path manipulation and enhance cross-platform compatibility.
+
+---
+
+# Detailed Implementation Guidance (Appended)
+
+- Replace all `os.path` usage with `pathlib.Path` for file and directory operations.
+- Update file open/save logic accordingly.
+- No changes to TTS logic or setup.
+

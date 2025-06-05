@@ -1,0 +1,14 @@
+2. Use sys.executable for Subprocess Calls
+   - Replace hardcoded `'python'` with `sys.executable` when launching scripts to respect virtual environments.
+   - Handle timeouts and exceptions using `subprocess.run(..., capture_output=True, timeout=...)` for simpler logic.
+
+---
+
+# Detailed Implementation Guidance (Appended)
+
+- Replace any hardcoded `'python'` in subprocess calls with `sys.executable` to respect virtual environments.
+- Use `subprocess.run(..., capture_output=True, timeout=...)` for better error handling.
+- Search for subprocess calls in the codebase (especially script launching features).
+- Add exception handling for timeouts and errors.
+- No changes to TTS logic or setup.
+

@@ -13,6 +13,7 @@
 		"cSpell.words": [
 			"Battlestar"
 		],
-		"DockerRun.DisableDockerrc": true
+		"DockerRun.DisableDockerrc": true,
+		"liveServer.settings.multiRootWorkspaceName": "Crew"
 	}
 }
