@@ -1,20 +1,27 @@
+import sys
+import tkinter as tk
+import tkinter as tk
+from pathlib import Path
+from gui import CrewGUI  # Import CrewGUI from gui.py
+
+
 def main():
     """Main function to initialize and run the GUI application."""
-    app = Application(sys.argv)
-    app.setApplicationName("Crew GUI")
-    app.setApplicationVersion("1.0")
+    root = tk.Tk()
+    root.title("Crew GUI")
+    # Version information can be displayed in the GUI if needed
 
     # Set application icon if available
-    icon_path = Path("icon.png")
-    if icon_path.exists():
-        app.setWindowIcon(QIcon(str(icon_path)))
+    icon_path = Path("/home/me/BACKUP/PROJECTS/Crew/input/Cars1.png")
+    if icon_path.exists() and icon_path.suffix == ".ico":
+        root.iconbitmap(str(icon_path))  # Set application icon if available
 
     # Create and show the main window
-    window = CrewGUI()
-    window.show()
+    window = CrewGUI(root)
+    root.mainloop()
 
     # Start the event loop
-    sys.exit(app.exec_())
+    root.mainloop()
 
 
 if __name__ == "__main__":
