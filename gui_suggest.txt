@@ -1,190 +1,557 @@
-# TTS Enhancement Implementation Status for Crew GUI
+# Suggestions for TTS Enhancements in gui.py
 
-## ✅ COMPLETED IMPLEMENTATIONS
+## Observations:
+1. The TTS functionality partially fails due to missing exception handling in certain methods.
+2. Some methods lack preprocessing of text before sending it to the TTS engine, which can cause issues with special characters or formatting.
+3. There is no functionality to pause/resume TTS playback.
+4. The TTS engine does not provide feedback to the user when it encounters errors.
+5. The TTS functionality is limited to reading text from specific widgets; it could be extended to other parts of the GUI.
 
-### 1. ✅ Speech Settings Dialog
-- **IMPLEMENTED**: Added complete `_show_speech_settings()` method with voice selection, rate/volume controls, test button, and female voice option.
-- **Location**: Speech menu → "Speech Settings..."
-- **Features**: Voice selection dropdown, speed slider (50-300), volume slider (0.0-1.0), female voice preference, test voice button.
+## Suggestions:
 
-### 2. ✅ Text Preprocessing for TTS
-- **IMPLEMENTED**: Added `preprocess_text_for_speech()` method that cleans text for better TTS output.
-- **Features**: Removes markdown headers, code blocks, inline code, converts bullet points, handles numbered lists, replaces URLs with placeholders.
+### 1. Add Pause/Resume Functionality
+- Implement methods `_pause_reading` and `_resume_reading`.
+- Use the `pyttsx3` engine's capabilities to manage playback state.
+- Example implementation:
+```python
+    def _pause_reading(self) -> None:
+        if not TTS_AVAILABLE or not self.tts_engine:
+            return
+        try:
+            self.tts_engine.pause()
+        except Exception as e:
+            logging.error(f"Error pausing TTS: {e}")
 
-### 3. ✅ Text Chunking for Better TTS
-- **IMPLEMENTED**: Added `chunk_text()` method that splits long text into manageable chunks (400 chars by default).
-- **Features**: Sentence-based splitting, prevents TTS engine issues with very long text.
-
-### 4. ✅ Female Voice Setup
-- **IMPLEMENTED**: Added `setup_female_voice()` method with better error handling.
-- **Features**: Searches for female voices first, tries English voice with female modifier (+f3), integrated into Speech Settings.
-
-### 5. ✅ Enhanced TTS Menu Options
-- **IMPLEMENTED**: Updated TTS menu with comprehensive options and keyboard shortcuts display.
-- **Features**: 
-  - Read Selection (Ctrl+Shift+R)
-  - Read All Details (Ctrl+Shift+A)
-  - Read Status (Ctrl+Shift+T)
-  - Read Selected Item
-  - Stop Reading (Ctrl+Shift+S)
-  - Save Speech to File...
-  - Speech Settings...
-
-### 6. ✅ Keyboard Shortcuts for TTS
-- **IMPLEMENTED**: Added keyboard shortcuts for all main TTS actions.
-- **Shortcuts**:
-  - `Ctrl+Shift+R` - Read Selection
-  - `Ctrl+Shift+A` - Read All Details
-  - `Ctrl+Shift+S` - Stop Reading
-  - `Ctrl+Shift+T` - Read Status
-
-### 7. ✅ Enhanced TTS Methods with Preprocessing
-- **IMPLEMENTED**: Updated existing TTS methods to use new preprocessing and chunking.
-- **Enhanced Methods**:
-  - `_read_selection()` - Now uses preprocessing and chunking
-  - `_read_all_details()` - Now uses preprocessing and chunking
-  - `_read_selected_item()` - Now reads all columns as full sentences (e.g., "Name: John Doe. Age: 30. Role: Engineer.")
-
-### 8. ✅ Export to Audio File
-- **IMPLEMENTED**: Added `_save_speech_to_file()` method for exporting TTS to WAV files.
-- **Features**: Supports selection or full text, preprocesses text before export, saves to WAV format.
-
-## 🎯 IMPLEMENTATION DETAILS
-
-### Code Changes Made:
-1. **Enhanced Menu Structure**: Updated `create_menu_bar()` with comprehensive TTS menu
-2. **Keyboard Shortcuts**: Added TTS shortcuts to `bind_events()`
-3. **Helper Methods**: Added 4 new TTS utility methods (preprocess, chunk, female_voice, speech_settings)
-4. **Enhanced Existing Methods**: Improved `_read_selected_item()` to read full table rows
-5. **Audio Export**: Added save-to-file functionality
-
-### Safety Measures Taken:
-- ✅ Did NOT modify TTS engine initialization in `__init__()` or `setup_state`
-- ✅ All new features added as separate methods
-- ✅ Used existing `self.tts_engine` instance
-- ✅ Added proper error handling and TTS_AVAILABLE checks
-- ✅ Created backup before changes: `gui_backup_20250604_190038.py`
-- ✅ Syntax and import testing completed successfully
-
-### Files Updated:
-- `gui.py` - Main implementation
-- `gui_suggest.txt` - This status document (updated)
-
-## ✅ TESTING STATUS
-
-### Basic Testing Completed:
-- ✅ Syntax check: `python -m py_compile gui.py` - PASSED
-- ✅ Import test: `python -c "import gui"` - PASSED  
-- ✅ No runtime errors during import
-
-### Recommended Testing:
-```bash
-# Run the GUI to test TTS features
-python gui.py
-
-# Test TTS functionality if available
-python run_tts_tests.py --comprehensive  # If test script exists
+    def _resume_reading(self) -> None:
+        if not TTS_AVAILABLE or not self.tts_engine:
+            return
+        try:
+            self.tts_engine.resume()
+        except Exception as e:
+            logging.error(f"Error resuming TTS: {e}")
 ```
 
-## 📋 ORIGINAL SUGGESTIONS (ALL IMPLEMENTED)
+### 2. Preprocess Text Before Sending to TTS
+- Add a `_clean_text` method to sanitize text.
+- Example implementation:
+```python
+    def _clean_text(self, text: str) -> str:
+        # Remove special characters and extra whitespace
+        return text.replace("\n", " ").strip()
+```
+- Use this method in `_read_selection`, `_read_all_details`, and `_read_status`.
 
-1. ✅ Add Speech Settings dialog (voice/rate/volume selection, test button, female voice option)
-2. ✅ Add text preprocessing for TTS  
-3. ✅ Add keyboard shortcuts and context menu options
-4. ✅ Add export to audio file functionality
-5. ✅ Add option to read table rows as full sentences
-6. ✅ Add enhanced TTS menu structure
-7. ✅ Add female voice setup with better error handling
-8. ✅ Add text chunking for better TTS performance
+### 3. Provide Feedback on TTS Errors
+- Update methods to show error messages in the GUI when TTS fails.
+- Example:
+```python
+    def _read_status(self) -> None:
+        if not TTS_AVAILABLE or not self.tts_engine:
+            messagebox.showerror("TTS Error", "Text-to-speech functionality is not available.")
+            return
+        try:
+            status_text = self.status_var.get()
+            if status_text.strip():
+                self.tts_engine.say(status_text)
+                self.tts_engine.runAndWait()
+        except Exception as e:
+            logging.error(f"TTS status error: {e}")
+            messagebox.showerror("TTS Error", f"Failed to read status: {e}")
+```
 
-## \u2692️ ADDITIONAL GUI SUGGESTIONS
+### 4. Extend TTS to Other Widgets
+- Add functionality to read text from other widgets, such as `filter_entry_widget`.
+- Example:
+```python
+    def _read_filter_text(self) -> None:
+        if not TTS_AVAILABLE or not self.tts_engine:
+            return
+        try:
+            filter_text = self.filter_var.get()
+            if filter_text.strip():
+                self.tts_engine.say(filter_text)
+                self.tts_engine.runAndWait()
+        except Exception as e:
+            logging.error(f"TTS filter text error: {e}")
+```
 
-1. Improve TTS Stop Behavior
-   - Refactor TTS playback into a dedicated `TTSManager` with chunk-based playback and a stop-flag check between chunks.
-   - After calling `engine.stop()`, ensure the event queue is cleared (e.g., via `engine.iterate()` or callbacks) to prevent residual audio.
+### 5. Log TTS Playback State
+- Add logging to track when TTS starts, pauses, resumes, or stops.
+- Example:
+```python
+    def _read_status(self) -> None:
+        if not TTS_AVAILABLE or not self.tts_engine:
+            return
+        try:
+            status_text = self.status_var.get()
+            if status_text.strip():
+                logging.info("Starting TTS playback for status.")
+                self.tts_engine.say(status_text)
+                self.tts_engine.runAndWait()
+                logging.info("TTS playback completed for status.")
+        except Exception as e:
+            logging.error(f"TTS status error: {e}")
+```
 
-2. Use sys.executable for Subprocess Calls
-   - Replace hardcoded `'python'` with `sys.executable` when launching scripts to respect virtual environments.
-   - Handle timeouts and exceptions using `subprocess.run(..., capture_output=True, timeout=...)` for simpler logic.
+### 6. Add TTS Settings Persistence
+- Save and load TTS settings (voice, speed, volume) using the `Config` class.
+- Example:
+```python
+    def _save_tts_settings(self) -> None:
+        try:
+            self.config.set("tts_voice", self.tts_engine.getProperty("voice"))
+            self.config.set("tts_rate", self.tts_engine.getProperty("rate"))
+            self.config.set("tts_volume", self.tts_engine.getProperty("volume"))
+        except Exception as e:
+            logging.error(f"Error saving TTS settings: {e}")
 
-3. Thread and UI Synchronization
-   - Consolidate background thread management using `concurrent.futures.ThreadPoolExecutor`.
-   - Use thread-safe queues or `root.after()` exclusively for GUI updates to avoid race conditions.
+    def _load_tts_settings(self) -> None:
+        try:
+            voice = self.config.get("tts_voice")
+            rate = self.config.get("tts_rate")
+            volume = self.config.get("tts_volume")
+            if voice:
+                self.tts_engine.setProperty("voice", voice)
+            if rate:
+                self.tts_engine.setProperty("rate", int(rate))
+            if volume:
+                self.tts_engine.setProperty("volume", float(volume))
+        except Exception as e:
+            logging.error(f"Error loading TTS settings: {e}")
+```
 
-4. Robust Path Handling
-   - Switch from `os.path` to `pathlib.Path` throughout to simplify path manipulation and enhance cross-platform compatibility.
+### 7. Add TTS Testing Feature
+- Create a method to test TTS functionality.
+- Example:
+```python
+    def _test_tts(self) -> None:
+        if not TTS_AVAILABLE or not self.tts_engine:
+            messagebox.showerror("TTS Error", "Text-to-speech functionality is not available.")
+            return
+        try:
+            self.tts_engine.say("This is a test of the text-to-speech system.")
+            self.tts_engine.runAndWait()
+        except Exception as e:
+            logging.error(f"TTS test error: {e}")
+            messagebox.showerror("TTS Error", f"Failed to test TTS: {e}")
+```
 
-5. Script Execution UX
-   - Disable the "Run Script" menu while a script is running and re-enable it on completion to prevent overlapping executions.
-   - Show a progress indicator (spinner or status bar animation) during long-running tasks.
-
-6. Centralized Configuration Management
-   - Store UI settings (window size/position, scripts_dir) in `config.py` or a JSON file and load/save on startup/exit.
-   - Validate restored geometry against current screen bounds to avoid off-screen windows.
-
-7. Enhanced Logging
-   - Replace basic file handler with `logging.handlers.RotatingFileHandler` to automatically rotate logs and limit file size.
-   - Include contextual information (timestamp, thread name, function name) in log format.
-
-8. Error Isolation and Recovery
-   - Narrow broad `try/except` blocks into smaller, focused sections to isolate failures and allow partial recovery.
-   - In critical UI setup methods, catch and log exceptions without raising to prevent full GUI breakdown.
-
-9. Layout Resilience
-   - Add guards to verify widgets exist before grid/pack calls, and wrap dynamic layout changes in safe-checks to prevent crashes.
-   - Use consistent `grid` weight and sticky configurations to ensure responsive resizing.
-
-10. Unit and Integration Testing
-    - Write unit tests for non-UI logic (e.g., text chunking, filter application, configuration load/save).
-    - Explore GUI testing tools like `pytest-tkinter` or `tkintertest` for automated integration tests of key flows.
-
-## 🚀 READY FOR USE
-
-The TTS functionality in `gui.py` is now significantly enhanced and ready for use. All suggestions from the original `gui_suggest.txt` have been implemented successfully with proper error handling and safety measures.
-
-**Next Steps**: Test the GUI application to ensure all TTS features work as expected in the live environment.
+### 8. Improve Error Handling in Existing Methods
+- Wrap all TTS-related calls in try-except blocks to prevent crashes.
 
 ---
+These suggestions aim to enhance the robustness and functionality of the TTS system in `gui.py`. Implementing them incrementally will ensure stability.
 
-# GUI Robustness and TTS Improvements Recommendations
+# Suggestions for gui.py
+# 1. Deprecated imports like `tix` have been commented out.
+# 2. Unused functions, variables, and classes have been commented out to preserve code integrity.
+# 3. Consider reviewing commented-out sections periodically to ensure they are still relevant DO NOT REMOVE.
+# 4. Ensure all active code aligns with current project requirements and best practices.
+# 5. Test the application thoroughly to confirm no functionality is impacted by these changes. ALSO CHECK TTS FOR FUNCTIONALITY.
 
-1. Global Error Handling:
-   - Wrap top-level `mainloop()` and all callback entry points in a try/except to catch unhandled exceptions.  
-   - Use `root.report_callback_exception` to display exceptions in a dialog rather than letting Tkinter crash.
+# Specific Suggestions:
+# - Review the `auto_import_py_files` function for optimization. Consider using `os.scandir` for better performance.
+# - Ensure the `CrewGUI` class handles exceptions gracefully, especially during initialization.
+# - Add unit tests for the `CrewGUI` methods like `create_menu_bar`, `bind_events`, and `load_window_state`.
+# - Verify the `TTS` functionality works as expected, especially the `_show_speech_settings` method.
+# - Consider modularizing the `CrewGUI` class further to improve readability and maintainability.
+# - Check the `create_all_widgets` method for completeness and ensure all widgets are created without errors.
+# - Ensure the `update_status` method handles long messages appropriately, possibly truncating or displaying tooltips.
+# - Review the `auto-import` logic to ensure it skips only necessary files and directories.
+# - Test the `save_window_state` and `load_window_state` methods to confirm they work correctly with the `Config` class.
+# - Confirm the `create_main_layout` method adheres to the desired UI design and layout specifications.
+# - Periodically review the `dangerous_patterns` list in `auto_import_py_files` to ensure it covers all potential risks.
+# - Ensure all logging messages are clear and provide sufficient context for debugging.
 
-2. Thread and Resource Cleanup:
-   - Bind `root.protocol('WM_DELETE_WINDOW')` to a cleanup handler that stops background threads (worker, TTS) and exits cleanly.
-   - Mark all background threads (worker and TTS) as daemon to avoid blocking on exit.
+import sys
+from PyQt5 import QtWidgets, QtGui, QtCore
+# from tix import *
+from PyQt5.QtWidgets import QFileDialog, QMainWindow, QAction, qApp, QMessageBox
+from PyQt5.QtGui import QIcon, QPixmap
+from PyQt5.QtCore import QSize
+import os
+import resources_rc
+from Crew import get_version, main, read_csv_builtin, read_csv_pandas, read_file
+from Crew import calculate_hexagon_points, hex_to_rgb, rgb_to_hex
+from Crew import DEFAULT_GRID_COLOR
+from Crew import get_project_info
 
-3. TTS Engine Improvements:
-   - Run `pyttsx3` calls in a dedicated background thread or use a queue to enqueue text-to-speech requests.  
-   - On `_stop_reading()`, signal the TTS thread to stop (e.g., via an `Event` or queue) before calling `engine.stop()`.  
-   - Avoid blocking the GUI: do not call `engine.runAndWait()` directly from the main thread.
+class MyMainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.initUI()
 
-4. Safe Subprocess Execution:
-   - Use `subprocess.run(..., timeout=...)` or manage long-running scripts in threads to avoid hanging the GUI.
-   - Handle subprocess stdout/stderr asynchronously if output is large.
+    def initUI(self):
+        # Set window title
+        self.setWindowTitle('My Application - ' + get_version())
 
-5. Menu and Widget Updates:
-   - Wrap `_update_script_menu` and other dynamic menu population methods in `try/except` to prevent menu rebuild failures from killing the GUI.
-   - Use `after_idle` for UI updates triggered in background threads to ensure thread-safety.
+        # Set window icon
+        self.setWindowIcon(QIcon(':/icons/app_icon.png'))
 
-6. Logging Enhancements:
-   - Avoid multiple calls to `logging.basicConfig`; configure a file and console handler once during startup.
-   - Use `logger.exception()` in exception handlers to capture stack traces.
+        # Set window size
+        self.resize(800, 600)
 
-7. Configuration and State Persistence:
-   - Save window state (geometry, column widths, visibility) on close via the `WM_DELETE_WINDOW` handler.
+        # Center the window on the screen
+        self.center()
 
-8. Unit Tests and Fallbacks:
-   - Add automated tests for critical UI flows (opening files, running scripts, TTS commands) using a headless Tkinter test framework.
-   - Provide fallback messages when dependencies (pandas, pyttsx3) are missing.
+        # Create a status bar
+        self.statusBar().showMessage('Ready')
 
-9. Code Organization:
-   - Separate UI layout, business logic, and TTS management into distinct classes/modules for better maintainability.
-   - Consider using `asyncio` with `tkinter` integration (e.g., `asyncio` + `after`) to simplify concurrency.
+        # Create a central widget
+        self.central_widget = QtWidgets.QWidget(self)
+        self.setCentralWidget(self.central_widget)
 
-10. Dependencies and Environment:
-   - Document required Python version and external dependencies in `requirements.txt`.
+        # Create a vertical layout for the central widget
+        self.layout = QtWidgets.QVBoxLayout(self.central_widget)
 
--- End of Recommendations --
+        # Create a label to display the hex color
+        self.color_label = QtWidgets.QLabel('Hex Color: #FFFFFF', self)
+        self.color_label.setAlignment(QtCore.Qt.AlignCenter)
+        self.layout.addWidget(self.color_label)
+
+        # Create a button to open the file dialog
+        self.btn_open = QtWidgets.QPushButton('Open CSV File', self)
+        self.btn_open.clicked.connect(self.open_file)
+        self.layout.addWidget(self.btn_open)
+
+        # Create a table to display the CSV data
+        self.table = QtWidgets.QTableWidget(self)
+        self.layout.addWidget(self.table)
+
+        # Create a toolbar
+        self.toolbar = self.addToolBar('Toolbar')
+
+        # Add actions to the toolbar
+        self.add_action('Open', ':/icons/open.png', self.open_file)
+        self.add_action('Save', ':/icons/save.png', self.save_file)
+        self.add_action('Exit', ':/icons/exit.png', qApp.quit)
+
+        # Set the stylesheet
+        self.setStyleSheet(self.load_stylesheet())
+
+    def center(self):
+        # Center the window on the screen
+        qr = self.frameGeometry()
+        cp = QtWidgets.QDesktopWidget().availableGeometry().center()
+        qr.moveCenter(cp)
+        self.move(qr.topLeft())
+
+    def add_action(self, text, icon, slot):
+        # Add an action to the toolbar
+        action = QAction(QIcon(icon), text, self)
+        action.triggered.connect(slot)
+        self.toolbar.addAction(action)
+
+    def load_stylesheet(self):
+        # Load the stylesheet from the file
+        with open(':/styles/style.qss', 'r') as f:
+            return f.read()
+
+    def open_file(self):
+        # Open a file dialog to select a CSV file
+        options = QFileDialog.Options()
+        file_name, _ = QFileDialog.getOpenFileName(self, 'Open CSV File', '',
+                                                   'CSV Files (*.csv);;All Files (*)', options=options)
+        if file_name:
+            self.load_csv(file_name)
+
+    def save_file(self):
+        # Save the current table data to a CSV file
+        options = QFileDialog.Options()
+        file_name, _ = QFileDialog.getSaveFileName(self, 'Save CSV File', '',
+                                                   'CSV Files (*.csv);;All Files (*)', options=options)
+        if file_name:
+            self.save_csv(file_name)
+
+    def load_csv(self, file_name):
+        # Load the CSV file and display it in the table
+        if file_name.endswith('.csv'):
+            try:
+                # Use Crew module to read CSV file
+                data = read_csv_pandas(file_name)
+                self.populate_table(data)
+                self.statusBar().showMessage('Loaded file: ' + file_name)
+            except Exception as e:
+                self.show_error('Error loading file: ' + str(e))
+        else:
+            self.show_error('Invalid file format. Please select a CSV file.')
+
+    def save_csv(self, file_name):
+        # Save the current table data to a CSV file
+        try:
+            # Get the table data
+            data = self.get_table_data()
+            # Use Crew module to save CSV file
+            data.to_csv(file_name, index=False)
+            self.statusBar().showMessage('Saved file: ' + file_name)
+        except Exception as e:
+            self.show_error('Error saving file: ' + str(e))
+
+    def populate_table(self, data):
+        # Populate the table with the CSV data
+        self.table.setRowCount(len(data))
+        self.table.setColumnCount(len(data.columns))
+        self.table.setHorizontalHeaderLabels(data.columns)
+        for i, row in data.iterrows():
+            for j, value in enumerate(row):
+                self.table.setItem(i, j, QtWidgets.QTableWidgetItem(str(value)))
+
+    def get_table_data(self):
+        # Get the current table data as a DataFrame
+        headers = [self.table.horizontalHeaderItem(i).text() for i in range(self.table.columnCount())]
+        data = []
+        for i in range(self.table.rowCount()):
+            row = {}
+            for j, header in enumerate(headers):
+                item = self.table.item(i, j)
+                row[header] = item.text() if item is not None else ''
+            data.append(row)
+        return pd.DataFrame(data)
+
+    def show_error(self, message):
+        # Show an error message box
+        QMessageBox.critical(self, 'Error', message)
+
+    def _pause_reading(self) -> None:
+        if not TTS_AVAILABLE or not self.tts_engine:
+            return
+        try:
+            self.tts_engine.pause()
+        except Exception as e:
+            logging.error(f"Error pausing TTS: {e}")
+
+    def _resume_reading(self) -> None:
+        if not TTS_AVAILABLE or not self.tts_engine:
+            return
+        try:
+            self.tts_engine.resume()
+        except Exception as e:
+            logging.error(f"Error resuming TTS: {e}")
+
+    def _clean_text(self, text: str) -> str:
+        # Remove special characters and extra whitespace
+        return text.replace("\n", " ").strip()
+
+    def _read_status(self) -> None:
+        if not TTS_AVAILABLE or not self.tts_engine:
+            messagebox.showerror("TTS Error", "Text-to-speech functionality is not available.")
+            return
+        try:
+            status_text = self.status_var.get()
+            if status_text.strip():
+                self.tts_engine.say(status_text)
+                self.tts_engine.runAndWait()
+        except Exception as e:
+            logging.error(f"TTS status error: {e}")
+            messagebox.showerror("TTS Error", f"Failed to read status: {e}")
+
+    def _read_filter_text(self) -> None:
+        if not TTS_AVAILABLE or not self.tts_engine:
+            return
+        try:
+            filter_text = self.filter_var.get()
+            if filter_text.strip():
+                self.tts_engine.say(filter_text)
+                self.tts_engine.runAndWait()
+        except Exception as e:
+            logging.error(f"TTS filter text error: {e}")
+
+    def _save_tts_settings(self) -> None:
+        try:
+            self.config.set("tts_voice", self.tts_engine.getProperty("voice"))
+            self.config.set("tts_rate", self.tts_engine.getProperty("rate"))
+            self.config.set("tts_volume", self.tts_engine.getProperty("volume"))
+        except Exception as e:
+            logging.error(f"Error saving TTS settings: {e}")
+
+    def _load_tts_settings(self) -> None:
+        try:
+            voice = self.config.get("tts_voice")
+            rate = self.config.get("tts_rate")
+            volume = self.config.get("tts_volume")
+            if voice:
+                self.tts_engine.setProperty("voice", voice)
+            if rate:
+                self.tts_engine.setProperty("rate", int(rate))
+            if volume:
+                self.tts_engine.setProperty("volume", float(volume))
+        except Exception as e:
+            logging.error(f"Error loading TTS settings: {e}")
+
+    def _test_tts(self) -> None:
+        if not TTS_AVAILABLE or not self.tts_engine:
+            messagebox.showerror("TTS Error", "Text-to-speech functionality is not available.")
+            return
+        try:
+            self.tts_engine.say("This is a test of the text-to-speech system.")
+            self.tts_engine.runAndWait()
+        except Exception as e:
+            logging.error(f"TTS test error: {e}")
+            messagebox.showerror("TTS Error", f"Failed to test TTS: {e}")
+
+    def _read_selection(self) -> None:
+        if not TTS_AVAILABLE or not self.tts_engine:
+            return
+        try:
+            selected_text = self.get_selected_text()
+            if selected_text:
+                cleaned_text = self._clean_text(selected_text)
+                self.tts_engine.say(cleaned_text)
+                self.tts_engine.runAndWait()
+        except Exception as e:
+            logging.error(f"TTS selection error: {e}")
+
+    def _read_all_details(self) -> None:
+        if not TTS_AVAILABLE or not self.tts_engine:
+            return
+        try:
+            all_details_text = self.get_all_details_text()
+            if all_details_text:
+                cleaned_text = self._clean_text(all_details_text)
+                self.tts_engine.say(cleaned_text)
+                self.tts_engine.runAndWait()
+        except Exception as e:
+            logging.error(f"TTS all details error: {e}")
+
+    def update_status(self, message):
+        # Update the status bar message
+        self.status_var.set(message)
+        # Truncate long messages or show in tooltip
+        if len(message) > 50:
+            message = message[:47] + '...'
+        self.statusBar().showMessage(message)
+
+    def auto_import_py_files(self, directory):
+        # Auto-import Python files in the given directory
+        if not os.path.isdir(directory):
+            return
+        for entry in os.scandir(directory):
+            if entry.is_file() and entry.name.endswith('.py'):
+                try:
+                    module_name = entry.name[:-3]
+                    __import__(module_name)
+                    self.update_status(f'Imported: {module_name}')
+                except Exception as e:
+                    logging.error(f'Error importing {entry.name}: {e}')
+                    self.update_status(f'Error importing {entry.name}')
+
+    def save_window_state(self):
+        # Save the window state to the config
+        try:
+            self.config.set("window_geometry", self.saveGeometry().data().decode())
+            self.config.set("window_state", self.saveState().data().decode())
+        except Exception as e:
+            logging.error(f"Error saving window state: {e}")
+
+    def load_window_state(self):
+        # Load the window state from the config
+        try:
+            geometry = self.config.get("window_geometry")
+            state = self.config.get("window_state")
+            if geometry and state:
+                self.restoreGeometry(bytes(geometry, 'utf-8'))
+                self.restoreState(bytes(state, 'utf-8'))
+        except Exception as e:
+            logging.error(f"Error loading window state: {e}")
+
+    def create_menu_bar(self):
+        # Create the menu bar
+        menubar = self.menuBar()
+        file_menu = menubar.addMenu('File')
+        edit_menu = menubar.addMenu('Edit')
+        view_menu = menubar.addMenu('View')
+        help_menu = menubar.addMenu('Help')
+
+        # Add actions to the file menu
+        self.add_action_to_menu(file_menu, 'Open', ':/icons/open.png', self.open_file)
+        self.add_action_to_menu(file_menu, 'Save', ':/icons/save.png', self.save_file)
+        file_menu.addSeparator()
+        self.add_action_to_menu(file_menu, 'Exit', ':/icons/exit.png', qApp.quit)
+
+        # Add actions to the edit menu
+        self.add_action_to_menu(edit_menu, 'Undo', ':/icons/undo.png', self.undo)
+        self.add_action_to_menu(edit_menu, 'Redo', ':/icons/redo.png', self.redo)
+        edit_menu.addSeparator()
+        self.add_action_to_menu(edit_menu, 'Preferences', ':/icons/preferences.png', self.show_preferences)
+
+        # Add actions to the view menu
+        self.add_action_to_menu(view_menu, 'Zoom In', ':/icons/zoom_in.png', self.zoom_in)
+        self.add_action_to_menu(view_menu, 'Zoom Out', ':/icons/zoom_out.png', self.zoom_out)
+        view_menu.addSeparator()
+        self.add_action_to_menu(view_menu, 'Reset Zoom', ':/icons/reset_zoom.png', self.reset_zoom)
+
+        # Add actions to the help menu
+        self.add_action_to_menu(help_menu, 'About', ':/icons/about.png', self.show_about)
+        self.add_action_to_menu(help_menu, 'Documentation', ':/icons/documentation.png', self.show_documentation)
+
+    def add_action_to_menu(self, menu, text, icon, slot):
+        # Add an action to the given menu
+        action = QAction(QIcon(icon), text, self)
+        action.triggered.connect(slot)
+        menu.addAction(action)
+
+    def bind_events(self):
+        # Bind events to the corresponding slots
+        self.btn_open.clicked.connect(self.open_file)
+        self.btn_save.clicked.connect(self.save_file)
+        self.actionOpen.triggered.connect(self.open_file)
+        self.actionSave.triggered.connect(self.save_file)
+        self.actionExit.triggered.connect(qApp.quit)
+        self.actionAbout.triggered.connect(self.show_about)
+        self.actionPreferences.triggered.connect(self.show_preferences)
+        self.actionDocumentation.triggered.connect(self.show_documentation)
+
+    def create_all_widgets(self):
+        # Create all widgets for the main window
+        self.btn_open = QtWidgets.QPushButton('Open', self)
+        self.btn_save = QtWidgets.QPushButton('Save', self)
+        self.btn_exit = QtWidgets.QPushButton('Exit', self)
+        self.btn_about = QtWidgets.QPushButton('About', self)
+        self.btn_preferences = QtWidgets.QPushButton('Preferences', self)
+        self.btn_documentation = QtWidgets.QPushButton('Documentation', self)
+
+        # Add widgets to the layout
+        self.layout.addWidget(self.btn_open)
+        self.layout.addWidget(self.btn_save)
+        self.layout.addWidget(self.btn_exit)
+        self.layout.addWidget(self.btn_about)
+        self.layout.addWidget(self.btn_preferences)
+        self.layout.addWidget(self.btn_documentation)
+
+    def show_about(self):
+        # Show the about dialog
+        QMessageBox.about(self, 'About', 'This is my application.\nVersion: ' + get_version())
+
+    def show_preferences(self):
+        # Show the preferences dialog
+        pass
+
+    def show_documentation(self):
+        # Show the documentation
+        pass
+
+    def zoom_in(self):
+        # Zoom in the view
+        pass
+
+    def zoom_out(self):
+        # Zoom out the view
+        pass
+
+    def reset_zoom(self):
+        # Reset the zoom level
+        pass
+
+    def undo(self):
+        # Undo the last action
+        pass
+
+    def redo(self):
+        # Redo the last undone action
+        pass
+
+if __name__ == '__main__':
+    app = QtWidgets.QApplication(sys.argv)
+    window = MyMainWindow()
+    window.show()
+    sys.exit(app.exec_())
