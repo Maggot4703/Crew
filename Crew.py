@@ -206,6 +206,10 @@ def job4():
     # Placeholder for a specific task
     pass
 
+def get_version():
+    """Return the version of the Crew application."""
+    return "1.0.0"
+
 def main():
     logger.info("Main application script started.")
     

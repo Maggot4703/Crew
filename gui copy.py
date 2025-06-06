@@ -14,8 +14,6 @@ import time  # Time-related functions for caching
 import tkinter as tk  # Core GUI framework
 
 # Remove deprecated tix import, use ttk tooltips instead
-# from tkinter.tix import *
-
 from pathlib import Path  # Cross-platform file handling
 from queue import Queue  # Thread-safe task queue
 
@@ -973,8 +971,6 @@ class CrewGUI:
                 current_line = self.details_text.index(tk.INSERT).split(".")[0]
                 selected_text = self.details_text.get(f"{current_line}.0", f"{current_line}.end")
             if selected_text.strip():
-                # Preprocessing step: Clean up markdown/code blocks
-                selected_text = self._clean_text(selected_text)
                 self.tts_engine.say(selected_text)
                 self.tts_engine.runAndWait()
         except Exception as e:
@@ -986,12 +982,8 @@ class CrewGUI:
         try:
             all_text = self.details_text.get("1.0", tk.END)
             if all_text.strip():
-                # Preprocessing step: Clean up markdown/code blocks
-                all_text = self._clean_text(all_text)
-                # Chunk long text to avoid TTS engine issues
-                chunks = self._chunk_text(all_text)
-                for chunk in chunks:
-                    self._send_to_tts_engine(chunk)
+                self.tts_engine.say(all_text)
+                self.tts_engine.runAndWait()
         except Exception as e:
             logging.error(f"TTS all details error: {e}")
 
@@ -1984,23 +1976,6 @@ class CrewGUI:
         #     self.update_status("No default data file found.")
         pass
 
-# Placeholder GUI class for testing.
-class GUI:
-    """Placeholder GUI class for testing."""
-    def __init__(self):
-        pass
-
-    def _clean_text(self, text):
-        """Remove markdown/code formatting from text."""
-        return text.replace("**", "").replace("`", "")
-
-    def _chunk_text(self, text, chunk_size=500):
-        """Split text into manageable chunks."""
-        return [text[i:i+chunk_size] for i in range(0, len(text), chunk_size)]
-
-    def _send_to_tts_engine(self, text):
-        """Send text to the TTS engine for processing."""
-        print(f"Sending to TTS engine: {text}")
 
 # Add a main execution block to launch the GUI directly if this file is run
 def main():

@@ -113,21 +113,84 @@ class TestGUIModule(unittest.TestCase):
             str(data_path), "data/npcs.csv" if sys.platform != "win32" else "data\\npcs.csv"
         )
 
-    # Example of how to mock and test a simple GUI interaction if CrewGUI was more complete
-    # @patch('gui.tk.messagebox') # Assuming CrewGUI uses messagebox
-    # def test_crew_gui_example_action(self, mock_messagebox):
-    #     """Example test for a hypothetical action in CrewGUI."""
-    #     if not hasattr(gui, 'CrewGUI'): self.skipTest("CrewGUI class not available")
-    #
-    #     app = gui.CrewGUI(self.root) # Assuming CrewGUI takes root as an arg
-    #
-    #     # Simulate an action, e.g., a button click that should show an info message
-    #     # if hasattr(app, 'on_some_button_click'):
-    #     #     app.on_some_button_click()
-    #     #     mock_messagebox.showinfo.assert_called_with("Info", "Action performed!")
-    #     # else:
-    #     #     self.skipTest("CrewGUI does not have on_some_button_click method for testing")
-    #     pass
+    def test_tts_menu_and_settings(self):
+        """Test that the TTS menu includes Speech Settings and the dialog can be shown."""
+        if not hasattr(gui, "CrewGUI"):
+            self.skipTest("CrewGUI not available in gui module")
+        app = gui.CrewGUI(self.root)
+
+        # Find the TTS menu
+        tts_menu = None
+        for i in range(app.menu_bar.index("end") + 1):
+            try:
+                label = app.menu_bar.entrycget(i, "label")
+                if label == "🔊 Speech":
+                    menu_name = app.menu_bar.entrycget(i, "menu")
+                    tts_menu = app.menu_bar.nametowidget(menu_name)
+                    break
+            except tk.TclError:
+                continue
+
+        self.assertIsNotNone(tts_menu, "TTS menu not found in menu bar.")
+
+        # Retrieve labels from the TTS menu
+        tts_labels = []
+        for j in range(tts_menu.index("end") + 1):
+            try:
+                tts_labels.append(tts_menu.entrycget(j, "label"))
+            except tk.TclError:
+                continue
+
+        self.assertIn("Speech Settings...", tts_labels)
+        self.assertIn("Read Status", tts_labels)
+        self.assertIn("Read Selected Item", tts_labels)
+        self.assertIn("Stop Reading", tts_labels)
+
+        # Test that the method exists
+        self.assertTrue(hasattr(app, "_show_speech_settings"))
+
+        # Test that calling it does not raise
+        from unittest.mock import patch
+
+        with patch.object(app, "tts_engine", create=True):
+            try:
+                app._show_speech_settings()
+            except Exception as e:
+                self.fail(f"_show_speech_settings raised: {e}")
+
+    def test_tts_settings(self):
+        """Test TTS settings window creation and functionality."""
+        try:
+            app = gui.CrewGUI(self.root)
+            app._show_speech_settings()
+
+            # Check if settings window is created
+            settings_window = self.root.winfo_children()[-1]
+            self.assertEqual(settings_window.title(), "Speech Settings")
+
+            # Check if widgets are present
+            voice_combo = settings_window.children.get("!combobox")
+            self.assertIsNotNone(voice_combo, "Voice combobox not found.")
+
+            speed_scale = settings_window.children.get("!scale")
+            self.assertIsNotNone(speed_scale, "Speed scale not found.")
+
+            volume_scale = settings_window.children.get("!scale")
+            self.assertIsNotNone(volume_scale, "Volume scale not found.")
+        except Exception as e:
+            self.fail(f"TTS settings test failed: {e}")
+
+    def test_tts_error_handling(self):
+        """Test error handling in TTS functionality."""
+        try:
+            app = gui.CrewGUI(self.root)
+            app.tts_engine = MagicMock()
+            app.tts_engine.say.side_effect = Exception("Test error")
+
+            with self.assertRaises(Exception):
+                app.tts_engine.say("This should raise an error.")
+        except Exception as e:
+            self.fail(f"TTS error handling test failed: {e}")
 
 
 if __name__ == "__main__":

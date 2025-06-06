@@ -3,6 +3,7 @@
   "imported_modules": [
     "bmp2png",
     "cache",
+    "create_documentation",
     "data.HTML.html",
     "data.JSON.json",
     "data.arcs.arcs",
@@ -19,7 +20,10 @@
     "database_manager (cached)",
     "error_handler",
     "errors (cached)",
+    "fetch_docs",
+    "fetch_documentation",
     "final_implementation_report",
+    "gui_copy",
     "gui.test",
     "log_analyzer",
     "mcp",
@@ -30,5 +34,5 @@
     "verify_script_loading"
   ],
   "failed_imports": [],
-  "timestamp": 1748888201.9114478
+  "timestamp": 1749231322.5226023
 }
