@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import sys
 import tkinter as tk
 import tkinter as tk
@@ -23,6 +24,15 @@ def main():
     # Start the event loop
     root.mainloop()
 
+=======
+import tkinter as tk
+from gui import CrewGUI
+
+def main():
+    root = tk.Tk()
+    app = CrewGUI(root)
+    root.mainloop()
+>>>>>>> 87191ac (Updated GUI and tests for TTS functionality)
 
 if __name__ == "__main__":
     main()

@@ -1,0 +1,92 @@
+============================= test session starts ==============================
+platform linux -- Python 3.11.2, pytest-8.3.5, pluggy-1.6.0 -- /home/me/BACKUP/PROJECTS/Crew/.venv/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/me/BACKUP/PROJECTS/Crew
+configfile: setup.cfg
+testpaths: tests
+collecting ... collected 101 items / 8 errors
+
+==================================== ERRORS ====================================
+____________________ ERROR collecting tests/test_bmp2png.py ____________________
+ImportError while importing test module '/home/me/BACKUP/PROJECTS/Crew/tests/test_bmp2png.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/lib/python3.11/importlib/__init__.py:126: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/test_bmp2png.py:14: in <module>
+    from Crew import get_version
+E   ImportError: cannot import name 'get_version' from 'Crew' (/home/me/BACKUP/PROJECTS/Crew/Crew.py)
+_____________________ ERROR collecting tests/test_cache.py _____________________
+ImportError while importing test module '/home/me/BACKUP/PROJECTS/Crew/tests/test_cache.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/lib/python3.11/importlib/__init__.py:126: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/test_cache.py:20: in <module>
+    from Crew import get_version
+E   ImportError: cannot import name 'get_version' from 'Crew' (/home/me/BACKUP/PROJECTS/Crew/Crew.py)
+____________________ ERROR collecting tests/test_config.py _____________________
+ImportError while importing test module '/home/me/BACKUP/PROJECTS/Crew/tests/test_config.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/lib/python3.11/importlib/__init__.py:126: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/test_config.py:13: in <module>
+    from Crew import get_version
+E   ImportError: cannot import name 'get_version' from 'Crew' (/home/me/BACKUP/PROJECTS/Crew/Crew.py)
+___________________ ERROR collecting tests/test_crew_main.py ___________________
+ImportError while importing test module '/home/me/BACKUP/PROJECTS/Crew/tests/test_crew_main.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/lib/python3.11/importlib/__init__.py:126: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/test_crew_main.py:13: in <module>
+    from Crew import get_version, main
+E   ImportError: cannot import name 'get_version' from 'Crew' (/home/me/BACKUP/PROJECTS/Crew/Crew.py)
+_________________ ERROR collecting tests/test_data_handling.py _________________
+ImportError while importing test module '/home/me/BACKUP/PROJECTS/Crew/tests/test_data_handling.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/lib/python3.11/importlib/__init__.py:126: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/test_data_handling.py:15: in <module>
+    from Crew import read_csv_builtin, read_csv_pandas, read_file
+E   ImportError: cannot import name 'read_file' from 'Crew' (/home/me/BACKUP/PROJECTS/Crew/Crew.py)
+___________________ ERROR collecting tests/test_geometry.py ____________________
+ImportError while importing test module '/home/me/BACKUP/PROJECTS/Crew/tests/test_geometry.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/lib/python3.11/importlib/__init__.py:126: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/test_geometry.py:8: in <module>
+    from Crew import calculate_hexagon_points, hex_to_rgb, rgb_to_hex
+E   ImportError: cannot import name 'calculate_hexagon_points' from 'Crew' (/home/me/BACKUP/PROJECTS/Crew/Crew.py)
+_______________ ERROR collecting tests/test_image_processing.py ________________
+ImportError while importing test module '/home/me/BACKUP/PROJECTS/Crew/tests/test_image_processing.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/lib/python3.11/importlib/__init__.py:126: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/test_image_processing.py:16: in <module>
+    from Crew import (
+E   ImportError: cannot import name 'DEFAULT_GRID_COLOR' from 'Crew' (/home/me/BACKUP/PROJECTS/Crew/Crew.py)
+______________ ERROR collecting tests/test_traveller5_scraper.py _______________
+ImportError while importing test module '/home/me/BACKUP/PROJECTS/Crew/tests/test_traveller5_scraper.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/lib/python3.11/importlib/__init__.py:126: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/test_traveller5_scraper.py:13: in <module>
+    from Crew import get_project_info, get_version
+E   ImportError: cannot import name 'get_project_info' from 'Crew' (/home/me/BACKUP/PROJECTS/Crew/Crew.py)
+=========================== short test summary info ============================
+ERROR tests/test_bmp2png.py
+ERROR tests/test_cache.py
+ERROR tests/test_config.py
+ERROR tests/test_crew_main.py
+ERROR tests/test_data_handling.py
+ERROR tests/test_geometry.py
+ERROR tests/test_image_processing.py
+ERROR tests/test_traveller5_scraper.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 8 errors during collection !!!!!!!!!!!!!!!!!!!!
+============================== 8 errors in 11.68s ==============================

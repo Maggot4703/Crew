@@ -42,6 +42,16 @@ def test_basic_gui():
         print(f"GUI Test Failed: {e}")
         return False
 
+def test_main_execution():
+    """Test the main execution block of the GUI"""
+    try:
+        import gui
+        gui.main()
+        print("Main execution block test passed.")
+    except Exception as e:
+        print(f"Main execution block test failed: {e}")
+        raise
+
 if __name__ == "__main__":
     print("GUI Functionality Test")
     print("Python version:", sys.version)
@@ -53,3 +63,5 @@ if __name__ == "__main__":
         print("Basic GUI functionality test PASSED")
     else:
         print("Basic GUI functionality test FAILED")
+    
+    test_main_execution()
