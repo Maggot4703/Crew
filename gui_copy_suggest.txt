@@ -1,0 +1,53 @@
+# Suggestions for GUI Improvements
+
+## 2. Implement Chunk-Based Playback
+
+### Changes Implemented
+- Added a `chunk_text` method to split long text into smaller chunks for smoother playback.
+- Updated `_read_text` method to utilize `chunk_text` for chunk-based playback.
+
+### Code Details
+```python
+def chunk_text(self, text: str, max_length: int = 400) -> list[str]:
+    """Split text into smaller chunks for smoother playback."""
+    words = text.split()
+    chunks = []
+    current_chunk = []
+    current_length = 0
+
+    for word in words:
+        if current_length + len(word) + 1 > max_length:
+            chunks.append(" ".join(current_chunk))
+            current_chunk = []
+            current_length = 0
+        current_chunk.append(word)
+        current_length += len(word) + 1
+
+    if current_chunk:
+        chunks.append(" ".join(current_chunk))
+
+    return chunks
+
+def _read_text(self, text: str) -> None:
+    """Read text using TTS with chunk-based playback."""
+    if not TTS_AVAILABLE or not self.tts_engine:
+        messagebox.showerror("TTS Error", "Text-to-speech functionality is not available.")
+        return
+
+    try:
+        chunks = self.chunk_text(text, max_length=400)
+        for chunk in chunks:
+            self.tts_engine.say(chunk)
+        self.tts_engine.runAndWait()
+    except Exception as e:
+        logging.error(f"TTS playback error: {e}")
+        messagebox.showerror("TTS Error", f"Failed to read text: {e}")
+```
+
+### Testing
+- Ensure the GUI remains responsive during TTS playback.
+- Test with long text inputs to verify chunking functionality.
+
+### Notes
+- The `chunk_text` method is designed to handle text splitting efficiently.
+- Exception handling ensures the GUI does not crash during playback.

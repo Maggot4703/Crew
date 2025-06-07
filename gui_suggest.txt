@@ -1,172 +1,3 @@
-<<<<<<< HEAD
-=======
-# Suggestions for TTS Enhancements in gui.py
-
-## Observations:
-1. The TTS functionality partially fails due to missing exception handling in certain methods.
-2. Some methods lack preprocessing of text before sending it to the TTS engine, which can cause issues with special characters or formatting.
-3. There is no functionality to pause/resume TTS playback.
-4. The TTS engine does not provide feedback to the user when it encounters errors.
-5. The TTS functionality is limited to reading text from specific widgets; it could be extended to other parts of the GUI.
-
-## Suggestions:
-
-### 1. Add Pause/Resume Functionality
-- Implement methods `_pause_reading` and `_resume_reading`.
-- Use the `pyttsx3` engine's capabilities to manage playback state.
-- Example implementation:
-```python
-    def _pause_reading(self) -> None:
-        if not TTS_AVAILABLE or not self.tts_engine:
-            return
-        try:
-            self.tts_engine.pause()
-        except Exception as e:
-            logging.error(f"Error pausing TTS: {e}")
-
-    def _resume_reading(self) -> None:
-        if not TTS_AVAILABLE or not self.tts_engine:
-            return
-        try:
-            self.tts_engine.resume()
-        except Exception as e:
-            logging.error(f"Error resuming TTS: {e}")
-```
-
-### 2. Preprocess Text Before Sending to TTS
-- Add a `_clean_text` method to sanitize text.
-- Example implementation:
-```python
-    def _clean_text(self, text: str) -> str:
-        # Remove special characters and extra whitespace
-        return text.replace("\n", " ").strip()
-```
-- Use this method in `_read_selection`, `_read_all_details`, and `_read_status`.
-
-### 3. Provide Feedback on TTS Errors
-- Update methods to show error messages in the GUI when TTS fails.
-- Example:
-```python
-    def _read_status(self) -> None:
-        if not TTS_AVAILABLE or not self.tts_engine:
-            messagebox.showerror("TTS Error", "Text-to-speech functionality is not available.")
-            return
-        try:
-            status_text = self.status_var.get()
-            if status_text.strip():
-                self.tts_engine.say(status_text)
-                self.tts_engine.runAndWait()
-        except Exception as e:
-            logging.error(f"TTS status error: {e}")
-            messagebox.showerror("TTS Error", f"Failed to read status: {e}")
-```
-
-### 4. Extend TTS to Other Widgets
-- Add functionality to read text from other widgets, such as `filter_entry_widget`.
-- Example:
-```python
-    def _read_filter_text(self) -> None:
-        if not TTS_AVAILABLE or not self.tts_engine:
-            return
-        try:
-            filter_text = self.filter_var.get()
-            if filter_text.strip():
-                self.tts_engine.say(filter_text)
-                self.tts_engine.runAndWait()
-        except Exception as e:
-            logging.error(f"TTS filter text error: {e}")
-```
-
-### 5. Log TTS Playback State
-- Add logging to track when TTS starts, pauses, resumes, or stops.
-- Example:
-```python
-    def _read_status(self) -> None:
-        if not TTS_AVAILABLE or not self.tts_engine:
-            return
-        try:
-            status_text = self.status_var.get()
-            if status_text.strip():
-                logging.info("Starting TTS playback for status.")
-                self.tts_engine.say(status_text)
-                self.tts_engine.runAndWait()
-                logging.info("TTS playback completed for status.")
-        except Exception as e:
-            logging.error(f"TTS status error: {e}")
-```
-
-### 6. Add TTS Settings Persistence
-- Save and load TTS settings (voice, speed, volume) using the `Config` class.
-- Example:
-```python
-    def _save_tts_settings(self) -> None:
-        try:
-            self.config.set("tts_voice", self.tts_engine.getProperty("voice"))
-            self.config.set("tts_rate", self.tts_engine.getProperty("rate"))
-            self.config.set("tts_volume", self.tts_engine.getProperty("volume"))
-        except Exception as e:
-            logging.error(f"Error saving TTS settings: {e}")
-
-    def _load_tts_settings(self) -> None:
-        try:
-            voice = self.config.get("tts_voice")
-            rate = self.config.get("tts_rate")
-            volume = self.config.get("tts_volume")
-            if voice:
-                self.tts_engine.setProperty("voice", voice)
-            if rate:
-                self.tts_engine.setProperty("rate", int(rate))
-            if volume:
-                self.tts_engine.setProperty("volume", float(volume))
-        except Exception as e:
-            logging.error(f"Error loading TTS settings: {e}")
-```
-
-### 7. Add TTS Testing Feature
-- Create a method to test TTS functionality.
-- Example:
-```python
-    def _test_tts(self) -> None:
-        if not TTS_AVAILABLE or not self.tts_engine:
-            messagebox.showerror("TTS Error", "Text-to-speech functionality is not available.")
-            return
-        try:
-            self.tts_engine.say("This is a test of the text-to-speech system.")
-            self.tts_engine.runAndWait()
-        except Exception as e:
-            logging.error(f"TTS test error: {e}")
-            messagebox.showerror("TTS Error", f"Failed to test TTS: {e}")
-```
-
-### 8. Improve Error Handling in Existing Methods
-- Wrap all TTS-related calls in try-except blocks to prevent crashes.
-
----
-These suggestions aim to enhance the robustness and functionality of the TTS system in `gui.py`. Implementing them incrementally will ensure stability.
-
-# Suggestions for gui.py
-# 1. Deprecated imports like `tix` have been commented out.
-# 2. Unused functions, variables, and classes have been commented out to preserve code integrity.
-# 3. Consider reviewing commented-out sections periodically to ensure they are still relevant DO NOT REMOVE.
-# 4. Ensure all active code aligns with current project requirements and best practices.
-# 5. Test the application thoroughly to confirm no functionality is impacted by these changes. ALSO CHECK TTS FOR FUNCTIONALITY.
-
-# Specific Suggestions:
-# - Review the `auto_import_py_files` function for optimization. Consider using `os.scandir` for better performance.
-# - Ensure the `CrewGUI` class handles exceptions gracefully, especially during initialization.
-# - Add unit tests for the `CrewGUI` methods like `create_menu_bar`, `bind_events`, and `load_window_state`.
->>>>>>> 87191ac (Updated GUI and tests for TTS functionality)
-# - Verify the `TTS` functionality works as expected, especially the `_show_speech_settings` method.
-# - Consider modularizing the `CrewGUI` class further to improve readability and maintainability.
-# - Check the `create_all_widgets` method for completeness and ensure all widgets are created without errors.
-# - Ensure the `update_status` method handles long messages appropriately, possibly truncating or displaying tooltips.
-# - Review the `auto-import` logic to ensure it skips only necessary files and directories.
-# - Test the `save_window_state` and `load_window_state` methods to confirm they work correctly with the `Config` class.
-# - Confirm the `create_main_layout` method adheres to the desired UI design and layout specifications.
-# - Periodically review the `dangerous_patterns` list in `auto_import_py_files` to ensure it covers all potential risks.
-<<<<<<< HEAD
-# - Ensure all logging messages are clear and provide sufficient context for debugging.
-=======
 # - Ensure all logging messages are clear and provide sufficient context for debugging.
 
 import sys
@@ -345,8 +176,10 @@ class MyMainWindow(QMainWindow):
         try:
             status_text = self.status_var.get()
             if status_text.strip():
+                logging.info("Starting TTS playback for status.")
                 self.tts_engine.say(status_text)
                 self.tts_engine.runAndWait()
+                logging.info("TTS playback completed for status.")
         except Exception as e:
             logging.error(f"TTS status error: {e}")
             messagebox.showerror("TTS Error", f"Failed to read status: {e}")
@@ -561,4 +394,3 @@ if __name__ == '__main__':
     window = MyMainWindow()
     window.show()
     sys.exit(app.exec_())
->>>>>>> 87191ac (Updated GUI and tests for TTS functionality)

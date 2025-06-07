@@ -2,12 +2,14 @@
 read gui.py
 DO NOT REMOVE CODE FROM gui.py - COMMENT OUT UNWANTED LINES if necessary,
 I do not want to lose it all again!
+check implementations of tts in gui.py - female voice does not affect output
 inspect and suggest extra implementations in TTS and how they would 
-be achieved - add more functionality if possible 
+be achieved - add more functionality if possible
+create update/create tests and save in ./tests
 gui.py is fragile - try not to move funcitons
 supply all suggestions to gui_suggest.txt (overwrite)
-update/create tests as necessary: then run all tests 
 (send errors to gui_test_fails.txt (overwrite))
 inspect gui_suggest.txt and explain reasons (try to keep gui & tts 
 operational) save explanation to gui_explain.txt (overwrite)
 
+please make a copy of gui.py first (gui_copy.py (overwrite)), also create copies of other modified files.   then apply suggestions to copy

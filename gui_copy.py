@@ -353,9 +353,18 @@ def auto_import_py_files() -> Tuple[List[str], List[Tuple[str, str]]]:
 
 class CrewGUI:
     def __init__(self, root: tk.Tk) -> None:
-        self.root = root  # Assign self.root immediately
         try:
-            self.root.title("Crew Manager") # Set title early
+            self.root = root  # Assign self.root immediately
+            self.root.title("Crew Manager")  # Set title early
+
+            # Initialize TTS engine if available
+            if TTS_AVAILABLE:
+                self.tts_engine = pyttsx3.init()
+                self.tts_engine.setProperty("rate", 150)  # Adjust rate
+                self.tts_engine.setProperty("volume", 0.8)  # Reduce volume slightly
+                self.tts_engine.setProperty("voice", "english")  # Default to English voice
+            else:
+                self.tts_engine = None
 
             # Define scripts directory and create it if it doesn't exist
             # Also create a sample script for testing if the directory is new
@@ -390,12 +399,6 @@ class CrewGUI:
                     )
             # If directory already exists, one might consider creating sample_script if it's missing,
             # but current logic only creates it if the directory itself is new.
-
-            # Initialize TTS engine if available
-            if TTS_AVAILABLE:
-                self.tts_engine = pyttsx3.init()
-            else:
-                self.tts_engine = None
 
             # Create menu bar before other UI elements
             self.create_menu_bar()
@@ -1001,9 +1004,11 @@ class CrewGUI:
 
     def _read_selection(self) -> None:
         if not TTS_AVAILABLE or not self.tts_engine:
+            messagebox.showerror("TTS Error", "Text-to-speech functionality is not available.")
             return
 
         try:
+            logging.info("Starting TTS playback for selection.")
             # Get selected text
             if self.details_text.tag_ranges(tk.SEL):
                 selected_text = self.details_text.get(tk.SEL_FIRST, tk.SEL_LAST)
@@ -1015,40 +1020,54 @@ class CrewGUI:
                 )
 
             if selected_text.strip():
-                self.tts_engine.say(selected_text)
+                cleaned_text = self._clean_text(selected_text)
+                self.tts_engine.say(cleaned_text)
                 self.tts_engine.runAndWait()
+                logging.info("TTS playback completed for selection.")
 
         except Exception as e:
             logging.error(f"TTS selection error: {e}")
+            messagebox.showerror("TTS Error", f"Failed to read selection: {e}")
 
     def _read_all_details(self) -> None:
         if not TTS_AVAILABLE or not self.tts_engine:
+            messagebox.showerror("TTS Error", "Text-to-speech functionality is not available.")
             return
 
         try:
+            logging.info("Starting TTS playback for all details.")
             all_text = self.details_text.get("1.0", tk.END)
             if all_text.strip():
-                self.tts_engine.say(all_text)
+                cleaned_text = self._clean_text(all_text)
+                self.tts_engine.say(cleaned_text)
                 self.tts_engine.runAndWait()
+                logging.info("TTS playback completed for all details.")
 
         except Exception as e:
             logging.error(f"TTS all details error: {e}")
+            messagebox.showerror("TTS Error", f"Failed to read all details: {e}")
 
     def _read_status(self) -> None:
         if not TTS_AVAILABLE or not self.tts_engine:
+            messagebox.showerror("TTS Error", "Text-to-speech functionality is not available.")
             return
 
         try:
+            logging.info("Starting TTS playback for status.")
             if hasattr(self, "status_var") and self.status_var:
                 status_text = self.status_var.get()
                 if status_text.strip():
-                    self.tts_engine.say(status_text)
+                    cleaned_text = self._clean_text(status_text)
+                    self.tts_engine.say(cleaned_text)
                     self.tts_engine.runAndWait()
+                    logging.info("TTS playback completed for status.")
         except Exception as e:
             logging.error(f"TTS status error: {e}")
+            messagebox.showerror("TTS Error", f"Failed to read status: {e}")
 
     def _read_selected_item(self) -> None:
         if not TTS_AVAILABLE or not self.tts_engine:
+            messagebox.showerror("TTS Error", "Text-to-speech functionality is not available.")
             return
 
         try:
@@ -1077,6 +1096,22 @@ class CrewGUI:
         except Exception as e:
             logging.error(f"Error stopping TTS: {e}")
 
+    def _pause_reading(self) -> None:
+        if not TTS_AVAILABLE or not self.tts_engine:
+            return
+        try:
+            self.tts_engine.pause()
+        except Exception as e:
+            logging.error(f"Error pausing TTS: {e}")
+
+    def _resume_reading(self) -> None:
+        if not TTS_AVAILABLE or not self.tts_engine:
+            return
+        try:
+            self.tts_engine.resume()
+        except Exception as e:
+            logging.error(f"Error resuming TTS: {e}")
+
     def preprocess_text_for_speech(self, text: str) -> str:
         """Clean and prepare text for better TTS pronunciation"""
         import re
@@ -1102,6 +1137,41 @@ class CrewGUI:
             text = re.sub(r'\b' + re.escape(abbrev) + r'\b', replacement, text, flags=re.IGNORECASE)
         
         return text
+
+    def chunk_text(self, text: str, max_length: int = 400) -> list[str]:
+        """Split text into smaller chunks for smoother playback."""
+        words = text.split()
+        chunks = []
+        current_chunk = []
+        current_length = 0
+
+        for word in words:
+            if current_length + len(word) + 1 > max_length:
+                chunks.append(" ".join(current_chunk))
+                current_chunk = []
+                current_length = 0
+            current_chunk.append(word)
+            current_length += len(word) + 1
+
+        if current_chunk:
+            chunks.append(" ".join(current_chunk))
+
+        return chunks
+
+    def _read_text(self, text: str) -> None:
+        """Read text using TTS with chunk-based playback."""
+        if not TTS_AVAILABLE or not self.tts_engine:
+            messagebox.showerror("TTS Error", "Text-to-speech functionality is not available.")
+            return
+
+        try:
+            chunks = self.chunk_text(text, max_length=400)
+            for chunk in chunks:
+                self.tts_engine.say(chunk)
+            self.tts_engine.runAndWait()
+        except Exception as e:
+            logging.error(f"TTS playback error: {e}")
+            messagebox.showerror("TTS Error", f"Failed to read text: {e}")
 
     def chunk_text(self, text: str, max_length: int = 500) -> List[str]:
         """Split long text into smaller chunks for better TTS handling"""
@@ -2001,6 +2071,58 @@ class CrewGUI:
         except Exception as e:
             logging.error(f"Error loading text in background: {e}")
             raise
+
+    def _clean_text(self, text: str) -> str:
+        # Remove special characters and extra whitespace
+        return text.replace("\n", " ").strip()
+
+    def _read_filter_text(self) -> None:
+        if not TTS_AVAILABLE or not self.tts_engine:
+            messagebox.showerror("TTS Error", "Text-to-speech functionality is not available.")
+            return
+
+        try:
+            filter_text = self.filter_var.get()
+            if filter_text.strip():
+                cleaned_text = self._clean_text(filter_text)
+                self.tts_engine.say(cleaned_text)
+                self.tts_engine.runAndWait()
+        except Exception as e:
+            logging.error(f"TTS filter text error: {e}")
+            messagebox.showerror("TTS Error", f"Failed to read filter text: {e}")
+
+    def _save_tts_settings(self) -> None:
+        try:
+            self.config.set("tts_voice", self.tts_engine.getProperty("voice"))
+            self.config.set("tts_rate", self.tts_engine.getProperty("rate"))
+            self.config.set("tts_volume", self.tts_engine.getProperty("volume"))
+        except Exception as e:
+            logging.error(f"Error saving TTS settings: {e}")
+
+    def _load_tts_settings(self) -> None:
+        try:
+            voice = self.config.get("tts_voice")
+            rate = self.config.get("tts_rate")
+            volume = self.config.get("tts_volume")
+            if voice:
+                self.tts_engine.setProperty("voice", voice)
+            if rate:
+                self.tts_engine.setProperty("rate", int(rate))
+            if volume:
+                self.tts_engine.setProperty("volume", float(volume))
+        except Exception as e:
+            logging.error(f"Error loading TTS settings: {e}")
+
+    def _test_tts(self) -> None:
+        if not TTS_AVAILABLE or not self.tts_engine:
+            messagebox.showerror("TTS Error", "Text-to-speech functionality is not available.")
+            return
+        try:
+            self.tts_engine.say("This is a test of the text-to-speech system.")
+            self.tts_engine.runAndWait()
+        except Exception as e:
+            logging.error(f"TTS test error: {e}")
+            messagebox.showerror("TTS Error", f"Failed to test TTS: {e}")
 
 if __name__ == "__main__":
     try:
