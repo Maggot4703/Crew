@@ -355,7 +355,16 @@ class CrewGUI:
     def __init__(self, root: tk.Tk) -> None:
         try:
             self.root = root  # Assign self.root immediately
-            self.root.title("Crew Manager") # Set title early
+            self.root.title("Crew Manager")  # Set title early
+
+            # Initialize TTS engine if available
+            if TTS_AVAILABLE:
+                self.tts_engine = pyttsx3.init()
+                self.tts_engine.setProperty("rate", 150)  # Adjust rate
+                self.tts_engine.setProperty("volume", 0.8)  # Reduce volume slightly
+                self.tts_engine.setProperty("voice", "english")  # Default to English voice
+            else:
+                self.tts_engine = None
 
             # Define scripts directory and create it if it doesn't exist
             # Also create a sample script for testing if the directory is new
@@ -390,12 +399,6 @@ class CrewGUI:
                     )
             # If directory already exists, one might consider creating sample_script if it's missing,
             # but current logic only creates it if the directory itself is new.
-
-            # Initialize TTS engine if available
-            if TTS_AVAILABLE:
-                self.tts_engine = pyttsx3.init()
-            else:
-                self.tts_engine = None
 
             # Create menu bar before other UI elements
             self.create_menu_bar()
@@ -1135,27 +1138,45 @@ class CrewGUI:
         
         return text
 
-    def chunk_text(self, text: str, max_length: int = 500) -> List[str]:
-        """Split long text into smaller chunks for better TTS handling"""
-        if len(text) <= max_length:
-            return [text]
-        
+    def chunk_text(self, text: str, max_length: int = 400) -> list[str]:
+        """Split text into smaller chunks for smoother playback."""
+        words = text.split()
         chunks = []
-        sentences = text.split('. ')
-        current_chunk = ""
-        
-        for sentence in sentences:
-            if len(current_chunk + sentence) <= max_length:
-                current_chunk += sentence + ". "
-            else:
-                if current_chunk:
-                    chunks.append(current_chunk.strip())
-                current_chunk = sentence + ". "
-        
+        current_chunk = []
+        current_length = 0
+
+        for word in words:
+            if current_length + len(word) + 1 > max_length:
+                chunks.append(" ".join(current_chunk))
+                current_chunk = []
+                current_length = 0
+            current_chunk.append(word)
+            current_length += len(word) + 1
+
         if current_chunk:
-            chunks.append(current_chunk.strip())
-        
+            chunks.append(" ".join(current_chunk))
+
         return chunks
+
+    def _read_text_in_background(self, text: str) -> None:
+        """Run TTS in a background thread to avoid blocking the GUI."""
+        threading.Thread(target=self._read_text, args=(text,), daemon=True).start()
+
+    def _read_text(self, text: str) -> None:
+        """Read text using TTS with chunk-based playback."""
+        if not TTS_AVAILABLE or not self.tts_engine:
+            messagebox.showerror("TTS Error", "Text-to-speech functionality is not available.")
+            return
+
+        try:
+            # Split text into chunks
+            chunks = self.chunk_text(text, max_length=400)
+            for chunk in chunks:
+                self.tts_engine.say(chunk)  # Queue each chunk for playback
+            self.tts_engine.runAndWait()  # Execute playback
+        except Exception as e:
+            logging.error(f"TTS playback error: {e}")
+            messagebox.showerror("TTS Error", f"Failed to read text: {e}")
 
     def setup_female_voice(self, engine) -> bool:
         """Attempt to set up a female voice if available"""

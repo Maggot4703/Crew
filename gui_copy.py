@@ -1158,6 +1158,10 @@ class CrewGUI:
 
         return chunks
 
+    def _read_text_in_background(self, text: str) -> None:
+        """Run TTS in a background thread to avoid blocking the GUI."""
+        threading.Thread(target=self._read_text, args=(text,), daemon=True).start()
+
     def _read_text(self, text: str) -> None:
         """Read text using TTS with chunk-based playback."""
         if not TTS_AVAILABLE or not self.tts_engine:
@@ -1165,35 +1169,14 @@ class CrewGUI:
             return
 
         try:
+            # Split text into chunks
             chunks = self.chunk_text(text, max_length=400)
             for chunk in chunks:
-                self.tts_engine.say(chunk)
-            self.tts_engine.runAndWait()
+                self.tts_engine.say(chunk)  # Queue each chunk for playback
+            self.tts_engine.runAndWait()  # Execute playback
         except Exception as e:
             logging.error(f"TTS playback error: {e}")
             messagebox.showerror("TTS Error", f"Failed to read text: {e}")
-
-    def chunk_text(self, text: str, max_length: int = 500) -> List[str]:
-        """Split long text into smaller chunks for better TTS handling"""
-        if len(text) <= max_length:
-            return [text]
-        
-        chunks = []
-        sentences = text.split('. ')
-        current_chunk = ""
-        
-        for sentence in sentences:
-            if len(current_chunk + sentence) <= max_length:
-                current_chunk += sentence + ". "
-            else:
-                if current_chunk:
-                    chunks.append(current_chunk.strip())
-                current_chunk = sentence + ". "
-        
-        if current_chunk:
-            chunks.append(current_chunk.strip())
-        
-        return chunks
 
     def setup_female_voice(self, engine) -> bool:
         """Attempt to set up a female voice if available"""
