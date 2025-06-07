@@ -2107,6 +2107,20 @@ class CrewGUI:
             logging.error(f"TTS test error: {e}")
             messagebox.showerror("TTS Error", f"Failed to test TTS: {e}")
 
+def speak_with_espeak_ng(text: str) -> None:
+    """Use espeak-ng for lightweight TTS."""
+    try:
+        subprocess.run(['espeak-ng', text], check=True)
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Error using espeak-ng: {e}")
+
+def speak_with_flite(text: str) -> None:
+    """Use flite for lightweight TTS."""
+    try:
+        subprocess.run(['flite', '-t', text], check=True)
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Error using flite: {e}")
+
 if __name__ == "__main__":
     try:
         root = tk.Tk()
