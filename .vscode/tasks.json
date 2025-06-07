@@ -1,0 +1,15 @@
+{
+    "tasks": [
+        {
+            "label": "Run Crew GUI",
+            "type": "shell",
+            "command": "python3 gui.py",
+            "args": [],
+            "group": "build",
+            "isBackground": false,
+            "problemMatcher": [
+                "$python"
+            ]
+        }
+    ]
+}

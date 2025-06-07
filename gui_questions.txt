@@ -1,0 +1,13 @@
+#codebase
+read gui.py
+DO NOT REMOVE CODE FROM gui.py - COMMENT OUT UNWANTED LINES if necessary,
+I do not want to lose it all again!
+inspect and suggest extra implementations in TTS and how they would 
+be achieved - add more functionality if possible 
+gui.py is fragile - try not to move funcitons
+supply all suggestions to gui_suggest.txt (overwrite)
+update/create tests as necessary: then run all tests 
+(send errors to gui_test_fails.txt (overwrite))
+inspect gui_suggest.txt and explain reasons (try to keep gui & tts 
+operational) save explanation to gui_explain.txt (overwrite)
+

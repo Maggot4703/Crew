@@ -192,6 +192,36 @@ class TestGUIModule(unittest.TestCase):
         except Exception as e:
             self.fail(f"TTS error handling test failed: {e}")
 
+    def test_read_widget_text(self):
+        """Test that _read_widget_text reads text from a widget and calls TTS engine."""
+        try:
+            app = gui.CrewGUI(self.root)
+            widget = tk.Entry(self.root)
+            widget.insert(0, "Sample Text")
+
+            app.tts_engine = MagicMock()
+            app.tts_engine.say = MagicMock()
+            app.tts_engine.runAndWait = MagicMock()
+
+            app._read_widget_text(widget)
+
+            app.tts_engine.say.assert_called_once_with("Sample Text")
+            app.tts_engine.runAndWait.assert_called_once()
+        except Exception as e:
+            self.fail(f"Read widget text test failed: {e}")
+
+    def test_tts_error_feedback(self):
+        """Test that TTS error feedback is raised during status reading."""
+        try:
+            app = gui.CrewGUI(self.root)
+            app.tts_engine = MagicMock()
+            app.tts_engine.say.side_effect = Exception("Test error")
+
+            with self.assertRaises(Exception):
+                app._read_status()
+        except Exception as e:
+            self.fail(f"TTS error feedback test failed: {e}")
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)  # Increased verbosity for more detailed test output
