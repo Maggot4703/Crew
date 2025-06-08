@@ -8,7 +8,6 @@ import json  # JSON file handling for caching
 import logging  # Application logging
 import os  # Operating system interface
 import re  # Needed for TTS text preprocessing
-import shutil
 import subprocess  # Process execution
 import sys  # System-specific parameters
 import threading  # Background thread support
@@ -427,9 +426,6 @@ class CrewGUI:
 
             # Load default data file if exists
             self.load_default_data()
-
-            # Load initial data from ./data/AI.csv
-            self.load_initial_data()
 
             # Update status with import results
             total_imported = (
@@ -1428,23 +1424,23 @@ class CrewGUI:
                 self.details_text.delete("1.0", "end")
                 self.details_text.insert("1.0", "Error displaying details after selection.")
 
-    def load_initial_data(self) -> None:
-        """Load initial data from ./data/AI.csv and display in Data View."""
+    def load_default_data(self) -> None:
+        """Load and display default data from ./data/npcs.csv."""
         try:
-            file_path = './data/AI.csv'
-            if os.path.exists(file_path):
-                self.update_status(f"Loading initial data from {file_path}...")
-                with open(file_path, 'r', encoding='utf-8') as f:
-                    reader = csv.reader(f)
-                    self.headers = next(reader)  # Assume first row contains headers
+            default_data_path = "./data/npcs.csv"
+            if os.path.exists(default_data_path):
+                self.update_status(f"Loading default data from {default_data_path}...")
+                with open(default_data_path, "r", encoding="utf-8") as file:
+                    reader = csv.reader(file)
+                    self.headers = next(reader)  # First row as headers
                     self.current_data = list(reader)
                     self._update_data_view(self.current_data)
-                    self.update_status(f"Loaded {len(self.current_data)} records from {file_path}.")
+                    self.update_status(f"Loaded {len(self.current_data)} records from {default_data_path}.")
             else:
-                self.update_status(f"File {file_path} not found.")
+                self.update_status("Default data file not found.")
         except Exception as e:
-            logging.error(f"Error loading initial data: {e}")
-            self.update_status(f"Error loading initial data: {e}")
+            logging.error(f"Error loading default data: {e}")
+            self.update_status(f"Error loading default data: {e}")
 
     def _on_apply_filter(self) -> None:
         try:
@@ -1801,18 +1797,22 @@ class CrewGUI:
             self.update_status(f"Error saving to {file_path}") # Update status
 
     def load_default_data(self) -> None:
-        """Placeholder for loading default data."""
-        logging.info("load_default_data called, but not implemented yet.")
-        # Example:
-        # default_data_path = "default_data.csv"
-        # if os.path.exists(default_data_path):
-        #     self.update_status(f"Loading default data from {default_data_path}...")
-        #     self.run_in_background(
-        #         self._load_data_background, default_data_path, callback=self._on_data_loaded
-        #     )
-        # else:
-        #     self.update_status("No default data file found.")
-        pass
+        """Load and display default data from ./data/npcs.csv."""
+        try:
+            default_data_path = "./data/npcs.csv"
+            if os.path.exists(default_data_path):
+                self.update_status(f"Loading default data from {default_data_path}...")
+                with open(default_data_path, "r", encoding="utf-8") as file:
+                    reader = csv.reader(file)
+                    self.headers = next(reader)  # First row as headers
+                    self.current_data = list(reader)
+                    self._update_data_view(self.current_data)
+                    self.update_status(f"Loaded {len(self.current_data)} records from {default_data_path}.")
+            else:
+                self.update_status("Default data file not found.")
+        except Exception as e:
+            logging.error(f"Error loading default data: {e}")
+            self.update_status(f"Error loading default data: {e}")
 
     def _on_open_file(self) -> None:
         """Handles opening different file types."""

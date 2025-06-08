@@ -30,6 +30,11 @@
     "storySearch",
     "traveller5_scraper"
   ],
-  "failed_imports": [],
-  "timestamp": 1749398455.5803962
+  "failed_imports": [
+    [
+      "guiQT.py",
+      "Import error: No module named 'PyQt5'"
+    ]
+  ],
+  "timestamp": 1749409867.107279
 }

@@ -1,0 +1,72 @@
+### Issue Analysis
+The "Stop Reading" functionality fails because the pyttsx3 engine's `runAndWait()` method blocks the GUI until the TTS playback finishes. This prevents the GUI from responding to user actions, including stopping the playback.
+
+### Suggestions for Fix
+1. **Introduce a `TTSManager` Class**:
+   - Manage playback in a background thread.
+   - Use a threading `Event` (e.g., `self.tts_stop_event`) to signal when to stop reading.
+
+2. **Refactor `_stop_reading()`**:
+   - Set the stop event and ensure the playback loop checks this event between chunks.
+   - Clear the engine's queue after calling `stop()`.
+
+3. **Update Playback Logic**:
+   - Split text into manageable chunks.
+   - Check the stop event between chunks to interrupt playback gracefully.
+
+### Code Example
+```python
+class TTSManager:
+    def __init__(self, engine):
+        self.engine = engine
+        self.stop_event = threading.Event()
+
+    def play_text(self, text, chunk_size=400):
+        """Play text in chunks with stop event handling."""
+        self.stop_event.clear()
+        chunks = self._chunk_text(text, chunk_size)
+
+        for chunk in chunks:
+            if self.stop_event.is_set():
+                break
+            self.engine.say(chunk)
+            self.engine.runAndWait()
+
+    def stop(self):
+        """Stop playback and clear the queue."""
+        self.stop_event.set()
+        self.engine.stop()
+
+    def _chunk_text(self, text, max_length):
+        """Split text into smaller chunks."""
+        words = text.split()
+        chunks = []
+        current_chunk = []
+
+        for word in words:
+            current_chunk.append(word)
+            if len(" ".join(current_chunk)) > max_length:
+                chunks.append(" ".join(current_chunk))
+                current_chunk = []
+
+        if current_chunk:
+            chunks.append(" ".join(current_chunk))
+
+        return chunks
+
+# Refactor `_stop_reading()` in `CrewGUI`
+def _stop_reading(self):
+    if not TTS_AVAILABLE or not self.tts_engine:
+        return
+
+    try:
+        if hasattr(self, "tts_manager"):
+            self.tts_manager.stop()
+    except Exception as e:
+        logging.error(f"Error stopping TTS: {e}")
+```
+
+### Benefits
+- **Non-blocking GUI**: Playback runs in a background thread, allowing the GUI to remain responsive.
+- **Immediate Stop**: The stop event ensures playback halts promptly.
+- **Scalable**: The `TTSManager` class can be reused for other TTS-related tasks.
