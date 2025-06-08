@@ -8,6 +8,7 @@ import json  # JSON file handling for caching
 import logging  # Application logging
 import os  # Operating system interface
 import re  # Needed for TTS text preprocessing
+import shutil
 import subprocess  # Process execution
 import sys  # System-specific parameters
 import threading  # Background thread support
@@ -426,6 +427,9 @@ class CrewGUI:
 
             # Load default data file if exists
             self.load_default_data()
+
+            # Load initial data from ./data/AI.csv
+            self.load_initial_data()
 
             # Update status with import results
             total_imported = (
@@ -1423,6 +1427,24 @@ class CrewGUI:
             if hasattr(self, "details_text"):
                 self.details_text.delete("1.0", "end")
                 self.details_text.insert("1.0", "Error displaying details after selection.")
+
+    def load_initial_data(self) -> None:
+        """Load initial data from ./data/AI.csv and display in Data View."""
+        try:
+            file_path = './data/AI.csv'
+            if os.path.exists(file_path):
+                self.update_status(f"Loading initial data from {file_path}...")
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    reader = csv.reader(f)
+                    self.headers = next(reader)  # Assume first row contains headers
+                    self.current_data = list(reader)
+                    self._update_data_view(self.current_data)
+                    self.update_status(f"Loaded {len(self.current_data)} records from {file_path}.")
+            else:
+                self.update_status(f"File {file_path} not found.")
+        except Exception as e:
+            logging.error(f"Error loading initial data: {e}")
+            self.update_status(f"Error loading initial data: {e}")
 
     def _on_apply_filter(self) -> None:
         try:

@@ -1,17 +1,168 @@
-AI
-Mother
-Nancy
-Sallii
-Debii
-Amii
-Angii
-Oracle
-Marii
-nan
-nan
-nan
-nan
-nan
-nan
-nan
-nan
+NPC,LIKENESS,ROLE,R/S,CLASS,RANK,COMPANY,PRIMUS,SECUNDUS,TERTIUS,AI,SQUAD,VEHICLE,SHIP,SYSTEM,QUOTE,WORK,REST,PLAY,MUSIC,LINK
+PC,nan,Captain,hm,Other-,O4,Sky Rig,Company,Care,Caress,Mother,Maid,Speeder A,SkyRig,nan,nan,nan,nan,nan,nan,nan
+Carl,nan,Pilot,hm,Navy-5,O4,Carl's Crew,Instruct,Planning,Contacts,Nancy,Alpha,APC A,Cutter A,Regina,nan,nan,nan,nan,nan,nan
+Terrii,Linda Carter,Navigator,hf,Scout-6,O3,Terri's Triangulation,Entertain,Comms,NIL,Sallii,Beta,APC B,Cutter B,Roup,nan,nan,nan,nan,nan,nan
+Andii,Jessica Rabbit,Doctor,hf,Doctor-6,O5,Andii's Angels,Medical,Sisters,Smuggling,Debii,Gamma,APC C,Cutter C,Feri,nan,nan,nan,nan,nan,nan
+Raoul,Rocket,Chief,hm,Army-5,E6,Raoul's RoughRiders,Mechanic,213th,Bros,Amii,Delta,APC D,Cutter D,Boughene,nan,nan,nan,nan,nan,nan
+Betti,Robyn,SensOp,hf,Army-5,O4,Bettii's Bots,Spares,Brothels,Streetwise,Angii,Epsilon,APC E,Cutter E,Efate,nan,nan,nan,nan,nan,nan
+Teelan,nan,Technician,hm,Other-4,nan,Teelan's,Entertain,Computers,Droids,Orac,Zeta,APC F,Cutter F,Lysen,nan,nan,nan,nan,nan,nan
+Max,Seven,Gunner,hf,Marine-4,nan,Max's,Marine,Postman,213th,Marii,Bad Batch,GCarrier,Jump mod,Jewell,nan,nan,nan,nan,nan,nan
+nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+Sister Sledge,2000AD,Medical,hf,Medic-4,nan,Sisters of Mercy,Healing,Teaching,Learning,Mary,Sisters,Meat Wagon,Angelus,nan,Do you Reshathra?,nan,nan,nan,nan,https://duckduckgo.com/?q=2000ad+all+hell+on+the+dixie+front&t=raspberrypi&atb=v474-1&ia=images&iax=images&iai=https%3A%2F%2F3.bp.blogspot.com%2F-Rg0WT7vU4TA%2FUDfKqAFyztI%2FAAAAAAAABOw%2F0fbJ5VOscXk%2Fs1600%2FRogue-Trooper---All-Hell-on-the-Dix-I-Front---Origional.jpg
+Sherlock Holmes,Sherlock Holmes,Sleuth,hm,Other-6,nan,Sleuthes,Perception,Deduction,Reasoning,Hemlock Bones,Bash St Runners,nan,nan,nan,Credits for kids,nan,nan,nan,Sherlock Holmes,nan
+Tanya Hide,Sherlock Holmes,Other,hf,Therapy-5,nan,Sherlocking,Psychology,Domination,'Fun’,nan,Clerks,Limo A,Phallus,nan,You may,nan,nan,nan,Sherlock Holmes,nan
+BarBelle,nan,Informer,hf,Other-1,nan,Trixies,Admin,Party,Party,nan,Bitches,nan,nan,nan,What ya buyin?,nan,nan,nan,nan,nan
+Barb Wire,Pamela Anderson,Dancer,hf,Other-2,nan,Downtowns,Streetwise,Smuggling,Dance,Hunnii,Bosses,Bike A,nan,nan,What have you got us?,nan,nan,nan,TV,https://duckduckgo.com/?q=pamela+anderson+barb+wire&t=raspberrypi&atb=v474-1&ia=images&iax=images&iai=https%3A%2F%2Fstatic1.srcdn.com%2Fwordpress%2Fwp-content%2Fuploads%2F2022%2F03%2FPamela-Anderson-Pam-Tommy-Barb-Wire.jpg
+Barbii & Bambam,nan,Courtesans,hf,Other-3,nan,Striperelllas,Carousing,Courier,'Fun’,nan,Bashers,Van A,nan,nan,Combat Couple Act,nan,nan,nan,TV,nan
+Col. Deering,Erin Gray,Leader,hf,Navy-5,nan,Roup Defence Force,Leader,Swimming,Aerobics,Twiki,COACC,nan,Star Fighter,nan,Thats not good,nan,nan,nan,TV,https://duckduckgo.com/?q=colonel+wilma+deering&t=raspberrypi&atb=v474-1&ia=images&iax=images&iai=https%3A%2F%2Falchetron.com%2Fcdn%2Fwilma-deering-12ed5105-d980-425a-9ef4-8b38e6e479c-resize-750.jpeg
+Ardarla,BR,Princess,hf,Other-2,nan,Peace Mission,Politics,Loving Life,Jogging,nan,Guards,Coach,Cruiser,nan,Attend me!,nan,nan,nan,nan,https://duckduckgo.com/?q=buck+rogers+ardarla&t=raspberrypi&atb=v474-1&iar=images&iai=https%3A%2F%2Fi.pinimg.com%2Foriginals%2Fd6%2Ffc%2Fd6%2Fd6fcd61a6a0db8eee797cdb623a02046.jpg
+Foxy Roxy,nan,Spy,hf,Scout-4,nan,nan,SPYING,Deals,Courier,nan,Lazers,Rock E5,Rock-E,nan,nan,nan,nan,nan,nan,nan
+Ruby Red,nan,Miner,hf,Navy-3,nan,Red Hand Gang,Mining,Building,Rocking,Crystii,BimboTs,MPak A,Big Red One,nan,I like big rocks,nan,nan,nan,nan,nan
+Walter,2000AD,Lisping bot,hm,Waiter-3,nan,Creative Cleaning,Wash,Rinse,Repeat,nan,BinBots,nan,nan,nan,"Hi Im Walter, twy me",nan,nan,nan,nan,https://www.thingiverse.com/thing:759662
+Mr 10%,2000AD,Employer,hm,Other-8,nan,Robusters,Business,nan,nan,Munii,Bruisers,Rolls A,Preying Mantis,nan,Robusters are Go!,nan,nan,nan,nan,https://duckduckgo.com/?q=2000ad+mr+10%25&t=raspberrypi&atb=v474-1&ia=web
+Stogie,2000AD,Cigarillo,hm,AI,nan,nan,Smoke,nan,nan,nan,Cigar Box,nan,nan,nan,Hey-Senyor,nan,nan,nan,nan,https://duckduckgo.com/?q=2000ad+robohunter+stogie&t=raspberrypi&atb=v474-1&ia=images&iax=images&iai=http%3A%2F%2Fwww.writeups.org%2Fwp-content%2Fuploads%2FSam-Slade-Robo-Hunter-2000AD-Comics-h.jpg
+Sam C Slade,Clint Eastwood,Robohunter,hm,Scout-6,nan,Robohunter,Job,nan,nan,nan,Droids,Cab A,Beowulf,nan,The C stands for Cat,nan,nan,nan,nan,https://duckduckgo.com/?q=2000ad+robohunter+sam+slade&t=raspberrypi&atb=v474-1&ia=images&iax=images&iai=https%3A%2F%2Fwww.writeups.org%2Fwp-content%2Fuploads%2FSam-Slade-Robo-Hunter-2000AD-Comics.jpg
+Dirty Harry,Clint Eastwood,Investigator,hm,Lawman-7,nan,nan,Job,nan,nan,nan,nan,nan,nan,nan,I know what you`re thinking,nan,nan,nan,nan,nan
+Dusty Bin,TV321,Bin-stupid,hm,Other-8,nan,Street Cleaner,Informant,nan,nan,nan,Postals,nan,nan,nan,nan,nan,nan,nan,nan,https://duckduckgo.com/?q=ted+rogers+321+dusty+bin&t=raspberrypi&atb=v474-1&ia=images&iax=images&iai=http%3A%2F%2Fcdn.images.express.co.uk%2Fimg%2Fdynamic%2Fgalleries%2Fx701%2F71495.jpg
+Johnny Alpha,nan,Leader,hm,Other-4,nan,nan,Hunter,nan,nan,nan,BountyBoys,Truck A,Hunter,nan,Muties Work,nan,nan,nan,nan,https://duckduckgo.com/?q=2000ad+strontium+dog&t=raspberrypi&atb=v474-1&ia=images&iax=images&iai=http%3A%2F%2Fwww.britcomicsart.com%2Fimages%2Fart%2F975_220817190100GgeChKcJ8U.jpg
+Wulf Sternhammer,nan,Bounty Hunter,hm,Other-5,nan,nan,nan,nan,nan,nan,BountyBoys,Truck A,nan,nan,Yes Johnny,nan,nan,nan,nan,https://www.warlordgames.com/who-is-wulf-sternhammer/
+Harry 20,nan,Employer,hm,Trader-5,nan,Rock Hard Mining,Streetwise,nan,nan,nan,Kinunir Crew,nan,High Rock,nan,Banged Up,nan,nan,nan,nan,http://www.internationalhero.co.uk/h/highrock.htm
+Buck Rogers,Gil Gerard,Explorer,hm,Pilot-6,nan,Longbow,Admin,nan,nan,Twikii,SSS(S3),nan,Searcher,nan,Outta Time,nan,nan,nan,nan,https://www.closerweekly.com/wp-content/uploads/2019/11/buck-rogers-cast-5.jpg?crop=0px%2C263px%2C2840px%2C1609px&resize=940%2C529&quality=86&strip=all
+Cammi,nan,Employer,f,Trader-5,nan,Cammis Commandos,nan,nan,nan,nan,Carlas,air/raft,Cruncher,nan,"Come on, is that it?",nan,nan,nan,nan,https://www.artstation.com/artwork/L2XaV5
+Deathlock,2000AD,Demolisher,hm,Cyborg-1,nan,Damage Inc,nan,nan,nan,nan,Demolishers,nan,nan,nan,Khaos Abounds,nan,nan,nan,nan,https://external-content.duckduckgo.com/iu/?u=http%3A%2F%2Fwww.writeups.org%2Fwp-content%2Fuploads%2FDeathlok-Demolisher-Marvel-Comics-Manning-a.jpg&f=1&nofb=1&ipt=5d6def4025dbd7e3bbbd6a56cd9530af3a70e51ede875f395d288afb642461c8
+Col Sam Carter,Stargate,Manager,hf,Navy-6,nan,nan,nan,nan,nan,nan,OSG,nan,SG1,nan,nan,nan,nan,nan,nan,https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse2.explicit.bing.net%2Fth%3Fid%3DOIP._R9np5VyVMG7W791pYdAPAHaRb%26pid%3DApi&f=1&ipt=32f04909c9c818b10c1830f47dfc057d5fc0e4c543b577630d4f1864bccdcae7&ipo=images
+Lt. Pillox,nan,Snooty Shit,hm, COACC,nan,Atari Death Squadron,nan,nan,nan,nan,A.D.S.,nan,Iramda,nan,nan,nan,nan,nan,nan,nan
+Mike,nan,Mechanic,hm,Other-5,nan,Mike & the Mechanics,Mechanic,Singing,Drugs,nan,Mechanics,nan,nan,nan,Make it now,nan,nan,nan,nan,nan
+Fat Fran,nan,Mechanic,hf,Other-4,nan,Frans Faire,nan,nan,nan,nan,League of Fatties,nan,nan,nan,We will speack,nan,nan,nan,nan,nan
+Aftab the Greek,Jabba,Crimelord,hm,Criminal-8,nan,???,nan,nan,nan,nan,Family n Underworld,nan,Many,nan,Lemme tell you a story about friends,nan,nan,nan,nan,https://www.2000ad.org/markus/travellers/image.php
+Savage Sid,Autoduel Shop,Salvage,hm,Mech-6,nan,Sids Salvage,nan,nan,nan,Backstock,Scrappers,Truck A,nan,nan,Got a wreck needs towing?,nan,nan,nan,nan,https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%3Fid%3DOIP.Lt01Ae_L5DNWbHLWisWEoAHaJz%26pid%3DApi&f=1&ipt=60a04b77841456a1b2139d6b4ae99160c2b457b119d4fd5ac19ec09a7b6f96f1&ipo=images
+Poe,Altered Carbon,AI Hotel,hm,Steward-4,nan,The Raven,nan,nan,nan,Poe,Hotel,Cabbi,nan,nan,We are fully equipped for any delectation or delight,nan,nan,nan,nan,https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fstatic1.srcdn.com%2Fwordpress%2Fwp-content%2Fuploads%2F2020%2F02%2FPoe-featured.jpg&f=1&nofb=1&ipt=236e3b62f3a653460ffedfd489288b915389a31297ae2516db62c20ca90c60e7
+Lucy,Lucy Lawless,Attorney,hf,Law-8,nan,Legal Eagles,Law,Law,Truth,nan,Book Babes,nan,nan,nan,I will ask my boss,nan,nan,nan,nan,nan
+Robyn,Robyn,Singer,hf,Perform-4,nan,FemBots,Music,Dance,Robotics,nan,Robyns Hoods,nan,nan,nan,nan,nan,nan,nan,Fembots,nan
+Solitaire,Jane Seymour,Prophecy,hf,Tarot-4,nan,Crocs & Co,Tarot,Companion,Lounging,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+Nemesis,2000AD,Warlock,m,Mystic-10,nan,ABC Warriors,Khaos,nan,nan,nan,Grandfather,nan,nan,nan,nan,nan,nan,nan,nan,https://i.ebayimg.com/images/g/hgQAAOSwWi9k-F2q/s-l1600.webp
+Torquemada,2000AD,BAD,m,Mystic-12,nan,ABC Warriors,Khaos,nan,nan,Slave,Terminators,Coach of Doom,nan,nan,"Be Pure, Be Vigilant, Behave!",nan,nan,nan,nan,https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fi.pinimg.com%2F736x%2Fe9%2Ff7%2F97%2Fe9f7971c4697cae81d22822020e8605f--comic-books-comic-art.jpg&f=1&nofb=1&ipt=a418ad4cbca1c264495b3ec3e4f754b382edd771ad2071a4164f2656663701b6
+Deadlock,2000AD,Leader,m,???,nan,ABC Warriors,Khaos,???,???,???,Termites,nan,nan,nan,nan,nan,nan,nan,nan,https://external-content.duckduckgo.com/iu/?u=http%3A%2F%2Fwww.kevcrossley.com%2Fwp-content%2Fuploads%2F2016%2F04%2F2000AD_colour_Deadlock.jpg&f=1&nofb=1&ipt=9039057612763fa9dd3e603a71dcc9ce799f35d14e089de54d9459c49d22b96e
+Hammerstein,2000AD,Muscle,m,Marine-5,nan,ABC Warriors,Combat,Repair,Leader,Rover,Rovers,nan,nan,nan,Here we go again,nan,nan,nan,nan,https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fi.pinimg.com%2Foriginals%2Fe0%2Fee%2F4a%2Fe0ee4a1907ed799b19c61b4c06afe26f.jpg&f=1&nofb=1&ipt=2cdbd66386f5636f7a15a45b96bb359f6a1ddfebf54aaebd16b58147d72a5bc2
+Joe Pineapples,2000AD,Sniper,m,Army-4,nan,ABC Warriors,Recon,Sniper,Vixens,Sexii,Joebots,nan,nan,nan,Easy,nan,nan,nan,nan,https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fimages.rebellion.click%2FproductVersion%2F64%2Fb3%2F00.large.jpg&f=1&nofb=1&ipt=9b71a61b32b458191b6537807eb6e955ca6cde11e15245f31f83075e1c9d5da7
+Ro Jaws,2000AD,Trash,m,Other-4,nan,ABC Warriors,Trash,Oil,Trouble,M8,Dusty Bin,nan,nan,nan,Wotcha Mate,nan,nan,nan,nan,https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fimages.rebellion.click%2FproductVersion%2F64%2Fb3%2F00.large.jpg&f=1&nofb=1&ipt=9b71a61b32b458191b6537807eb6e955ca6cde11e15245f31f83075e1c9d5da7
+Happy Shrapnel,2000AD,Stubborn,m,Army-4,nan,ABC Warriors,Combat,nan,Zippo,Scanner,Mongrol,nan,nan,nan,Wheres my Zippo?,nan,nan,nan,nan,https://external-content.duckduckgo.com/iu/?u=http%3A%2F%2Fwww.internationalhero.co.uk%2Fh%2Fhappyshr.jpg&f=1&nofb=1&ipt=42550bb80d1afb0bca3f5e63e1f8778505978f316deb2fb566c1b885b5fcfe32
+General BlackBlood,2000AD,Nasty,m,Marine-5,nan,ABC Warriors,Interrogate,nan,nan,Meanii,Straw Dogs,nan,nan,nan,Ssssssalvage,nan,nan,nan,nan,https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fi.pinimg.com%2Foriginals%2F85%2Fda%2F49%2F85da493ce89d205c927630b99cb223f7.jpg&f=1&nofb=1&ipt=d86bb9153eaf475470395a2ae968be90a22245cf6a39e28d1d02408d006928c6
+Mek Quake,2000AD,Stoopid,m,Other-4,nan,ABC Warriors,Drive,nan,nan,-NO-!,ABC Warriors,nan,nan,nan,Big Jobs,nan,nan,nan,nan,https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse4.mm.bing.net%2Fth%2Fid%2FOIP.OP_st2KSdDe_4A9mkIjxNgAAAA%3Fpid%3DApi&f=1&ipt=d7ea37d388c4f6675e0160ba1b6f7485fafe7ab942ea067ed6d4c73ca0af2a90&ipo=images
+Morrigun,2000AD,BarBot,f,Other-4,nan,ABC Warriors,Entertain,nan,nan,nan,The Girls,nan,nan,nan,"Nice piece, now look at this",nan,nan,nan,nan,https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse4.mm.bing.net%2Fth%3Fid%3DOIP.MVSXislfjsMSprdOKT2JDAHaE3%26cb%3Diwp2%26pid%3DApi&f=1&ipt=e8ba36afbdccdf89803f6d48c9a20dc538e0a09fdd7e8691855866050c7fed82&ipo=images
+Mongrol,2000AD,Para,m,Marine-5,nan,ABC Warriors,Paradroid,nan,nan,nan,ABC Warriors,nan,nan,nan,Who`s my girl,nan,nan,nan,nan,nan
+Metal Mickey,TV,Juke Box,m,Music,nan,ABC Warriors,Boogie,nan,nan,nan,Company73,nan,nan,nan,nan,nan,nan,nan,nan,https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%3Fid%3DOIP.VO8lba6OViBf5OhgIQUBFgHaDt%26pid%3DApi&f=1&ipt=b5f315f50d120b21cb5b2a6f05e69ed2a36347e5f12a2a63952394529560e1b6&ipo=images
+nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+Rogue,2000AD,GI,hm,Army-4,nan,Blues Brothers,Fight,nan,nan,nan,GI Joes,nan,nan,nan,I want all to know,nan,nan,nan,nan,https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse2.mm.bing.net%2Fth%3Fid%3DOIP.TO6Pg6XVkNHxMV23PVqb-AHaJn%26pid%3DApi&f=1&ipt=3cfb1d4e57789f9bcc29522f25e413d8f14c5c232ce363b35b27cc0c5a68e10c&ipo=images
+Helm,2000AD,Sensors,hm,Army-4,nan,Blues Brothers,Fight,nan,nan,nan,GI Joes,nan,nan,nan,Who is the Traitor,nan,nan,nan,nan,https://i.ebayimg.com/images/g/JsYAAOSw7mplwOYv/s-l1600.webp
+Bagman,2000AD,Rearguard,hm,Army-4,nan,Blues Brothers,Fight,nan,nan,nan,GI Joes,nan,nan,nan,Refills,nan,nan,nan,nan,https://i.ebayimg.com/images/g/JsYAAOSw7mplwOYv/s-l1600.webp
+Gunnar,2000AD,Sniper,hm,Army-4,nan,Blues Brothers,Fight,nan,nan,nan,GI Joes,nan,nan,nan,I Spy,nan,nan,nan,nan,https://i.ebayimg.com/images/g/JsYAAOSw7mplwOYv/s-l1600.webp
+Maj. Magnum,2000AD,GI Leader,hm,Army-8,nan,Blues Brothers,Fight,nan,nan,nan,GI Joes,nan,nan,nan,I Don`t Care,nan,nan,nan,nan,https://i.ebayimg.com/images/g/JsYAAOSw7mplwOYv/s-l1600.webp
+Venus Bluegenes,2000AD,GI Pilot,hf,Army-3,nan,Blues Brothers,Fight,nan,nan,nan,GI Joes,Blue Bird,nan,nan,Lets get em,nan,nan,nan,nan,https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fassets-prd.ignimgs.com%2F2024%2F01%2F29%2Frogue-trooper-explained-venus-bluegenes-1706539820357.jpg&f=1&nofb=1&ipt=b01b0399cd6e7cc5f2f267d3b1409b061b8b393013049b9805460ad9c33b2c2d
+Bland Brothers,2000AD,Scavengers,hm,Other-4,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,What Could We Get,nan,nan,nan,nan,https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse3.mm.bing.net%2Fth%3Fid%3DOIP.g5KtXKlcQiSpGkXQtDI_OwHaGY%26pid%3DApi&f=1&ipt=ac6a611fce6ae6793ae2d9648eecd58888c08f73d076b53396390cb5e49fa314&ipo=images
+nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+Horatio Flynn,The Travellers,Salesman,hm,Scout-6,nan,The Travellers,Smuggler,Next Con,Vacc Suit Sales,nan,CSB,air/raft,Osprey,nan,Your vacc suit any good?,nan,nan,nan,nan,https://www.2000ad.org/markus/travellers/image.php
+Syrena Medussa,Cate Capshaw,Ditzy,hf,Other-1,nan,The Travellers,Courier,Next Bloke,nan,nan,Cat Girls,air/bike,Osprey,nan,Hello There,nan,nan,nan,nan,https://www.2000ad.org/markus/travellers/image.php
+Jeremiah Hayes,The Travellers,Courier,hm,Scout-4,nan,The Travellers,Sneak,Payoff Aftab,nan,nan,Drivers,air/raft,Osprey,nan,Bloody Doors off again,nan,nan,nan,nan,https://www.2000ad.org/markus/travellers/image.php
+Felix the fur,The Travellers,Pet,?,???,nan,The Travellers,Purr,Purr,Purr,nan,???,GODS,Osprey,nan,proooot,nan,nan,nan,nan,https://www.2000ad.org/markus/travellers/image.php
+Gav,John Beck,BOOM,hm,Marine-4,nan,The Travellers,Train,Game,Same,nan,The Boys,Battledress,Osprey,nan,Whuh? Huh? Die!,nan,nan,nan,nan,https://www.2000ad.org/markus/travellers/image.php
+Dinalt,The Travellers,Perv,hm,Other-7,nan,The Travellers,Underworld,Pervy stuff,AI sexy stuff,nan,The Viewers,Boots,Osprey,nan,nan,nan,nan,nan,nan,https://www.2000ad.org/markus/travellers/image.php
+nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+Holden,Expanse,Aqua,hm,Crew-4,nan,The Ice Pirates,Truth,nan,nan,nan,The Saved,Combat Armour,Rocinante,nan,Why,nan,nan,nan,nan,https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%3Fid%3DOIP.Nt07L4RKmvRE4Kg9F4eFlgHaEK%26pid%3DApi&f=1&ipt=9d6f87f762c0faacbceda36d852879027fbfc69627f0d4c61b678d941a0f0af3&ipo=images
+Avasarala,Expanse,Aqua,hf,Politic-9,nan,The Ice Pirates,Diplomat,nan,nan,nan,The Rich,nan,Rocinante,nan,Because,nan,nan,nan,nan,https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%3Fid%3DOIP.Nt07L4RKmvRE4Kg9F4eFlgHaEK%26pid%3DApi&f=1&ipt=9d6f87f762c0faacbceda36d852879027fbfc69627f0d4c61b678d941a0f0af3&ipo=images
+Bobby,Expanse,Aqua,hf,Marine-3,nan,The Ice Pirates,Marine,nan,nan,nan,Marines,nan,Rocinante,nan,Hoo Yaa,nan,nan,nan,nan,https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%3Fid%3DOIP.Nt07L4RKmvRE4Kg9F4eFlgHaEK%26pid%3DApi&f=1&ipt=9d6f87f762c0faacbceda36d852879027fbfc69627f0d4c61b678d941a0f0af3&ipo=images
+Amos,Expanse,Aqua,hm,Other-7,nan,The Ice Pirates,Muscle,nan,nan,nan,The Town,nan,Rocinante,nan,"East, Sleep",nan,nan,nan,nan,https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%3Fid%3DOIP.Nt07L4RKmvRE4Kg9F4eFlgHaEK%26pid%3DApi&f=1&ipt=9d6f87f762c0faacbceda36d852879027fbfc69627f0d4c61b678d941a0f0af3&ipo=images
+Martian,Expanse,Aqua,hm,Pilot-6,nan,The Ice Pirates,Pilot,nan,nan,nan,No-one,nan,Rocinante,nan,nan,nan,nan,nan,nan,https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%3Fid%3DOIP.Nt07L4RKmvRE4Kg9F4eFlgHaEK%26pid%3DApi&f=1&ipt=9d6f87f762c0faacbceda36d852879027fbfc69627f0d4c61b678d941a0f0af3&ipo=images
+nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+Kitt,Knight Rider,Smart,h,Drive-5,nan,Knight Industries,Driver,nan,nan,nan,Knight Industries,nan,nan,nan,Michael,nan,nan,nan,nan,https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%3Fid%3DOIP.Nt07L4RKmvRE4Kg9F4eFlgHaEK%26pid%3DApi&f=1&ipt=9d6f87f762c0faacbceda36d852879027fbfc69627f0d4c61b678d941a0f0af3&ipo=images
+Karr,Knight Rider,Rough,h,Drive-5,nan,Aftab,Driver,nan,nan,nan,Spi Bots,nan,nan,nan,nan,nan,nan,nan,nan,https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse2.mm.bing.net%2Fth%3Fid%3DOIP.TSp_ogySlpjUa6prkVwtwAHaEK%26pid%3DApi&f=1&ipt=3cbdcf67f63bd0defd50c83b86a5877ea963b68988ae197a29dc4643942a5a00&ipo=images
+Cabii,Escape From NY,Old Timer,h,Drive-6,nan,A2B Cabs,Driver,nan,nan,nan,Street Rats,nan,nan,nan,Been around too long,nan,nan,nan,nan,https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%2Fid%2FOIP.fjdaI1X4WuC-Q1dMwKOdSgHaDK%3Fpid%3DApi&f=1&ipt=5575f1efef961b859341253d280ab90795507ad3b9f3b256fba358e7ab835aaf&ipo=images
+Bob,Black Hole,Old Timer,h,Nav-6,nan,Sids Salvage,Contact,nan,nan,nan,Contacts,nan,nan,nan,nan,nan,nan,nan,nan,https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse2.mm.bing.net%2Fth%3Fid%3DOIP.6ZB3cV3ThdPhMSJgso0R_wHaEw%26cb%3Diwc2%26pid%3DApi&f=1&ipt=f41d6efb4d9edee73de231076d7f3d11ff605934b2b665629f80d0fe2ffc870c&ipo=images
+Vincent,Roddy McDowell,ScoutBot,h,Nav-2,nan,Cygnus Research,Mapping,nan,nan,nan,University,nan,nan,nan,At you service,nan,nan,nan,nan,https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse2.mm.bing.net%2Fth%3Fid%3DOIP.6ZB3cV3ThdPhMSJgso0R_wHaEw%26cb%3Diwc2%26pid%3DApi&f=1&ipt=f41d6efb4d9edee73de231076d7f3d11ff605934b2b665629f80d0fe2ffc870c&ipo=images
+Maximilian,Black Hole,CrushBot,h,Other-0,nan,Aftab,Crushing,nan,nan,nan,Black Bots,nan,nan,nan,Whirrrr….,nan,nan,nan,nan,https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%3Fid%3DOIP.F_30Mwek0RMUsyJkJOG6ygHaE5%26pid%3DApi&f=1&ipt=f0c566d2e939ac01a40a0c8d335efc3d62d48bb956fac361cef3641ad0a8cc5d&ipo=images
+Johnny Cab,nan,Cleaned,h,Drive-4,nan,Gen Cabs,Driver-10,nan,nan,nan,Cabbies,nan,nan,nan,My Names Jonnii,nan,nan,nan,nan,https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%3Fid%3DOIP.7zF1-63_H2PkuXFj2m9PBwHaFc%26cb%3Diwc2%26pid%3DApi&f=1&ipt=16cc88649bc109024b1daed77f5671df879aa4916a7709907be6b1fad2380b66&ipo=images
+Twiki,Buck Rogers,nan,h,Comic-2,nan,Buck Rogers,Other-3,nan,nan,nan,nan,nan,nan,nan,Bi-di bi-di beep,nan,nan,nan,nan,nan
+Twiiti,Wilma,nan,f,Comic-1,nan,Wilma,Other-2,nan,nan,nan,nan,nan,nan,nan,Boogie – Boogie,nan,nan,nan,nan,nan
+nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+Rog Blake,Blakes Seven,Rebel,hm,Other-5,nan,Blakes Seven,Rebellion,nan,nan,nan,Underworld,nan,Liberator,nan,nan,nan,nan,nan,nan,https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse2.mm.bing.net%2Fth%3Fid%3DOIP.uifgjkDcIuTDCZq69EgukgHaE8%26pid%3DApi&f=1&ipt=52745677b879d1776467abf47c0280d71044558e1be0c26031819bb6f5b7a67e&ipo=images
+Kerr Avon,Blakes Seven,Cocky Crim,hm,Other-4,nan,Blakes Seven,Theft,nan,nan,nan,Rich Friends,nan,Liberator,nan,nan,nan,nan,nan,nan,https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse2.mm.bing.net%2Fth%3Fid%3DOIP.uifgjkDcIuTDCZq69EgukgHaE8%26pid%3DApi&f=1&ipt=52745677b879d1776467abf47c0280d71044558e1be0c26031819bb6f5b7a67e&ipo=images
+Dana,Blakes Seven,Weapon Smith,hf,Army-3,nan,Blakes Seven,Gun Craft,nan,nan,nan,Crew,nan,Liberator,nan,nan,nan,nan,nan,nan,https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse2.mm.bing.net%2Fth%3Fid%3DOIP.uifgjkDcIuTDCZq69EgukgHaE8%26pid%3DApi&f=1&ipt=52745677b879d1776467abf47c0280d71044558e1be0c26031819bb6f5b7a67e&ipo=images
+Kali,Blakes Seven,Psychic,hf,Psi-4,nan,Blakes Seven,Mind Tricks,nan,nan,nan,Peace,nan,Liberator,nan,nan,nan,nan,nan,nan,https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse2.mm.bing.net%2Fth%3Fid%3DOIP.uifgjkDcIuTDCZq69EgukgHaE8%26pid%3DApi&f=1&ipt=52745677b879d1776467abf47c0280d71044558e1be0c26031819bb6f5b7a67e&ipo=images
+Gan,Blakes Seven,Brute,hm,Other-5,nan,Blakes Seven,???,nan,nan,nan,Escape,nan,Liberator,nan,nan,nan,nan,nan,nan,https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse2.mm.bing.net%2Fth%3Fid%3DOIP.uifgjkDcIuTDCZq69EgukgHaE8%26pid%3DApi&f=1&ipt=52745677b879d1776467abf47c0280d71044558e1be0c26031819bb6f5b7a67e&ipo=images
+Jenna,Blakes Seven,Jewel Thief,hf,Navy-3,nan,Blakes Seven,nan,nan,nan,nan,Courtesans,nan,nan,nan,nan,nan,nan,nan,nan,https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse2.mm.bing.net%2Fth%3Fid%3DOIP.uifgjkDcIuTDCZq69EgukgHaE8%26pid%3DApi&f=1&ipt=52745677b879d1776467abf47c0280d71044558e1be0c26031819bb6f5b7a67e&ipo=images
+Villa,Blakes Seven,Thief,hm,Other-,nan,Blakes Seven,Theft,nan,nan,nan,The World,nan,Liberator,nan,nan,nan,nan,nan,nan,https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse2.mm.bing.net%2Fth%3Fid%3DOIP.uifgjkDcIuTDCZq69EgukgHaE8%26pid%3DApi&f=1&ipt=52745677b879d1776467abf47c0280d71044558e1be0c26031819bb6f5b7a67e&ipo=images
+Soolin,Blakes Seven,Gun Runner,hf,Army-3,nan,Blakes Seven,Trade,nan,nan,nan,Research,nan,Liberator,nan,nan,nan,nan,nan,nan,https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse2.mm.bing.net%2Fth%3Fid%3DOIP.uifgjkDcIuTDCZq69EgukgHaE8%26pid%3DApi&f=1&ipt=52745677b879d1776467abf47c0280d71044558e1be0c26031819bb6f5b7a67e&ipo=images
+Servalan,Blakes Seven,Antagonist,hf,Diplomat-6,nan,Federation,Revenge,nan,nan,nan,Vengeance,nan,Liberator,nan,nan,nan,nan,nan,nan,https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse2.mm.bing.net%2Fth%3Fid%3DOIP.uifgjkDcIuTDCZq69EgukgHaE8%26pid%3DApi&f=1&ipt=52745677b879d1776467abf47c0280d71044558e1be0c26031819bb6f5b7a67e&ipo=images
+Tarrant,Blakes Seven,Marine,hm,Marine-4,nan,Federation,Squad,nan,nan,nan,Power,nan,Liberator,nan,nan,nan,nan,nan,nan,https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse2.mm.bing.net%2Fth%3Fid%3DOIP.uifgjkDcIuTDCZq69EgukgHaE8%26pid%3DApi&f=1&ipt=52745677b879d1776467abf47c0280d71044558e1be0c26031819bb6f5b7a67e&ipo=images
+nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+Col. Alan Faulkner,Richard Burton,Recruiting,hm,Army-8,nan,The Wild Geese,Leader,The Job,Next Job,nan,Soldiery,nan,Spruce Goose,nan,nan,nan,nan,nan,nan,nan
+Lt. Shaun Flynn,Roger Moore,Drug Running,hm,Army-6,nan,The Wild Geese,Pilot,nan,nan,nan,Drug Lords,nan,Spruce Goose,nan,nan,nan,nan,nan,nan,nan
+R.S.M. Sandy Young,nan,Gardening,hm,Marine-7,nan,The Wild Geese,Train,Planning,Retired,nan,Soldiery,nan,Spruce Goose,nan,nan,nan,nan,nan,nan,nan
+'Queenie’,nan,Carer,hm,Other 7,nan,The Wild Geese,Medical,Gay,Home,nan,Medics,nan,Spruce Goose,nan,nan,nan,nan,nan,nan,nan
+Rafer Janders,Richard Harris,Planner,hm,Other-6,nan,The Wild Geese,Family,Friends,Vinyard,nan,Family,nan,Spruce Goose,nan,nan,nan,nan,nan,nan,nan
+nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+Susan Ivanova,B5,Lt Cmdr,hf,Navy-5,nan,Babylon 5,Admin,nan,nan,nan,B5,nan,Fighter,nan,nan,nan,nan,nan,nan,nan
+John Sheridan,B5,Leader,hm,Navy-6,nan,Babylon 5,Leader,nan,nan,nan,B5,nan,B5,nan,nan,nan,nan,nan,nan,nan
+Michael Garibaldi,B5,Security,hm,Other-6,nan,Babylon 5,Streetwise,nan,nan,nan,B5,nan,B5,nan,nan,nan,nan,nan,nan,nan
+Londo Malarii,Peter Jurassic,Diplomat,hm,Other-9,nan,Babylon 5,Diplomat,nan,nan,nan,B5,nan,B5,nan,nan,nan,nan,nan,nan,nan
+G`Kar,B5,Diplomat,hm,Army-8,nan,Babylon 5,Diplomat,nan,nan,nan,B5,nan,B5,nan,nan,nan,nan,nan,nan,nan
+Zathras,B5,Technician,hm,Other-15,nan,Babylon 5,Tech,nan,nan,nan,The Five,nan,B5,nan,nan,nan,nan,nan,nan,nan
+Bester,B5,Psi Corps,hm,Psi-8,nan,Psyche,Gain Info,nan,nan,nan,Psi-Corp,Tridents,Psi-700,nan,nan,nan,nan,nan,nan,nan
+nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+Wrecker,Bad Batch,Assault,hm,Marine-4,nan,Bad Batch,Team,nan,nan,nan,4518th,Battledress,nan,nan,nan,nan,nan,nan,nan,nan
+Tekk,Bad Batch,SensOp,hm,Marine-4,nan,Bad Batch,Team,nan,nan,nan,213th,Battledress,nan,nan,nan,nan,nan,nan,nan,nan
+Omega,Bad Batch,Lookout,hm,Marine-4,nan,Bad Batch,Team,nan,nan,nan,Cloners,Battledress,nan,nan,nan,nan,nan,nan,nan,nan
+Brute,Bad Batch,Assault,hm,Marine-4,nan,Bad Batch,Team,nan,nan,nan,101st,Battledress,nan,nan,nan,nan,nan,nan,nan,nan
+Brains,Bad Batch,Intel,hm,Marine-4,nan,Bad Batch,Team,nan,nan,nan,501st,Battledress,nan,nan,nan,nan,nan,nan,nan,nan
+nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+Luke,Mark Hamill,nan,hm,Other-3,nan,Rebellion,Force,nan,nan,nan,Rebels,Land Speeder,nan,nan,nan,nan,nan,nan,nan,nan
+Han,Harrison Ford,nan,hm,Navy-6,nan,Myself,Luck,nan,nan,nan,Underworld,Raouls Beast,nan,nan,nan,nan,nan,nan,nan,nan
+Leia,Carrie Fisher,nan,hf,Other-4,nan,Rebellion,Hormones,nan,nan,nan,Upper Crust,Limousine,nan,nan,nan,nan,nan,nan,nan,nan
+Darf Tater,Vargr,nan,vm,Navy-8,nan,Empire,Anger,nan,nan,nan,Empire,APC ,nan,nan,nan,nan,nan,nan,nan,nan
+Padme,SW,nan,hf,Other-2,nan,Rebellion,Lust,nan,nan,nan,Senate,Belt,nan,nan,nan,nan,nan,nan,nan,nan
+nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+Joe Dredd,2000AD,Judge,hm,nan,nan,Judges,Law,nan,nan,nan,Hall of Justice,Lawmaster 3,nan,nan,I am the Law,nan,nan,nan,nan,nan
+Cassy Anderson,2000AD,Judge,hf,nan,nan,Judges,Humanity,nan,nan,nan,Hall of Justice,Lawmaster 2,nan,nan,"Wait, I feel something",nan,nan,nan,nan,nan
+Pa Fink,2000AD,Criminal,hm,nan,nan,Muties,More,nan,nan,nan,Muties,Truck,nan,nan,Angel Gang Survives,nan,nan,nan,nan,nan
+Mean Machine,2000AD,Criminal,hm,nan,nan,Muties,RRRRR,nan,nan,nan,Muties,Truck,nan,nan,Yes Pa,nan,nan,nan,nan,nan
+Ma-Man,Judge Dredd,Criminal,hf,nan,nan,Druggies,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+Cmdr Walter Koenig,Space 1999,Leader,hm,nan,nan,Moonbase Alpha,Moonbase,nan,nan,nan,Base,Buggy,nan,nan,What is out there,nan,nan,nan,nan,nan
+Alan Carter,Space 1999,nan,hm,nan,nan,Moonbase Alpha,Security,Pilot,nan,nan,Base,Buggy,nan,nan,Just Another Day,nan,nan,nan,nan,nan
+Miya,Space 1999,nan,zf,nan,nan,Moonbase Alpha,Friendship,Metamorph,Junkie,nan,Base,nan,nan,nan,Do you like?,nan,nan,nan,nan,nan
+nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+Nick Fury,Marvel,nan,hm,nan,nan,SHIELD,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+Peggy Carter,Marvel,nan,hf,nan,nan,SHIELD,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+Deapool,Marvel,nan,hm,nan,nan,SHIELD,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+Wolverine,Marvel,nan,hm,nan,nan,SHIELD,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+Wonder Woman,Marvel,nan,hf,nan,nan,SHIELD,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+Powergirl,Marvel,nan,hf,nan,nan,SHIELD,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+Black Widow,Marvel,nan,hf,nan,nan,SHIELD,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+Capt Ameritus,Marvel,nan,hm,nan,nan,SHIELD,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+Green Arrow,Marvel,nan,hm,nan,nan,SHIELD,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+Rocket,Guardians,nan,vm,nan,nan,Guardians,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+nan,Guardians,nan,hm,nan,nan,Guardians,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+nan,Guardians,nan,hm,nan,nan,Guardians,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+nan,Guardians,nan,hm,nan,nan,Guardians,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+nan,Guardians,nan,hm,nan,nan,Guardians,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
