@@ -848,7 +848,7 @@ class CrewGUI:
     def create_data_section(self) -> None:
         try:
             data_frame = ttk.LabelFrame(self.paned_right, text="Data View", padding="5")
-            self.paned_right.add(data_frame, weight=3)
+            self.paned_right.add(data_frame, weight=1)
 
             # Create container frame for table and scrollbars
             table_frame = ttk.Frame(data_frame)
@@ -923,7 +923,7 @@ class CrewGUI:
             details_frame = ttk.LabelFrame(
                 self.paned_right, text="Details View", padding="5"
             )
-            self.paned_right.add(details_frame, weight=1)
+            self.paned_right.add(details_frame, weight=5)
 
             # Create container frame for text and scrollbar
             text_frame = ttk.Frame(details_frame)
