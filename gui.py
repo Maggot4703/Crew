@@ -933,19 +933,19 @@ class CrewGUI:
     def create_new_view_section(self) -> None:
         try:
             # Create a new frame for your view
-            new_view_frame = ttk.LabelFrame(self.paned_left, text="New View", padding="5")
+            new_view_frame = ttk.LabelFrame(self.paned_left, text="Mods View", padding="5")
             # Add the new frame to the paned window in the left panel
             # Adjust weight as needed; weight=0 means it won't expand as much as others
             self.paned_left.add(new_view_frame, weight=0) 
 
             # Add any widgets you want in this new view
-            ttk.Label(new_view_frame, text="Content for the new view").pack(padx=5, pady=5)
+            ttk.Label(new_view_frame, text="Content for the mods view").pack(padx=5, pady=5)
             # Example: Add a button
-            ttk.Button(new_view_frame, text="New View Button").pack(fill="x", pady=2)
-            ttk.Button(new_view_frame, text="Save", command=lambda: print("Save button in New View clicked")).pack(fill="x", pady=2)
+            ttk.Button(new_view_frame, text="Mods View Button").pack(fill="x", pady=2)
+            ttk.Button(new_view_frame, text="Save", command=lambda: print("Save button in Mods View clicked")).pack(fill="x", pady=2)
 
         except Exception as e:
-            logging.error(f"Failed to create new view section: {e}")
+            logging.error(f"Failed to create mods view section: {e}")
             raise
 
     def create_data_section(self) -> None:
@@ -1948,6 +1948,7 @@ class CrewGUI:
             ]
             file_path = filedialog.askopenfilename(
                
+
                 defaultextension=".txt",  # Default to .txt if no specific type chosen
                 filetypes=file_types,
             )

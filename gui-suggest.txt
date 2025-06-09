@@ -1,72 +1,80 @@
-### Issue Analysis
-The "Stop Reading" functionality fails because the pyttsx3 engine's `runAndWait()` method blocks the GUI until the TTS playback finishes. This prevents the GUI from responding to user actions, including stopping the playback.
+Suggestions for improving gui.py:
 
-### Suggestions for Fix
-1. **Introduce a `TTSManager` Class**:
-   - Manage playback in a background thread.
-   - Use a threading `Event` (e.g., `self.tts_stop_event`) to signal when to stop reading.
+1.  **Refactor `auto_import_py_files` Function (Lines 65-303):**
+    *   This function is very long and handles multiple responsibilities (caching, file discovery, filtering, importing, error handling).
+    *   **Action:** Break it down into smaller, more manageable helper functions. For example:
+        *   A function to handle cache loading/saving.
+        *   A function to discover Python files.
+        *   A function to determine if a file should be skipped (incorporating `skip_files`, `skip_patterns`, `skip_dirs`).
+        *   A function to check file content for `dangerous_patterns`.
+        *   A function to perform the actual import of a single module.
+    *   The extensive lists like `skip_files`, `skip_patterns`, `skip_dirs`, and `dangerous_patterns` are hardcoded.
+    *   **Action:** Move these to a separate configuration file (e.g., JSON) or define them as module-level constants for easier management and modification.
 
-2. **Refactor `_stop_reading()`**:
-   - Set the stop event and ensure the playback loop checks this event between chunks.
-   - Clear the engine's queue after calling `stop()`.
+2.  **Refactor `CrewGUI.__init__` Method (Lines 306-377):**
+    *   The constructor is quite long and performs many setup tasks.
+    *   **Action:** Decompose the initialization logic into several private helper methods. For example:
+        *   `_initialize_tts_engine()`
+        *   `_setup_scripts_directory()`
+        *   `_initialize_background_worker()`
+        *   `_load_configuration_and_state()`
+        *   `_perform_initial_auto_import()`
 
-3. **Update Playback Logic**:
-   - Split text into manageable chunks.
-   - Check the stop event between chunks to interrupt playback gracefully.
+3.  **Reduce Method Length and Complexity in Other Areas:**
+    *   `_show_speech_settings` (Lines 1403-1481): This method creates a new Toplevel window with many UI elements. Consider breaking down the UI creation for this dialog into smaller parts or using a dedicated class for the settings dialog.
+    *   `_update_script_menu` (Lines 1760-1821): The logic for finding scripts and populating the menu, including error handling for the scripts directory, is complex. This could be simplified or broken down.
 
-### Code Example
-```python
-class TTSManager:
-    def __init__(self, engine):
-        self.engine = engine
-        self.stop_event = threading.Event()
+4.  **Centralize Constants and Configuration Values:**
+    *   The code uses many hardcoded strings (e.g., "All Columns", "Mods View", UI element text, default file paths like `"./data/npcs.csv"`) and numbers (e.g., `padding="5"`, `width=140`, font sizes).
+    *   **Action:** Define these as constants at the module level or as class attributes within `CrewGUI`. This improves readability, maintainability, and reduces the risk of typos. Examples: `DEFAULT_PADDING = "5"`, `SCRIPTS_DIR_NAME = "scripts"`, `DEFAULT_DATA_FILE = Path("./data/npcs.csv")`.
 
-    def play_text(self, text, chunk_size=400):
-        """Play text in chunks with stop event handling."""
-        self.stop_event.clear()
-        chunks = self._chunk_text(text, chunk_size)
+5.  **Remove Code Duplication:**
+    *   The method `load_default_data` is defined twice (Lines 1379-1393 and Lines 1552-1566).
+    *   **Action:** Remove one of the definitions to avoid redundancy and potential inconsistencies.
 
-        for chunk in chunks:
-            if self.stop_event.is_set():
-                break
-            self.engine.say(chunk)
-            self.engine.runAndWait()
+6.  **Error Handling Strategy and Consistency:**
+    *   Review the use of `raise` vs. `messagebox.showerror` vs. just logging an error. For example, in `create_details_section` (Line 908), `raise` is uncommented, which will halt execution if this non-critical UI part fails.
+    *   **Action:** Decide on a consistent error handling policy for different types of errors (e.g., critical failures vs. non-critical UI element creation).
+    *   The `setup_logging()` method in `__init__` has a comment `"# os is used here, but this line is commented out"` (Line 350), but `setup_logging` itself (Lines 541-549) doesn't directly use `os` in a way that would justify this comment. The call to `self.setup_logging()` is active. Review and remove misleading comments.
 
-    def stop(self):
-        """Stop playback and clear the queue."""
-        self.stop_event.set()
-        self.engine.stop()
+7.  **Logging Improvements:**
+    *   The current `FileHandler` for `crew_gui.log` will append to the file indefinitely.
+    *   **Action:** Consider using `logging.handlers.RotatingFileHandler` to limit the log file size and manage log rotation.
 
-    def _chunk_text(self, text, max_length):
-        """Split text into smaller chunks."""
-        words = text.split()
-        chunks = []
-        current_chunk = []
+8.  **GUI Layout and Styling:**
+    *   Fixed heights are calculated for some frames (e.g., `group_frame` in `create_group_section`, `filter_frame` in `create_filter_section`) based on font metrics. This can be brittle.
+    *   **Action:** Explore using Tkinter's layout managers more dynamically or ensure these calculations are robust. For `PanedWindow` children, `weight` is often sufficient.
+    *   Consider centralizing `ttk.Style()` configurations if more extensive custom styling is applied or planned, rather than ad-hoc styling (e.g., `style.configure("Treeview", rowheight=25)` in `create_data_section`).
 
-        for word in words:
-            current_chunk.append(word)
-            if len(" ".join(current_chunk)) > max_length:
-                chunks.append(" ".join(current_chunk))
-                current_chunk = []
+9.  **TTS Functionality Enhancements:**
+    *   The `replacements` dictionary in `preprocess_text_for_speech` (Lines 1223-1238) is extensive.
+    *   **Action:** If this list is expected to grow or needs user customization, consider moving it to a configuration file or making it a class/module level constant.
+    *   Many TTS methods (`_read_selection`, `_read_all_details`, etc.) have repetitive initial checks: `if not TTS_AVAILABLE or not self.tts_engine:`.
+    *   **Action:** Use a decorator or a private helper method to encapsulate this check and reduce boilerplate.
 
-        if current_chunk:
-            chunks.append(" ".join(current_chunk))
+10. **Cross-Platform Compatibility:**
+    *   `_open_scripts_folder` (Lines 1848-1858) uses `xdg-open`, which is Linux-specific.
+    *   **Action:** If cross-platform support is a goal, add checks for the operating system and use appropriate commands (e.g., `os.startfile` on Windows, `subprocess.call(['open', ...])` on macOS).
 
-        return chunks
+11. **Modularity of `CrewGUI` Class:**
+    *   The `CrewGUI` class is very large (over 1700 lines) and handles numerous responsibilities (UI, data management, TTS, file operations, script execution).
+    *   **Action:** For long-term maintainability, consider breaking down `CrewGUI` into smaller, more focused classes or modules (e.g., `TTSManager`, `ViewManager`, `ScriptRunner`, `FileHandler`).
 
-# Refactor `_stop_reading()` in `CrewGUI`
-def _stop_reading(self):
-    if not TTS_AVAILABLE or not self.tts_engine:
-        return
+12. **File Path Management:**
+    *   **Action:** Consistently use `pathlib.Path` objects for path manipulations, as it's generally more robust and Pythonic than `os.path`. For example, `self.scripts_dir` could be a `Path` object.
+    *   Paths like `"./data/npcs.csv"` should be made relative to the application's script location robustly, e.g., `Path(__file__).resolve().parent / "data" / "npcs.csv"`.
 
-    try:
-        if hasattr(self, "tts_manager"):
-            self.tts_manager.stop()
-    except Exception as e:
-        logging.error(f"Error stopping TTS: {e}")
-```
+13. **Defensive `hasattr` Checks in `bind_events`:**
+    *   The `hasattr` checks in `bind_events` (Lines 432-455), e.g., `hasattr(self, 'filter_entry_widget')`, might indicate that the order of widget creation and event binding could be fragile or that not all widgets are guaranteed to exist when bindings are set up.
+    *   **Action:** Ensure widgets are always created before events are bound to them. If these checks are necessary due to conditional widget creation, ensure the logic is clear. Otherwise, they might mask initialization order issues.
 
-### Benefits
-- **Non-blocking GUI**: Playback runs in a background thread, allowing the GUI to remain responsive.
-- **Immediate Stop**: The stop event ensures playback halts promptly.
-- **Scalable**: The `TTSManager` class can be reused for other TTS-related tasks.
+14. **Clarity of Column Width Management in `create_data_section`:**
+    *   The interaction between default column widths (set to 100 initially), `_saved_column_widths` from config, and the `apply_saved_column_widths` callback (Lines 829-846) is a bit complex.
+    *   **Action:** Ensure this logic is robust, especially if columns are dynamically added/removed or if the table is repopulated frequently. The current check `if col_id in table_columns:` is good.
+
+15. **Review `_on_treeview_configure` (Lines 1601-1625):**
+    *   Proportional column resizing can be tricky. While the current logic attempts this, thoroughly test its behavior under various conditions (window resize, scrollbar visibility changes).
+
+16. **TTS Engine Initialization and Configuration:**
+    *   TTS properties (`rate`, `volume`, `voice`) are set in `__init__` and can be changed in `_show_speech_settings`.
+    *   **Action:** Ensure that TTS settings loaded via `_load_tts_settings` (Lines 1659-1669) are applied correctly and consistently with the settings dialog. The `_load_tts_settings` method is defined but doesn't appear to be called in the current codebase. If it's intended for use, ensure it's called at an appropriate time (e.g., during initialization after `tts_engine` is created).
