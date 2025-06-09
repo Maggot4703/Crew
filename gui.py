@@ -629,7 +629,7 @@ class CrewGUI:
         self.paned_window.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
 
         # Left panel with fixed narrow width
-        self.left_frame = ttk.Frame(self.paned_window, width=280)
+        self.left_frame = ttk.Frame(self.paned_window, width=140)  # Halved width
         self.left_frame.grid_propagate(False)  # Prevent frame from shrinking
 
         # Right panel
@@ -863,7 +863,7 @@ class CrewGUI:
 
             # Create scrolled frame to contain treeview
             self.data_table = ttk.Treeview(
-                table_frame, show="headings", selectmode="browse"
+                table_frame, show="headings", selectmode="browse", height=8  # Set height to 8 lines
             )
 
             # Create scrollbars
