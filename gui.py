@@ -14,6 +14,7 @@ import threading  # Background thread support
 import time  # Time-related functions for caching
 import tkinter as tk  # Core GUI framework
 from tkinter import filedialog  # File dialog functionality
+import tkinter.font as tkfont # Add this import
 
 # Remove deprecated tix import, use ttk tooltips instead
 from pathlib import Path  # Cross-platform file handling
@@ -570,6 +571,43 @@ class CrewGUI:
         except Exception as e:
             logging.error(f"Error saving window state: {e}")
 
+    def _update_filter_column_dropdown(self) -> None:
+        try:
+            if not hasattr(self, "column_menu"):  # The Combobox in filter section
+                return  # Not yet created or an issue
+
+            column_options = ["All Columns"]
+            if hasattr(self, "headers") and self.headers:
+                column_options.extend(self.headers)
+            
+            self.column_menu['values'] = column_options
+            
+            if hasattr(self, "column_var"):  # The StringVar for the Combobox
+                # Set to "All Columns" if available, otherwise the first option
+                if "All Columns" in column_options:
+                    self.column_var.set("All Columns")
+                elif column_options:
+                    self.column_var.set(column_options[0])
+                else: 
+                    self.column_var.set("")
+        except Exception as e:
+            logging.error(f"Error updating filter column dropdown: {e}")
+
+    def _on_filter_column_selected(self, event: Optional[tk.Event] = None) -> None:
+        """
+        Handles the event when a column is selected in the filter dropdown.
+        Automatically re-applies the current filter text to the newly selected column.
+        """
+        try:
+            # The self.column_var is automatically updated by the Combobox.
+            # Call _on_apply_filter to re-filter the data with the new column selection
+            # and current filter text. If filter text is empty, it will show all data.
+            if hasattr(self, '_on_apply_filter'):
+                self._on_apply_filter()
+        except Exception as e:
+            logging.error(f"Error handling filter column selection: {e}")
+            messagebox.showerror("Filter Error", f"Error processing column selection: {e}")
+
     def _background_worker(self) -> None:
         while True:
             task: Tuple[Callable, tuple, Optional[Callable]] = self.task_queue.get()
@@ -606,6 +644,7 @@ class CrewGUI:
         self.current_data = []
         self.headers = []  # Initialize empty headers
         self.column_visibility = {}  # Initialize column visibility tracking
+        self.filter_case_sensitive_var = tk.BooleanVar(value=False) # Default to case-insensitive
 
     def create_main_layout(self) -> None:
         # Configure root window
@@ -658,6 +697,7 @@ class CrewGUI:
             self.create_control_section()
             self.create_group_section()
             self.create_filter_section()
+            self.create_new_view_section() # Add this line
             self.create_data_section()
             self.create_details_section()
             self.create_status_bar()
@@ -754,11 +794,30 @@ class CrewGUI:
 
     def create_group_section(self) -> None:
         try:
-            group_frame = ttk.LabelFrame(self.paned_left, text="Groups", padding="5")
-            self.paned_left.add(group_frame, weight=1)
+            default_font = tkfont.nametofont("TkDefaultFont")
+            line_height = default_font.metrics("linespace")
+            # Calculate height for the LabelFrame, considering some padding for the frame itself
+            # and ensuring the Treeview with 5 rows fits comfortably.
+            # A Treeview row is typically a bit taller than a simple line of text.
+            # Let's aim for a LabelFrame height that accommodates 5 Treeview rows + padding.
+            # Treeview row height is often around 20-25px. Default line_height might be ~15px.
+            # Using 5 Treeview rows directly for Treeview height is more precise for its content.
+            # For the LabelFrame, let's give it enough space for those 5 Treeview rows + padding.
+            # A typical Treeview row is often larger than a simple font linespace.
+            # ttk.Style().configure("Treeview", rowheight=25) is used later.
+            # So, 5 rows * 25px/row = 125px for Treeview content. Add some for LabelFrame padding.
+            desired_label_frame_height_pixels = (5 * 25) + 2 * int(default_font.metrics("ascent")) # approx padding for label frame text and borders
+
+            group_frame = ttk.LabelFrame(
+                self.paned_left,
+                text="Groups",
+                padding="5",
+                height=int(desired_label_frame_height_pixels)
+            )
+            self.paned_left.add(group_frame, weight=0) # Changed weight to 0
 
             # Group list
-            self.group_list = ttk.Treeview(group_frame, selectmode="browse", height=10)
+            self.group_list = ttk.Treeview(group_frame, selectmode="browse", height=5) # Changed height to 5
             self.group_list.pack(fill="both", expand=True)
 
             # Create right-click menu
@@ -820,8 +879,18 @@ class CrewGUI:
 
     def create_filter_section(self) -> None:
         try:
-            filter_frame = ttk.LabelFrame(self.paned_left, text="Filters", padding="5")
-            self.paned_left.add(filter_frame, weight=0)
+            default_font = tkfont.nametofont("TkDefaultFont")
+            line_height = default_font.metrics("linespace")
+            # Adjusted height to accommodate new checkbox and button layout
+            desired_height_pixels = 7 * line_height # Increased height slightly
+
+            filter_frame = ttk.LabelFrame(
+                self.paned_left,
+                text="Filters",
+                padding="5",
+                height=int(desired_height_pixels) 
+            )
+            self.paned_left.add(filter_frame, weight=0) 
             self.filter_frame = filter_frame
 
             # Filter controls
@@ -833,16 +902,50 @@ class CrewGUI:
                 filter_frame, textvariable=self.column_var, state="readonly"
             )
             self.column_menu.pack(fill="x", pady=2)
+            self.column_menu.bind("<<ComboboxSelected>>", self._on_filter_column_selected) # Add this line
 
             # Filter entry
-            self.filter_entry_widget = ttk.Entry(filter_frame, textvariable=self.filter_var) # Store the widget
+            self.filter_entry_widget = ttk.Entry(filter_frame, textvariable=self.filter_var) 
             self.filter_entry_widget.pack(fill="x", pady=2)
             
+            # Case sensitive checkbox
+            case_sensitive_check = ttk.Checkbutton(
+                filter_frame, text="Case Sensitive", variable=self.filter_case_sensitive_var
+            )
+            case_sensitive_check.pack(anchor="w", pady=2)
+
+            # Frame for buttons
+            button_frame = ttk.Frame(filter_frame)
+            button_frame.pack(fill="x", pady=(5, 2))
+
             ttk.Button(
-                filter_frame, text="Apply Filter", command=self._on_apply_filter
-            ).pack(fill="x", pady=2)
+                button_frame, text="Apply Filter", command=self._on_apply_filter
+            ).pack(side="left", expand=True, fill="x", padx=(0, 1))
+            
+            ttk.Button(
+                button_frame, text="Clear Filter", command=self.clear_filter
+            ).pack(side="left", expand=True, fill="x", padx=(1, 0))
+
         except Exception as e:
             logging.error(f"Failed to create filter section: {e}")
+            raise
+
+    def create_new_view_section(self) -> None:
+        try:
+            # Create a new frame for your view
+            new_view_frame = ttk.LabelFrame(self.paned_left, text="New View", padding="5")
+            # Add the new frame to the paned window in the left panel
+            # Adjust weight as needed; weight=0 means it won't expand as much as others
+            self.paned_left.add(new_view_frame, weight=0) 
+
+            # Add any widgets you want in this new view
+            ttk.Label(new_view_frame, text="Content for the new view").pack(padx=5, pady=5)
+            # Example: Add a button
+            ttk.Button(new_view_frame, text="New View Button").pack(fill="x", pady=2)
+            ttk.Button(new_view_frame, text="Save", command=lambda: print("Save button in New View clicked")).pack(fill="x", pady=2)
+
+        except Exception as e:
+            logging.error(f"Failed to create new view section: {e}")
             raise
 
     def create_data_section(self) -> None:
@@ -983,11 +1086,14 @@ class CrewGUI:
         try:
             # Create context menu for TTS
             context_menu = tk.Menu(self.root, tearoff=0)
+            context_menu.add_command(label="Cut", command=self._cut_text)
+            context_menu.add_command(label="Copy", command=self._copy_text)
+            context_menu.add_command(label="Paste", command=self._paste_text)
+            context_menu.add_separator()
             context_menu.add_command(
                 label="Read Selection", command=self._read_selection
             )
             context_menu.add_command(label="Read All", command=self._read_all_details)
-            context_menu.add_separator()
             context_menu.add_command(label="Stop Reading", command=self._stop_reading)
 
             # Bind right-click to show context menu
@@ -1001,6 +1107,18 @@ class CrewGUI:
 
         except Exception as e:
             logging.error(f"Error setting up details TTS: {e}")
+
+    def _cut_text(self) -> None:
+        if hasattr(self, "details_text"):
+            self.details_text.event_generate("<<Cut>>")
+
+    def _copy_text(self) -> None:
+        if hasattr(self, "details_text"):
+            self.details_text.event_generate("<<Copy>>")
+
+    def _paste_text(self) -> None:
+        if hasattr(self, "details_text"):
+            self.details_text.event_generate("<<Paste>>")
 
     def _read_selection(self) -> None:
         if not TTS_AVAILABLE or not self.tts_engine:
@@ -1470,6 +1588,7 @@ class CrewGUI:
             # Clear filter inputs
             self.filter_var.set("")
             self.column_var.set("All Columns")
+            self.filter_case_sensitive_var.set(False) # Reset case sensitivity
 
             # Clear group selection if its a filter group
             selection = self.group_list.selection()
@@ -1542,6 +1661,7 @@ class CrewGUI:
 
             # Update column menu with current headers
             self._update_column_menu()
+            self._update_filter_column_dropdown() # Add this line
 
             # Apply current column visibility settings
             self._apply_column_visibility()
@@ -1670,21 +1790,24 @@ class CrewGUI:
             return data
 
         filtered_data = []
+        case_sensitive = self.filter_case_sensitive_var.get()
+
         for row in data:
             if column_name == "All Columns":
                 # Search in all columns
                 if any(
-                    filter_text.lower() in str(cell).lower() for cell in row
+                    (filter_text in str(cell)) if case_sensitive else (filter_text.lower() in str(cell).lower())
+                    for cell in row
                 ):
                     filtered_data.append(row)
             else:
                 # Search in specific column
                 if hasattr(self, "headers") and column_name in self.headers:
                     col_index = self.headers.index(column_name)
-                    if col_index < len(row) and filter_text.lower() in str(
-                        row[col_index]
-                    ).lower():
-                        filtered_data.append(row)
+                    if col_index < len(row):
+                        cell_value = str(row[col_index])
+                        if (filter_text in cell_value) if case_sensitive else (filter_text.lower() in cell_value.lower()):
+                            filtered_data.append(row)
 
         return filtered_data
 
@@ -1824,6 +1947,7 @@ class CrewGUI:
                 ("All Files", "*.*"),
             ]
             file_path = filedialog.askopenfilename(
+               
                 defaultextension=".txt",  # Default to .txt if no specific type chosen
                 filetypes=file_types,
             )
@@ -1926,24 +2050,20 @@ class CrewGUI:
                 # or if scripts_dir was missing/not configured and the specific messages above were already added.
                 # To avoid duplicate "missing" messages, we check if items were already added.
                 if self.script_menu.index(tk.END) is None:  # No items added yet
-                    self.script_menu.add_command(label="(No scripts found)", state=tk.DISABLED)
+                    self.script_menu.add_command(label="No scripts found", state=tk.DISABLED)
             else:
-                for script_path in sorted(script_files):
+                # Add each script file as a menu item
+                for script_path in script_files:
                     script_name = os.path.basename(script_path)
                     self.script_menu.add_command(
                         label=script_name,
-                        command=lambda sp=script_path: self._run_selected_script(sp)
+                        command=lambda sp=script_path: self._run_selected_script(sp),
                     )
-            
-            self.script_menu.add_separator()
-            self.script_menu.add_command(label="Refresh Scripts", command=self._update_script_menu)
-            self.script_menu.add_command(
-                label="Open Scripts Folder...",
-                command=self._open_scripts_folder
-            )
-            # Avoid updating status if scripts_dir was problematic initially, status might be confusing.
-            if hasattr(self, 'scripts_dir') and self.scripts_dir and os.path.exists(self.scripts_dir):
-                self.update_status(f"Scripts menu updated. Found {len(script_files)} scripts.")
+
+                # Optionally, add a separator and a refresh option
+                self.script_menu.add_separator()
+                self.script_menu.add_command(label="Refresh Scripts", command=self._update_script_menu)
+                self.script_menu.add_command(label="Open Scripts Folder...", command=self._open_scripts_folder)
 
         except Exception as e:
             logging.error(f"Error updating script menu: {e}", exc_info=True)
@@ -2039,6 +2159,8 @@ class CrewGUI:
                 self.data_table.delete(*self.data_table.get_children())
             self.current_data = None
             self.headers = []
+            self._update_column_menu() 
+            self._update_filter_column_dropdown() # Add this line
         except Exception as e:
             logging.error(f"Error in text loaded callback: {e}")
             messagebox.showerror("Error", f"Failed to load text: {e}")
