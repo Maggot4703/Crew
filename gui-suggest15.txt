@@ -1,0 +1,42 @@
+Suggestion 15: Scripts Directory Creation Robustness
+
+PROBLEM:
+Scripts directory creation and handling needs improvement.
+
+CURRENT APPROACH:
+Basic os.makedirs() calls without comprehensive error handling.
+
+SOLUTION:
+Implement robust directory management:
+
+```python
+def ensure_scripts_directory(self):
+    """Ensure scripts directory exists with proper error handling."""
+    scripts_dir = "./scripts"
+    try:
+        os.makedirs(scripts_dir, exist_ok=True)
+        
+        # Verify directory is writable
+        test_file = os.path.join(scripts_dir, ".write_test")
+        with open(test_file, 'w') as f:
+            f.write("test")
+        os.remove(test_file)
+        
+        return True
+        
+    except PermissionError:
+        self.update_status("Cannot create/write to scripts directory: Permission denied")
+        messagebox.showerror("Error", "Permission denied for scripts directory")
+        return False
+        
+    except Exception as e:
+        self.update_status(f"Scripts directory error: {e}")
+        messagebox.showerror("Error", f"Cannot setup scripts directory: {e}")
+        return False
+```
+
+BENEFITS:
+- Better error handling
+- User feedback on issues
+- Permission checking
+- Robust directory setup

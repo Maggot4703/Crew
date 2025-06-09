@@ -941,8 +941,7 @@ class CrewGUI:
             # Add any widgets you want in this new view
             ttk.Label(new_view_frame, text="Content for the mods view").pack(padx=5, pady=5)
             # Example: Add a button
-            ttk.Button(new_view_frame, text="Mods View Button").pack(fill="x", pady=2)
-            ttk.Button(new_view_frame, text="Save", command=lambda: print("Save button in Mods View clicked")).pack(fill="x", pady=2)
+            ttk.Button(new_view_frame, text="Saver", command=lambda: print("Saver button in Mods View clicked")).pack(fill="x", pady=2)
 
         except Exception as e:
             logging.error(f"Failed to create mods view section: {e}")

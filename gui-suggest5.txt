@@ -1,0 +1,33 @@
+Suggestion 5: auto_import_py_files Function Refactoring
+
+PROBLEM:
+The auto_import_py_files function is quite long and handles multiple responsibilities.
+
+SOLUTION:
+Break the function into smaller helper methods:
+
+1. _should_skip_file() for file filtering logic
+2. _check_dangerous_patterns() for security checks  
+3. _attempt_import() for individual import attempts
+
+Example refactored structure:
+```python
+def _should_skip_file(self, filepath):
+    skip_patterns = ["__pycache__", ".pyc", "__init__.py", "test_"]
+    return any(pattern in os.path.basename(filepath) for pattern in skip_patterns)
+
+def _check_dangerous_patterns(self, filepath):
+    dangerous_patterns = ["os.system", "subprocess.call", "exec(", "eval("]
+    # Check first 20 lines for patterns
+    # Return True if dangerous patterns found
+
+def auto_import_py_files(self):
+    # Main function becomes much cleaner
+    # Uses helper methods for each step
+```
+
+BENEFITS:
+- Improved readability
+- Easier testing of components
+- Better error handling per step
+- More maintainable code structure

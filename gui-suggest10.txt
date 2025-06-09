@@ -1,0 +1,25 @@
+Suggestion 10: __init__ Logging Comment Clarity
+
+PROBLEM:
+Misleading comment: "self.setup_logging() # os is used here, but this line is commented out"
+
+ISSUES:
+- os is not used in setup_logging()
+- setup_logging() is actually called, not commented out
+- Comment creates confusion
+
+SOLUTION:
+Remove or clarify the misleading comment:
+
+```python
+# Current:
+self.setup_logging() # os is used here, but this line is commented out
+
+# Fix:
+self.setup_logging()  # Initialize logging configuration
+```
+
+BENEFITS:
+- Removes confusion
+- Accurate documentation
+- Cleaner code comments

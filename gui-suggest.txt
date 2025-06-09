@@ -1,80 +1,62 @@
 Suggestions for improving gui.py:
 
-1.  **Refactor `auto_import_py_files` Function (Lines 65-303):**
-    *   This function is very long and handles multiple responsibilities (caching, file discovery, filtering, importing, error handling).
-    *   **Action:** Break it down into smaller, more manageable helper functions. For example:
-        *   A function to handle cache loading/saving.
-        *   A function to discover Python files.
-        *   A function to determine if a file should be skipped (incorporating `skip_files`, `skip_patterns`, `skip_dirs`).
-        *   A function to check file content for `dangerous_patterns`.
-        *   A function to perform the actual import of a single module.
-    *   The extensive lists like `skip_files`, `skip_patterns`, `skip_dirs`, and `dangerous_patterns` are hardcoded.
-    *   **Action:** Move these to a separate configuration file (e.g., JSON) or define them as module-level constants for easier management and modification.
+1.  **Modularity and Class Size:**
+    *   The `CrewGUI` class is very large (over 2000 lines). Consider breaking it down into smaller, more manageable classes. For example:
+        *   TTS-related functionality could be encapsulated in a `TTSManager` class.
+        *   File I/O operations (loading/saving data, text, scripts) could be grouped into a `FileManager` or `IOHelper` class.
+        *   Complex UI panels, if they evolve, could become their own classes.
 
-2.  **Refactor `CrewGUI.__init__` Method (Lines 306-377):**
-    *   The constructor is quite long and performs many setup tasks.
-    *   **Action:** Decompose the initialization logic into several private helper methods. For example:
-        *   `_initialize_tts_engine()`
-        *   `_setup_scripts_directory()`
-        *   `_initialize_background_worker()`
-        *   `_load_configuration_and_state()`
-        *   `_perform_initial_auto_import()`
+2.  **Constants and Configuration:**
+    *   Replace magic strings and numbers with named constants (e.g., "All Columns", default widths, cache durations, TTS chunk lengths, default file paths like "./data/npcs.csv", log file name "crew_gui.log"). This improves readability and maintainability.
+    *   Consider making more paths and settings configurable, perhaps through the existing `Config` object or a dedicated settings file.
 
-3.  **Reduce Method Length and Complexity in Other Areas:**
-    *   `_show_speech_settings` (Lines 1403-1481): This method creates a new Toplevel window with many UI elements. Consider breaking down the UI creation for this dialog into smaller parts or using a dedicated class for the settings dialog.
-    *   `_update_script_menu` (Lines 1760-1821): The logic for finding scripts and populating the menu, including error handling for the scripts directory, is complex. This could be simplified or broken down.
+3.  **Cross-Platform Compatibility:**
+    *   The `_open_scripts_folder` method uses `xdg-open`, which is Linux-specific. For broader compatibility, add checks and alternatives for other operating systems:
+        *   Windows: `os.startfile(path)`
+        *   macOS: `subprocess.run(['open', path])`
 
-4.  **Centralize Constants and Configuration Values:**
-    *   The code uses many hardcoded strings (e.g., "All Columns", "Mods View", UI element text, default file paths like `"./data/npcs.csv"`) and numbers (e.g., `padding="5"`, `width=140`, font sizes).
-    *   **Action:** Define these as constants at the module level or as class attributes within `CrewGUI`. This improves readability, maintainability, and reduces the risk of typos. Examples: `DEFAULT_PADDING = "5"`, `SCRIPTS_DIR_NAME = "scripts"`, `DEFAULT_DATA_FILE = Path("./data/npcs.csv")`.
+4.  **Custom Event `<<TreeviewPopulated>>` for Column Widths:**
+    *   The custom event `<<TreeviewPopulated>>` bound in `create_data_section` is not standard.
+    *   **Recommendation:** Instead of relying on this event, call the `apply_saved_column_widths` method directly at the end of `_update_data_view` after the Treeview has been populated with columns and data. This simplifies the logic.
 
-5.  **Remove Code Duplication:**
-    *   The method `load_default_data` is defined twice (Lines 1379-1393 and Lines 1552-1566).
-    *   **Action:** Remove one of the definitions to avoid redundancy and potential inconsistencies.
+5.  **`auto_import_py_files` Function:**
+    *   This function is quite long. Consider refactoring parts of its logic (e.g., file skipping rules, import attempt logic) into smaller helper functions to improve readability.
+    *   The `dangerous_patterns` check on the first 20 lines is a heuristic. While useful, acknowledge its limitations in documentation if this feature is critical for security.
 
-6.  **Error Handling Strategy and Consistency:**
-    *   Review the use of `raise` vs. `messagebox.showerror` vs. just logging an error. For example, in `create_details_section` (Line 908), `raise` is uncommented, which will halt execution if this non-critical UI part fails.
-    *   **Action:** Decide on a consistent error handling policy for different types of errors (e.g., critical failures vs. non-critical UI element creation).
-    *   The `setup_logging()` method in `__init__` has a comment `"# os is used here, but this line is commented out"` (Line 350), but `setup_logging` itself (Lines 541-549) doesn't directly use `os` in a way that would justify this comment. The call to `self.setup_logging()` is active. Review and remove misleading comments.
+6.  **`create_new_view_section` Placeholder:**
+    *   The "Saver" button in `create_new_view_section` currently has a `print` statement as its command. Replace this with actual functionality or remove the button if it's only an example.
 
-7.  **Logging Improvements:**
-    *   The current `FileHandler` for `crew_gui.log` will append to the file indefinitely.
-    *   **Action:** Consider using `logging.handlers.RotatingFileHandler` to limit the log file size and manage log rotation.
+7.  **Redundant `hasattr` Checks:**
+    *   In `bind_events`, some `hasattr` checks (e.g., for `self.filter_var`, `self._refresh_views`) might be unnecessary if the corresponding attributes are guaranteed to be initialized before `bind_events` is called. Review if these are truly needed or if they mask potential initialization order issues. The check for `self.filter_entry_widget` in `create_menu_bar` is appropriate due to creation order.
 
-8.  **GUI Layout and Styling:**
-    *   Fixed heights are calculated for some frames (e.g., `group_frame` in `create_group_section`, `filter_frame` in `create_filter_section`) based on font metrics. This can be brittle.
-    *   **Action:** Explore using Tkinter's layout managers more dynamically or ensure these calculations are robust. For `PanedWindow` children, `weight` is often sufficient.
-    *   Consider centralizing `ttk.Style()` configurations if more extensive custom styling is applied or planned, rather than ad-hoc styling (e.g., `style.configure("Treeview", rowheight=25)` in `create_data_section`).
+8.  **`_on_treeview_configure` Method:**
+    *   This method is defined but does not appear to be bound to any `<Configure>` event. If it's intended for dynamic, proportional column resizing when the window/pane resizes, it needs to be bound to the `data_table` or its parent frame's `<Configure>` event.
 
-9.  **TTS Functionality Enhancements:**
-    *   The `replacements` dictionary in `preprocess_text_for_speech` (Lines 1223-1238) is extensive.
-    *   **Action:** If this list is expected to grow or needs user customization, consider moving it to a configuration file or making it a class/module level constant.
-    *   Many TTS methods (`_read_selection`, `_read_all_details`, etc.) have repetitive initial checks: `if not TTS_AVAILABLE or not self.tts_engine:`.
-    *   **Action:** Use a decorator or a private helper method to encapsulate this check and reduce boilerplate.
+9.  **TTS Text Preprocessing:**
+    *   There are two functions for text cleaning/preprocessing: `_clean_text` (simpler) and `preprocess_text_for_speech` (more comprehensive).
+    *   **Recommendation:** Consider unifying these or consistently using `preprocess_text_for_speech` where appropriate, as it offers more robust cleaning for TTS.
 
-10. **Cross-Platform Compatibility:**
-    *   `_open_scripts_folder` (Lines 1848-1858) uses `xdg-open`, which is Linux-specific.
-    *   **Action:** If cross-platform support is a goal, add checks for the operating system and use appropriate commands (e.g., `os.startfile` on Windows, `subprocess.call(['open', ...])` on macOS).
+10. **Clarity in `__init__` Logging Comment:**
+    *   The comment `self.setup_logging() # os is used here, but this line is commented out` is misleading. `os` is not used in `setup_logging`, and the method `setup_logging()` is indeed called. Remove or clarify this comment.
 
-11. **Modularity of `CrewGUI` Class:**
-    *   The `CrewGUI` class is very large (over 1700 lines) and handles numerous responsibilities (UI, data management, TTS, file operations, script execution).
-    *   **Action:** For long-term maintainability, consider breaking down `CrewGUI` into smaller, more focused classes or modules (e.g., `TTSManager`, `ViewManager`, `ScriptRunner`, `FileHandler`).
+11. **Tkinter Widget Consistency:**
+    *   The code primarily uses `ttk` widgets, which is good. However, `tk.Scale` is used in `_show_speech_settings`. `ttk.Scale` is available and would provide a more consistent look and feel. `tk.Text` and `tk.Menu` are fine as they don't have direct `ttk` replacements with identical APIs.
 
-12. **File Path Management:**
-    *   **Action:** Consistently use `pathlib.Path` objects for path manipulations, as it's generally more robust and Pythonic than `os.path`. For example, `self.scripts_dir` could be a `Path` object.
-    *   Paths like `"./data/npcs.csv"` should be made relative to the application's script location robustly, e.g., `Path(__file__).resolve().parent / "data" / "npcs.csv"`.
+12. **Error Handling in `_save_data_to_file`:**
+    *   The current error handling logs the error, shows a `messagebox`, and updates the status. This is good. Ensure this pattern is consistent for user-facing file operations.
 
-13. **Defensive `hasattr` Checks in `bind_events`:**
-    *   The `hasattr` checks in `bind_events` (Lines 432-455), e.g., `hasattr(self, 'filter_entry_widget')`, might indicate that the order of widget creation and event binding could be fragile or that not all widgets are guaranteed to exist when bindings are set up.
-    *   **Action:** Ensure widgets are always created before events are bound to them. If these checks are necessary due to conditional widget creation, ensure the logic is clear. Otherwise, they might mask initialization order issues.
+13. **Code Comments and Docstrings:**
+    *   The code has a good amount of comments. Continue to ensure that complex logic sections have clear explanations.
+    *   Add module-level docstrings and class-level docstrings to explain the purpose of `gui.py` and the `CrewGUI` class.
+    *   Ensure method docstrings clearly explain parameters, return values, and side effects, especially for public-facing methods.
 
-14. **Clarity of Column Width Management in `create_data_section`:**
-    *   The interaction between default column widths (set to 100 initially), `_saved_column_widths` from config, and the `apply_saved_column_widths` callback (Lines 829-846) is a bit complex.
-    *   **Action:** Ensure this logic is robust, especially if columns are dynamically added/removed or if the table is repopulated frequently. The current check `if col_id in table_columns:` is good.
+14. **Hardcoded UI Values:**
+    *   Values like `width=140` for `left_frame`, `height=5` for `group_list`, `height=8` for `data_table` are hardcoded. While this works, consider if making these adaptable or configurable (e.g., based on font size or a configuration setting) would be beneficial for accessibility or different display resolutions. For `PanedWindow` children, using `weight` is often more flexible than fixed pixel sizes unless a fixed size is strictly required.
 
-15. **Review `_on_treeview_configure` (Lines 1601-1625):**
-    *   Proportional column resizing can be tricky. While the current logic attempts this, thoroughly test its behavior under various conditions (window resize, scrollbar visibility changes).
+15. **Scripts Directory Creation in `_update_script_menu`:**
+    *   The `_update_script_menu` method attempts to re-create the scripts directory if it's missing. This is good for robustness. Ensure that user permissions issues are handled gracefully (e.g., logging the error if creation fails).
 
-16. **TTS Engine Initialization and Configuration:**
-    *   TTS properties (`rate`, `volume`, `voice`) are set in `__init__` and can be changed in `_show_speech_settings`.
-    *   **Action:** Ensure that TTS settings loaded via `_load_tts_settings` (Lines 1659-1669) are applied correctly and consistently with the settings dialog. The `_load_tts_settings` method is defined but doesn't appear to be called in the current codebase. If it's intended for use, ensure it's called at an appropriate time (e.g., during initialization after `tts_engine` is created).
+16. **Pandas and CustomTkinter Availability:**
+    *   The checks for `PANDAS_AVAILABLE` and `CTK_AVAILABLE` are well-implemented, allowing the application to degrade gracefully if these optional libraries are not present.
+
+These suggestions aim to improve the program's maintainability, robustness, and user experience.

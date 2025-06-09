@@ -1,0 +1,30 @@
+Suggestion 8: _on_treeview_configure Method Binding
+
+PROBLEM:
+The _on_treeview_configure method exists but is never bound to events.
+
+SOLUTION:
+Bind the method to Configure event in create_data_section:
+
+```python
+def create_data_section(self, parent):
+    # ... existing treeview creation ...
+    
+    # Add this binding:
+    self.data_table.bind('<Configure>', self._on_treeview_configure)
+```
+
+ENHANCEMENT:
+Add safety checks in the method:
+
+```python
+def _on_treeview_configure(self, event):
+    if event.widget != self.data_table or self.data_table.winfo_width() <= 1:
+        return
+    # ... proportional resizing logic
+```
+
+BENEFITS:
+- Enables dynamic column resizing
+- Better responsive behavior
+- Uses existing method effectively

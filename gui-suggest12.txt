@@ -1,0 +1,33 @@
+Suggestion 12: Error Handling Pattern Consistency
+
+PROBLEM:
+Ensure consistent error handling pattern across all file operations.
+
+CURRENT GOOD PATTERN (_save_data_to_file):
+1. Log the error
+2. Show user messagebox
+3. Update status bar
+
+SOLUTION:
+Apply this pattern consistently to all user-facing operations:
+
+```python
+def _operation_with_files(self):
+    try:
+        # File operation
+        pass
+    except Exception as e:
+        logging.error(f"Operation failed: {e}")
+        messagebox.showerror("Error", f"Operation failed: {e}")
+        self.update_status(f"Error: {e}")
+```
+
+AREAS TO CHECK:
+- File loading operations
+- Import/export functions
+- Configuration save/load
+
+BENEFITS:
+- Consistent user experience
+- Better error visibility
+- Proper error logging

@@ -1,0 +1,72 @@
+// filepath: /home/me/BACKUP/PROJECTS/Crew/gui-suggest2.txt
+Suggestion #2: Constants and Configuration
+
+ISSUE:
+The code contains many magic strings and numbers scattered throughout, making it difficult to maintain and modify. Hardcoded values reduce flexibility and can lead to inconsistencies.
+
+DETAILED ANALYSIS:
+Current hardcoded values identified in the codebase:
+- String literals: "All Columns", "crew_gui.log", "./data/npcs.csv"
+- UI dimensions: width=140, height=5, height=8
+- Default file paths and extensions
+- Cache durations and TTS chunk lengths
+- Column headers and data field names
+
+IMPACT OF CURRENT APPROACH:
+- Changes require searching through the entire codebase
+- Risk of missing instances when making updates
+- Inconsistent values across different parts of the application
+- Difficulty in making the application configurable for different environments
+
+PROPOSED SOLUTION:
+
+1. **Create Constants Module:**
+   ```python
+   # constants.py
+   class UIConstants:
+       LEFT_FRAME_WIDTH = 140
+       GROUP_LIST_HEIGHT = 5
+       DATA_TABLE_HEIGHT = 8
+       DEFAULT_COLUMN_WIDTH = 100
+   
+   class FileConstants:
+       DEFAULT_DATA_PATH = "./data/npcs.csv"
+       LOG_FILE_NAME = "crew_gui.log"
+       SCRIPTS_FOLDER = "scripts"
+       CONFIG_FILE = "config.json"
+   
+   class TTSConstants:
+       DEFAULT_CHUNK_LENGTH = 1000
+       DEFAULT_RATE = 200
+       DEFAULT_VOLUME = 0.7
+   
+   class DataConstants:
+       ALL_COLUMNS_FILTER = "All Columns"
+       DEFAULT_CACHE_DURATION = 300  # seconds
+   ```
+
+2. **Enhanced Configuration System:**
+   - Extend the existing `Config` object to handle more settings
+   - Add user-configurable options for UI layout, file locations, TTS settings
+
+3. **Environment-Specific Configuration:**
+   - Override defaults with user preferences
+   - Persist user changes
+   - Configuration file versioning and migration
+
+IMPLEMENTATION PLAN:
+1. Create constants.py module with categorized constants
+2. Create enhanced configuration management system
+3. Systematically replace hardcoded values throughout the codebase
+4. Add configuration UI for user-adjustable settings
+5. Implement configuration file versioning and migration
+
+BENEFITS:
+- Centralized configuration management
+- Easier maintenance and updates
+- User customization capabilities
+- Environment-specific deployments
+- Reduced risk of inconsistencies
+- Better code readability
+
+ESTIMATED IMPACT: Medium-High - Significantly improves maintainability and adds user customization capabilities.
