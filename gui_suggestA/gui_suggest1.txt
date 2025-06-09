@@ -1,0 +1,21 @@
+1. Improve TTS Stop Behavior
+   - Refactor TTS playback into a dedicated `TTSManager` with chunk-based playback and a stop-flag check between chunks.
+   - After calling `engine.stop()`, ensure the event queue is cleared (e.g., via `engine.iterate()` or callbacks) to prevent residual audio.
+
+---
+
+# Detailed Implementation Guidance (Appended)
+
+- Current TTS stop is handled by calling `self.tts_engine.stop()` in `_stop_reading()`. All TTS calls (`runAndWait`) are made directly, often from the main thread.
+- To improve robustness:
+  - Implement a `TTSManager` class to manage playback in a background thread.
+  - Use a threading `Event` (e.g., `self.tts_stop_event`) to signal when to stop reading.
+  - In the playback loop, check the stop event between text chunks.
+  - After `engine.stop()`, call `engine.iterate()` or ensure the event queue is empty to prevent residual audio.
+  - Do not change the TTS engine initialization or settings logic—only refactor playback and stop logic.
+- Expected edits:
+  - Add `TTSManager` class (new file or inside `gui.py`).
+  - Refactor TTS playback methods to use the manager and event.
+  - Update `_stop_reading()` to set the stop event and call `engine.stop()`.
+  - No changes to TTS setup or configuration.
+

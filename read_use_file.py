@@ -4,6 +4,7 @@ This script reads out the contents of a selected "use-" file using text-to-speec
 """
 
 import glob
+import json
 import os
 import re
 import sys
@@ -17,16 +18,23 @@ try:
 except ImportError:
     print("pyttsx3 library is not installed. Installing it now...")
     import subprocess
-
-    subprocess.call([sys.executable, "-m", "pip", "install", "pyttsx3"])
+    import os
+    
+    # Get the path to the virtual environment's Python interpreter if available
+    venv_python = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.venv', 'bin', 'python')
+    if os.path.exists(venv_python):
+        python_executable = venv_python
+    else:
+        python_executable = sys.executable
+    
     try:
+        subprocess.check_call([python_executable, "-m", "pip", "install", "pyttsx3"])
         import pyttsx3
-
         print("pyttsx3 installed successfully!")
-    except ImportError:
-        print(
-            "Failed to install pyttsx3. Please install it manually: pip install pyttsx3"
-        )
+    except (subprocess.CalledProcessError, ImportError) as e:
+        print(f"Failed to install pyttsx3: {e}")
+        print("Please install it manually: pip install pyttsx3")
+        print("If using a virtual environment: source .venv/bin/activate && pip install pyttsx3")
         sys.exit(1)
 
 
@@ -53,6 +61,9 @@ class UseFileReader:
 
         # Set female voice if available
         self.setup_female_voice()
+
+        # Load view sizes
+        self.load_view_sizes()
 
     def setup_ui(self):
         """Set up the user interface."""
@@ -136,6 +147,9 @@ class UseFileReader:
             main_frame, textvariable=self.status_var, relief=tk.SUNKEN, anchor=tk.W
         )
         status_bar.pack(side=tk.BOTTOM, fill=tk.X)
+
+        # Handle window close event to save view sizes
+        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
     def change_rate(self, value):
         """Change the TTS speech rate."""
@@ -339,6 +353,31 @@ class UseFileReader:
         self.read_button.config(state=tk.NORMAL)
         self.stop_button.config(state=tk.DISABLED)
         self.status_var.set("Reading stopped")
+
+    def save_view_sizes(self):
+        """Save the sizes of views to a file."""
+        sizes = {
+            "file_listbox": (self.file_listbox.winfo_width(), self.file_listbox.winfo_height()),
+            "preview_text": (self.preview_text.winfo_width(), self.preview_text.winfo_height()),
+        }
+        with open("view_sizes.json", "w") as f:
+            json.dump(sizes, f)
+
+    def load_view_sizes(self):
+        """Load the sizes of views from a file."""
+        if os.path.exists("view_sizes.json"):
+            with open("view_sizes.json", "r") as f:
+                sizes = json.load(f)
+            for view_name, size in sizes.items():
+                if view_name == "file_listbox":
+                    self.file_listbox.config(width=size[0], height=size[1])
+                elif view_name == "preview_text":
+                    self.preview_text.config(width=size[0], height=size[1])
+
+    def on_closing(self):
+        """Handle window close event."""
+        self.save_view_sizes()
+        self.root.destroy()
 
 
 def main():

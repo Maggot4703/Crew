@@ -1,9 +1,9 @@
 {
   "workspace_root": "/home/me/BACKUP/PROJECTS/Crew",
   "imported_modules": [
+    "ReadMine_completion_report",
     "bmp2png",
     "cache",
-    "create_documentation",
     "data.HTML.html",
     "data.JSON.json",
     "data.arcs.arcs",
@@ -21,18 +21,16 @@
     "error_handler",
     "errors (cached)",
     "fetch_docs",
-    "fetch_documentation",
-    "final_implementation_report",
+    "get_pip",
     "gui_copy",
-    "gui.test",
+    "gui_copy (cached)",
     "log_analyzer",
     "mcp",
     "mcp_service",
     "read_use_file",
     "storySearch",
-    "traveller5_scraper",
-    "verify_script_loading"
+    "traveller5_scraper"
   ],
   "failed_imports": [],
-  "timestamp": 1749231322.5226023
+  "timestamp": 1749423809.149043
 }

@@ -1,0 +1,8 @@
+# start - Intermediate Usage Guide
+Generated stub content for start intermediate usage instructions.
+
+## Further Reading
+- https://www.w3schools.com/search/search.php?search=start+usage
+- https://stackoverflow.com/questions/tagged/start
+
+Generated on: 2025-06-03 16:24:18

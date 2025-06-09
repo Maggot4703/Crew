@@ -1,0 +1,8 @@
+# Sabbat - Beginner Usage Guide
+Generated stub content for Sabbat beginner usage instructions.
+
+## Further Reading
+- https://www.w3schools.com/search/search.php?search=Sabbat+usage
+- https://stackoverflow.com/questions/tagged/sabbat
+
+Generated on: 2025-06-03 16:23:58

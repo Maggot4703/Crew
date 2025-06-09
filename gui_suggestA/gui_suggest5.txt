@@ -1,0 +1,13 @@
+5. Script Execution UX
+   - Disable the "Run Script" menu while a script is running and re-enable it on completion to prevent overlapping executions.
+   - Show a progress indicator (spinner or status bar animation) during long-running tasks.
+
+---
+
+# Detailed Implementation Guidance (Appended)
+
+- Disable the "Run Script" menu while a script is running; re-enable on completion.
+- Show a progress indicator (spinner or status bar animation) during execution.
+- Add logic to disable/enable the menu and add a progress indicator widget.
+- No changes to TTS logic or setup.
+
