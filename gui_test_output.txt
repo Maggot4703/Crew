@@ -1,0 +1,27 @@
+2025-06-10 21:49:44,465 - INFO - EventManager initialized
+2025-06-10 21:49:44,465 - INFO - StateManager initialized
+2025-06-10 21:49:45,704 - INFO - Menu bar created successfully
+2025-06-10 21:49:45,704 - INFO - Main layout created successfully
+2025-06-10 21:49:45,722 - INFO - Control section created successfully
+2025-06-10 21:49:45,742 - INFO - Group section created successfully
+2025-06-10 21:49:45,768 - INFO - Filter section created successfully
+2025-06-10 21:49:45,772 - INFO - New view section created successfully
+2025-06-10 21:49:45,774 - INFO - Data section created successfully
+2025-06-10 21:49:45,799 - INFO - Details section created successfully
+2025-06-10 21:49:45,800 - INFO - Status bar created successfully
+2025-06-10 21:49:45,800 - INFO - All widgets created successfully
+2025-06-10 21:49:51,190 - INFO - Auto-imported 38 modules successfully
+2025-06-10 21:49:51,191 - INFO - Auto-import summary: 38 imported, 0 failed, 9233 skipped, 9271 total files processed
+2025-06-10 21:49:51,210 - INFO - Window state loaded successfully
+2025-06-10 21:49:51,211 - ERROR - Failed to initialize GUI: 'CrewGUI' object has no attribute 'load_default_data'
+2025-06-10 21:49:55,221 - CRITICAL - Failed to launch Crew GUI: 'CrewGUI' object has no attribute 'load_default_data'
+Traceback (most recent call last):
+  File "/home/me/BACKUP/PROJECTS/Crew/gui.py", line 1702, in <module>
+    app = CrewGUI(root)
+          ^^^^^^^^^^^^^
+  File "/home/me/BACKUP/PROJECTS/Crew/gui.py", line 453, in __init__
+    self.load_default_data()
+    ^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'CrewGUI' object has no attribute 'load_default_data'
+Error: 'CrewGUI' object has no attribute 'load_default_data'
+Press Enter to exit...
