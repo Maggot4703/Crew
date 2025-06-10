@@ -17,10 +17,13 @@
     "data.scratch.scratch",
     "data.sequences.sequences",
     "data.tlinks.tlinks",
+    "data_manager",
     "database_manager (cached)",
     "error_handler",
     "errors (cached)",
+    "event_manager",
     "fetch_docs",
+    "file_manager",
     "get_pip",
     "gui_copy",
     "gui_copy (cached)",
@@ -28,9 +31,15 @@
     "mcp",
     "mcp_service",
     "read_use_file",
+    "refactoring_verification",
+    "script_manager",
+    "state_manager",
     "storySearch",
-    "traveller5_scraper"
+    "syntax_check",
+    "traveller5_scraper",
+    "tts_manager",
+    "ui_manager"
   ],
   "failed_imports": [],
-  "timestamp": 1749484863.1017442
+  "timestamp": 1749594382.5296829
 }
