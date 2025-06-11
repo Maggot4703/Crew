@@ -1,8 +1,0 @@
-# SQL - Beginner Usage Guide
-Generated stub content for SQL beginner usage instructions.
-
-## Further Reading
-- https://www.w3schools.com/search/search.php?search=SQL+usage
-- https://stackoverflow.com/questions/tagged/sql
-
-Generated on: 2025-06-03 16:48:23

@@ -1,8 +1,0 @@
-# harrison_tribute - Beginner Usage Guide
-Generated stub content for harrison_tribute beginner usage instructions.
-
-## Further Reading
-- https://www.w3schools.com/search/search.php?search=harrison_tribute+usage
-- https://stackoverflow.com/questions/tagged/harrison_tribute
-
-Generated on: 2025-06-03 16:22:42

@@ -1,8 +1,0 @@
-# VSCode - Intermediate Usage Guide
-Generated stub content for VSCode intermediate usage instructions.
-
-## Further Reading
-- https://www.w3schools.com/search/search.php?search=VSCode+usage
-- https://stackoverflow.com/questions/tagged/vscode
-
-Generated on: 2025-06-03 16:25:00

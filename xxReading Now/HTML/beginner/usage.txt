@@ -1,8 +1,0 @@
-# HTML - Beginner Usage Guide
-Generated stub content for HTML beginner usage instructions.
-
-## Further Reading
-- https://www.w3schools.com/search/search.php?search=HTML+usage
-- https://stackoverflow.com/questions/tagged/html
-
-Generated on: 2025-06-03 16:22:49

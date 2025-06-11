@@ -1,8 +1,0 @@
-# git - Intermediate Usage Guide
-Generated stub content for git intermediate usage instructions.
-
-## Further Reading
-- https://www.w3schools.com/search/search.php?search=git+usage
-- https://stackoverflow.com/questions/tagged/git
-
-Generated on: 2025-06-03 16:46:52

@@ -1,8 +1,0 @@
-# Databases - Advanced Usage Guide
-Generated stub content for Databases advanced usage instructions.
-
-## Further Reading
-- https://www.w3schools.com/search/search.php?search=Databases+usage
-- https://stackoverflow.com/questions/tagged/databases
-
-Generated on: 2025-06-03 16:46:30

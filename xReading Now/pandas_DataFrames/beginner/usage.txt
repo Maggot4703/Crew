@@ -1,8 +1,0 @@
-# pandas_DataFrames - Beginner Usage Guide
-Generated stub content for pandas_DataFrames beginner usage instructions.
-
-## Further Reading
-- https://www.w3schools.com/search/search.php?search=pandas_DataFrames+usage
-- https://stackoverflow.com/questions/tagged/pandas_dataframes
-
-Generated on: 2025-06-03 16:47:47
