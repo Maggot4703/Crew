@@ -8,7 +8,13 @@ import pandas as pd
 from PIL import Image, ImageDraw
 import logging
 import tkinter as tk # Add this import
-from gui import CrewGUI # Add this import
+import math
+
+# Constants required by tests
+DEFAULT_GRID_COLOR = 'lightgrey'
+DEFAULT_LINE_COLOR = 'red'
+DEFAULT_GRID_SIZE = (42, 32)  # Grid cell size (width, height)
+IMAGE_DIMENSIONS = (800, 600)  # Default image dimensions (width, height)
 
 # Setup logging
 logging.basicConfig(
@@ -210,8 +216,154 @@ def get_version():
     """Return the version of the Crew application."""
     return "1.0.0"
 
+def get_project_info():
+    """
+    Return project information as a dictionary.
+    :return: Dictionary containing project metadata
+    """
+    return {
+        'name': 'Crew',
+        'version': get_version(),
+        'description': 'Image processing and crew management application',
+        'author': 'Crew Team',
+        'license': 'MIT',
+        'python_version': '3.11+',
+        'dependencies': ['PIL', 'pandas', 'tkinter'],
+        'features': ['image_processing', 'csv_handling', 'grid_overlay', 'gui']
+    }
+
+def read_file(filename: str, encoding: str = 'utf-8') -> str:
+    """
+    Read the contents of a text file.
+    :param filename: Path to the file to read
+    :param encoding: File encoding (default: utf-8)
+    :return: File contents as string or empty string on error
+    """
+    if not filename or not isinstance(filename, str):
+        logger.error("Invalid filename provided for read_file.")
+        return ""
+    
+    try:
+        with open(filename, 'r', encoding=encoding) as file:
+            content = file.read()
+        logger.info(f"Successfully read file: {filename}")
+        return content
+    except FileNotFoundError:
+        logger.error(f"File not found: {filename}")
+        return ""
+    except UnicodeDecodeError as e:
+        logger.error(f"Unicode decode error reading {filename}: {e}")
+        return ""
+    except Exception as e:
+        logger.error(f"Error reading file {filename}: {e}", exc_info=True)
+        return ""
+
+def calculate_hexagon_points(center_x: float, center_y: float, radius: float) -> list:
+    """
+    Calculate the points of a regular hexagon given center and radius.
+    :param center_x: X coordinate of the center
+    :param center_y: Y coordinate of the center  
+    :param radius: Radius of the hexagon
+    :return: List of (x, y) tuples representing hexagon vertices
+    """
+    try:
+        points = []
+        for i in range(6):
+            angle = math.pi * i / 3  # 60 degrees in radians
+            x = center_x + radius * math.cos(angle)
+            y = center_y + radius * math.sin(angle)
+            points.append((x, y))
+        logger.debug(f"Calculated hexagon points for center ({center_x}, {center_y}) with radius {radius}")
+        return points
+    except Exception as e:
+        logger.error(f"Error calculating hexagon points: {e}", exc_info=True)
+        return []
+
+def hex_to_rgb(hex_color: str) -> tuple:
+    """
+    Convert hexadecimal color to RGB tuple.
+    :param hex_color: Hex color string (e.g., '#FF0000' or 'FF0000')
+    :return: RGB tuple (r, g, b) or (0, 0, 0) on error
+    """
+    try:
+        # Remove '#' if present
+        hex_color = hex_color.lstrip('#')
+        
+        # Validate hex color format
+        if len(hex_color) != 6:
+            raise ValueError(f"Invalid hex color length: {hex_color}")
+        
+        # Convert to RGB
+        r = int(hex_color[0:2], 16)
+        g = int(hex_color[2:4], 16)
+        b = int(hex_color[4:6], 16)
+        
+        logger.debug(f"Converted hex {hex_color} to RGB ({r}, {g}, {b})")
+        return (r, g, b)
+    except ValueError as e:
+        logger.error(f"Invalid hex color format '{hex_color}': {e}")
+        return (0, 0, 0)
+    except Exception as e:
+        logger.error(f"Error converting hex to RGB '{hex_color}': {e}", exc_info=True)
+        return (0, 0, 0)
+
+def rgb_to_hex(r: int, g: int, b: int) -> str:
+    """
+    Convert RGB values to hexadecimal color string.
+    :param r: Red component (0-255)
+    :param g: Green component (0-255)  
+    :param b: Blue component (0-255)
+    :return: Hex color string (e.g., '#FF0000') or '#000000' on error
+    """
+    try:
+        # Validate RGB values
+        if not (0 <= r <= 255 and 0 <= g <= 255 and 0 <= b <= 255):
+            raise ValueError(f"RGB values must be 0-255: ({r}, {g}, {b})")
+        
+        hex_color = f"#{r:02X}{g:02X}{b:02X}"
+        logger.debug(f"Converted RGB ({r}, {g}, {b}) to hex {hex_color}")
+        return hex_color
+    except ValueError as e:
+        logger.error(f"Invalid RGB values ({r}, {g}, {b}): {e}")
+        return "#000000"
+    except Exception as e:
+        logger.error(f"Error converting RGB to hex ({r}, {g}, {b}): {e}", exc_info=True)
+        return "#000000"
+
+def markHorizontalLine(x1: int, y1: int, x2: int, y2: int, color: str = 'red', thickness: int = 1):
+    """
+    Create a new image with a line marked on it (test-compatible function).
+    :param x1: Starting x-coordinate
+    :param y1: Starting y-coordinate
+    :param x2: Ending x-coordinate
+    :param y2: Ending y-coordinate
+    :param color: Color of the line (default is red)
+    :param thickness: Thickness of the line (default is 1)
+    :return: Image with the drawn line
+    """
+    try:
+        # Create a new image with default dimensions
+        image = Image.new("RGB", IMAGE_DIMENSIONS, "white")
+        return mark_line(image, x1, y1, x2, y2, color, thickness)
+    except Exception as e:
+        logger.error(f"Error in markHorizontalLine: {e}", exc_info=True)
+        return None
+
+def overlayGrid(image_path: str, grid_color: str = DEFAULT_GRID_COLOR, grid_size: tuple = DEFAULT_GRID_SIZE):
+    """
+    Overlay a grid on an image (test-compatible function).
+    :param image_path: Path to the input image
+    :param grid_color: Color of the grid lines
+    :param grid_size: Tuple specifying the grid cell size (width, height)
+    :return: Image with grid overlay
+    """
+    return overlay_grid(image_path, grid_color, grid_size)
+
 def main():
     logger.info("Main application script started.")
+    
+    # Import GUI locally to avoid circular import
+    from gui import CrewGUI
     
     # Start the GUI
     root = tk.Tk()

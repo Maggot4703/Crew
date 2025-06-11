@@ -734,12 +734,24 @@ class CrewGUI:
             logging.error(f"Failed to create status bar: {e}")
             raise
 
-    def update_status(self, message: str) -> None:
+    def update_status(self, message: str, error: bool = False) -> None:
         try:
             if not message:
                 message = "Ready"
+            
+            # Add error indication if needed
+            if error:
+                message = f"❌ {message}"
+                
             self.status_var.set(message)
             self.root.update_idletasks()
+            
+            # Log error messages
+            if error:
+                logging.error(f"Status error: {message}")
+            else:
+                logging.info(f"Status: {message}")
+                
         except Exception as e:
             logging.error(f"Failed to update status: {e}")
 
@@ -1369,7 +1381,7 @@ class CrewGUI:
             logging.error(f"Error reading item type: {e}")
 
     def _show_speech_settings(self) -> None:
-        """Show TTS configuration dialog"""
+        """Show TTS configuration dialog with improved sizing"""
         if not TTS_AVAILABLE or not self.tts_engine:
             messagebox.showinfo("TTS Not Available", "Text-to-speech functionality is not available.")
             return
@@ -1379,12 +1391,30 @@ class CrewGUI:
             
             settings_window = tk.Toplevel(self.root)
             settings_window.title("Speech Settings")
-            settings_window.geometry("400x300")
+            
+            # Improved sizing for RPi5 and better content fit
+            settings_window.geometry("500x450")  # Increased from 400x300
+            settings_window.minsize(450, 400)    # Set minimum size
+            settings_window.resizable(True, True) # Allow resizing
+            
             settings_window.transient(self.root)
             settings_window.grab_set()
             
-            # Voice selection
-            ttk.Label(settings_window, text="Voice:").pack(pady=5)
+            # Center the window on the parent
+            settings_window.geometry("+%d+%d" % (
+                self.root.winfo_rootx() + 50,
+                self.root.winfo_rooty() + 50
+            ))
+            
+            # Create main frame with scrollbar support
+            main_frame = ttk.Frame(settings_window)
+            main_frame.pack(fill="both", expand=True, padx=10, pady=10)
+            
+            # Voice selection section
+            voice_frame = ttk.LabelFrame(main_frame, text="Voice Selection", padding="10")
+            voice_frame.pack(fill="x", pady=(0, 10))
+            
+            ttk.Label(voice_frame, text="Available Voices:").pack(anchor="w", pady=(0, 5))
             voices = self.tts_engine.getProperty('voices')
             voice_names = [voice.name for voice in voices] if voices else ['Default']
             
@@ -1397,64 +1427,201 @@ class CrewGUI:
             else:
                 voice_var.set(voice_names[0] if voice_names else 'Default')
             
-            voice_combo = ttk.Combobox(settings_window, textvariable=voice_var, values=voice_names, state="readonly")
-            voice_combo.pack(pady=5, padx=20, fill="x")
+            voice_combo = ttk.Combobox(
+                voice_frame, 
+                textvariable=voice_var, 
+                values=voice_names, 
+                state="readonly",
+                width=50  # Increased width
+            )
+            voice_combo.pack(fill="x", pady=(0, 10))
             
-            # Female voice option
+            # Female voice preference
             female_voice_var = tk.BooleanVar()
-            ttk.Checkbutton(settings_window, text="Prefer female voice", variable=female_voice_var).pack(pady=5)
+            ttk.Checkbutton(
+                voice_frame, 
+                text="Prefer female voice (if available)", 
+                variable=female_voice_var
+            ).pack(anchor="w")
             
-            # Speed control
-            ttk.Label(settings_window, text="Speaking Speed:").pack(pady=(10,5))
+            # Speech controls section
+            controls_frame = ttk.LabelFrame(main_frame, text="Speech Controls", padding="10")
+            controls_frame.pack(fill="x", pady=(0, 10))
+            
+            # Speed control with better layout
+            speed_frame = ttk.Frame(controls_frame)
+            speed_frame.pack(fill="x", pady=(0, 10))
+            
+            ttk.Label(speed_frame, text="Speaking Speed:").pack(anchor="w")
             speed_var = tk.IntVar(value=self.tts_engine.getProperty('rate'))
-            speed_scale = tk.Scale(settings_window, from_=50, to=300, orient="horizontal", variable=speed_var)
-            speed_scale.pack(pady=5, padx=20, fill="x")
             
-            # Volume control
-            ttk.Label(settings_window, text="Volume:").pack(pady=(10,5))
+            speed_control_frame = ttk.Frame(speed_frame)
+            speed_control_frame.pack(fill="x", pady=(5, 0))
+            
+            ttk.Label(speed_control_frame, text="Slow").pack(side="left")
+            speed_scale = ttk.Scale(
+                speed_control_frame, 
+                from_=50, 
+                to=300, 
+                orient="horizontal", 
+                variable=speed_var
+            )
+            speed_scale.pack(side="left", fill="x", expand=True, padx=(10, 10))
+            ttk.Label(speed_control_frame, text="Fast").pack(side="right")
+            
+            # Speed value display
+            speed_value_label = ttk.Label(speed_frame, text=f"Current: {speed_var.get()} WPM")
+            speed_value_label.pack(anchor="w", pady=(5, 0))
+            
+            def update_speed_label(*args):
+                speed_value_label.config(text=f"Current: {int(speed_var.get())} WPM")
+            speed_var.trace('w', update_speed_label)
+            
+            # Volume control with better layout
+            volume_frame = ttk.Frame(controls_frame)
+            volume_frame.pack(fill="x")
+            
+            ttk.Label(volume_frame, text="Volume:").pack(anchor="w")
             volume_var = tk.DoubleVar(value=self.tts_engine.getProperty('volume'))
-            volume_scale = tk.Scale(settings_window, from_=0.0, to=1.0, resolution=0.1, orient="horizontal", variable=volume_var)
-            volume_scale.pack(pady=5, padx=20, fill="x")
             
-            # Test button
+            volume_control_frame = ttk.Frame(volume_frame)
+            volume_control_frame.pack(fill="x", pady=(5, 0))
+            
+            ttk.Label(volume_control_frame, text="Quiet").pack(side="left")
+            volume_scale = ttk.Scale(
+                volume_control_frame,
+                from_=0.0,
+                to=1.0,
+                orient="horizontal",
+                variable=volume_var
+            )
+            volume_scale.pack(side="left", fill="x", expand=True, padx=(10, 10))
+            ttk.Label(volume_control_frame, text="Loud").pack(side="right")
+            
+            # Volume value display
+            volume_value_label = ttk.Label(volume_frame, text=f"Current: {int(volume_var.get() * 100)}%")
+            volume_value_label.pack(anchor="w", pady=(5, 0))
+            
+            def update_volume_label(*args):
+                volume_value_label.config(text=f"Current: {int(volume_var.get() * 100)}%")
+            volume_var.trace('w', update_volume_label)
+            
+            # Test and action buttons
+            button_frame = ttk.Frame(main_frame)
+            button_frame.pack(fill="x", pady=(10, 0))
+            
+            # Test button with better feedback
             def test_voice():
-                self.tts_engine.setProperty("rate", speed_var.get())
-                self.tts_engine.setProperty("volume", volume_var.get())
-                self.tts_engine.say("This is a test of the speech settings.")
-                self.tts_engine.runAndWait()
-            
-            ttk.Button(settings_window, text="Test Voice", command=test_voice).pack(pady=5)
-
-            # Apply button
-            def apply_settings():
                 try:
-                    # Set voice
-                    selected_voice = voice_var.get()
-                    for voice in voices:
-                        if voice.name == selected_voice:
-                            voice_id = voice.id
-                            if female_voice_var.get():
-                                self.setup_female_voice(self.tts_engine)
-                            else:
-                                self.tts_engine.setProperty("voice", voice_id)
-                            break
-
-                    # Set speed and volume
-                    self.tts_engine.setProperty("rate", speed_var.get())
+                    settings_window.config(cursor="watch")
+                    settings_window.update()
+                    
+                    # Apply current settings temporarily for test
+                    original_rate = self.tts_engine.getProperty('rate')
+                    original_volume = self.tts_engine.getProperty('volume')
+                    
+                    self.tts_engine.setProperty("rate", int(speed_var.get()))
                     self.tts_engine.setProperty("volume", volume_var.get())
                     
+                    test_text = "This is a test of the current speech settings. How does this sound?"
+                    self.tts_engine.say(test_text)
+                    self.tts_engine.runAndWait()
+                    
+                    # Restore original settings
+                    self.tts_engine.setProperty("rate", original_rate)
+                    self.tts_engine.setProperty("volume", original_volume)
+                    
+                except Exception as e:
+                    messagebox.showerror("Test Error", f"Failed to test voice: {e}")
+                finally:
+                    settings_window.config(cursor="")
+        
+            test_btn = ttk.Button(
+                button_frame, 
+                text="🔊 Test Voice", 
+                command=test_voice,
+                width=20
+            )
+            test_btn.pack(pady=(0, 10))
+            
+            # Apply and Cancel buttons
+            action_frame = ttk.Frame(button_frame)
+            action_frame.pack(fill="x")
+            
+            # Create voice mapping dictionary
+            voice_mapping = {}
+            if voices:
+                for voice in voices:
+                    display_name = voice.name if voice.name else f"Voice {voice.id}"
+                    voice_mapping[display_name] = voice
+
+            def apply_settings():
+                try:
+                    # Handle voice selection with female preference
+                    if female_voice_var.get():
+                        # User wants female voice - try to find one
+                        logging.info("Attempting to set female voice")
+                        if not self.setup_female_voice(self.tts_engine):
+                            # No female voice found, show warning
+                            messagebox.showwarning(
+                                "Female Voice", 
+                                "No female voice detected. Using selected voice instead."
+                            )
+                            # Use selected voice as fallback
+                            selected_voice = voice_var.get()
+                            for voice in voices:
+                                if voice.name == selected_voice:
+                                    self.tts_engine.setProperty("voice", voice.id)
+                                    logging.info(f"Female voice not found, using selected: {voice.name}")
+                                    break
+                    else:
+                        # User wants specific voice
+                        selected_voice = voice_var.get()
+                        for voice in voices:
+                            if voice.name == selected_voice:
+                                self.tts_engine.setProperty("voice", voice.id)
+                                logging.info(f"Voice set to: {voice.name}")
+                                break
+
+                    # Set speed and volume
+                    self.tts_engine.setProperty("rate", int(speed_var.get()))
+                    self.tts_engine.setProperty("volume", volume_var.get())
+                    
+                    # Save settings
+                    if hasattr(self, 'config'):
+                        self._save_tts_settings()
+                    
                     settings_window.destroy()
-                    self.update_status("Speech settings applied")
+                    self.update_status("Speech settings applied successfully")
+                    messagebox.showinfo("Settings Applied", "Speech settings have been saved and applied.")
                     
                 except Exception as e:
                     logging.error(f"Error applying speech settings: {e}")
                     messagebox.showerror("Error", f"Failed to apply settings: {e}")
+
+            def cancel_settings():
+                settings_window.destroy()
+
+            ttk.Button(
+                action_frame, 
+                text="✓ Apply & Save", 
+                command=apply_settings,
+                width=15
+            ).pack(side="left", padx=(0, 10))
             
-            # Buttons
-            buttons_frame = ttk.Frame(settings_window)
-            buttons_frame.pack(pady=10)
-            ttk.Button(buttons_frame, text="Apply", command=apply_settings).pack(side="left", padx=5)
-            ttk.Button(buttons_frame, text="Cancel", command=settings_window.destroy).pack(side="left", padx=5)
+            ttk.Button(
+                action_frame, 
+                text="✗ Cancel", 
+                command=cancel_settings,
+                width=15
+            ).pack(side="left")
+
+            # Add keyboard shortcuts
+            settings_window.bind('<Return>', lambda e: apply_settings())
+            settings_window.bind('<Escape>', lambda e: cancel_settings())
+
+            # Focus on the voice combo box
+            voice_combo.focus_set()
 
         except Exception as e:
             logging.error(f"Error showing speech settings: {e}")
@@ -1817,6 +1984,8 @@ class CrewGUI:
                 col = self.data_table.identify_column(event.x, event.y)
                 col_index = int(col.replace("#", "")) - 1
 
+
+
                 if hasattr(self, "headers") and col_index < len(self.headers):
                     header = self.headers[col_index]
                     self._sort_by_column(col_index, header)
@@ -2169,24 +2338,37 @@ class CrewGUI:
     def _load_data_background(self, file_path: str) -> Tuple[List[List[Any]], List[str]]:
         try:
             if not PANDAS_AVAILABLE:
-                raise ImportError("Pandas is required to load data.")
+                # Fallback to CSV reading without pandas
+                if file_path.lower().endswith('.csv'):
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        reader = csv.reader(f)
+                        headers = next(reader)
+                        data = list(reader)
+                        return data, headers
+                else:
+                    raise ImportError("Pandas is required to load Excel files.")
+        
             _, ext = os.path.splitext(file_path)
             ext = ext.lower()
+            
             if ext == '.csv':
                 df = pd.read_csv(file_path)
             elif ext in ['.xlsx', '.xls']:
                 try:
                     df = pd.read_excel(file_path)
-                except:
+                except Exception:
+                    # Try with specific engine
                     engine = 'openpyxl' if ext == '.xlsx' else 'xlrd'
                     df = pd.read_excel(file_path, engine=engine)
-            elif ext == '.txt':
-                with open(file_path, 'r', encoding='utf-8') as f:
-                    lines = [l.strip() for l in f if l.strip()]
-                df = pd.DataFrame(lines, columns=['text_data'])
             else:
-                raise ValueError(f"Unsupported extension: {ext}")
-            return df.values.tolist(), df.columns.tolist()
+                raise ValueError(f"Unsupported file extension: {ext}")
+            
+            # Convert to lists for compatibility
+            data = df.values.tolist()
+            headers = df.columns.tolist()
+            
+            return data, headers
+        
         except Exception as e:
             logging.error(f"Error loading data in background: {e}")
             raise
@@ -2200,43 +2382,41 @@ class CrewGUI:
             raise
 
     def _clean_text(self, text: str) -> str:
-        # Remove special characters and extra whitespace
-        return text.replace("\n", " ").strip()
-
-    def _read_filter_text(self) -> None:
-        if not TTS_AVAILABLE or not self.tts_engine:
-            messagebox.showerror("TTS Error", "Text-to-speech functionality is not available.")
-            return
-
-        try:
-            filter_text = self.filter_var.get()
-            if filter_text.strip():
-                cleaned_text = self._clean_text(filter_text)
-                self.tts_engine.say(cleaned_text)
-                self.tts_engine.runAndWait()
-        except Exception as e:
-            logging.error(f"TTS filter text error: {e}")
-            messagebox.showerror("TTS Error", f"Failed to read filter text: {e}")
+        """Remove special characters and extra whitespace for TTS"""
+        import re
+        # Remove excessive whitespace
+        text = re.sub(r'\s+', ' ', text.strip())
+        # Remove special characters that might confuse TTS
+        text = re.sub(r'[^\w\s.,!?-]', '', text)
+        return text
 
     def _save_tts_settings(self) -> None:
+        """Save current TTS settings to configuration"""
         try:
-            self.config.set("tts_voice", self.tts_engine.getProperty("voice"))
-            self.config.set("tts_rate", self.tts_engine.getProperty("rate"))
-            self.config.set("tts_volume", self.tts_engine.getProperty("volume"))
+            if hasattr(self, 'tts_engine') and self.tts_engine:
+                tts_settings = {
+                    'voice': self.tts_engine.getProperty('voice'),
+                    'rate': self.tts_engine.getProperty('rate'),
+                    'volume': self.tts_engine.getProperty('volume')
+                }
+                self.config.set('tts_settings', tts_settings)
+                logging.info("TTS settings saved successfully")
         except Exception as e:
             logging.error(f"Error saving TTS settings: {e}")
 
     def _load_tts_settings(self) -> None:
+        """Load TTS settings from configuration"""
         try:
-            voice = self.config.get("tts_voice")
-            rate = self.config.get("tts_rate")
-            volume = self.config.get("tts_volume")
-            if voice:
-                self.tts_engine.setProperty("voice", voice)
-            if rate:
-                self.tts_engine.setProperty("rate", int(rate))
-            if volume:
-                self.tts_engine.setProperty("volume", float(volume))
+            if hasattr(self, 'tts_engine') and self.tts_engine:
+                tts_settings = self.config.get('tts_settings', {})
+                if tts_settings:
+                    if 'voice' in tts_settings:
+                        self.tts_engine.setProperty('voice', tts_settings['voice'])
+                    if 'rate' in tts_settings:
+                        self.tts_engine.setProperty('rate', tts_settings['rate'])
+                    if 'volume' in tts_settings:
+                        self.tts_engine.setProperty('volume', tts_settings['volume'])
+                    logging.info("TTS settings loaded successfully")
         except Exception as e:
             logging.error(f"Error loading TTS settings: {e}")
 
@@ -2250,6 +2430,25 @@ class CrewGUI:
         except Exception as e:
             logging.error(f"TTS test error: {e}")
             messagebox.showerror("TTS Error", f"Failed to test TTS: {e}")
+
+    def _update_groups_view(self) -> None:
+        """Update the groups view with current group data"""
+        try:
+            # Clear existing groups in the treeview
+            if hasattr(self, 'group_list'):
+                self.group_list.delete(*self.group_list.get_children())
+            
+            # Add groups to the treeview
+            if hasattr(self, 'groups') and self.groups:
+                for group_name, group_data in self.groups.items():
+                    item_count = len(group_data) if isinstance(group_data, list) else 0
+                    display_text = f"{group_name} ({item_count} items)"
+                    self.group_list.insert("", "end", text=group_name, values=[display_text])
+            
+            logging.info(f"Updated groups view with {len(self.groups) if hasattr(self, 'groups') else 0} groups")
+            
+        except Exception as e:
+            logging.error(f"Error updating groups view: {e}")
 
 def speak_with_espeak_ng(text: str) -> None:
     """Use espeak-ng for lightweight TTS."""

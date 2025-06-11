@@ -191,9 +191,6 @@ class TestGUIModule(unittest.TestCase):
                 app.tts_engine.say("This should raise an error.")
         except Exception as e:
             self.fail(f"TTS error handling test failed: {e}")
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
 
     def test_read_widget_text(self):
         """Test that _read_widget_text reads text from a widget and calls TTS engine."""
@@ -224,9 +221,6 @@ class TestGUIModule(unittest.TestCase):
                 app._read_status()
         except Exception as e:
             self.fail(f"TTS error feedback test failed: {e}")
-=======
->>>>>>> 87191ac (Updated GUI and tests for TTS functionality)
->>>>>>> chunk-playback
 
 
 if __name__ == "__main__":

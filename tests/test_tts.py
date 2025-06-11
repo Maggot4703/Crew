@@ -1,8 +1,16 @@
 #!/usr/bin/env python3
 import pyttsx3
 import unittest
+import sys
+from pathlib import Path
 from unittest.mock import MagicMock
-<<<<<<< HEAD
+from tkinter import Tk
+
+# Add project root to sys.path to allow importing gui module
+project_root = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(project_root))
+
+from gui import CrewGUI
 
 class TestTTSFunctionality(unittest.TestCase):
     def setUp(self):

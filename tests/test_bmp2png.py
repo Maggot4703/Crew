@@ -5,7 +5,10 @@ Test module for BMP to PNG conversion functionality.
 
 import sys
 import unittest
+import tempfile
+import os
 from pathlib import Path
+from unittest.mock import patch, MagicMock
 
 # Add the parent directory to the path
 sys.path.insert(0, str(Path(__file__).parent.parent))

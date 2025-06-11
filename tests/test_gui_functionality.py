@@ -1,9 +1,16 @@
 import unittest
-from gui import GUI
+import tkinter as tk
+from gui import CrewGUI
 
 class TestGUIPreprocessing(unittest.TestCase):
     def setUp(self):
-        self.gui = GUI()
+        self.root = tk.Tk()
+        self.root.withdraw()  # Hide window during testing
+        self.gui = CrewGUI(self.root)
+
+    def tearDown(self):
+        if self.root:
+            self.root.destroy()
 
     def test_clean_text(self):
         text = "**bold** `code` normal"
