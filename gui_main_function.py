@@ -1,9 +1,10 @@
-<<<<<<< HEAD
+#<<<<<<< HEAD
 import tkinter as tk
 from gui import CrewGUI
 
-def main():
-=======
+#def main():
+#
+#=======
 import sys
 import tkinter as tk
 import tkinter as tk
@@ -33,7 +34,7 @@ import tkinter as tk
 from gui import CrewGUI
 
 def main():
->>>>>>> chunk-playback
+#>>>>>>> chunk-playback
     root = tk.Tk()
     app = CrewGUI(root)
     root.mainloop()

@@ -1,2 +1,0 @@
-https://www.w3schools.com/search/search.php?search=Docker+usage
-https://stackoverflow.com/questions/tagged/docker

@@ -1,2 +1,0 @@
-https://www.w3schools.com/search/search.php?search=DockerHub+examples
-https://www.programiz.com/search/DockerHub

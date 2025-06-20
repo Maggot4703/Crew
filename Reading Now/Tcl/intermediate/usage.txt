@@ -1,8 +1,0 @@
-# Tcl - Intermediate Usage Guide
-Generated stub content for Tcl intermediate usage instructions.
-
-## Further Reading
-- https://www.w3schools.com/search/search.php?search=Tcl+usage
-- https://stackoverflow.com/questions/tagged/tcl
-
-Generated on: 2025-06-03 17:14:20

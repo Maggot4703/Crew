@@ -7,10 +7,6 @@
 		{
 			"name": "Crew_Backups",
 			"path": "../Crew_Backups"
-		},
-		{
-			"name": "CardCutter",
-			"path": "../CardCutter"
 		}
 	],
 	"settings": {

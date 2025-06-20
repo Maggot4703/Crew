@@ -1,8 +1,0 @@
-# Javascript - Beginner Usage Guide
-Generated stub content for Javascript beginner usage instructions.
-
-## Further Reading
-- https://www.w3schools.com/search/search.php?search=Javascript+usage
-- https://stackoverflow.com/questions/tagged/javascript
-
-Generated on: 2025-06-03 17:12:37

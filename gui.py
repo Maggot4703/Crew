@@ -69,10 +69,7 @@ except ImportError:
 
 # Initialize logger
 logger = logging.getLogger(__name__)
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-)
-
+logging.basicConfig(    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 def auto_import_py_files() -> Tuple[List[str], List[Tuple[str, str]]]:
     try:
@@ -1983,9 +1980,6 @@ class CrewGUI:
             if region == "heading":
                 col = self.data_table.identify_column(event.x, event.y)
                 col_index = int(col.replace("#", "")) - 1
-
-
-
                 if hasattr(self, "headers") and col_index < len(self.headers):
                     header = self.headers[col_index]
                     self._sort_by_column(col_index, header)
@@ -2115,8 +2109,6 @@ class CrewGUI:
                 ("All Files", "*.*"),
             ]
             file_path = filedialog.askopenfilename(
-               
-
                 defaultextension=".txt",  # Default to .txt if no specific type chosen
                 filetypes=file_types,
             )

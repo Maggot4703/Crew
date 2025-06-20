@@ -1,8 +1,0 @@
-# github - Intermediate Usage Guide
-Generated stub content for github intermediate usage instructions.
-
-## Further Reading
-- https://www.w3schools.com/search/search.php?search=github+usage
-- https://stackoverflow.com/questions/tagged/github
-
-Generated on: 2025-06-03 17:12:18

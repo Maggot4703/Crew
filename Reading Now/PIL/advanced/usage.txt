@@ -1,8 +1,0 @@
-# PIL - Advanced Usage Guide
-Generated stub content for PIL advanced usage instructions.
-
-## Further Reading
-- https://www.w3schools.com/search/search.php?search=PIL+usage
-- https://stackoverflow.com/questions/tagged/pil
-
-Generated on: 2025-06-03 17:13:37

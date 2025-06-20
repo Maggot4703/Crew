@@ -1,2 +1,0 @@
-https://www.w3schools.com/search/search.php?search=pandas_guide+examples
-https://www.programiz.com/search/pandas_guide
