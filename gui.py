@@ -8,6 +8,7 @@ import json  # JSON file handling for caching
 import logging  # Application logging
 import os  # Operating system interface
 import re  # Needed for TTS text preprocessing
+import shutil  # Executable discovery for platform-specific launchers
 import subprocess  # Process execution
 import sys  # System-specific parameters
 import threading  # Background thread support
@@ -70,6 +71,12 @@ except ImportError:
 # Initialize logger
 logger = logging.getLogger(__name__)
 logging.basicConfig(    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+
+DEFAULT_MAIN_WINDOW_WIDTH = 800
+DEFAULT_MAIN_WINDOW_HEIGHT = 800
+DEFAULT_MAIN_WINDOW_SIZE = (
+    f"{DEFAULT_MAIN_WINDOW_WIDTH}x{DEFAULT_MAIN_WINDOW_HEIGHT}"
+)
 
 def auto_import_py_files() -> Tuple[List[str], List[Tuple[str, str]]]:
     try:
@@ -350,6 +357,18 @@ def auto_import_py_files() -> Tuple[List[str], List[Tuple[str, str]]]:
         return [], [(str(Path.cwd()), str(e))] # Ensure workspace_root is defined for the error case
 
 class CrewGUI:
+    @staticmethod
+    def build_centered_geometry(
+        screen_width: int,
+        screen_height: int,
+        window_width: int = DEFAULT_MAIN_WINDOW_WIDTH,
+        window_height: int = DEFAULT_MAIN_WINDOW_HEIGHT,
+    ) -> str:
+        """Return a centered Tk geometry string for the main window."""
+        x_offset = max((screen_width - window_width) // 2, 0)
+        y_offset = max((screen_height - window_height) // 2, 0)
+        return f"{window_width}x{window_height}+{x_offset}+{y_offset}"
+
     def __init__(self, root: tk.Tk) -> None:
         try:
             self.root = root  # Assign self.root immediately
@@ -529,15 +548,37 @@ class CrewGUI:
         except Exception as e:
             logging.error(f"Error setting up event bindings: {e}")
 
+    def _apply_main_window_geometry(self) -> None:
+        """Force the main window to use the required centered startup size."""
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+        geometry = self.build_centered_geometry(screen_width, screen_height)
+        self.root.geometry(geometry)
+        self.root.minsize(
+            DEFAULT_MAIN_WINDOW_WIDTH,
+            DEFAULT_MAIN_WINDOW_HEIGHT,
+        )
+
     def load_window_state(self) -> None:
         try:
-            # Restore window geometry
-            if self.config.get("window_size"):
-                self.root.geometry(self.config.get("window_size"))
+            saved_window_size = self.config.get("window_size")
+            if saved_window_size and saved_window_size != DEFAULT_MAIN_WINDOW_SIZE:
+                logging.info(
+                    "Ignoring saved window size '%s' and forcing '%s'.",
+                    saved_window_size,
+                    DEFAULT_MAIN_WINDOW_SIZE,
+                )
 
-            if self.config.get("min_window_size"):
-                self.root.minsize(
-                    *map(int, self.config.get("min_window_size").split("x"))
+            self._apply_main_window_geometry()
+            saved_min_window_size = self.config.get("min_window_size")
+            if (
+                saved_min_window_size
+                and saved_min_window_size != DEFAULT_MAIN_WINDOW_SIZE
+            ):
+                logging.info(
+                    "Ignoring saved minimum window size '%s' and forcing '%s'.",
+                    saved_min_window_size,
+                    DEFAULT_MAIN_WINDOW_SIZE,
                 )
 
             # Store column widths for later application after table is populated
@@ -553,7 +594,8 @@ class CrewGUI:
 
     def save_window_state(self) -> None:
         try:
-            self.config.set("window_size", self.root.geometry())
+            self.config.set("window_size", DEFAULT_MAIN_WINDOW_SIZE)
+            self.config.set("min_window_size", DEFAULT_MAIN_WINDOW_SIZE)
 
             # Save column widths
             column_widths = {}
@@ -645,8 +687,7 @@ class CrewGUI:
 
     def create_main_layout(self) -> None:
         # Configure root window
-        self.root.geometry("1200x800")
-        self.root.minsize(800, 600)
+        self._apply_main_window_geometry()
 
         # Main container
         self.main_frame = ttk.Frame(self.root, padding="5")
@@ -1696,9 +1737,11 @@ class CrewGUI:
             self.details_text.insert("1.0", "Error displaying details after selection.")
 
     def load_default_data(self) -> None:
-        """Load and display default data from ./data/npcs.csv."""
+        """Load and display default data from data/npcs.csv relative to this file."""
         try:
-            default_data_path = "./data/npcs.csv"
+            base_dir = os.path.dirname(os.path.abspath(__file__))
+            default_data_path = os.path.join(base_dir, "data", "npcs.csv")
+
             if os.path.exists(default_data_path):
                 self.update_status(f"Loading default data from {default_data_path}...")
                 with open(default_data_path, "r", encoding="utf-8") as file:
@@ -1706,7 +1749,9 @@ class CrewGUI:
                     self.headers = next(reader)  # First row as headers
                     self.current_data = list(reader)
                     self._update_data_view(self.current_data)
-                    self.update_status(f"Loaded {len(self.current_data)} records from {default_data_path}.")
+                    self.update_status(
+                        f"Loaded {len(self.current_data)} records from {default_data_path}."
+                    )
             else:
                 self.update_status("Default data file not found.")
         except Exception as e:
@@ -2071,24 +2116,6 @@ class CrewGUI:
             self.root.after(0, lambda: messagebox.showerror("Save Error", str(e))) # Show error to user
             self.update_status(f"Error saving to {file_path}") # Update status
 
-    def load_default_data(self) -> None:
-        """Load and display default data from ./data/npcs.csv."""
-        try:
-            default_data_path = "./data/npcs.csv"
-            if os.path.exists(default_data_path):
-                self.update_status(f"Loading default data from {default_data_path}...")
-                with open(default_data_path, "r", encoding="utf-8") as file:
-                    reader = csv.reader(file)
-                    self.headers = next(reader)  # First row as headers
-                    self.current_data = list(reader)
-                    self._update_data_view(self.current_data)
-                    self.update_status(f"Loaded {len(self.current_data)} records from {default_data_path}.")
-            else:
-                self.update_status("Default data file not found.")
-        except Exception as e:
-            logging.error(f"Error loading default data: {e}")
-            self.update_status(f"Error loading default data: {e}")
-
     def _on_open_file(self) -> None:
         """Handles opening different file types."""
         try:
@@ -2273,7 +2300,14 @@ class CrewGUI:
             logging.warning(f"Non-existent scripts_dir: {self.scripts_dir}")
             return
         try:
-            subprocess.run(['xdg-open', self.scripts_dir], check=True)
+            if os.name == 'nt':
+                subprocess.run(['explorer', self.scripts_dir], check=True)
+            elif sys.platform == 'darwin':
+                subprocess.run(['open', self.scripts_dir], check=True)
+            else:
+                # Prefer PCManFM on Linux, fallback to xdg-open for compatibility.
+                folder_opener = 'pcmanfm' if shutil.which('pcmanfm') else 'xdg-open'
+                subprocess.run([folder_opener, self.scripts_dir], check=True)
             self.update_status(f"Opened scripts folder: {self.scripts_dir}")
         except Exception as e:
             logging.error(f"Failed to open scripts folder: {e}")

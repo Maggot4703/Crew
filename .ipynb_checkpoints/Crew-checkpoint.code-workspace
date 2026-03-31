@@ -1,0 +1,19 @@
+{
+	"folders": [
+		{
+			"name": "Crew",
+			"path": "."
+		},
+		{
+			"name": "Crew_Backups",
+			"path": "../Crew_Backups"
+		}
+	],
+	"settings": {
+		"cSpell.words": [
+			"Battlestar"
+		],
+		"DockerRun.DisableDockerrc": true,
+		"liveServer.settings.multiRootWorkspaceName": "Crew"
+	}
+}

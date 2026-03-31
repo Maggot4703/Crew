@@ -13,7 +13,9 @@ This module separates script logic from the main GUI class for better maintainab
 
 import os
 import glob
+import shutil
 import subprocess
+import sys
 import threading
 import logging
 from typing import Callable, Optional, List, Dict, Any, Tuple
@@ -298,8 +300,12 @@ class ScriptManager:
         try:
             if os.name == 'nt':  # Windows
                 subprocess.run(['explorer', self.scripts_dir], check=True)
-            else:  # Linux/Mac
-                subprocess.run(['xdg-open', self.scripts_dir], check=True)
+            elif sys.platform == 'darwin':  # macOS
+                subprocess.run(['open', self.scripts_dir], check=True)
+            else:  # Linux and other Unix
+                # Prefer PCManFM on Linux, fallback to xdg-open for compatibility.
+                folder_opener = 'pcmanfm' if shutil.which('pcmanfm') else 'xdg-open'
+                subprocess.run([folder_opener, self.scripts_dir], check=True)
             self.update_status(f"Opened scripts folder: {self.scripts_dir}", False)
         except Exception as e:
             logging.error(f"Failed to open scripts folder: {e}")

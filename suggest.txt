@@ -1,0 +1,358 @@
+Crew - Detailed Suggested Improvements and Extra Functionality
+Date: 2026-03-16
+Source: Expanded from `suggestions.txt` (2026-03-15)
+
+Purpose
+This document expands the existing suggestion list into implementation-ready guidance. Each item includes intent, recommended approach, edge cases, and acceptance criteria so changes can be delivered consistently and verified quickly.
+
+Improve Current Functionality
+
+1. Implement `process_images`
+Objective
+Provide a reliable batch image-processing workflow that applies grid overlays to supported image files and writes deterministic output filenames.
+
+Detailed Implementation Guidance
+- Add or finalize a `process_images(input_directory, output_directory, grid_size, color, thickness, ...)` function that:
+  - Enumerates files in `input_directory`.
+  - Filters by extension: `.png`, `.jpg`, `.jpeg` (case-insensitive).
+  - Loads each image safely and applies `overlay_grid`.
+  - Writes output into `output_directory` with `_grid` suffix before extension.
+- Use predictable naming rules:
+  - `photo.jpg` -> `photo_grid.jpg`
+  - `diagram.PNG` -> `diagram_grid.PNG`
+- Ensure output directory creation is explicit (`mkdir(parents=True, exist_ok=True)` or equivalent).
+- Return a structured summary object instead of print-only behavior:
+  - `processed_count`, `skipped_count`, `failed_count`, `outputs`, and per-file error details.
+
+Edge Cases
+- Empty input directory.
+- Non-image files mixed with valid files.
+- Corrupt image file that cannot be decoded.
+- Existing output file name collision (define overwrite policy: overwrite, skip, or add numeric suffix).
+- Permission-denied write path.
+
+Acceptance Criteria
+- Supported extensions are processed and output names include `_grid` suffix.
+- Non-supported files are skipped without crashing.
+- Function returns structured results for success/skip/failure paths.
+- No uncaught exception halts the full batch due to one bad file.
+
+Verification
+- Unit tests for extension filtering and output naming.
+- Integration-style test with temporary directories and mixed file types.
+
+2. Keep naming consistent (`snake_case` with wrappers)
+Objective
+Standardize internal naming while preserving backward compatibility with existing callers.
+
+Detailed Implementation Guidance
+- Prefer `snake_case` for internal/public Python implementations.
+- Keep compatibility wrappers for existing camelCase names such as:
+  - `markHorizontalLine` -> delegates to `mark_horizontal_line`
+  - `overlayGrid` -> delegates to `overlay_grid`
+- Mark wrappers as compatibility layer in docstrings.
+- Do not duplicate business logic inside wrappers; wrappers should forward inputs only.
+
+Edge Cases
+- Callers using positional vs keyword args.
+- Wrappers and canonical functions drifting in signature over time.
+
+Acceptance Criteria
+- Current external call patterns still work.
+- Canonical implementation exists in snake_case.
+- Wrapper behavior and return values match canonical function.
+
+Verification
+- Add compatibility tests that call both old and new names and compare outputs.
+
+3. Add input validation
+Objective
+Fail early with clear messages when invalid drawing/grid parameters are passed.
+
+Detailed Implementation Guidance
+- Validate `grid_size`:
+  - Must be a 2-item tuple/list of integers.
+  - Both values must be `> 0`.
+- Validate drawing values:
+  - `thickness` is integer and `> 0`.
+  - Coordinates are numeric and within image bounds where required.
+  - Color supports expected formats (tuple/list RGB, hex, named color if supported).
+- Raise specific exceptions (`ValueError`, `TypeError`) with actionable error text.
+- Keep validation close to function boundaries so invalid inputs are caught immediately.
+
+Edge Cases
+- `grid_size` provided as string (`"10,10"`) or float values.
+- Negative/zero widths or heights.
+- Color tuple length mismatch (e.g., 2 or 4 values when only RGB allowed).
+- Coordinates partially outside image.
+
+Acceptance Criteria
+- Invalid arguments are rejected deterministically with clear exception type/message.
+- Valid argument sets continue to work unchanged.
+
+Verification
+- Parameterized tests for invalid/valid combinations.
+
+4. Align metadata (`python_version`)
+Objective
+Ensure project metadata is accurate and consistent with declared support policy.
+
+Detailed Implementation Guidance
+- Update `get_project_info()["python_version"]` to `"3.7+"`.
+- Confirm consistency across docs/config where Python support is stated.
+- If runtime checks exist, ensure they do not contradict metadata.
+
+Edge Cases
+- Multiple metadata sources disagreeing on version support.
+- Legacy docs still declaring older or fixed versions.
+
+Acceptance Criteria
+- Metadata reports `3.7+`.
+- No obvious conflicting version declaration in core project docs/config.
+
+Verification
+- Quick grep/search for `python_version` and version strings in main docs.
+
+5. Improve error handling
+Objective
+Make core logic robust and machine-consumable by minimizing broad exception catches and replacing print-driven flows with structured outputs.
+
+Detailed Implementation Guidance
+- Replace broad `except Exception` where possible with specific exceptions.
+- Where broad catch is unavoidable, capture context and re-raise or convert to structured error records.
+- Return structured results from core operations rather than direct printing:
+  - `{"ok": bool, "data": ..., "errors": [...], "warnings": [...]}` pattern (or existing project equivalent).
+- Keep user-facing printing/logging at CLI or UI layer, not core logic layer.
+
+Edge Cases
+- Third-party library exceptions with nonstandard attributes.
+- Partial success batches where some operations fail.
+
+Acceptance Criteria
+- Core functions can be consumed programmatically without parsing stdout.
+- Failures include enough context to debug quickly.
+
+Verification
+- Tests assert both success and failure payload structure.
+
+Add Extra Functionality
+
+6. Add CLI (`argparse`) commands
+Objective
+Expose core operations through a clear command-line interface for interactive and automation workflows.
+
+Detailed Implementation Guidance
+- Add `argparse` entrypoints/subcommands:
+  - `grid-image` for one input image.
+  - `grid-folder` for directory batch mode.
+  - `read-csv` for CSV ingestion path.
+  - `read-excel` for Excel ingestion path.
+- Standardize CLI behavior:
+  - Exit code `0` on success, non-zero on hard failure.
+  - `--help` output for each command.
+  - Optional verbosity flags for warnings/details.
+- Ensure CLI delegates to core functions; avoid duplicating business logic in parser handlers.
+
+Edge Cases
+- Missing required args.
+- Invalid path values.
+- Unsupported extension passed to `grid-image`.
+
+Acceptance Criteria
+- Each subcommand appears in help and executes expected flow.
+- Errors are readable and actionable.
+
+Verification
+- CLI tests using subprocess or parser-level tests.
+
+7. Add CSV annotation crop pipeline
+Objective
+Create a reproducible crop-export pipeline from annotation rows.
+
+Detailed Implementation Guidance
+- Support row format: `name,x,y,width,height`.
+- For each valid row:
+  - Parse and validate numeric fields.
+  - Crop image region.
+  - Save using `name`-derived filename (plus conflict-safe suffix logic).
+- Invalid rows should be skipped with warnings collected in output summary.
+- Add optional strict mode:
+  - Default: continue on invalid rows.
+  - Strict: fail fast on first invalid row.
+
+Edge Cases
+- Header-only files.
+- Empty `name` value.
+- Negative dimensions or zero width/height.
+- Crop rectangle exceeds image bounds.
+- Duplicate `name` values.
+
+Acceptance Criteria
+- Valid rows export expected crop files.
+- Invalid rows do not crash default pipeline and are reported.
+- Summary reports processed/skipped/failed counts.
+
+Verification
+- Tests with mixed valid/invalid rows and out-of-bounds scenarios.
+
+8. Add optional grid labels
+Objective
+Allow users to annotate grid intersections with row/column coordinates for reference workflows.
+
+Detailed Implementation Guidance
+- Add optional argument/flag to enable labels.
+- Label format examples:
+  - Numeric style: `(r,c)`
+  - Alphanumeric style: `A1`, `B3` (if desired)
+- Render labels with configurable font size/color/offset.
+- Keep labels readable against image backgrounds (contrast option or outline/stroke if available).
+
+Edge Cases
+- Very dense grids causing label overlap.
+- Very small images where labels are illegible.
+
+Acceptance Criteria
+- Labels are disabled by default and enabled only when requested.
+- Label placement is consistent and non-crashing across typical image sizes.
+
+Verification
+- Visual snapshot tests or deterministic output checks where feasible.
+
+9. Add export options (format + quality/compression)
+Objective
+Support output optimization and compatibility by allowing format conversion and compression controls.
+
+Detailed Implementation Guidance
+- Add output format option: `png`, `jpg`, `webp`.
+- Add quality/compression parameters with safe defaults.
+- Validate format-specific constraints:
+  - JPEG typically no alpha channel; handle conversion behavior.
+  - PNG compression level range validation.
+- Expose these options in both API and CLI.
+
+Edge Cases
+- Input contains transparency and output format does not support alpha.
+- Invalid quality range values.
+
+Acceptance Criteria
+- Converted output files are produced in selected format.
+- Quality/compression options affect output as expected without runtime errors.
+
+Verification
+- Tests for each supported export type and invalid parameter handling.
+
+10. Expand color utilities
+Objective
+Increase input flexibility for color parameters while keeping behavior deterministic.
+
+Detailed Implementation Guidance
+- Support shorthand hex (`#FFF`) by normalizing to full hex.
+- Support named colors via a controlled mapping table.
+- Normalize all accepted color inputs to one internal representation (e.g., RGB tuple).
+- Reject unknown names or malformed hex with clear validation errors.
+
+Edge Cases
+- Case-insensitive color names (`"Red"`, `"RED"`).
+- Ambiguous names if third-party library aliases differ.
+
+Acceptance Criteria
+- `#FFF`, `#ffffff`, and supported named colors resolve correctly.
+- Invalid colors fail with informative errors.
+
+Verification
+- Unit tests for normalization matrix and invalid inputs.
+
+Quality and Maintainability
+
+11. Add/update tests in `tests/`
+Objective
+Protect behavior against regressions and confirm new functionality.
+
+Detailed Implementation Guidance
+- Add tests for any changed logic and each new feature path.
+- Prioritize:
+  - Validation behavior
+  - Batch process summaries
+  - CLI argument routing
+  - Error and warning collection
+- Keep tests deterministic using temporary directories and fixtures.
+
+Acceptance Criteria
+- New/modified behavior has coverage in `tests/`.
+- Failing tests are meaningful and actionable.
+
+12. Use clear type hints
+Objective
+Improve maintainability and editor/static-analysis support.
+
+Detailed Implementation Guidance
+- Add type hints for changed/new function signatures and key return structures.
+- Prefer explicit composite types for summaries (e.g., `Dict[str, Any]` or typed structure if available).
+- Keep compatibility with Python `3.7+` typing capabilities.
+
+Acceptance Criteria
+- Public/changed APIs include understandable, consistent type hints.
+
+13. Add concise docstrings for public functions
+Objective
+Provide immediate usage clarity without over-documenting internals.
+
+Detailed Implementation Guidance
+- Add concise docstrings to new/changed public functions.
+- Include purpose, key args, and return behavior (especially structured results and exceptions).
+
+Acceptance Criteria
+- Public API surfaces have concise, practical documentation.
+
+14. Keep changes focused
+Objective
+Reduce review risk and improve merge confidence.
+
+Detailed Implementation Guidance
+- Keep feature implementation separated from unrelated cleanup.
+- If possible, split work into logical commits/PRs by feature area.
+
+Acceptance Criteria
+- Diffs are traceable to scoped goals; unrelated refactors are minimized.
+
+15. Keep tooling clean (`black`, `flake8`, `pytest -q`)
+Objective
+Maintain style consistency, static quality checks, and baseline test confidence.
+
+Detailed Implementation Guidance
+- Run formatting and linting after changes.
+- Run test suite (or targeted tests at minimum during incremental work, full pass before merge).
+- Resolve violations rather than suppressing unless there is a justified exception.
+
+Acceptance Criteria
+- Formatting, linting, and test checks complete successfully for the relevant scope.
+
+Suggested Delivery Plan (Phased)
+Phase 1: Reliability Foundation
+- Input validation
+- Error handling structure
+- Metadata alignment
+- Naming wrappers and canonical naming cleanup
+
+Phase 2: Core Features
+- `process_images`
+- CLI subcommands (`grid-image`, `grid-folder`)
+- Export options
+- Color utility expansion
+
+Phase 3: Data Pipelines and UX
+- CSV annotation crop pipeline
+- `read-csv` / `read-excel`
+- Optional grid labels
+
+Phase 4: Quality Closure
+- Add/update tests
+- Type hints and docstrings
+- Format/lint/test clean pass
+
+Definition of Done (Overall)
+- Every expanded requirement above is implemented or explicitly deferred with reason.
+- Core operations return structured results suitable for GUI/CLI integration.
+- CLI is discoverable and stable.
+- Tests cover major success/failure/edge-case paths.
+- Tooling checks pass for the changed scope.

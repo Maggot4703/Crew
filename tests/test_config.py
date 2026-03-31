@@ -30,7 +30,7 @@ class TestConfig(unittest.TestCase):
         config = Config()
         self.assertIsInstance(config, Config)
         self.assertIn("window_size", config.DEFAULT_CONFIG)
-        self.assertEqual(config.DEFAULT_CONFIG["window_size"], "1200x800")
+        self.assertEqual(config.DEFAULT_CONFIG["window_size"], "800x800")
 
     def test_default_config_values(self):
         """Test that default configuration contains expected values."""
@@ -38,8 +38,8 @@ class TestConfig(unittest.TestCase):
         defaults = config.DEFAULT_CONFIG
 
         # Test key default values
-        self.assertEqual(defaults["window_size"], "1200x800")
-        self.assertEqual(defaults["min_window_size"], "800x600")
+        self.assertEqual(defaults["window_size"], "800x800")
+        self.assertEqual(defaults["min_window_size"], "800x800")
         self.assertEqual(defaults["data_dir"], "data")
         self.assertEqual(defaults["log_level"], "INFO")
         self.assertTrue(defaults["auto_save"])
@@ -56,7 +56,7 @@ class TestConfig(unittest.TestCase):
 
                 # Test getting existing default value
                 result = config.get("window_size")
-                self.assertEqual(result, "1200x800")
+                self.assertEqual(result, "800x800")
 
                 # Test getting non-existent value with default
                 result = config.get("non_existent_key", "default_value")

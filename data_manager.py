@@ -11,6 +11,13 @@ class FilterConfig:
     column: str = "All Columns"
     case_sensitive: bool = False
 
+
+@dataclass
+class SortKey:
+    column: str
+    ascending: bool = True
+
+
 @dataclass
 class DataState:
     raw_data: List[List[Any]]
@@ -19,7 +26,8 @@ class DataState:
     current_filter: FilterConfig
     sort_column: Optional[str] = None
     sort_ascending: bool = True
-    
+    sort_keys: Optional[List[SortKey]] = None
+
 class DataManager:
     def __init__(self):
         self._state = DataState([], [], [], FilterConfig())
@@ -52,6 +60,7 @@ class DataManager:
             self._state.current_filter = FilterConfig()
             self._state.sort_column = None
             self._state.sort_ascending = True
+            self._state.sort_keys = None
             
             self._notify_observers()
             return True
@@ -82,8 +91,13 @@ class DataManager:
             elif ext in ['.xlsx', '.xls']:
                 try:
                     df = pd.read_excel(file_path)
-                except:
+                except (ValueError, ImportError, OSError) as read_error:
                     engine = 'openpyxl' if ext == '.xlsx' else 'xlrd'
+                    logging.warning(
+                        "Primary Excel read failed (%s). Retrying with engine '%s'.",
+                        read_error,
+                        engine,
+                    )
                     df = pd.read_excel(file_path, engine=engine)
             elif ext == '.txt':
                 # For text files, create single column data
@@ -191,6 +205,7 @@ class DataManager:
                 
             self._state.sort_column = column_name
             self._state.sort_ascending = ascending
+            self._state.sort_keys = None
             
             self._apply_sort()
             self._notify_observers()
@@ -199,15 +214,68 @@ class DataManager:
         except Exception as e:
             logging.error(f"Sort operation failed: {e}")
             return self._state.filtered_data
+
+    def sort_by_columns(self, sort_keys: List[SortKey]) -> List[List[Any]]:
+        """Sort data by multiple columns in priority order."""
+        try:
+            invalid_columns = [k.column for k in sort_keys if k.column not in self._state.headers]
+            if invalid_columns:
+                logging.warning(f"Unknown columns in sort keys: {invalid_columns}")
+                sort_keys = [k for k in sort_keys if k.column in self._state.headers]
+
+            if not sort_keys:
+                return self._state.filtered_data
+
+            self._state.sort_keys = sort_keys
+            # Keep single-sort fields aligned with the primary key for compatibility.
+            self._state.sort_column = sort_keys[0].column
+            self._state.sort_ascending = sort_keys[0].ascending
+
+            self._apply_sort()
+            self._notify_observers()
+            return self._state.filtered_data
+
+        except Exception as e:
+            logging.error(f"Multi-column sort failed: {e}")
+            return self._state.filtered_data
     
     def _apply_sort(self) -> None:
-        """Apply current sort configuration"""
-        if not self._state.sort_column or not self._state.filtered_data:
+        """Apply current sort configuration (single or multi-column)."""
+        if not self._state.filtered_data:
             return
-            
+
         try:
+            if self._state.sort_keys:
+                # Apply stable sorts from lowest priority to highest priority.
+                for key_info in reversed(self._state.sort_keys):
+                    if key_info.column not in self._state.headers:
+                        continue
+
+                    col_index = self._state.headers.index(key_info.column)
+
+                    def make_sort_key(index: int):
+                        def sort_key(row: List[Any]):
+                            if index < len(row):
+                                value = row[index]
+                                try:
+                                    return (0, float(value))
+                                except (ValueError, TypeError):
+                                    return (1, str(value).lower())
+                            return (1, "")
+
+                        return sort_key
+
+                    self._state.filtered_data.sort(
+                        key=make_sort_key(col_index),
+                        reverse=not key_info.ascending,
+                    )
+                return
+
+            if not self._state.sort_column:
+                return
+
             col_index = self._state.headers.index(self._state.sort_column)
-            
+
             def sort_key(row):
                 if col_index < len(row):
                     value = row[col_index]
@@ -217,12 +285,12 @@ class DataManager:
                     except (ValueError, TypeError):
                         return str(value).lower()
                 return ""
-            
+
             self._state.filtered_data.sort(
-                key=sort_key, 
+                key=sort_key,
                 reverse=not self._state.sort_ascending
             )
-            
+
         except Exception as e:
             logging.error(f"Error applying sort: {e}")
 
@@ -303,6 +371,10 @@ class DataManager:
     def get_sort_info(self) -> Tuple[Optional[str], bool]:
         """Get current sort column and direction"""
         return self._state.sort_column, self._state.sort_ascending
+
+    def get_sort_keys(self) -> List[SortKey]:
+        """Get current multi-column sort keys in priority order."""
+        return list(self._state.sort_keys) if self._state.sort_keys else []
     
     def clear_filter(self) -> List[List[Any]]:
         """Clear all filters and return to raw data"""
@@ -320,6 +392,7 @@ class DataManager:
         """Clear sorting and return to filtered data in original order"""
         self._state.sort_column = None
         self._state.sort_ascending = True
+        self._state.sort_keys = None
         
         # Reapply filter to get unsorted filtered data
         if self._state.current_filter.text:
@@ -344,7 +417,11 @@ class DataManager:
             "filter_text": self._state.current_filter.text,
             "filter_column": self._state.current_filter.column,
             "sort_column": self._state.sort_column,
-            "sort_ascending": self._state.sort_ascending
+            "sort_ascending": self._state.sort_ascending,
+            "sort_keys": [
+                {"column": key.column, "ascending": key.ascending}
+                for key in (self._state.sort_keys or [])
+            ],
         }
     
     def reset_data(self) -> None:

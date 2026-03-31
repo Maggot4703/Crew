@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 """
-Launcher script for Crew Manager GUI
-"""
-import tkinter as tk
+Compatibility launcher for Crew Manager GUI.
 
-from gui import CrewGUI
+Canonical startup is in gui_main_function.main.
+"""
+from gui_main_function import main
+
 
 if __name__ == "__main__":
-    root = tk.Tk()
-    app = CrewGUI(root)
-    root.mainloop()
+    main()

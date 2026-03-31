@@ -1,0 +1,3 @@
+def initialize_gui():
+    # ...existing code for GUI layout and initialization...
+    pass

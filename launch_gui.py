@@ -1,32 +1,40 @@
 #!/usr/bin/env python3
 """
-Simple script to launch the Crew GUI
+Legacy compatibility launcher for Crew GUI.
+
+Canonical startup is gui_main_function.main. Keep this file as a thin wrapper.
 """
-import tkinter as tk
+import logging
+import sys
 
-from gui import CrewGUI
+from gui_main_function import main as launch_main
 
 
-def main():
-    """Launch the Crew GUI application"""
+logger = logging.getLogger(__name__)
+
+
+def main() -> int:
+    """Launch the Crew GUI application via canonical startup path."""
     try:
-        print("Creating root window...")
-        root = tk.Tk()
-
-        print("Initializing CrewGUI...")
-        app = CrewGUI(root)
-
-        print("Starting main loop...")
-        root.mainloop()
-
-        print("GUI closed")
-
-    except Exception as e:
-        print(f"Error launching GUI: {e}")
-        import traceback
-
-        traceback.print_exc()
+        logging.basicConfig(
+            level=logging.INFO,
+            format="%(asctime)s - %(levelname)s - %(message)s",
+        )
+        logger.info("Launching Crew GUI via canonical startup path")
+        launch_main()
+        return 0
+    except (KeyboardInterrupt, SystemExit):
+        raise
+    except (ImportError, RuntimeError, OSError) as exc:
+        logger.exception(
+            "Launcher failed before or during GUI startup: %s",
+            exc,
+        )
+        return 1
+    except Exception as exc:
+        logger.exception("Unexpected launcher failure: %s", exc)
+        return 1
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

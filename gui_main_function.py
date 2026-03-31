@@ -1,43 +1,55 @@
-#<<<<<<< HEAD
 import tkinter as tk
+import logging
+import math
+from pathlib import Path
+
 from gui import CrewGUI
 
-#def main():
-#
-#=======
-import sys
-import tkinter as tk
-import tkinter as tk
-from pathlib import Path
-from gui import CrewGUI  # Import CrewGUI from gui.py
+
+logger = logging.getLogger(__name__)
 
 
-def main():
-    """Main function to initialize and run the GUI application."""
+def _set_safe_icon(root: tk.Tk, icon_ico: Path, icon_png: Path) -> None:
+    """Set a window icon while avoiding X11 crashes from oversized images."""
+    if icon_ico.exists():
+        root.iconbitmap(str(icon_ico))
+        return
+
+    if not icon_png.exists():
+        return
+
+    icon_image = tk.PhotoImage(file=str(icon_png))
+
+    # Large icons can trigger X11 BadLength on some Linux stacks.
+    max_dim = max(icon_image.width(), icon_image.height())
+    if max_dim > 128:
+        scale = max(1, math.ceil(max_dim / 128))
+        icon_image = icon_image.subsample(scale, scale)
+
+    root.iconphoto(True, icon_image)
+    # Keep a reference to prevent Tk from garbage collecting the image.
+    root._icon_image = icon_image
+
+
+def main() -> None:
+    """Initialize and run the Crew GUI application."""
     root = tk.Tk()
     root.title("Crew GUI")
-    # Version information can be displayed in the GUI if needed
 
-    # Set application icon if available
-    icon_path = Path("/home/me/BACKUP/PROJECTS/Crew/input/Cars1.png")
-    if icon_path.exists() and icon_path.suffix == ".ico":
-        root.iconbitmap(str(icon_path))  # Set application icon if available
+    # Resolve icon relative to this module; keep startup resilient if missing.
+    base_dir = Path(__file__).resolve().parent
+    icon_ico = base_dir / "input" / "Cars1.ico"
+    icon_png = base_dir / "input" / "Cars1.png"
 
-    # Create and show the main window
-    window = CrewGUI(root)
+    try:
+        _set_safe_icon(root, icon_ico, icon_png)
+    except (tk.TclError, OSError) as exc:
+        # Icon setup is optional and should never block GUI startup.
+        logger.warning("Icon setup skipped: %s", exc)
+
+    CrewGUI(root)
     root.mainloop()
 
-    # Start the event loop
-    root.mainloop()
-
-import tkinter as tk
-from gui import CrewGUI
-
-def main():
-#>>>>>>> chunk-playback
-    root = tk.Tk()
-    app = CrewGUI(root)
-    root.mainloop()
 
 if __name__ == "__main__":
     main()

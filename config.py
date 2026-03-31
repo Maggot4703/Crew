@@ -34,8 +34,8 @@ class Config:
     """
 
     DEFAULT_CONFIG = {
-        "window_size": "1200x800",
-        "min_window_size": "800x600",
+        "window_size": "800x800",
+        "min_window_size": "800x800",
         "column_widths": {},
         "column_visibility": {},
         "last_directory": str(Path.home()),

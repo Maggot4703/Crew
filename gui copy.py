@@ -8,6 +8,7 @@ import json  # JSON file handling for caching
 import logging  # Application logging
 import os  # Operating system interface
 import re  # Needed for TTS text preprocessing
+import shutil  # Executable discovery for platform-specific launchers
 import subprocess  # Process execution
 import sys  # System-specific parameters
 import threading  # Background thread support
@@ -69,10 +70,7 @@ except ImportError:
 
 # Initialize logger
 logger = logging.getLogger(__name__)
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-)
-
+logging.basicConfig(    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 def auto_import_py_files() -> Tuple[List[str], List[Tuple[str, str]]]:
     try:
@@ -1668,7 +1666,7 @@ class CrewGUI:
             logging.error(f"Error saving speech to file: {e}")
             messagebox.showerror("Save Error", f"Failed to save speech: {e}")
 
-    def _update_details_view(self, item_data: Optional[Dict[str, Any]]) -> None:  # Updated signature with type hint
+    def _update_details_view(self, item_data: Optional[Dict[str, Any]]) -> None:
         try:
             if not hasattr(self, "details_text"):
                 return
@@ -1676,37 +1674,27 @@ class CrewGUI:
             # Clear current content
             self.details_text.delete("1.0", "end")
 
-            if item_data and "values" in item_data: # Check if item_data is not None
+            if item_data and "values" in item_data:
                 values = item_data["values"]
 
-                # Check if this is a text file (has Content column)
-                if hasattr(self, "headers") and "Content" in self.headers:
-                    content_index = self.headers.index("Content")
-                    if content_index < len(values):
-                        content = values[content_index]
-                        self.details_text.insert("1.0", content)
-                        return
-
-                # For non-text files, display structured information
-                details = []
-                if hasattr(self, "headers"):
+                # Filter visible columns
+                visible_details = []
+                if hasattr(self, "headers") and hasattr(self, "column_visibility"):
                     for i, header in enumerate(self.headers):
-                        if i < len(values):
-                            details.append(f"{header}: {values[i]}")
+                        if i < len(values) and self.column_visibility.get(header, True):
+                            visible_details.append(f"{header}: {values[i]}")
 
-                if details:
-                    self.details_text.insert("1.0", "\n".join(details))
+                if visible_details:
+                    self.details_text.insert("1.0", "\n".join(visible_details))
                 else:
-                    self.details_text.insert("1.0", str(values))
+                    self.details_text.insert("1.0", "No visible columns to display.")
             else:
-                self.details_text.delete("1.0", tk.END)
                 self.details_text.insert("1.0", "Error displaying details after selection.")
 
         except Exception as e:
             logging.error(f"Error updating details view: {e}")
-            if hasattr(self, "details_text"):
-                self.details_text.delete("1.0", "end")
-                self.details_text.insert("1.0", "Error displaying details after selection.")
+            self.details_text.delete("1.0", "end")
+            self.details_text.insert("1.0", "Error displaying details after selection.")
 
     def load_default_data(self) -> None:
         """Load and display default data from ./data/npcs.csv."""
@@ -1983,9 +1971,6 @@ class CrewGUI:
             if region == "heading":
                 col = self.data_table.identify_column(event.x, event.y)
                 col_index = int(col.replace("#", "")) - 1
-
-
-
                 if hasattr(self, "headers") and col_index < len(self.headers):
                     header = self.headers[col_index]
                     self._sort_by_column(col_index, header)
@@ -2115,8 +2100,6 @@ class CrewGUI:
                 ("All Files", "*.*"),
             ]
             file_path = filedialog.askopenfilename(
-               
-
                 defaultextension=".txt",  # Default to .txt if no specific type chosen
                 filetypes=file_types,
             )
@@ -2291,7 +2274,14 @@ class CrewGUI:
             logging.warning(f"Non-existent scripts_dir: {self.scripts_dir}")
             return
         try:
-            subprocess.run(['xdg-open', self.scripts_dir], check=True)
+            if os.name == 'nt':
+                subprocess.run(['explorer', self.scripts_dir], check=True)
+            elif sys.platform == 'darwin':
+                subprocess.run(['open', self.scripts_dir], check=True)
+            else:
+                # Prefer PCManFM on Linux, fallback to xdg-open for compatibility.
+                folder_opener = 'pcmanfm' if shutil.which('pcmanfm') else 'xdg-open'
+                subprocess.run([folder_opener, self.scripts_dir], check=True)
             self.update_status(f"Opened scripts folder: {self.scripts_dir}")
         except Exception as e:
             logging.error(f"Failed to open scripts folder: {e}")

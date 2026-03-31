@@ -1,0 +1,8 @@
+# PDFs - Advanced Usage Guide
+Generated stub content for PDFs advanced usage instructions.
+
+## Further Reading
+- https://www.w3schools.com/search/search.php?search=PDFs+usage
+- https://stackoverflow.com/questions/tagged/pdfs
+
+Generated on: 2025-07-25 13:10:32
