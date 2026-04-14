@@ -20,24 +20,24 @@ Crew Manager is a data processing and GUI tool for managing crew or NPC data. It
 
 2. Create and activate a virtual environment:
     ```bash
-    python -m venv venv
-    source venv/bin/activate  # or venv\Scripts\activate on Windows
+    cd /home/me/Notebooks/CREW
+    uv sync
     ```
 
 3. Install dependencies:
     ```bash
-    uv pip install -r requirements.txt
+    uv sync
     ```
 
 ## Usage
 
 - To run the main data processing script:
     ```bash
-    python Crew.py
+    uv run python Crew.py
     ```
 - To launch the GUI:
     ```bash
-    python gui.py
+    uv run python gui.py
     ```
 - Place data files in the `data` directory.
 
@@ -61,3 +61,12 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 ## License
 
 MIT License
+
+
+## Startup Code
+
+```bash
+cd /home/me/Notebooks/CREW/Crew
+uv sync
+uv run python Crew.py
+```

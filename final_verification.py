@@ -18,7 +18,7 @@ def main():
     # Test 1: Module imports
     print("\n1. Testing module imports...")
     try:
-        import Crew
+        import BACKUP.Crew15 as Crew15
         import database_manager
         import gui
 

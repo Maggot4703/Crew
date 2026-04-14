@@ -9,19 +9,16 @@ import sys
 import tkinter as tk
 import unittest
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
-# Add project root to sys.path to allow importing gui module
-# This assumes the tests are run from the project root or the test_gui.py script's directory
-project_root = Path(__file__).resolve().parent.parent
+# Add project root to sys.path to allow absolute imports from Crew
+project_root = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-# Attempt to import the gui module. Handle if it's not found or causes issues.
+# Attempt to import the gui module from Crew
 try:
-    import gui  # Assuming gui.py is in the project root
+    from BACKUP.Crew15 import gui
 except ImportError as e:
-    # This allows tests to run and report the import error clearly
-    # rather than failing before test execution begins.
     gui = None
     gui_import_error = e
 
@@ -35,7 +32,8 @@ class TestGUIModule(unittest.TestCase):
         # Check if gui module was imported successfully
         if gui is None:
             raise unittest.SkipTest(
-                f"Skipping GUI tests: gui module could not be imported. Error: {gui_import_error}"
+                "Skipping GUI tests: gui module could not be imported. "
+                f"Error: {gui_import_error}"
             )
 
     def setUp(self):
@@ -46,15 +44,21 @@ class TestGUIModule(unittest.TestCase):
             self.root = tk.Tk()
             self.root.withdraw()  # Hide the window during testing
         except tk.TclError as e:
-            # This can happen in environments without a display (e.g., some CI servers)
-            self.skipTest(f"Skipping test: Tkinter could not be initialized (no display?): {e}")
+            # This can happen in environments without a display
+            # (e.g., some CI servers)
+            self.skipTest(
+                "Skipping test: Tkinter could not be initialized "
+                f"(no display?): {e}"
+            )
 
     def tearDown(self):
         """Clean up test environment after each test."""
         if hasattr(self, "root") and self.root:
             try:
                 self.root.destroy()
-            except tk.TclError:  # Handle cases where window might already be destroyed or not fully initialized
+            except tk.TclError:
+                # Handle cases where window might already be destroyed
+                # or not fully initialized
                 pass
 
     def test_tkinter_availability(self):
@@ -81,27 +85,49 @@ class TestGUIModule(unittest.TestCase):
         """Test the auto_import_py_files function exists in gui module."""
         # Assumes gui module is imported successfully (checked in setUpClass)
         self.assertTrue(
-            hasattr(gui, "auto_import_py_files"), "gui module does not have auto_import_py_files function"
+            hasattr(gui, "auto_import_py_files"),
+            "gui module does not have auto_import_py_files function"
         )
-        self.assertTrue(callable(gui.auto_import_py_files), "auto_import_py_files is not callable")
+        self.assertTrue(
+            callable(gui.auto_import_py_files),
+            "auto_import_py_files is not callable"
+        )
 
-    # This test might be too broad or hard to maintain if gui.py has many complex imports.
+    # This test might be too broad or hard to maintain
+    # if gui.py has many complex imports.
     # def test_gui_imports(self):
     #     """Test that all required GUI imports are available."""
-    #     # This is implicitly tested by the successful import of the `gui` module itself.
-    #     # If specific sub-dependencies of gui.py need checking, they could be tested here.
+    #     # This is implicitly tested by the successful import
+    #     # of the `gui` module itself.
+    #     # If specific sub-dependencies of gui.py need checking,
+    #     # they could be tested here.
     #     pass
 
     def test_gui_main_entities_exist(self):
-        """Test that GUI module contains expected main classes and functions."""
-        self.assertTrue(hasattr(gui, "CrewGUI"), "CrewGUI class is missing from gui module.")
-        self.assertTrue(callable(gui.CrewGUI), "CrewGUI is not callable (not a class?).")
-        self.assertTrue(hasattr(gui, "main"), "main function is missing from gui module.")
-        self.assertTrue(callable(gui.main), "main is not callable.")
+        """
+        Test that GUI module contains expected main classes and functions.
+        """
+        self.assertTrue(
+            hasattr(gui, "CrewGUI"),
+            "CrewGUI class is missing from gui module."
+        )
+        self.assertTrue(
+            callable(gui.CrewGUI),
+            "CrewGUI is not callable (not a class?)."
+        )
+        self.assertTrue(
+            hasattr(gui, "main"),
+            "main function is missing from gui module."
+        )
+        self.assertTrue(
+            callable(gui.main),
+            "main is not callable."
+        )
 
     def test_path_handling_pathlib(self):
         """Test Path object handling from pathlib, as it's used in project."""
-        # This test is more about pathlib itself, but confirms its availability and basic use.
+        # This test is more about pathlib itself,
+        # but confirms its availability and basic use.
         test_path = Path("test_file.csv")
         self.assertEqual(test_path.suffix, ".csv")
         self.assertEqual(test_path.stem, "test_file")
@@ -110,11 +136,15 @@ class TestGUIModule(unittest.TestCase):
         # Use os.path.join for platform-independent path comparison if needed,
         # but string comparison is fine here for a fixed example.
         self.assertEqual(
-            str(data_path), "data/npcs.csv" if sys.platform != "win32" else "data\\npcs.csv"
+            str(data_path),
+            "data/npcs.csv" if sys.platform != "win32" else "data\\npcs.csv"
         )
 
     def test_tts_menu_and_settings(self):
-        """Test that the TTS menu includes Speech Settings and the dialog can be shown."""
+        """
+        Test that the TTS menu includes Speech Settings and
+        the dialog can be shown.
+        """
         if not hasattr(gui, "CrewGUI"):
             self.skipTest("CrewGUI not available in gui module")
         app = gui.CrewGUI(self.root)
@@ -193,7 +223,10 @@ class TestGUIModule(unittest.TestCase):
             self.fail(f"TTS error handling test failed: {e}")
 
     def test_read_widget_text(self):
-        """Test that _read_widget_text reads text from a widget and calls TTS engine."""
+        """
+        Test that _read_widget_text reads text from a widget
+        and calls TTS engine.
+        """
         try:
             app = gui.CrewGUI(self.root)
             widget = tk.Entry(self.root)
@@ -224,4 +257,4 @@ class TestGUIModule(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main(verbosity=2)  # Increased verbosity for more detailed test output
+    unittest.main(verbosity=2)

@@ -10,7 +10,8 @@
       "request": "launch",
       "program": "${file}",
       "console": "integratedTerminal",
-      "python": "${workspaceFolder}/.venv/bin/python"
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "cwd": "${workspaceFolder}"
     },
     {
       "name": "Crew GUI",
@@ -19,7 +20,8 @@
       "program": "${workspaceFolder}/gui.py",
       "console": "integratedTerminal",
       "python": "${workspaceFolder}/.venv/bin/python",
-      "justMyCode": true
+      "justMyCode": true,
+      "cwd": "${workspaceFolder}"
     }
   ]
 }

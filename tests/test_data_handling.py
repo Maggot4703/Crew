@@ -12,7 +12,9 @@ import pandas as pd
 # Add the parent directory to the path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from Crew import read_csv_builtin, read_csv_pandas, read_file
+import sys, os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from file_utils import read_csv_builtin, read_csv_pandas, read_file
 
 
 class TestDataHandling(unittest.TestCase):

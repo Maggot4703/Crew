@@ -9,8 +9,9 @@
     ".ipynb_checkpoints.state_manager_checkpoint",
     ".ipynb_checkpoints.storySearch_checkpoint",
     ".ipynb_checkpoints.untitled_checkpoint",
-    "ReadMine_completion_report",
+    "audio_manager",
     "cache",
+    "crew_auth",
     "data.HTML.html",
     "data.arcs.arcs",
     "data.clones.clones",
@@ -31,15 +32,19 @@
     "event_manager",
     "events",
     "file_manager",
+    "file_utils (cached)",
     "get_pip",
     "gui_copy",
     "gui_copy (cached)",
-    "gui_main_function (cached)",
+    "gui_main_function",
+    "image_utils (cached)",
     "layout",
     "log_analyzer",
     "logic",
     "mcp",
     "mcp_service",
+    "message_router (cached)",
+    "python_Crew",
     "read_use_file",
     "refactoring_verification",
     "script_manager",
@@ -56,5 +61,5 @@
     "utils"
   ],
   "failed_imports": [],
-  "timestamp": 1774447795.923145
+  "timestamp": 1776204582.8985791
 }

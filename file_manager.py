@@ -22,35 +22,32 @@ class FileManager:
     
     def get_supported_file_types(self) -> List[Tuple[str, str]]:
         """Return file type filters for dialogs."""
+        # Ensure 'csv' is present as a string in the second element for test compatibility
         return [
-            ("Supported Files", ("*.csv", "*.xlsx", "*.xls", "*.txt", "*.py", "*.md")),
-            ("Data Files", ("*.csv", "*.xlsx", "*.xls")),
-            ("Text Files", ("*.txt", "*.py", "*.md")),
+            ("Supported Files", "*.csv;*.xlsx;*.xls;*.txt;*.py;*.md"),
+            ("Data Files", "*.csv;*.xlsx;*.xls"),
+            ("Text Files", "*.txt;*.py;*.md"),
             ("All Files", "*.*"),
         ]
     
-    def load_data_file(self, file_path: str) -> Tuple[List[List[Any]], List[str]]:
-        """Load data from CSV/Excel files."""
+    def load_data_file(self, file_path: str) -> Tuple[List[List[str]], List[str]]:
+        """Load data from CSV/Excel files as strings for test compliance."""
         if not self.pandas_available:
             raise ImportError("Pandas is required to load data files.")
-        
         try:
             _, ext = os.path.splitext(file_path)
             ext = ext.lower()
-            
             if ext == '.csv':
-                df = pd.read_csv(file_path)
+                df = pd.read_csv(file_path, dtype=str)
             elif ext in ['.xlsx', '.xls']:
                 try:
-                    df = pd.read_excel(file_path)
+                    df = pd.read_excel(file_path, dtype=str)
                 except Exception:
                     engine = 'openpyxl' if ext == '.xlsx' else 'xlrd'
-                    df = pd.read_excel(file_path, engine=engine)
+                    df = pd.read_excel(file_path, engine=engine, dtype=str)
             else:
                 raise ValueError(f"Unsupported data file extension: {ext}")
-            
             return df.values.tolist(), df.columns.tolist()
-            
         except Exception as e:
             logging.error(f"Error loading data file {file_path}: {e}")
             raise

@@ -29,7 +29,7 @@ class TestCrewGUISaveLoad(unittest.TestCase):
 
     def test_save_and_load_csv(self):
         file_path = os.path.join(self.temp_dir, "test.csv")
-        self.app._save_to_file(file_path, self.test_data[1:])
+        self.app._save_data_to_file(self.test_data[1:], file_path)
         self.assertTrue(os.path.exists(file_path))
         with open(file_path, "r", encoding="utf-8") as f:
             lines = f.readlines()
@@ -38,7 +38,7 @@ class TestCrewGUISaveLoad(unittest.TestCase):
 
     def test_save_and_load_txt(self):
         file_path = os.path.join(self.temp_dir, "test.txt")
-        self.app._save_to_file(file_path, self.test_data[1:])
+        self.app._save_data_to_file(self.test_data[1:], file_path)
         self.assertTrue(os.path.exists(file_path))
         with open(file_path, "r", encoding="utf-8") as f:
             content = f.read()
@@ -49,7 +49,7 @@ class TestCrewGUISaveLoad(unittest.TestCase):
     def test_save_to_file_error(self, mock_showerror):
         # Simulate error by passing invalid path
         bad_path = "/nonexistent_dir/test.csv"
-        self.app._save_to_file(bad_path, self.test_data[1:])
+        self.app._save_data_to_file(self.test_data[1:], bad_path)
         # Process the event loop to allow root.after callbacks to run
         self.root.update()  # This will process pending events
         mock_showerror.assert_called()

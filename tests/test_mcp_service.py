@@ -1,27 +1,21 @@
-"""
-Test module for mcp_service.py
 
-This module tests the Model Context Protocol (MCP) service functionality
-including data gathering from DataFrames, MCP formatting, and JSON encoding.
-"""
 
 import json
-import os
-import sys
 import unittest
-from datetime import datetime
-from unittest.mock import MagicMock, patch
-
 import numpy as np
 import pandas as pd
+from unittest.mock import MagicMock, patch
 
-# Add the parent directory to the path to import the module under test
+
+import sys
+import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import mcp_service
 
+# Import the tested functions directly for test scope
 from mcp_service import (
-    CustomEncoder,
-    format_data_as_mcp,
     gather_context_data_from_dataframe,
+    format_data_as_mcp,
     get_mcp_context_for_npcs,
 )
 
@@ -31,12 +25,12 @@ class TestCustomEncoder(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        self.encoder = CustomEncoder()
+        self.encoder = mcp_service.CustomEncoder()
 
     def test_encode_nan_values(self):
         """Test that NaN values are handled properly in JSON."""
         data = {"value": float("nan")}
-        result = json.dumps(data, cls=CustomEncoder)
+        result = json.dumps(data, cls=mcp_service.CustomEncoder)
         parsed = json.loads(result)
         # NaN should be converted to None by CustomEncoder
         self.assertIsNone(parsed["value"])
@@ -45,7 +39,7 @@ class TestCustomEncoder(unittest.TestCase):
         """Test that pandas Timestamp objects are converted to strings."""
         timestamp = pd.Timestamp("2024-01-01 12:00:00")
         data = {"timestamp": timestamp}
-        result = json.dumps(data, cls=CustomEncoder)
+        result = json.dumps(data, cls=mcp_service.CustomEncoder)
         parsed = json.loads(result)
         self.assertIsInstance(parsed["timestamp"], str)
         self.assertIn("2024-01-01", parsed["timestamp"])
@@ -54,7 +48,7 @@ class TestCustomEncoder(unittest.TestCase):
         """Test that pandas Timedelta objects are converted to strings."""
         timedelta = pd.Timedelta(days=1, hours=2)
         data = {"duration": timedelta}
-        result = json.dumps(data, cls=CustomEncoder)
+        result = json.dumps(data, cls=mcp_service.CustomEncoder)
         parsed = json.loads(result)
         self.assertIsInstance(parsed["duration"], str)
 
@@ -67,20 +61,23 @@ class TestCustomEncoder(unittest.TestCase):
             "list": [1, 2, 3],
             "dict": {"nested": "value"},
         }
-        result = json.dumps(data, cls=CustomEncoder)
+        result = json.dumps(data, cls=mcp_service.CustomEncoder)
         parsed = json.loads(result)
         self.assertEqual(parsed, data)
 
     def test_nested_nan_handling(self):
         """Test NaN handling in nested structures."""
         data = {
-            "level1": {"level2": {"nan_value": float("nan"), "normal_value": 42}},
+            "level1": {
+                "level2": {
+                    "nan_value": float("nan"),
+                    "normal_value": 42,
+                }
+            },
             "list_with_nan": [1, float("nan"), 3],
         }
-
-        json_str = json.dumps(data, cls=CustomEncoder)
+        json_str = json.dumps(data, cls=mcp_service.CustomEncoder)
         parsed = json.loads(json_str)
-
         self.assertIsNone(parsed["level1"]["level2"]["nan_value"])
         self.assertEqual(parsed["level1"]["level2"]["normal_value"], 42)
         self.assertIsNone(parsed["list_with_nan"][1])
@@ -94,8 +91,7 @@ class TestCustomEncoder(unittest.TestCase):
             "nan": float("nan"),
             "regular": "normal_string",
         }
-
-        json_str = json.dumps(data, cls=CustomEncoder)
+        json_str = json.dumps(data, cls=mcp_service.CustomEncoder)
         parsed = json.loads(json_str)
 
         self.assertIsInstance(parsed["timestamp"], str)
@@ -107,20 +103,24 @@ class TestCustomEncoder(unittest.TestCase):
     def test_encoder_with_complex_dataframe_output(self):
         """Test encoder with complex DataFrame conversion output."""
         # Create DataFrame with various pandas types
-        df = pd.DataFrame(
-            {
-                "name": ["Alice", "Bob"],
-                "start_date": [pd.Timestamp("2020-01-01"), pd.Timestamp("2021-01-01")],
-                "duration": [pd.Timedelta(days=100), pd.Timedelta(days=200)],
-                "score": [95.5, np.nan],
-            }
-        )
+        df = pd.DataFrame({
+            "name": ["Alice", "Bob"],
+            "start_date": [
+                pd.Timestamp("2020-01-01"),
+                pd.Timestamp("2021-01-01")
+            ],
+            "duration": [
+                pd.Timedelta(days=100),
+                pd.Timedelta(days=200)
+            ],
+            "score": [95.5, np.nan],
+        })
 
         # Convert to dict (simulating gather_context_data_from_dataframe)
         dict_data = df.to_dict(orient="records")
 
         # Encode with CustomEncoder
-        json_str = json.dumps(dict_data, cls=CustomEncoder)
+        json_str = json.dumps(dict_data, cls=mcp_service.CustomEncoder)
         parsed = json.loads(json_str)
 
         self.assertEqual(len(parsed), 2)
@@ -191,7 +191,10 @@ class TestFormatDataAsMcp(unittest.TestCase):
 
         self.assertEqual(result["version"], "1.0.0")
         self.assertEqual(result["context_type"], "application_data_snapshot")
-        self.assertEqual(result["payload"][0]["data_source_identifier"], "test_source")
+        self.assertEqual(
+            result["payload"][0]["data_source_identifier"],
+            "test_source"
+        )
         self.assertEqual(result["payload"][0]["item_count"], 0)
         self.assertEqual(result["payload"][0]["items"], [])
 
@@ -211,7 +214,10 @@ class TestFormatDataAsMcp(unittest.TestCase):
     def test_formatting_error(self, mock_logger):
         """Test error handling during MCP formatting."""
         # Force an error by patching pd.Timestamp.now()
-        with patch("pandas.Timestamp.now", side_effect=Exception("Timestamp error")):
+        with patch(
+            "pandas.Timestamp.now",
+            side_effect=Exception("Timestamp error")
+        ):
             result = format_data_as_mcp([{"test": "data"}], "test_source")
 
             self.assertEqual(result, {})
@@ -262,7 +268,8 @@ class TestGetMcpContextForNpcs(unittest.TestCase):
 
         result = get_mcp_context_for_npcs(mock_df)
 
-        # Should return a valid MCP structure with empty payload when gather fails
+        # Should return a valid MCP structure with empty payload
+        # when gather fails
         self.assertIsInstance(result, dict)
         self.assertEqual(result["payload"][0]["item_count"], 0)
         self.assertEqual(result["payload"][0]["items"], [])
@@ -297,7 +304,7 @@ class TestMcpServiceIntegration(unittest.TestCase):
         self.assertEqual(items[0]["NPC"], "Test Engineer")
 
         # Verify JSON serialization works
-        json_str = json.dumps(result, cls=CustomEncoder)
+        json_str = json.dumps(result, cls=mcp_service.CustomEncoder)
         self.assertIsInstance(json_str, str)
 
     def test_performance_with_large_dataset(self):
@@ -324,7 +331,10 @@ class TestMcpServiceIntegration(unittest.TestCase):
             "AGE": [25, 30],
             "ACTIVE": [True, False],
             "SALARY": [50000.50, 75000.75],
-            "START_DATE": [pd.Timestamp("2020-01-01"), pd.Timestamp("2021-06-15")],
+            "START_DATE": [
+                pd.Timestamp("2020-01-01"),
+                pd.Timestamp("2021-06-15")
+            ],
         }
         df = pd.DataFrame(mixed_data)
 

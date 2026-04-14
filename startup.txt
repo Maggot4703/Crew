@@ -1,4 +1,5 @@
-deactivate
-cd /home/me/Notebooks/CREW/Crew
+deactivate 2>/dev/null || true
+cd "/home/me/Notebooks/CREW/Crew"
 source .venv/bin/activate
-jupyter lab
+//jupyter lab
+python Crew.py

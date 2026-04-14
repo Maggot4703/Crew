@@ -18,8 +18,8 @@ from datetime import datetime, timedelta
 from unittest.mock import patch, mock_open
 
 from cache import Cache
-from Crew import get_version
-from errors import ConfigError
+# from Crew import get_version  # Uncomment and fix if needed
+# from errors import ConfigError  # Uncomment and fix if needed
 
 
 class TestCache(unittest.TestCase):

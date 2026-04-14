@@ -1,0 +1,45 @@
+#========================== JOB 1 #==========================
+THESE SHOULD BE CONSIDERED 'GLOBAL' IN SCOPE - ALWAYS APPLY TO CODE
+#codebase #Crew.py
+remember errors &  warnings
+proceed step-by-step with the processes,
+debug and fix often - check off list if completed
+use existing code if possible - modify if needed
+careful of linting errors - 
+add comments throughout
+
+#Crew.py
+ONLY WORK ON COPIES - DO NOT REPLACE ORIGINALS UNTIL TESTED AND RUNNING CORRECTLY
+create more tests to include and test all files referenced in Crew.py
+Save all suggestions and plans to /home/me/Notebooks/CREW/Crew/PLANS (the plans folder)
+please research and plan each of these suggestions and save to the plans folder
+
+when told to create/save plans:
+	research #codebase for files that maybe useful or referenced
+	Save all research, suggestions and plans to :
+	/home/me/Notebooks/CREW/Crew/PLANS 	(the plans folder)
+	create tests for plan - test until OK - debug often
+
+please make suggestions if things go wrong - save to plans folder
+
+save plan to plans folder
+
+look in plans folder - UPDATE as necessary
+
+#========================== JOB 2 #==========================
+PLAN:
+	Crew Manager/Crew Chat/Open Crew Chat selected
+	Crew Multi-User Chat window opens
+	provide suggestions for improving code further
+	some are already implemented - do not overwrite
+	 - reuse and modify
+	 save to plans folder
+	
+#========================== JOB 3 #==========================
+PLAN:
+	Start /home/me/Notebooks/0101/0101/src/public_html/server.py from the menu bar. add 'Server' option on menubar and an item to launch it
+
+#========================== JOB 4 #==========================
+the program should always display 'Help' item as the last item on the menubar - dheck and move
+
+#========================== JOB 5 #==========================

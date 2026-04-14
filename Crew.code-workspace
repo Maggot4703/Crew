@@ -3,10 +3,6 @@
 		{
 			"name": "Crew",
 			"path": "."
-		},
-		{
-			"name": "Crew_Backups",
-			"path": "../Crew_Backups"
 		}
 	],
 	"settings": {

@@ -10,7 +10,13 @@ from pathlib import Path
 # Add the parent directory to the path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from Crew import get_version
+
+
+# Import Config from config.py
+from config import Config
+
+# Import patch for mocking
+from unittest.mock import patch
 
 
 class TestConfig(unittest.TestCase):
@@ -18,23 +24,27 @@ class TestConfig(unittest.TestCase):
 
     def setUp(self):
         """Set up test environment before each test."""
-        self.test_dir = tempfile.mkdtemp()
+        import tempfile
+        self.tempfile = tempfile
+        self.test_dir = self.tempfile.mkdtemp()
+        self.config_path = Path(self.test_dir) / "config.json"
 
     def tearDown(self):
         """Clean up test environment after each test."""
-        if os.path.exists(self.test_dir):
-            os.rmdir(self.test_dir)
+        import shutil
+        if self.test_dir and Path(self.test_dir).exists():
+            shutil.rmtree(self.test_dir, ignore_errors=True)
 
     def test_config_initialization(self):
         """Test Config class initialization with default values."""
-        config = Config()
+        config = Config(config_dir=self.test_dir)
         self.assertIsInstance(config, Config)
         self.assertIn("window_size", config.DEFAULT_CONFIG)
         self.assertEqual(config.DEFAULT_CONFIG["window_size"], "800x800")
 
     def test_default_config_values(self):
         """Test that default configuration contains expected values."""
-        config = Config()
+        config = Config(config_dir=self.test_dir)
         defaults = config.DEFAULT_CONFIG
 
         # Test key default values
@@ -47,24 +57,18 @@ class TestConfig(unittest.TestCase):
 
     def test_get_default_value(self):
         """Test getting configuration values with defaults."""
-        # Create config with isolated test directory
-        import tempfile
+        config = Config(config_dir=self.test_dir)
+        # Test getting existing default value
+        result = config.get("window_size")
+        self.assertEqual(result, "800x800")
 
-        with tempfile.TemporaryDirectory() as temp_dir:
-            with patch("config.Path.home", return_value=Path(temp_dir)):
-                config = Config()
-
-                # Test getting existing default value
-                result = config.get("window_size")
-                self.assertEqual(result, "800x800")
-
-                # Test getting non-existent value with default
-                result = config.get("non_existent_key", "default_value")
-                self.assertEqual(result, "default_value")
+        # Test getting non-existent value with default
+        result = config.get("non_existent_key", "default_value")
+        self.assertEqual(result, "default_value")
 
     def test_set_and_get_value(self):
         """Test setting and getting configuration values."""
-        config = Config()
+        config = Config(config_dir=self.test_dir)
 
         # Test setting new value
         config.set("test_key", "test_value")
@@ -78,7 +82,7 @@ class TestConfig(unittest.TestCase):
 
     def test_column_widths_management(self):
         """Test column widths configuration management."""
-        config = Config()
+        config = Config(config_dir=self.test_dir)
 
         # Test setting column widths
         test_widths = {"col1": 100, "col2": 150, "col3": 200}
@@ -89,7 +93,7 @@ class TestConfig(unittest.TestCase):
 
     def test_config_data_types(self):
         """Test configuration with different data types."""
-        config = Config()
+        config = Config(config_dir=self.test_dir)
 
         # Test string value
         config.set("string_val", "test")
@@ -109,14 +113,14 @@ class TestConfig(unittest.TestCase):
 
     def test_auto_save_default(self):
         """Test auto-save configuration default."""
-        config = Config()
+        config = Config(config_dir=self.test_dir)
         auto_save = config.get("auto_save")
         self.assertTrue(auto_save)
         self.assertIsInstance(auto_save, bool)
 
     def test_log_level_default(self):
         """Test log level configuration default."""
-        config = Config()
+        config = Config(config_dir=self.test_dir)
         log_level = config.get("log_level")
         self.assertEqual(log_level, "INFO")
 

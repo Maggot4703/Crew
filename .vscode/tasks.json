@@ -10,24 +10,11 @@
             "isBackground": false,
             "problemMatcher": [
                 "$python"
-            ]
-        },
-        {
-            "label": "Open Crew CSV On Startup",
-            "type": "shell",
-            "command": "code",
-            "args": [
-                "-r",
-                "${workspaceFolder}/Crew.csv"
             ],
-            "runOptions": {
-                "runOn": "folderOpen"
-            },
-            "presentation": {
-                "reveal": "never",
-                "panel": "dedicated"
-            },
-            "problemMatcher": []
-        }
+            "options": {
+                "cwd": "${workspaceFolder}"
+            }
+        },
+        
     ]
 }
