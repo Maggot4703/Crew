@@ -253,15 +253,6 @@ def overlay_grid(
         )
         return None
 
-    # csv
-    # xls
-    # ...existing code...
-    """
-    Crop image regions using CSV rows in format: name,x,y,width,height.
-    Invalid rows are skipped and logged as warnings.
-    """
-
-
 def get_version() -> str:
     """
     Return the version of the Crew application.

@@ -1,18 +1,11 @@
-"""
-Provides story searching capabilities, likely within a dataset of narratives or game content.
+"""Simple story-search helpers for in-memory, JSON, and CSV sources."""
 
-This module might interface with a database or a collection of text files
-to find stories matching certain criteria, keywords, themes, or characters.
-It could be used for content retrieval in a game, a writing tool, or a digital library.
-"""
+from __future__ import annotations
 
-# Import necessary libraries (e.g., for database access, text processing)
-# import sqlite3
-# import re
-# from nltk.tokenize import word_tokenize # Example for NLP
-
-# Placeholder for actual data source or connection
-# STORY_DATABASE_PATH = "data/stories.db"
+import csv
+import json
+from pathlib import Path
+from typing import Any
 
 
 class StorySearch:
@@ -32,8 +25,7 @@ class StorySearch:
             data_source (str, optional): Path to the data source (e.g., database file)
                                          or an existing data structure.
         """
-        # self.story_data = self._load_stories(data_source)
-        print(f"StorySearch initialized with data source: {data_source}")
+        self.story_data = self._load_stories(data_source)
 
     def _load_stories(self, data_source):
         """
@@ -48,14 +40,67 @@ class StorySearch:
         Returns:
             A structured representation of the stories (e.g., list of dicts).
         """
-        # Placeholder: Implement actual data loading logic here
-        # Example: if data_source.endswith('.csv'):
-        #              return pd.read_csv(data_source).to_dict('records')
-        #          elif data_source.endswith('.db'):
-        #              # connect and fetch
-        #              pass
-        print(f"Loading stories from {data_source}...")
-        return []  # Return empty list as placeholder
+        if data_source is None:
+            return []
+
+        if isinstance(data_source, list):
+            return [self._normalize_story(item) for item in data_source]
+
+        if isinstance(data_source, dict):
+            stories = data_source.get("stories", [])
+            return [self._normalize_story(item) for item in stories]
+
+        if isinstance(data_source, (str, Path)):
+            path = Path(data_source)
+            if not path.exists():
+                return []
+            if path.suffix.lower() == ".json":
+                loaded = json.loads(path.read_text(encoding="utf-8"))
+                if isinstance(loaded, dict):
+                    loaded = loaded.get("stories", [])
+                if isinstance(loaded, list):
+                    return [self._normalize_story(item) for item in loaded]
+                return []
+            if path.suffix.lower() == ".csv":
+                with path.open("r", encoding="utf-8", newline="") as handle:
+                    return [
+                        self._normalize_story(row) for row in csv.DictReader(handle)
+                    ]
+        return []
+
+    def _normalize_story(self, story: Any) -> dict[str, Any]:
+        if not isinstance(story, dict):
+            return {
+                "title": str(story),
+                "text": str(story),
+                "characters": [],
+                "themes": [],
+            }
+
+        normalized = dict(story)
+        normalized.setdefault("title", "")
+        normalized.setdefault("text", "")
+        normalized["characters"] = self._normalize_list_field(
+            normalized.get("characters", [])
+        )
+        normalized["themes"] = self._normalize_list_field(normalized.get("themes", []))
+        return normalized
+
+    @staticmethod
+    def _normalize_list_field(value: Any) -> list[str]:
+        if value is None:
+            return []
+        if isinstance(value, list):
+            return [str(item) for item in value]
+        if isinstance(value, str):
+            return [part.strip() for part in value.split(",") if part.strip()]
+        return [str(value)]
+
+    @staticmethod
+    def _normalize_query(value: Any) -> str:
+        if value is None:
+            return ""
+        return str(value).strip().lower()
 
     def find_by_keyword(self, keyword: str) -> list:
         """
@@ -67,10 +112,15 @@ class StorySearch:
         Returns:
             list: A list of stories (or story identifiers) matching the keyword.
         """
-        # Placeholder: Implement keyword search logic
-        # results = [story for story in self.story_data if keyword.lower() in story.get('text', '').lower()]
-        print(f"Searching for stories with keyword: {keyword}")
-        return []
+        query = self._normalize_query(keyword)
+        if not query:
+            return []
+        return [
+            story
+            for story in self.story_data
+            if query in story.get("text", "").lower()
+            or query in story.get("title", "").lower()
+        ]
 
     def find_by_character(self, character_name: str) -> list:
         """
@@ -82,10 +132,14 @@ class StorySearch:
         Returns:
             list: A list of stories (or story identifiers) featuring the character.
         """
-        # Placeholder: Implement character search logic
-        # results = [story for story in self.story_data if character_name in story.get('characters', [])]
-        print(f"Searching for stories with character: {character_name}")
-        return []
+        query = self._normalize_query(character_name)
+        if not query:
+            return []
+        return [
+            story
+            for story in self.story_data
+            if any(query == character.lower() for character in story.get("characters", []))
+        ]
 
     def find_by_theme(self, theme: str) -> list:
         """
@@ -97,17 +151,20 @@ class StorySearch:
         Returns:
             list: A list of stories (or story identifiers) matching the theme.
         """
-        # Placeholder: Implement theme search logic
-        # results = [story for story in self.story_data if theme.lower() in story.get('themes', [])]
-        print(f"Searching for stories with theme: {theme}")
-        return []
+        query = self._normalize_query(theme)
+        if not query:
+            return []
+        return [
+            story
+            for story in self.story_data
+            if any(query == item.lower() for item in story.get("themes", []))
+        ]
 
 
 # Example Usage (if this script were to be run directly):
 if __name__ == "__main__":
     # Assuming you have a data source, e.g., 'data/story_collection.csv'
-    # search_engine = StorySearch(data_source='data/story_collection.csv')
-    search_engine = StorySearch()  # Using placeholder initialization
+    search_engine = StorySearch()
 
     keyword_stories = search_engine.find_by_keyword("dragon")
     print(f"Stories about dragons: {keyword_stories}")

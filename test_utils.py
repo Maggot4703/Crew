@@ -1,6 +1,10 @@
 import unittest
+import sys
+from pathlib import Path
 
-from Crew import utils
+sys.path.insert(0, str(Path(__file__).parent))
+
+import utils
 
 
 class TestUtils(unittest.TestCase):
@@ -25,11 +29,9 @@ class TestUtils(unittest.TestCase):
         result = utils._build_save_kwargs(".tiff", 80)
         self.assertEqual(result, {})
 
-    # Additional tests for other functions would require mocking file I/O and logging
-    # Example placeholder for crop_from_annotations:
-    # def test_crop_from_annotations_invalid_file(self):
-    #     result = utils.crop_from_annotations('nofile.png', 'noann.csv', 'outdir')
-    #     self.assertEqual(result, [])
+    def test_crop_from_annotations_invalid_file(self):
+        result = utils.crop_from_annotations("nofile.png", "noann.csv", "outdir")
+        self.assertEqual(result, [])
 
 
 if __name__ == "__main__":

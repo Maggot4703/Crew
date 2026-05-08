@@ -449,8 +449,6 @@ def auto_import_py_files() -> Tuple[List[str], List[Tuple[str, str]]]:
 
                 except (
                     ImportError,
-                    ModuleNotFoundError,
-                    # ...existing code...
                     AttributeError,
                 ) as e:
                     # These are expected for some files

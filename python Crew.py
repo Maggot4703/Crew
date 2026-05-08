@@ -430,11 +430,11 @@ def crop_from_annotations(
     return saved_paths
 
 
-# placeholder job
 def job4():
-    logger.info("job4 called - specific task to be defined.")
-    # Placeholder for a specific task
-    pass
+    """Run a lightweight self-check and return current project metadata."""
+    info = get_project_info()
+    logger.info("job4 self-check complete for %s %s", info["name"], info["version"])
+    return info
 
 
 def get_version():

@@ -103,7 +103,7 @@ Important implementation notes for future work:
 
 - `generate_bot_reply()` in `gui.py` is currently a keyword/rule-based helper with a final HTTP POST fallback to `http://localhost:8000/v1/completions`.
 - The chat windows read `self.llm_backend_var` if present and otherwise default to `ollama`; no backend selector wiring is currently documented in `CREW/Crew/`.
-- `gui.py` imports `strategies.user_strategy.UserStrategy` and `strategies.referee_strategy.RefereeStrategy`, but those strategy modules are not currently present under `CREW/Crew/`; matching placeholder implementations exist in `CREW/xxCrew/strategies/`.
+- `gui.py` imports `strategies.user_strategy.UserStrategy` and `strategies.referee_strategy.RefereeStrategy`; the current production fallback implementations live under `CREW/Crew/strategies/`.
 - `message_router.py` is local and in-memory only, so `Crew Multi-User Chat` does not yet synchronize messages across processes or devices on the network.
 - Voice features depend on optional runtime components such as `SpeechRecognition`, microphone access, and a working TTS/audio stack.
 

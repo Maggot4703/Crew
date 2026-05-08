@@ -12,21 +12,21 @@ logger = logging.getLogger(__name__)
 
 def log_progress_md(message: str) -> None:
     """
-    Log a progress message in Markdown format (placeholder).
+    Log a progress-style message for markdown-friendly progress tracking.
     """
     logger.info(f"[PROGRESS] {message}")
 
 
 def show_user_error(message: str) -> None:
     """
-    Display or log a user-facing error message (placeholder).
+    Log a user-facing error message.
     """
     logger.error(f"[USER ERROR] {message}")
 
 
 def spacer() -> None:
     """
-    Print or log a visual spacer (placeholder).
+    Log a visual spacer for readability in console or log output.
     """
     logger.info("%s", "-" * 40)
 

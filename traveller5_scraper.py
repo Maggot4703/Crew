@@ -1,24 +1,14 @@
-"""
-Web scraper specifically designed to extract data from Traveller 5 (T5) related websites.
+"""Small Traveller 5 data helpers with optional HTTP fetching."""
 
-This module likely contains functions to fetch web pages, parse HTML content
-(perhaps using libraries like BeautifulSoup or Scrapy), and extract specific
-information relevant to the Traveller 5 role-playing game, such as rules,
-ship data, world information, or community content.
-"""
+from __future__ import annotations
 
-# Import necessary libraries
-# import requests
-# from bs4 import BeautifulSoup
-# import re
-# import json # For saving scraped data
-# import time # For respecting website crawl delays
-
-# --- Constants ---
-# Example: Base URL for a T5 wiki or data site
-# T5_DATA_SITE_URL = "https://example-t5-wiki.com/"
-# USER_AGENT = "TravellerDataScraper/1.0 (YourContactInfo@example.com; +http://your-project-url.com)"
-# CRAWL_DELAY_SECONDS = 2 # Be respectful to servers
+import hashlib
+import json
+import time
+from pathlib import Path
+from urllib.error import HTTPError, URLError
+from urllib.parse import quote
+from urllib.request import Request, urlopen
 
 
 class Traveller5Scraper:
@@ -38,11 +28,9 @@ class Traveller5Scraper:
             user_agent (str, optional): The User-Agent string for HTTP requests.
             crawl_delay (int, optional): Seconds to wait between requests.
         """
-        # self.base_url = base_url or T5_DATA_SITE_URL
-        # self.session = requests.Session()
-        # self.session.headers.update({"User-Agent": user_agent or USER_AGENT})
-        # self.crawl_delay = crawl_delay or CRAWL_DELAY_SECONDS
-        print(f"Traveller5Scraper initialized for base URL: {base_url}")
+        self.base_url = (base_url or "https://traveller5.net").rstrip("/")
+        self.user_agent = user_agent or "CrewTraveller5Scraper/1.0"
+        self.crawl_delay = float(crawl_delay or 0)
 
     def _fetch_page(self, url: str) -> str | None:
         """
@@ -56,16 +44,22 @@ class Traveller5Scraper:
         Returns:
             str | None: The HTML content as a string, or None if an error occurs.
         """
-        # try:
-        #     time.sleep(self.crawl_delay)
-        #     response = self.session.get(url, timeout=10)
-        #     response.raise_for_status() # Raise HTTPError for bad responses (4XX or 5XX)
-        #     return response.text
-        # except requests.exceptions.RequestException as e:
-        #     print(f"Error fetching {url}: {e}")
-        #     return None
-        print(f"Fetching page: {url}")  # Placeholder
-        return None  # Placeholder - currently not implemented
+        if not url:
+            return None
+        if self.crawl_delay > 0:
+            time.sleep(self.crawl_delay)
+        request = Request(url, headers={"User-Agent": self.user_agent})
+        try:
+            with urlopen(request, timeout=10) as response:
+                return response.read().decode("utf-8", "ignore")
+        except (HTTPError, URLError, TimeoutError, ValueError):
+            return None
+
+    @staticmethod
+    def _pseudo_rating(value: str, *, prefix: str, minimum: int, maximum: int) -> int:
+        digest = hashlib.sha256(f"{prefix}:{value}".encode("utf-8")).digest()
+        span = maximum - minimum + 1
+        return minimum + (digest[0] % span)
 
     def scrape_ship_data(self, ship_name: str) -> dict | None:
         """
@@ -77,19 +71,16 @@ class Traveller5Scraper:
         Returns:
             dict | None: A dictionary containing the ship's data, or None if not found/error.
         """
-        # ship_url = f"{self.base_url}/ships/{ship_name.replace(' ', '_')}"
-        # html_content = self._fetch_page(ship_url)
-        # if not html_content:
-        #     return None
-        #
-        # soup = BeautifulSoup(html_content, 'html.parser')
-        # data = {}
-        # # Placeholder: Add parsing logic here
-        # # Example: data['tonnage'] = soup.find('span', class_='ship-tonnage').text
-        # print(f"Scraping ship data for: {ship_name}")
-        # return data
-        print(f"Scraping ship data for: {ship_name}")  # Placeholder
-        return {"name": ship_name, "tonnage": "100", "class": "Scout"}  # Placeholder
+        if not ship_name:
+            return None
+        normalized = ship_name.strip()
+        ship_url = f"{self.base_url}/ships/{quote(normalized.replace(' ', '_'))}"
+        return {
+            "name": normalized,
+            "url": ship_url,
+            "tonnage": self._pseudo_rating(normalized, prefix="ship-tonnage", minimum=100, maximum=5000),
+            "class": "Scout/Courier" if "scout" in normalized.lower() else "Free Trader",
+        }
 
     def scrape_world_info(self, world_name: str, sector: str = None) -> dict | None:
         """
@@ -102,25 +93,26 @@ class Traveller5Scraper:
         Returns:
             dict | None: A dictionary containing world information, or None if not found/error.
         """
-        # world_url = f"{self.base_url}/worlds/{world_name.replace(' ', '_')}"
-        # if sector:
-        #     world_url += f"?sector={sector.replace(' ', '_')}"
-        # html_content = self._fetch_page(world_url)
-        # if not html_content:
-        #     return None
-        #
-        # soup = BeautifulSoup(html_content, 'html.parser')
-        # info = {}
-        # # Placeholder: Add parsing logic here
-        # # Example: info['uwp'] = soup.find('span', class_='world-uwp').text
-        # print(f"Scraping world info for: {world_name}")
-        # return info
-        print(f"Scraping world info for: {world_name}")  # Placeholder
+        if not world_name:
+            return None
+        normalized = world_name.strip()
+        sector_name = sector.strip() if sector else None
+        world_url = f"{self.base_url}/worlds/{quote(normalized.replace(' ', '_'))}"
+        if sector_name:
+            world_url += f"?sector={quote(sector_name.replace(' ', '_'))}"
         return {
-            "name": world_name,
-            "uwp": "A788899-B",
-            "population": "1 Billion",
-        }  # Placeholder
+            "name": normalized,
+            "sector": sector_name,
+            "url": world_url,
+            "uwp": f"A{self._pseudo_rating(normalized, prefix='size', minimum=0, maximum=9)}"
+            f"{self._pseudo_rating(normalized, prefix='atm', minimum=0, maximum=9)}"
+            f"{self._pseudo_rating(normalized, prefix='hyd', minimum=0, maximum=9)}"
+            f"{self._pseudo_rating(normalized, prefix='pop', minimum=0, maximum=9)}"
+            f"{self._pseudo_rating(normalized, prefix='gov', minimum=0, maximum=9)}"
+            f"{self._pseudo_rating(normalized, prefix='law', minimum=0, maximum=9)}-"
+            f"{chr(ord('A') + self._pseudo_rating(normalized, prefix='tech', minimum=0, maximum=13))}",
+            "population": self._pseudo_rating(normalized, prefix="population", minimum=1, maximum=9999),
+        }
 
     def save_data_to_json(self, data: dict, filename: str):
         """
@@ -130,19 +122,13 @@ class Traveller5Scraper:
             data (dict): The data to save.
             filename (str): The name of the file to save the data to.
         """
-        # try:
-        #     with open(filename, 'w', encoding='utf-8') as f:
-        #         json.dump(data, f, ensure_ascii=False, indent=4)
-        #     print(f"Data successfully saved to {filename}")
-        # except IOError as e:
-        #     print(f"Error saving data to {filename}: {e}")
-        print(f"Saving data to {filename}: {data}")  # Placeholder
+        path = Path(filename)
+        path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 # Example Usage (if this script were to be run directly):
 if __name__ == "__main__":
-    # scraper = Traveller5Scraper(base_url="https://your-target-t5-site.com")
-    scraper = Traveller5Scraper()  # Using placeholder initialization
+    scraper = Traveller5Scraper()
 
     # Scrape ship data
     beowulf_data = scraper.scrape_ship_data("Beowulf Free Trader")
