@@ -44,6 +44,7 @@ import json  # JSON file handling
 import logging  # Application logging
 import os  # Operating system interface
 import re
+import shlex
 import shutil  # File operations
 import socket
 import subprocess  # Process execution
@@ -189,6 +190,13 @@ DEFAULT_0101_REMOTE_TARGET = "me@p48"
 DEFAULT_0101_REMOTE_LOG_PATH = "/tmp/crew-0101-server.log"
 DEFAULT_0101_LOCAL_LOG_PATH = "/tmp/crew-0101-local-server.log"
 DEFAULT_0101_URL = "http://localhost:8080/0101.html"
+DEFAULT_0101_SYNC_EXCLUDES = [
+    ".git/",
+    "__pycache__/",
+    ".pytest_cache/",
+    ".ruff_cache/",
+    ".mypy_cache/",
+]
 DARK_WINDOW_BG = "#0d1117"
 DARK_PANEL_BG = "#161b22"
 DARK_INPUT_BG = "#21262d"
@@ -853,7 +861,6 @@ class CrewGUI:
                 self.tts_engine = pyttsx3.init()
                 self.tts_engine.setProperty("rate", 150)
                 self.tts_engine.setProperty("volume", 0.8)
-                self.tts_engine.setProperty("voice", "english")
                 self.tts_available = True
             except Exception as e:
                 self.tts_engine = None
@@ -863,6 +870,8 @@ class CrewGUI:
             # Centralized STT initialization
             self.stt_available = False
             self.stt_recognizer = None
+            self.selected_mic_index = None
+            self.selected_mic_name = ""
             try:
                 import pyaudio
                 import speech_recognition as sr
@@ -930,6 +939,8 @@ class CrewGUI:
             self.create_menu_bar()
 
             self.config = Config()
+            self._load_tts_settings()
+            self._load_stt_settings()
             self.setup_logging()  # os is used here, but this line is commented out
             self.setup_state()
             self.create_main_layout()
@@ -1224,15 +1235,12 @@ class CrewGUI:
 
     def _launch_remote_0101_server(self) -> Tuple[str, str]:
         """Return the remote launch status and URL for the 0101 server."""
-        remote_candidates = " ".join(f"'{path}'" for path in DEFAULT_0101_SERVER_PATHS)
+        remote_server_path = self._sync_0101_project_to_remote()
         remote_command = (
             "host_ip=$(hostname -I 2>/dev/null | awk '{print $1}'); "
-            "server_path=''; "
-            f"for candidate in {remote_candidates}; do "
-            'if [ -f "$candidate" ]; then server_path="$candidate"; break; fi; '
-            "done; "
-            'if [ -z "$server_path" ]; then '
-            f"echo 'missing:{DEFAULT_0101_SERVER_PATHS[0]}'; "
+            f"server_path={shlex.quote(remote_server_path)}; "
+            'if [ ! -f "$server_path" ]; then '
+            'echo "missing:$server_path"; '
             "elif ss -ltn 2>/dev/null | grep -q ':8080 '; then "
             'echo "running|$server_path|$host_ip"; '
             "else "
@@ -1262,6 +1270,96 @@ class CrewGUI:
         status, _, remote_host = (outcome.split("|", 2) + ["", ""])[:3]
         browser_host = remote_host or "p48"
         return status, f"http://{browser_host}:8080/0101.html"
+
+    def _build_remote_ssh_command(self, remote_command: str) -> list[str]:
+        """Build a consistent SSH command for remote 0101 actions."""
+        return [
+            "ssh",
+            "-o",
+            "BatchMode=yes",
+            "-o",
+            "ConnectTimeout=5",
+            DEFAULT_0101_REMOTE_TARGET,
+            remote_command,
+        ]
+
+    def _find_local_0101_project_root(self) -> Path:
+        """Return the local 0101 project root that contains server.py."""
+        return Path(self._find_0101_server_path()).resolve().parents[2]
+
+    def _resolve_remote_0101_server_path(self) -> str:
+        """Return the remote server.py path to update and launch."""
+        remote_candidates = " ".join(
+            shlex.quote(path) for path in DEFAULT_0101_SERVER_PATHS
+        )
+        resolve_command = (
+            "server_path=''; "
+            f"for candidate in {remote_candidates}; do "
+            'if [ -f "$candidate" ]; then server_path="$candidate"; break; fi; '
+            "done; "
+            'if [ -z "$server_path" ]; then '
+            f"printf '%s' {shlex.quote(DEFAULT_0101_SERVER_PATHS[0])}; "
+            "else "
+            'printf "%s" "$server_path"; '
+            "fi"
+        )
+        result = subprocess.run(
+            self._build_remote_ssh_command(resolve_command),
+            capture_output=True,
+            text=True,
+            timeout=15,
+            check=True,
+        )
+        return result.stdout.strip() or DEFAULT_0101_SERVER_PATHS[0]
+
+    def _sync_0101_project_to_remote(self) -> str:
+        """Sync the local 0101 project to p48 before remote launch."""
+        if shutil.which("rsync") is None:
+            raise FileNotFoundError("rsync is required for remote 0101 updates.")
+
+        local_project_root = self._find_local_0101_project_root()
+        remote_server_path = self._resolve_remote_0101_server_path()
+        remote_project_root = str(Path(remote_server_path).parent.parent.parent)
+
+        subprocess.run(
+            self._build_remote_ssh_command(
+                f"mkdir -p {shlex.quote(remote_project_root)}"
+            ),
+            capture_output=True,
+            text=True,
+            timeout=15,
+            check=True,
+        )
+
+        rsync_command = [
+            "rsync",
+            "-az",
+            "--delete",
+            "-e",
+            "ssh -o BatchMode=yes -o ConnectTimeout=5",
+        ]
+        for pattern in DEFAULT_0101_SYNC_EXCLUDES:
+            rsync_command.extend(["--exclude", pattern])
+        rsync_command.extend(
+            [
+                f"{local_project_root}/",
+                f"{DEFAULT_0101_REMOTE_TARGET}:{remote_project_root}/",
+            ]
+        )
+        subprocess.run(
+            rsync_command,
+            capture_output=True,
+            text=True,
+            timeout=60,
+            check=True,
+        )
+        logging.info(
+            "Synced local 0101 project %s to %s:%s before remote launch.",
+            local_project_root,
+            DEFAULT_0101_REMOTE_TARGET,
+            remote_project_root,
+        )
+        return remote_server_path
 
     def _launch_local_0101_server(self) -> Tuple[str, str]:
         """Return the local launch status and URL for the 0101 server."""
@@ -1770,8 +1868,15 @@ class CrewGUI:
                             entry_widget.insert(0, "Listening...")
                             parent_win.update()
                             try:
+                                self._prepare_stt_source(recognizer, source)
                                 audio = recognizer.listen(
-                                    source, timeout=5, phrase_time_limit=8
+                                    source,
+                                    timeout=self._get_stt_setting(
+                                        "listen_timeout", 5.0
+                                    ),
+                                    phrase_time_limit=self._get_stt_setting(
+                                        "phrase_time_limit", 8.0
+                                    ),
                                 )
                             except Exception as listen_err:
                                 entry_widget.config(state="normal")
@@ -1785,7 +1890,7 @@ class CrewGUI:
                             entry_widget.insert(0, "Recognizing...")
                             parent_win.update()
                             try:
-                                text = recognizer.recognize_google(audio)
+                                text = self._recognize_stt_audio(recognizer, audio)
                                 entry_widget.delete(0, tk.END)
                                 entry_widget.insert(0, text)
                                 status_var.set("Voice recognized.")
@@ -2515,11 +2620,18 @@ class CrewGUI:
                         entry_widget.delete(0, tk.END)
                         entry_widget.insert(0, "Listening...")
                         parent_win.update()
-                        audio = recognizer.listen(src, timeout=5, phrase_time_limit=8)
+                        self._prepare_stt_source(recognizer, src)
+                        audio = recognizer.listen(
+                            src,
+                            timeout=self._get_stt_setting("listen_timeout", 5.0),
+                            phrase_time_limit=self._get_stt_setting(
+                                "phrase_time_limit", 8.0
+                            ),
+                        )
                         entry_widget.delete(0, tk.END)
                         entry_widget.insert(0, "Recognizing...")
                         parent_win.update()
-                        text = recognizer.recognize_google(audio)
+                        text = self._recognize_stt_audio(recognizer, audio)
                         entry_widget.delete(0, tk.END)
                         entry_widget.insert(0, text)
                         status_var.set("Voice recognized.")
@@ -2835,8 +2947,7 @@ class CrewGUI:
             anchor="w", padx=10, pady=(10, 0)
         )
         # Determine current selection
-        current_idx = getattr(self, "selected_mic_index", 0) if mics else 0
-        current_idx = current_idx if 0 <= current_idx < len(mics) else 0
+        current_idx = self._resolve_selected_microphone_index(mics)
         mic_var = tk.StringVar(value=mics[current_idx] if mics else "")
         if mics:
             from tkinter import ttk
@@ -2862,6 +2973,8 @@ class CrewGUI:
             if selected in mics:
                 idx = mics.index(selected)
                 self.selected_mic_index = idx
+                self.selected_mic_name = selected
+                self._save_stt_settings(selected, idx)
                 messagebox.showinfo(
                     "Microphone Selected", f"Selected: {selected}", parent=win
                 )
@@ -2980,11 +3093,7 @@ class CrewGUI:
             )
             self.update_status("No microphone detected. Recording aborted.", error=True)
             return
-        selected_idx = (
-            getattr(self, "selected_mic_index", 0)
-            if hasattr(self, "selected_mic_index")
-            else 0
-        )
+        selected_idx = self._resolve_selected_microphone_index(input_mics)
         selected_idx = selected_idx if 0 <= selected_idx < len(input_mics) else 0
         mic_var = tk.StringVar(value=input_mics[selected_idx])
         win = tk.Toplevel(self.root)
@@ -3013,6 +3122,8 @@ class CrewGUI:
             if selected in input_mics:
                 idx = input_mics.index(selected)
                 self.selected_mic_index = mic_indices[idx]
+                self.selected_mic_name = selected
+                self._save_stt_settings(selected, self.selected_mic_index)
                 win.destroy()
                 self._start_recording_with_device(selected)
             else:
@@ -3189,68 +3300,7 @@ class CrewGUI:
                 subprocess.run(["xdg-open", doc_dir])
 
     def show_speech_settings_dialog(self):
-        if (
-            not TTS_AVAILABLE
-            or not hasattr(self, "tts_engine")
-            or self.tts_engine is None
-        ):
-            # messagebox already imported at the top
-            messagebox.showerror(
-                "Speech Settings", "Text-to-speech engine is not available."
-            )
-            return
-        win = tk.Toplevel(self.root)
-        win.title("Speech Settings")
-        win.geometry("350x250")
-        win.resizable(False, False)
-        # Voice selection
-        tk.Label(win, text="Voice:").pack(anchor="w", padx=10, pady=(10, 0))
-        voices = self.tts_engine.getProperty("voices")
-        voice_names = [v.name for v in voices]
-        voice_var = tk.StringVar(value=self.tts_engine.getProperty("voice"))
-        voice_map = {v.id: v.name for v in voices}
-        id_to_voice = {v.name: v.id for v in voices}
-        current_voice_name = next(
-            (v.name for v in voices if v.id == self.tts_engine.getProperty("voice")),
-            voice_names[0],
-        )
-        voice_dropdown = tk.OptionMenu(win, voice_var, *voice_names)
-        voice_var.set(current_voice_name)
-        voice_dropdown.pack(fill="x", padx=10)
-        # Rate
-        tk.Label(win, text="Rate:").pack(anchor="w", padx=10, pady=(10, 0))
-        rate_var = tk.IntVar(value=self.tts_engine.getProperty("rate"))
-        rate_scale = tk.Scale(
-            win, from_=80, to=300, orient="horizontal", variable=rate_var
-        )
-        rate_scale.pack(fill="x", padx=10)
-        # Volume
-        tk.Label(win, text="Volume:").pack(anchor="w", padx=10, pady=(10, 0))
-        volume_var = tk.DoubleVar(value=self.tts_engine.getProperty("volume"))
-        volume_scale = tk.Scale(
-            win,
-            from_=0.0,
-            to=1.0,
-            resolution=0.01,
-            orient="horizontal",
-            variable=volume_var,
-        )
-        volume_scale.pack(fill="x", padx=10)
-
-        # Save button
-        def save_settings():
-            # Set voice
-            selected_voice_name = voice_var.get()
-            selected_voice_id = id_to_voice.get(selected_voice_name, voices[0].id)
-            self.tts_engine.setProperty("voice", selected_voice_id)
-            # Set rate
-            self.tts_engine.setProperty("rate", rate_var.get())
-            # Set volume
-            self.tts_engine.setProperty("volume", volume_var.get())
-            win.destroy()
-
-        tk.Button(win, text="Save", command=save_settings).pack(pady=15)
-        self._apply_dark_theme(win)
+        return self._show_speech_settings()
 
     def show_quick_start(self):
         msg = (
@@ -4476,68 +4526,87 @@ class CrewGUI:
         except Exception as e:
             logging.error(f"Error reading item type: {e}")
 
-    def _show_speech_settings(self) -> None:
-        """Show TTS configuration dialog with improved sizing"""
+    def _show_speech_settings(self) -> Optional[tk.Toplevel]:
+        """Show the main speech settings dialog for both TTS and STT."""
         if not TTS_AVAILABLE or not self.tts_engine:
             messagebox.showinfo(
                 "TTS Not Available", "Text-to-speech functionality is not available."
             )
-            return
+            return None
 
         try:
-            import tkinter.ttk as ttk
-
             settings_window = tk.Toplevel(self.root)
             settings_window.title("Speech Settings")
-
-            # Improved sizing for RPi5 and better content fit
-            settings_window.geometry("500x450")  # Increased from 400x300
-            settings_window.minsize(450, 400)  # Set minimum size
-            settings_window.resizable(True, True)  # Allow resizing
-
+            settings_window.geometry("560x620")
+            settings_window.minsize(520, 560)
+            settings_window.resizable(True, True)
             settings_window.transient(self.root)
             settings_window.grab_set()
-
-            # Center the window on the parent
             settings_window.geometry(
                 "+%d+%d" % (self.root.winfo_rootx() + 50, self.root.winfo_rooty() + 50)
             )
 
-            # Create main frame with scrollbar support
             main_frame = ttk.Frame(settings_window)
             main_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
-            # Voice selection section
+            voice_profiles = self._get_tts_voice_profiles()
+            voice_labels = [profile["label"] for profile in voice_profiles] or [
+                "Default"
+            ]
+            voice_profiles_by_label = {
+                profile["label"]: profile for profile in voice_profiles
+            }
+            current_voice_profile = self._find_tts_voice_profile(
+                self.tts_engine.getProperty("voice")
+            )
+
             voice_frame = ttk.LabelFrame(
                 main_frame, text="Voice Selection", padding="10"
             )
             voice_frame.pack(fill="x", pady=(0, 10))
-
             ttk.Label(voice_frame, text="Available Voices:").pack(
                 anchor="w", pady=(0, 5)
             )
-            voices = self.tts_engine.getProperty("voices")
-            voice_names = [voice.name for voice in voices] if voices else ["Default"]
 
-            voice_var = tk.StringVar()
-            current_voice = self.tts_engine.getProperty("voice")
-            for voice in voices:
-                if voice.id == current_voice:
-                    voice_var.set(voice.name)
-                    break
-            else:
-                voice_var.set(voice_names[0] if voice_names else "Default")
-
+            voice_var = tk.StringVar(
+                value=(
+                    current_voice_profile["label"]
+                    if current_voice_profile
+                    else (voice_labels[0] if voice_labels else "Default")
+                )
+            )
             voice_combo = ttk.Combobox(
                 voice_frame,
                 textvariable=voice_var,
-                values=voice_names,
+                values=voice_labels,
                 state="readonly",
-                width=50,  # Increased width
+                width=50,
             )
             voice_combo.pack(fill="x", pady=(0, 10))
 
-            # Female voice preference
+            voice_details_var = tk.StringVar()
+
+            def update_voice_details(*_args):
+                selected_profile = voice_profiles_by_label.get(voice_var.get())
+                if not selected_profile:
+                    voice_details_var.set("Voice details unavailable.")
+                    return
+                languages = ", ".join(selected_profile["languages"]) or "Unknown"
+                voice_details_var.set(
+                    f"Voice ID: {selected_profile['id']} | "
+                    f"Language: {languages} | "
+                    f"Gender guess: {selected_profile['gender'].title()}"
+                )
+
+            ttk.Label(
+                voice_frame,
+                textvariable=voice_details_var,
+                foreground=DARK_MUTED_TEXT,
+                wraplength=500,
+            ).pack(anchor="w", pady=(0, 10))
+            update_voice_details()
+            voice_combo.bind("<<ComboboxSelected>>", update_voice_details)
+
             female_voice_var = tk.BooleanVar()
             ttk.Checkbutton(
                 voice_frame,
@@ -4545,22 +4614,18 @@ class CrewGUI:
                 variable=female_voice_var,
             ).pack(anchor="w")
 
-            # Speech controls section
             controls_frame = ttk.LabelFrame(
                 main_frame, text="Speech Controls", padding="10"
             )
             controls_frame.pack(fill="x", pady=(0, 10))
 
-            # Speed control with better layout
             speed_frame = ttk.Frame(controls_frame)
             speed_frame.pack(fill="x", pady=(0, 10))
-
             ttk.Label(speed_frame, text="Speaking Speed:").pack(anchor="w")
-            speed_var = tk.IntVar(value=self.tts_engine.getProperty("rate"))
+            speed_var = tk.IntVar(value=int(self.tts_engine.getProperty("rate")))
 
             speed_control_frame = ttk.Frame(speed_frame)
             speed_control_frame.pack(fill="x", pady=(5, 0))
-
             ttk.Label(speed_control_frame, text="Slow").pack(side="left")
             speed_scale = ttk.Scale(
                 speed_control_frame,
@@ -4572,27 +4637,26 @@ class CrewGUI:
             speed_scale.pack(side="left", fill="x", expand=True, padx=(10, 10))
             ttk.Label(speed_control_frame, text="Fast").pack(side="right")
 
-            # Speed value display
             speed_value_label = ttk.Label(
-                speed_frame, text=f"Current: {speed_var.get()} WPM"
+                speed_frame, text=f"Current: {int(speed_var.get())} WPM"
             )
             speed_value_label.pack(anchor="w", pady=(5, 0))
+            speed_var.trace(
+                "w",
+                lambda *_args: speed_value_label.config(
+                    text=f"Current: {int(speed_var.get())} WPM"
+                ),
+            )
 
-            def update_speed_label(*args):
-                speed_value_label.config(text=f"Current: {int(speed_var.get())} WPM")
-
-            speed_var.trace("w", update_speed_label)
-
-            # Volume control with better layout
             volume_frame = ttk.Frame(controls_frame)
             volume_frame.pack(fill="x")
-
             ttk.Label(volume_frame, text="Volume:").pack(anchor="w")
-            volume_var = tk.DoubleVar(value=self.tts_engine.getProperty("volume"))
+            volume_var = tk.DoubleVar(
+                value=float(self.tts_engine.getProperty("volume"))
+            )
 
             volume_control_frame = ttk.Frame(volume_frame)
             volume_control_frame.pack(fill="x", pady=(5, 0))
-
             ttk.Label(volume_control_frame, text="Quiet").pack(side="left")
             volume_scale = ttk.Scale(
                 volume_control_frame,
@@ -4604,102 +4668,178 @@ class CrewGUI:
             volume_scale.pack(side="left", fill="x", expand=True, padx=(10, 10))
             ttk.Label(volume_control_frame, text="Loud").pack(side="right")
 
-            # Volume value display
             volume_value_label = ttk.Label(
                 volume_frame, text=f"Current: {int(volume_var.get() * 100)}%"
             )
             volume_value_label.pack(anchor="w", pady=(5, 0))
-
-            def update_volume_label(*args):
-                volume_value_label.config(
+            volume_var.trace(
+                "w",
+                lambda *_args: volume_value_label.config(
                     text=f"Current: {int(volume_var.get() * 100)}%"
-                )
+                ),
+            )
 
-            volume_var.trace("w", update_volume_label)
+            stt_settings = self._get_stt_settings()
+            recognition_frame = ttk.LabelFrame(
+                main_frame, text="Speech Recognition", padding="10"
+            )
+            recognition_frame.pack(fill="x", pady=(0, 10))
 
-            # Test and action buttons
+            selected_mic = (
+                getattr(self, "selected_mic_name", "") or "Default microphone"
+            )
+            ttk.Label(
+                recognition_frame,
+                text=f"Selected microphone: {selected_mic}",
+                foreground=DARK_MUTED_TEXT,
+            ).pack(anchor="w", pady=(0, 10))
+
+            listen_timeout_var = tk.DoubleVar(
+                value=float(stt_settings.get("listen_timeout", 5.0))
+            )
+            phrase_time_limit_var = tk.DoubleVar(
+                value=float(stt_settings.get("phrase_time_limit", 8.0))
+            )
+            energy_threshold_var = tk.IntVar(
+                value=int(stt_settings.get("energy_threshold", 300))
+            )
+            dynamic_energy_var = tk.BooleanVar(
+                value=bool(stt_settings.get("dynamic_energy_threshold", True))
+            )
+            ambient_noise_var = tk.BooleanVar(
+                value=bool(stt_settings.get("adjust_for_ambient_noise", False))
+            )
+
+            timeout_frame = ttk.Frame(recognition_frame)
+            timeout_frame.pack(fill="x", pady=(0, 8))
+            ttk.Label(timeout_frame, text="Listen timeout (s):").pack(side="left")
+            ttk.Spinbox(
+                timeout_frame,
+                from_=1.0,
+                to=60.0,
+                increment=0.5,
+                textvariable=listen_timeout_var,
+                width=8,
+            ).pack(side="right")
+
+            phrase_frame = ttk.Frame(recognition_frame)
+            phrase_frame.pack(fill="x", pady=(0, 8))
+            ttk.Label(phrase_frame, text="Phrase limit (s):").pack(side="left")
+            ttk.Spinbox(
+                phrase_frame,
+                from_=1.0,
+                to=120.0,
+                increment=0.5,
+                textvariable=phrase_time_limit_var,
+                width=8,
+            ).pack(side="right")
+
+            energy_frame = ttk.Frame(recognition_frame)
+            energy_frame.pack(fill="x", pady=(0, 8))
+            ttk.Label(energy_frame, text="Energy threshold:").pack(side="left")
+            ttk.Spinbox(
+                energy_frame,
+                from_=50,
+                to=5000,
+                increment=25,
+                textvariable=energy_threshold_var,
+                width=8,
+            ).pack(side="right")
+
+            ttk.Checkbutton(
+                recognition_frame,
+                text="Dynamic energy threshold",
+                variable=dynamic_energy_var,
+            ).pack(anchor="w")
+            ttk.Checkbutton(
+                recognition_frame,
+                text="Adjust for ambient noise before listening",
+                variable=ambient_noise_var,
+            ).pack(anchor="w", pady=(4, 0))
+
             button_frame = ttk.Frame(main_frame)
             button_frame.pack(fill="x", pady=(10, 0))
 
-            # Test button with better feedback
             def test_voice():
                 try:
                     settings_window.config(cursor="watch")
                     settings_window.update()
 
-                    # Apply current settings temporarily for test
+                    original_voice = self.tts_engine.getProperty("voice")
                     original_rate = self.tts_engine.getProperty("rate")
                     original_volume = self.tts_engine.getProperty("volume")
+                    selected_profile = voice_profiles_by_label.get(voice_var.get())
 
+                    if selected_profile:
+                        self.tts_engine.setProperty("voice", selected_profile["id"])
                     self.tts_engine.setProperty("rate", int(speed_var.get()))
-                    self.tts_engine.setProperty("volume", volume_var.get())
-
-                    test_text = "This is a test of the current speech settings. How does this sound?"
-                    self.tts_engine.say(test_text)
+                    self.tts_engine.setProperty("volume", float(volume_var.get()))
+                    self.tts_engine.say(
+                        "This is a test of the current speech settings. How does this sound?"
+                    )
                     self.tts_engine.runAndWait()
 
-                    # Restore original settings
+                    self.tts_engine.setProperty("voice", original_voice)
                     self.tts_engine.setProperty("rate", original_rate)
                     self.tts_engine.setProperty("volume", original_volume)
-
                 except Exception as e:
                     messagebox.showerror("Test Error", f"Failed to test voice: {e}")
                 finally:
                     settings_window.config(cursor="")
 
-            test_btn = ttk.Button(
+            ttk.Button(
                 button_frame, text="🔊 Test Voice", command=test_voice, width=20
-            )
-            test_btn.pack(pady=(0, 10))
+            ).pack(pady=(0, 10))
 
-            # Apply and Cancel buttons
             action_frame = ttk.Frame(button_frame)
             action_frame.pack(fill="x")
 
-            # Create voice mapping dictionary
-            voice_mapping = {}
-            if voices:
-                for voice in voices:
-                    display_name = voice.name if voice.name else f"Voice {voice.id}"
-                    voice_mapping[display_name] = voice
-
             def apply_settings():
                 try:
-                    # Handle voice selection with female preference
+                    selected_profile = voice_profiles_by_label.get(voice_var.get())
                     if female_voice_var.get():
-                        # User wants female voice - try to find one
-                        logging.info("Attempting to set female voice")
-                        if not self.setup_female_voice(self.tts_engine):
-                            # No female voice found, show warning
+                        selected_profile = self._find_preferred_tts_voice(
+                            voice_profiles,
+                            preferred_gender="female",
+                            fallback_id=(
+                                selected_profile["id"] if selected_profile else None
+                            ),
+                        )
+                        if selected_profile is None:
                             messagebox.showwarning(
                                 "Female Voice",
-                                "No female voice detected. Using selected voice instead.",
+                                "No female voice detected. Using the selected voice instead.",
                             )
-                            # Use selected voice as fallback
-                            selected_voice = voice_var.get()
-                            for voice in voices:
-                                if voice.name == selected_voice:
-                                    self.tts_engine.setProperty("voice", voice.id)
-                                    logging.info(
-                                        f"Female voice not found, using selected: {voice.name}"
-                                    )
-                                    break
-                    else:
-                        # User wants specific voice
-                        selected_voice = voice_var.get()
-                        for voice in voices:
-                            if voice.name == selected_voice:
-                                self.tts_engine.setProperty("voice", voice.id)
-                                logging.info(f"Voice set to: {voice.name}")
-                                break
+                            selected_profile = voice_profiles_by_label.get(
+                                voice_var.get()
+                            )
 
-                    # Set speed and volume
+                    if selected_profile:
+                        self.tts_engine.setProperty("voice", selected_profile["id"])
                     self.tts_engine.setProperty("rate", int(speed_var.get()))
-                    self.tts_engine.setProperty("volume", volume_var.get())
+                    self.tts_engine.setProperty("volume", float(volume_var.get()))
 
-                    # Save settings
-                    if hasattr(self, "config"):
-                        self._save_tts_settings()
+                    if self.stt_recognizer:
+                        self.stt_recognizer.energy_threshold = int(
+                            energy_threshold_var.get()
+                        )
+                        self.stt_recognizer.dynamic_energy_threshold = bool(
+                            dynamic_energy_var.get()
+                        )
+                    stt_settings = self._get_stt_settings()
+                    stt_settings.update(
+                        {
+                            "listen_timeout": float(listen_timeout_var.get()),
+                            "phrase_time_limit": float(phrase_time_limit_var.get()),
+                            "energy_threshold": int(energy_threshold_var.get()),
+                            "dynamic_energy_threshold": bool(dynamic_energy_var.get()),
+                            "adjust_for_ambient_noise": bool(ambient_noise_var.get()),
+                        }
+                    )
+                    self.config.set("stt_settings", stt_settings)
+                    self._save_stt_settings()
+                    self._load_stt_settings()
+                    self._save_tts_settings()
 
                     settings_window.destroy()
                     self.update_status("Speech settings applied successfully")
@@ -4707,33 +4847,30 @@ class CrewGUI:
                         "Settings Applied",
                         "Speech settings have been saved and applied.",
                     )
-
                 except Exception as e:
                     logging.error(f"Error applying speech settings: {e}")
                     messagebox.showerror("Error", f"Failed to apply settings: {e}")
 
-            def cancel_settings():
-                settings_window.destroy()
-
             ttk.Button(
                 action_frame, text="✓ Apply & Save", command=apply_settings, width=15
             ).pack(side="left", padx=(0, 10))
-
             ttk.Button(
-                action_frame, text="✗ Cancel", command=cancel_settings, width=15
+                action_frame,
+                text="✗ Cancel",
+                command=settings_window.destroy,
+                width=15,
             ).pack(side="left")
 
-            # Add keyboard shortcuts
-            settings_window.bind("<Return>", lambda e: apply_settings())
-            settings_window.bind("<Escape>", lambda e: cancel_settings())
-
-            # Focus on the voice combo box
+            settings_window.bind("<Return>", lambda _event: apply_settings())
+            settings_window.bind("<Escape>", lambda _event: settings_window.destroy())
             self._apply_dark_theme(settings_window)
             voice_combo.focus_set()
+            return settings_window
 
         except Exception as e:
             logging.error(f"Error showing speech settings: {e}")
             messagebox.showerror("Error", f"Failed to open speech settings: {e}")
+            return None
 
     def _save_speech_to_file(self) -> None:
         """Save current text content as audio file"""
@@ -5616,18 +5753,216 @@ class CrewGUI:
     def _load_tts_settings(self) -> None:
         """Load TTS settings from configuration"""
         try:
-            if hasattr(self, "tts_engine") and self.tts_engine:
+            if (
+                hasattr(self, "config")
+                and hasattr(self, "tts_engine")
+                and self.tts_engine
+            ):
                 tts_settings = self.config.get("tts_settings", {})
                 if tts_settings:
-                    if "voice" in tts_settings:
+                    if "voice" in tts_settings and tts_settings["voice"] != "default":
                         self.tts_engine.setProperty("voice", tts_settings["voice"])
                     if "rate" in tts_settings:
-                        self.tts_engine.setProperty("rate", tts_settings["rate"])
+                        rate = tts_settings["rate"]
+                        if isinstance(rate, (int, float)) and 0 < rate <= 10:
+                            rate = int(rate * 100)
+                        self.tts_engine.setProperty("rate", int(rate))
                     if "volume" in tts_settings:
-                        self.tts_engine.setProperty("volume", tts_settings["volume"])
+                        self.tts_engine.setProperty(
+                            "volume", float(tts_settings["volume"])
+                        )
                     logging.info("TTS settings loaded successfully")
         except Exception as e:
             logging.error(f"Error loading TTS settings: {e}")
+
+    def _normalize_tts_voice_languages(self, voice: Any) -> list[str]:
+        """Return readable language tags for a pyttsx3 voice."""
+        normalized = []
+        for language in getattr(voice, "languages", []) or []:
+            if isinstance(language, bytes):
+                language = language.decode("utf-8", "ignore")
+            language_text = str(language).strip().lstrip("\x05").replace("_", "-")
+            if language_text:
+                normalized.append(language_text)
+        return normalized
+
+    def _guess_tts_voice_gender(self, voice: Any) -> str:
+        """Return a best-effort gender guess for a voice."""
+        voice_text = f"{getattr(voice, 'name', '')} {getattr(voice, 'id', '')}".lower()
+        if any(token in voice_text for token in ("female", "woman", "zira", "hazel")):
+            return "female"
+        if any(token in voice_text for token in ("male", "man", "david", "mark")):
+            return "male"
+        return "unknown"
+
+    def _get_tts_voice_profiles(self) -> list[dict[str, Any]]:
+        """Build rich metadata for the available TTS voices."""
+        if not self.tts_engine:
+            return []
+
+        profiles = []
+        for voice in self.tts_engine.getProperty("voices") or []:
+            languages = self._normalize_tts_voice_languages(voice)
+            gender = self._guess_tts_voice_gender(voice)
+            label = getattr(voice, "name", None) or f"Voice {getattr(voice, 'id', '')}"
+            details = []
+            if languages:
+                details.append(", ".join(languages))
+            if gender != "unknown":
+                details.append(gender.title())
+            if details:
+                label = f"{label} ({' | '.join(details)})"
+            profiles.append(
+                {
+                    "id": getattr(voice, "id", ""),
+                    "name": getattr(voice, "name", "") or "Unnamed voice",
+                    "languages": languages,
+                    "gender": gender,
+                    "label": label,
+                }
+            )
+        return profiles
+
+    def _find_tts_voice_profile(self, voice_id: str | None) -> Optional[dict[str, Any]]:
+        """Return the voice profile matching a voice id."""
+        if not voice_id:
+            return None
+        for profile in self._get_tts_voice_profiles():
+            if profile["id"] == voice_id:
+                return profile
+        return None
+
+    def _find_preferred_tts_voice(
+        self,
+        voice_profiles: list[dict[str, Any]],
+        preferred_gender: str,
+        fallback_id: str | None = None,
+    ) -> Optional[dict[str, Any]]:
+        """Find the first preferred voice, or fall back to the selected/current one."""
+        for profile in voice_profiles:
+            if profile["gender"] == preferred_gender:
+                return profile
+        if fallback_id:
+            for profile in voice_profiles:
+                if profile["id"] == fallback_id:
+                    return profile
+        return voice_profiles[0] if voice_profiles else None
+
+    def _default_stt_settings(self) -> dict[str, Any]:
+        """Return default speech-recognition settings."""
+        return {
+            "selected_microphone_name": "",
+            "selected_microphone_index": -1,
+            "energy_threshold": 300,
+            "dynamic_energy_threshold": True,
+            "pause_threshold": 0.8,
+            "non_speaking_duration": 0.5,
+            "listen_timeout": 5.0,
+            "phrase_time_limit": 8.0,
+            "adjust_for_ambient_noise": False,
+            "ambient_noise_duration": 0.5,
+        }
+
+    def _get_stt_settings(self) -> dict[str, Any]:
+        """Return STT settings merged with defaults."""
+        settings = self._default_stt_settings()
+        if hasattr(self, "config"):
+            settings.update(self.config.get("stt_settings", {}))
+        return settings
+
+    def _get_stt_setting(self, key: str, default: Any) -> Any:
+        """Return a single STT setting."""
+        return self._get_stt_settings().get(key, default)
+
+    def _apply_stt_settings(self) -> None:
+        """Apply stored STT settings to the active recognizer."""
+        settings = self._get_stt_settings()
+        selected_index = int(settings.get("selected_microphone_index", -1))
+        self.selected_mic_index = selected_index if selected_index >= 0 else None
+        self.selected_mic_name = settings.get("selected_microphone_name", "")
+        if self.stt_recognizer:
+            self.stt_recognizer.energy_threshold = int(
+                settings.get("energy_threshold", 300)
+            )
+            self.stt_recognizer.dynamic_energy_threshold = bool(
+                settings.get("dynamic_energy_threshold", True)
+            )
+            self.stt_recognizer.pause_threshold = float(
+                settings.get("pause_threshold", 0.8)
+            )
+            self.stt_recognizer.non_speaking_duration = float(
+                settings.get("non_speaking_duration", 0.5)
+            )
+
+    def _load_stt_settings(self) -> None:
+        """Load STT settings from configuration."""
+        try:
+            if hasattr(self, "config"):
+                self._apply_stt_settings()
+        except Exception as e:
+            logging.error(f"Error loading STT settings: {e}")
+
+    def _save_stt_settings(
+        self,
+        microphone_name: Optional[str] = None,
+        microphone_index: Optional[int] = None,
+    ) -> None:
+        """Save current STT settings to configuration."""
+        try:
+            if not hasattr(self, "config"):
+                return
+            settings = self._get_stt_settings()
+            selected_name = (
+                microphone_name
+                if microphone_name is not None
+                else getattr(self, "selected_mic_name", "")
+            )
+            selected_index = (
+                microphone_index
+                if microphone_index is not None
+                else getattr(self, "selected_mic_index", None)
+            )
+            settings["selected_microphone_name"] = selected_name or ""
+            settings["selected_microphone_index"] = (
+                int(selected_index) if selected_index is not None else -1
+            )
+            if self.stt_recognizer:
+                settings["energy_threshold"] = int(self.stt_recognizer.energy_threshold)
+                settings["dynamic_energy_threshold"] = bool(
+                    self.stt_recognizer.dynamic_energy_threshold
+                )
+                settings["pause_threshold"] = float(self.stt_recognizer.pause_threshold)
+                settings["non_speaking_duration"] = float(
+                    self.stt_recognizer.non_speaking_duration
+                )
+            self.config.set("stt_settings", settings)
+            logging.info("STT settings saved successfully")
+        except Exception as e:
+            logging.error(f"Error saving STT settings: {e}")
+
+    def _resolve_selected_microphone_index(self, microphone_names: list[str]) -> int:
+        """Return the best microphone index for the current/saved preference."""
+        if not microphone_names:
+            return 0
+        current_index = getattr(self, "selected_mic_index", None)
+        if current_index is not None and 0 <= current_index < len(microphone_names):
+            return current_index
+        current_name = getattr(self, "selected_mic_name", "")
+        if current_name and current_name in microphone_names:
+            return microphone_names.index(current_name)
+        return 0
+
+    def _prepare_stt_source(self, recognizer: Any, source: Any) -> None:
+        """Apply ambient-noise calibration before listening when enabled."""
+        if self._get_stt_setting("adjust_for_ambient_noise", False):
+            recognizer.adjust_for_ambient_noise(
+                source,
+                duration=float(self._get_stt_setting("ambient_noise_duration", 0.5)),
+            )
+
+    def _recognize_stt_audio(self, recognizer: Any, audio: Any) -> str:
+        """Recognize speech from audio with the configured backend."""
+        return recognizer.recognize_google(audio)
 
     def _test_tts(self) -> None:
         if not TTS_AVAILABLE or not self.tts_engine:

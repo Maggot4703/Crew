@@ -86,6 +86,25 @@ class TestGUIRecordMenu(unittest.TestCase):
         self.assertIn("You: /about", text)
         self.assertIn("Bot:", text)
 
+    def test_tts_voice_profiles_include_language_details(self):
+        class DummyVoice:
+            def __init__(self, voice_id, name, languages):
+                self.id = voice_id
+                self.name = name
+                self.languages = languages
+
+        voices = [DummyVoice("voice-f1", "English Female", [b"\x05en-us"])]
+        self.gui.tts_engine = MagicMock()
+        self.gui.tts_engine.getProperty.side_effect = lambda key: (
+            voices if key == "voices" else None
+        )
+
+        profiles = self.gui._get_tts_voice_profiles()
+
+        self.assertEqual(profiles[0]["id"], "voice-f1")
+        self.assertEqual(profiles[0]["gender"], "female")
+        self.assertIn("en-us", profiles[0]["label"].lower())
+
     def setUp(self):
         self.root = tk.Tk()
         self.root.withdraw()

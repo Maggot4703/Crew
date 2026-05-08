@@ -2,9 +2,10 @@
 """Tests for 0101 launch fallback behavior."""
 
 import sys
+import subprocess
 import unittest
 from pathlib import Path
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 project_root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(project_root))
@@ -36,6 +37,41 @@ class Test0101LaunchFallback(unittest.TestCase):
         status_message = app.update_status.call_args.args[0]
         self.assertIn("using local server", status_message)
         self.assertIn("http://localhost:8080/0101.html", status_message)
+
+    @patch("gui.subprocess.run")
+    def test_launch_remote_0101_server_syncs_project_before_starting(self, mock_run):
+        app = CrewGUI.__new__(CrewGUI)
+        app._find_local_0101_project_root = MagicMock(
+            return_value=Path("/home/me/Notebooks/0101/0101")
+        )
+        mock_run.side_effect = [
+            subprocess.CompletedProcess(
+                args=[],
+                returncode=0,
+                stdout="/home/me/Desktop/0101/0101/src/public_html/server.py",
+                stderr="",
+            ),
+            subprocess.CompletedProcess(args=[], returncode=0, stdout="", stderr=""),
+            subprocess.CompletedProcess(args=[], returncode=0, stdout="", stderr=""),
+            subprocess.CompletedProcess(
+                args=[],
+                returncode=0,
+                stdout="started|/home/me/Desktop/0101/0101/src/public_html/server.py|192.168.1.50",
+                stderr="",
+            ),
+        ]
+
+        status, remote_url = app._launch_remote_0101_server()
+
+        self.assertEqual(status, "started")
+        self.assertEqual(remote_url, "http://192.168.1.50:8080/0101.html")
+        rsync_call = next(
+            call for call in mock_run.call_args_list if call.args[0][0] == "rsync"
+        )
+        self.assertIn(
+            "me@p48:/home/me/Desktop/0101/0101/",
+            rsync_call.args[0],
+        )
 
 
 if __name__ == "__main__":
