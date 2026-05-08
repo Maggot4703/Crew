@@ -1,0 +1,24 @@
+{
+  "subject": "SQL",
+  "level": "beginner",
+  "content_type": "theory",
+  "status": "skipped",
+  "used_stub": false,
+  "source_candidates": [
+    {
+      "source_name": "sqlite-docs",
+      "url": "https://www.sqlite.org/lang.html",
+      "description": "direct documentation page"
+    },
+    {
+      "source_name": "w3schools",
+      "url": "https://www.w3schools.com/sql/",
+      "description": "direct documentation page"
+    }
+  ],
+  "source_url": "https://www.w3schools.com/search/search.php?search=SQL",
+  "source_name": null,
+  "tags": [],
+  "subject_metadata": {},
+  "updated_at": "2026-05-08T17:09:50.889325+00:00"
+}

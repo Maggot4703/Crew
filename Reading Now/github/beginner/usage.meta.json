@@ -1,0 +1,24 @@
+{
+  "subject": "github",
+  "level": "beginner",
+  "content_type": "usage",
+  "status": "skipped",
+  "used_stub": false,
+  "source_candidates": [
+    {
+      "source_name": "github-docs",
+      "url": "https://docs.github.com/en/get-started/start-your-journey/hello-world",
+      "description": "direct documentation page"
+    },
+    {
+      "source_name": "git-docs",
+      "url": "https://git-scm.com/book/en/v2/Getting-Started-What-is-Git%3F",
+      "description": "direct documentation page"
+    }
+  ],
+  "source_url": "https://www.w3schools.com/search/search.php?search=github+usage",
+  "source_name": null,
+  "tags": [],
+  "subject_metadata": {},
+  "updated_at": "2026-05-08T17:09:50.842647+00:00"
+}

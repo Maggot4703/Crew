@@ -182,6 +182,13 @@ DEFAULT_MAIN_WINDOW_HEIGHT = 800
 DEFAULT_MAIN_WINDOW_SIZE = f"{DEFAULT_MAIN_WINDOW_WIDTH}x{DEFAULT_MAIN_WINDOW_HEIGHT}"
 DEFAULT_LEFT_PANEL_WIDTH = 220
 READMINE_OUTPUT_DIR = Path(__file__).resolve().parent / "Reading Now"
+PROJECT_README_PATH = Path(__file__).resolve().parent / "README.md"
+PROJECT_DOCS_INDEX_PATH = Path(__file__).resolve().parent / "docs" / "README.md"
+READMINE_GUIDE_PATH = (
+    Path(__file__).resolve().parent.parent / "docs" / "fetchdocs_readmine.md"
+)
+READMINE_OUTPUT_README_PATH = READMINE_OUTPUT_DIR / "README.md"
+DEFAULT_TTS_LEAD_IN_SECONDS = 0.5
 DEFAULT_0101_CONTENT_WIDTH = 600
 DEFAULT_0101_CONTENT_HEIGHT = 1020
 DEFAULT_0101_WINDOW_WIDTH = 720
@@ -574,8 +581,7 @@ class CrewGUI:
         """Stub for test compliance."""
         text = getattr(widget, "get", lambda: "")()
         if hasattr(self, "tts_engine") and self.tts_engine:
-            self.tts_engine.say(text)
-            self.tts_engine.runAndWait()
+            self._speak_text_with_lead_in(text)
         return text
 
     def tts_error_feedback(self):
@@ -888,6 +894,7 @@ class CrewGUI:
             # Centralized TTS initialization
             self.tts_engine = None
             self.tts_available = False
+            self.tts_lead_in_seconds = DEFAULT_TTS_LEAD_IN_SECONDS
             try:
                 # pyttsx3 already imported at the top if available
                 self.tts_engine = pyttsx3.init()
@@ -1159,7 +1166,20 @@ class CrewGUI:
         help_menu.add_command(
             label="Keyboard Shortcuts", command=self.show_keyboard_shortcuts
         )
-        help_menu.add_command(label="Online Docs", command=self.show_online_docs)
+        help_menu.add_separator()
+        help_menu.add_command(label="Project README", command=self.open_project_readme)
+        help_menu.add_command(label="Docs Index", command=self.open_project_docs_index)
+        help_menu.add_command(label="ReadMine Guide", command=self.open_readmine_guide)
+        help_menu.add_command(
+            label="ReadMine Output Notes", command=self.open_readmine_output_notes
+        )
+        help_menu.add_command(
+            label="Open ReadMine Output Folder",
+            command=self._open_documentation_folder,
+        )
+        help_menu.add_separator()
+        help_menu.add_command(label="Project on GitHub", command=self.show_online_docs)
+        help_menu.add_command(label="GitHub Issues", command=self.open_github_issues)
         help_menu.add_command(
             label="Contact Support", command=self.show_contact_support
         )
@@ -1196,11 +1216,89 @@ class CrewGUI:
             "Q: How do I import images or data?\nA: Use the File menu to open or import files.\n\n"
             "Q: How do I overlay a grid?\nA: Use the grid tools in the main menu or CLI.\n\n"
             "Q: Where are logs saved?\nA: See crew_app.log in the workspace.\n\n"
-            "Q: How do I get help?\nA: Use this Help menu or Contact Support.\n"
+            "Q: Where is the documentation?\n"
+            "A: Use Help > Project README, Docs Index, or ReadMine Guide.\n\n"
+            "Q: How do I get help?\n"
+            "A: Use this Help menu, GitHub Issues, or Contact Support.\n"
         )
         from tkinter import messagebox
 
         messagebox.showinfo("FAQ", msg)
+
+    def _open_path_in_system_viewer(self, path: Path, label: str) -> None:
+        if not path.exists():
+            messagebox.showwarning("Missing File", f"{label} was not found:\n{path}")
+            logging.warning("%s not found: %s", label, path)
+            return
+        try:
+            if os.name == "nt":
+                os.startfile(str(path))
+            elif sys.platform == "darwin":
+                subprocess.run(["open", str(path)], check=True)
+            else:
+                opener = (
+                    "pcmanfm"
+                    if path.is_dir() and shutil.which("pcmanfm")
+                    else "xdg-open"
+                )
+                subprocess.run([opener, str(path)], check=True)
+            self.update_status(f"Opened {label}: {path}")
+        except (OSError, subprocess.CalledProcessError) as exc:
+            logging.error("Failed to open %s: %s", label, exc)
+            messagebox.showerror("Open Failed", f"Could not open {label}:\n{exc}")
+
+    def open_project_readme(self) -> None:
+        self._open_path_in_system_viewer(PROJECT_README_PATH, "Project README")
+
+    def open_project_docs_index(self) -> None:
+        self._open_path_in_system_viewer(PROJECT_DOCS_INDEX_PATH, "Docs Index")
+
+    def open_readmine_guide(self) -> None:
+        self._open_path_in_system_viewer(READMINE_GUIDE_PATH, "ReadMine Guide")
+
+    def open_readmine_output_notes(self) -> None:
+        self._open_path_in_system_viewer(
+            READMINE_OUTPUT_README_PATH, "ReadMine Output Notes"
+        )
+
+    def _get_tts_lead_in_seconds(self) -> float:
+        try:
+            value = float(
+                getattr(self, "tts_lead_in_seconds", DEFAULT_TTS_LEAD_IN_SECONDS)
+            )
+        except (TypeError, ValueError):
+            value = DEFAULT_TTS_LEAD_IN_SECONDS
+        return max(0.0, value)
+
+    def _warm_up_tts_output(self) -> None:
+        lead_in_seconds = self._get_tts_lead_in_seconds()
+        if lead_in_seconds <= 0 or not self.tts_engine:
+            return
+
+        # Some Linux TTS backends keep the engine muted after a zero-volume utterance.
+        # Use a short lead-in pause instead of a muted warm-up phrase.
+        time.sleep(lead_in_seconds)
+
+    def _speak_tts_chunks(self, chunks: List[str]) -> None:
+        if not TTS_AVAILABLE or not self.tts_engine:
+            raise RuntimeError("Text-to-speech functionality is not available.")
+
+        queued_chunks = [chunk for chunk in chunks if chunk and chunk.strip()]
+        if not queued_chunks:
+            return
+
+        self._warm_up_tts_output()
+        for chunk in queued_chunks:
+            self.tts_engine.say(chunk)
+        self.tts_engine.runAndWait()
+
+    def _speak_text_with_lead_in(
+        self, text: str, *, preprocess: bool = False, chunked: bool = False
+    ) -> None:
+        if preprocess:
+            text = self.preprocess_text_for_speech(text)
+        chunks = self.chunk_text(text) if chunked else [text]
+        self._speak_tts_chunks(chunks)
 
     def show_keyboard_shortcuts(self):
         msg = (
@@ -1225,12 +1323,17 @@ class CrewGUI:
 
         webbrowser.open_new_tab("https://github.com/Maggot4703/Crew")
 
+    def open_github_issues(self):
+        import webbrowser
+
+        webbrowser.open_new_tab("https://github.com/Maggot4703/Crew/issues")
+
     def show_contact_support(self):
         msg = (
             "Contact Support:\n\n"
-            "- Email: support@example.com\n"
+            "- Start with Help > Project README or ReadMine Guide for local docs.\n"
             "- GitHub Issues: https://github.com/Maggot4703/Crew/issues\n"
-            "- For urgent help, mention your OS and error details.\n"
+            "- When reporting a problem, include your OS, what you clicked, and any error text.\n"
         )
         from tkinter import messagebox
 
@@ -2146,8 +2249,7 @@ class CrewGUI:
                         break
                 if last and self.tts_available:
                     try:
-                        self.tts_engine.say(last)
-                        self.tts_engine.runAndWait()
+                        self._speak_text_with_lead_in(last)
                         status_var.set("Spoken last bot reply.")
                     except Exception as e:
                         print(f"TTS error: {e}")
@@ -2866,8 +2968,7 @@ class CrewGUI:
         def speak_last_bot_reply():
             if self.tts_available and last_bot_reply[0]:
                 try:
-                    self.tts_engine.say(last_bot_reply[0])
-                    self.tts_engine.runAndWait()
+                    self._speak_text_with_lead_in(last_bot_reply[0])
                     status_var.set("Spoken last bot reply.")
                 except Exception as exc:
                     logger.warning("TTS error: %s", exc)
@@ -3617,12 +3718,7 @@ class CrewGUI:
 
     def _open_documentation_folder(self):
         """Open the documentation directory in the system explorer."""
-        doc_dir = str(READMINE_OUTPUT_DIR)
-        if os.path.isdir(doc_dir):
-            if sys.platform == "win32":
-                os.startfile(doc_dir)
-            else:
-                subprocess.run(["xdg-open", doc_dir])
+        self._open_path_in_system_viewer(READMINE_OUTPUT_DIR, "ReadMine Output Folder")
 
     def show_speech_settings_dialog(self):
         return self._show_speech_settings()
@@ -3634,6 +3730,8 @@ class CrewGUI:
             "- Use the Edit and View menus to filter, refresh, and customize columns.\n"
             "- Use the Tools menu for speech, chat, scripts, docs, and server actions.\n"
             "- Use Tools > Diagnostics to check feature status.\n"
+            "- Use Help > Project README for the main app guide.\n"
+            "- Use Help > ReadMine Guide for documentation-generation help.\n"
             "- For more help, see Troubleshooting.\n"
         )
         from tkinter import messagebox
@@ -3758,7 +3856,8 @@ class CrewGUI:
             "- If a feature is missing, check Tools > Diagnostics.\n"
             "- For speech issues, ensure your system audio is working and dependencies are installed.\n"
             "- If you see errors, check crew_app.log or crew_gui.log for details.\n"
-            "- For further help, consult the README or contact support.\n"
+            "- For ReadMine issues, open Help > ReadMine Guide or ReadMine Output Notes.\n"
+            "- For further help, use the Project README, GitHub Issues, or Contact Support.\n"
         )
         from tkinter import messagebox
 
@@ -4721,8 +4820,7 @@ class CrewGUI:
 
             if selected_text.strip():
                 cleaned_text = self._clean_text(selected_text)
-                self.tts_engine.say(cleaned_text)
-                self.tts_engine.runAndWait()
+                self._speak_text_with_lead_in(cleaned_text)
                 logging.info("TTS playback completed for selection.")
 
         except Exception as e:
@@ -4741,8 +4839,7 @@ class CrewGUI:
             all_text = self.details_text.get("1.0", tk.END)
             if all_text.strip():
                 cleaned_text = self._clean_text(all_text)
-                self.tts_engine.say(cleaned_text)
-                self.tts_engine.runAndWait()
+                self._speak_text_with_lead_in(cleaned_text)
                 logging.info("TTS playback completed for all details.")
 
         except Exception as e:
@@ -4762,8 +4859,7 @@ class CrewGUI:
                 status_text = self.status_var.get()
                 if status_text.strip():
                     cleaned_text = self._clean_text(status_text)
-                    self.tts_engine.say(cleaned_text)
-                    self.tts_engine.runAndWait()
+                    self._speak_text_with_lead_in(cleaned_text)
                     logging.info("TTS playback completed for status.")
         except Exception as e:
             logging.error(f"TTS status error: {e}")
@@ -4788,8 +4884,7 @@ class CrewGUI:
                         text_to_read = (
                             str(item_values[0]) if item_values else "No details"
                         )
-                        self.tts_engine.say(text_to_read)
-                        self.tts_engine.runAndWait()
+                        self._speak_text_with_lead_in(text_to_read)
         except Exception as e:
             logging.error(f"TTS selected item error: {e}")
 
@@ -4916,9 +5011,7 @@ class CrewGUI:
         try:
             # Split text into chunks
             chunks = self.chunk_text(text, max_length=400)
-            for chunk in chunks:
-                self.tts_engine.say(chunk)  # Queue each chunk for playback
-            self.tts_engine.runAndWait()  # Execute playback
+            self._speak_tts_chunks(chunks)
         except Exception as e:
             logging.error(f"TTS playback error: {e}")
             messagebox.showerror("TTS Error", f"Failed to read text: {e}")
@@ -4996,21 +5089,15 @@ class CrewGUI:
 
                         cleaned_text = self.preprocess_text_for_speech(text_to_read)
                         chunks = self.chunk_text(cleaned_text)
-
-                        for chunk in chunks:
-                            self.tts_engine.say(chunk)
-                        self.tts_engine.runAndWait()
+                        self._speak_tts_chunks(chunks)
                     else:
-                        self.tts_engine.say(
+                        self._speak_text_with_lead_in(
                             "No item selected or no type information available"
                         )
-                        self.tts_engine.runAndWait()
                 else:
-                    self.tts_engine.say("No item selected")
-                    self.tts_engine.runAndWait()
+                    self._speak_text_with_lead_in("No item selected")
             else:
-                self.tts_engine.say("Data table not available")
-                self.tts_engine.runAndWait()
+                self._speak_text_with_lead_in("Data table not available")
 
         except Exception as e:
             logging.error(f"Error reading item type: {e}")
@@ -5026,14 +5113,22 @@ class CrewGUI:
         try:
             settings_window = tk.Toplevel(self.root)
             settings_window.title("Speech Settings")
-            settings_window.geometry("560x620")
-            settings_window.minsize(520, 560)
+            screen_width = self.root.winfo_screenwidth()
+            screen_height = self.root.winfo_screenheight()
+            window_width = min(720, max(600, screen_width - 120))
+            window_height = min(820, max(680, screen_height - 120))
+            settings_window.geometry(
+                self.build_centered_geometry(
+                    screen_width,
+                    screen_height,
+                    window_width=window_width,
+                    window_height=window_height,
+                )
+            )
+            settings_window.minsize(min(window_width, 600), min(window_height, 680))
             settings_window.resizable(True, True)
             settings_window.transient(self.root)
             settings_window.grab_set()
-            settings_window.geometry(
-                "+%d+%d" % (self.root.winfo_rootx() + 50, self.root.winfo_rooty() + 50)
-            )
 
             main_frame = ttk.Frame(settings_window)
             main_frame.pack(fill="both", expand=True, padx=10, pady=10)
@@ -5168,6 +5263,27 @@ class CrewGUI:
                 ),
             )
 
+            lead_in_frame = ttk.Frame(controls_frame)
+            lead_in_frame.pack(fill="x", pady=(10, 0))
+            ttk.Label(lead_in_frame, text="Playback lead-in (seconds):").pack(
+                side="left"
+            )
+            lead_in_var = tk.DoubleVar(value=self._get_tts_lead_in_seconds())
+            ttk.Spinbox(
+                lead_in_frame,
+                from_=0.0,
+                to=3.0,
+                increment=0.1,
+                textvariable=lead_in_var,
+                width=8,
+            ).pack(side="right")
+            ttk.Label(
+                controls_frame,
+                text="Adds a short pause before speech so the first words are easier to catch.",
+                foreground=DARK_MUTED_TEXT,
+                wraplength=500,
+            ).pack(anchor="w", pady=(5, 0))
+
             stt_settings = self._get_stt_settings()
             recognition_frame = ttk.LabelFrame(
                 main_frame, text="Speech Recognition", padding="10"
@@ -5263,10 +5379,10 @@ class CrewGUI:
                         self.tts_engine.setProperty("voice", selected_profile["id"])
                     self.tts_engine.setProperty("rate", int(speed_var.get()))
                     self.tts_engine.setProperty("volume", float(volume_var.get()))
-                    self.tts_engine.say(
+                    self.tts_lead_in_seconds = float(lead_in_var.get())
+                    self._speak_text_with_lead_in(
                         "This is a test of the current speech settings. How does this sound?"
                     )
-                    self.tts_engine.runAndWait()
 
                     self.tts_engine.setProperty("voice", original_voice)
                     self.tts_engine.setProperty("rate", original_rate)
@@ -5307,6 +5423,7 @@ class CrewGUI:
                         self.tts_engine.setProperty("voice", selected_profile["id"])
                     self.tts_engine.setProperty("rate", int(speed_var.get()))
                     self.tts_engine.setProperty("volume", float(volume_var.get()))
+                    self.tts_lead_in_seconds = float(lead_in_var.get())
 
                     if self.stt_recognizer:
                         self.stt_recognizer.energy_threshold = int(
@@ -5349,6 +5466,15 @@ class CrewGUI:
                 command=settings_window.destroy,
                 width=15,
             ).pack(side="left")
+
+            resize_footer = ttk.Frame(main_frame)
+            resize_footer.pack(fill="x", side="bottom", pady=(8, 0))
+            ttk.Label(
+                resize_footer,
+                text="Tip: drag the lower-right corner to resize this window.",
+                foreground=DARK_MUTED_TEXT,
+            ).pack(side="left")
+            ttk.Sizegrip(resize_footer).pack(side="right", anchor="se")
 
             settings_window.bind("<Return>", lambda _event: apply_settings())
             settings_window.bind("<Escape>", lambda _event: settings_window.destroy())
@@ -6229,10 +6355,14 @@ class CrewGUI:
         """Save current TTS settings to configuration"""
         try:
             if hasattr(self, "tts_engine") and self.tts_engine:
+                rate = self.tts_engine.getProperty("rate")
+                if isinstance(rate, (int, float)) and 0 < rate <= 10:
+                    rate = int(rate * 100)
                 tts_settings = {
                     "voice": self.tts_engine.getProperty("voice"),
-                    "rate": self.tts_engine.getProperty("rate"),
+                    "rate": int(rate),
                     "volume": self.tts_engine.getProperty("volume"),
+                    "lead_in_seconds": self._get_tts_lead_in_seconds(),
                 }
                 self.config.set("tts_settings", tts_settings)
                 logging.info("TTS settings saved successfully")
@@ -6260,6 +6390,14 @@ class CrewGUI:
                         self.tts_engine.setProperty(
                             "volume", float(tts_settings["volume"])
                         )
+                    self.tts_lead_in_seconds = max(
+                        0.0,
+                        float(
+                            tts_settings.get(
+                                "lead_in_seconds", DEFAULT_TTS_LEAD_IN_SECONDS
+                            )
+                        ),
+                    )
                     logging.info("TTS settings loaded successfully")
         except Exception as e:
             logging.error(f"Error loading TTS settings: {e}")
@@ -6460,8 +6598,9 @@ class CrewGUI:
             )
             return
         try:
-            self.tts_engine.say("This is a test of the text-to-speech system.")
-            self.tts_engine.runAndWait()
+            self._speak_text_with_lead_in(
+                "This is a test of the text-to-speech system."
+            )
         except Exception as e:
             logging.error(f"TTS test error: {e}")
             messagebox.showerror("TTS Error", f"Failed to test TTS: {e}")

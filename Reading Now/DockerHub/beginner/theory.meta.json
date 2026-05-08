@@ -1,0 +1,19 @@
+{
+  "subject": "DockerHub",
+  "level": "beginner",
+  "content_type": "theory",
+  "status": "skipped",
+  "used_stub": false,
+  "source_candidates": [
+    {
+      "source_name": "docker-docs",
+      "url": "https://docs.docker.com/docker-hub/",
+      "description": "direct documentation page"
+    }
+  ],
+  "source_url": "https://www.w3schools.com/search/search.php?search=DockerHub",
+  "source_name": null,
+  "tags": [],
+  "subject_metadata": {},
+  "updated_at": "2026-05-08T17:09:50.789116+00:00"
+}

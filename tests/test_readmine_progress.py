@@ -10,7 +10,11 @@ from pathlib import Path
 project_root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(project_root))
 
-from ReadMine import CONTENT_TYPES, LEVELS, DocumentationFetcher  # noqa: E402
+from ReadMine import (  # noqa: E402
+    CONTENT_TYPES,
+    DEFAULT_OUTPUT_LEVELS,
+    DocumentationFetcher,
+)
 
 
 class TestReadMineProgress(unittest.TestCase):
@@ -31,7 +35,7 @@ class TestReadMineProgress(unittest.TestCase):
                 subjects_file=subjects_file,
             ).process()
 
-            expected_items = len(LEVELS) * len(CONTENT_TYPES)
+            expected_items = len(DEFAULT_OUTPUT_LEVELS) * len(CONTENT_TYPES)
             self.assertEqual(first_run["generated"], expected_items)
             self.assertEqual(first_run["skipped"], 0)
             self.assertEqual(first_run["stub_generated"], expected_items)

@@ -54,6 +54,7 @@ class Config:
             "rate": 150,
             "volume": 1.0,
             "language": "en-US",
+            "lead_in_seconds": 0.5,
         },
         "stt_settings": {
             "selected_microphone_name": "",
@@ -97,6 +98,7 @@ class Config:
                 "rate": {"type": (int, float), "min": 0.5, "max": 300},
                 "volume": {"type": (int, float), "min": 0.0, "max": 1.0},
                 "language": {"type": str},
+                "lead_in_seconds": {"type": (int, float), "min": 0.0, "max": 3.0},
             },
         },
         "stt_settings": {

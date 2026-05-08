@@ -7,6 +7,7 @@ import argparse
 import json
 import logging
 import re
+import shutil
 import subprocess
 import sys
 from dataclasses import dataclass, field
@@ -44,6 +45,7 @@ DEFAULT_BASE_DIR = SCRIPT_DIR / "Reading Now"
 DEFAULT_PROGRESS_FILE = SCRIPT_DIR / "readmine_progress.json"
 DEFAULT_SUBJECTS_FILE = SCRIPT_DIR / "read_books.txt"
 LEVELS = ("beginner", "intermediate", "advanced")
+DEFAULT_OUTPUT_LEVELS = ("beginner",)
 CONTENT_TYPES = ("theory", "usage", "examples")
 KNOWN_SOURCES = {
     "custom",
@@ -402,12 +404,20 @@ class DocumentationFetcher:
         progress_file: Path = DEFAULT_PROGRESS_FILE,
         subjects_file: Path = DEFAULT_SUBJECTS_FILE,
         force: bool = False,
+        output_levels: tuple[str, ...] = DEFAULT_OUTPUT_LEVELS,
     ):
         self.use_web = use_web
         self.base_dir = Path(base_dir)
         self.progress_file = Path(progress_file)
         self.subjects_file = Path(subjects_file)
         self.force = force
+        invalid_levels = [level for level in output_levels if level not in LEVELS]
+        if invalid_levels:
+            invalid = ", ".join(sorted(invalid_levels))
+            raise ValueError(f"Unsupported ReadMine output level(s): {invalid}")
+        self.output_levels = (
+            tuple(dict.fromkeys(output_levels)) or DEFAULT_OUTPUT_LEVELS
+        )
         self.base_dir.mkdir(parents=True, exist_ok=True)
         self.progress = self._load_progress()
         self.session = requests.Session()
@@ -488,6 +498,54 @@ class DocumentationFetcher:
     def _metadata_path(self, subject: SubjectRequest, level: str, ctype: str) -> Path:
         return self._subject_dir(subject) / level / f"{ctype}.meta.json"
 
+    def _prune_unused_output_levels(self, subject: SubjectRequest) -> None:
+        subject_dir = self._subject_dir(subject)
+        for level in LEVELS:
+            if level in self.output_levels:
+                continue
+            level_dir = subject_dir / level
+            if level_dir.exists():
+                shutil.rmtree(level_dir)
+
+    def _prune_unused_progress_items(self, subject: SubjectRequest) -> None:
+        active_levels = set(self.output_levels)
+        active_item_keys = {
+            self._item_key(subject, level, ctype)
+            for level in self.output_levels
+            for ctype in CONTENT_TYPES
+        }
+
+        for item_key, item_record in list(self.progress["items"].items()):
+            if item_record.get("subject") != subject.name:
+                continue
+            if item_record.get("level") in active_levels:
+                continue
+            self.progress["items"].pop(item_key, None)
+            self.progress["completed_items"] = [
+                value for value in self.progress["completed_items"] if value != item_key
+            ]
+
+        subject_progress = self.progress["subjects"].get(subject.name)
+        if not subject_progress:
+            return
+
+        subject_items = {
+            item_key: item_record
+            for item_key, item_record in subject_progress.get("items", {}).items()
+            if item_key in active_item_keys
+        }
+        subject_progress["items"] = subject_items
+        subject_progress["completed_items"] = [
+            item_key
+            for item_key in subject_progress.get("completed_items", [])
+            if item_key in active_item_keys
+        ]
+        subject_progress["failed_items"] = [
+            item_key
+            for item_key in subject_progress.get("failed_items", [])
+            if item_key in active_item_keys
+        ]
+
     def _record_item(
         self,
         subject: SubjectRequest,
@@ -563,7 +621,7 @@ class DocumentationFetcher:
         subject_progress["completed_items"] = sorted(subject_completed)
         subject_progress["failed_items"] = sorted(subject_failed)
 
-        total_items = len(LEVELS) * len(CONTENT_TYPES)
+        total_items = len(self.output_levels) * len(CONTENT_TYPES)
         completed_subjects = set(self.progress["completed"])
         if (
             len(subject_progress["completed_items"]) == total_items
@@ -824,7 +882,7 @@ class DocumentationFetcher:
             f"<h1>{subject.name}</h1>",
             "<ul>",
         ]
-        for level in LEVELS:
+        for level in self.output_levels:
             rows.append(f"<li><strong>{level.title()}</strong><ul>")
             for ctype in CONTENT_TYPES:
                 content_path = self._content_path(subject, level, ctype)
@@ -854,6 +912,8 @@ class DocumentationFetcher:
         }
 
         for subject in subjects:
+            self._prune_unused_output_levels(subject)
+            self._prune_unused_progress_items(subject)
             summary["subjects"][subject.name] = {
                 "generated": 0,
                 "skipped": 0,
@@ -861,7 +921,7 @@ class DocumentationFetcher:
                 "stub_generated": 0,
                 "fetched_generated": 0,
             }
-            for level in LEVELS:
+            for level in self.output_levels:
                 for ctype in CONTENT_TYPES:
                     candidates = build_source_candidates(subject)
                     output_path = self._content_path(subject, level, ctype)

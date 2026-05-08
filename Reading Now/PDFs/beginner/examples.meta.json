@@ -1,0 +1,19 @@
+{
+  "subject": "PDFs",
+  "level": "beginner",
+  "content_type": "examples",
+  "status": "skipped",
+  "used_stub": false,
+  "source_candidates": [
+    {
+      "source_name": "python-docs",
+      "url": "https://docs.python.org/3/library/pydoc.html",
+      "description": "direct documentation page"
+    }
+  ],
+  "source_url": "https://www.w3schools.com/search/search.php?search=PDFs+examples",
+  "source_name": null,
+  "tags": [],
+  "subject_metadata": {},
+  "updated_at": "2026-05-08T17:09:50.885565+00:00"
+}

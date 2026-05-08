@@ -1,0 +1,24 @@
+{
+  "subject": "Markdown",
+  "level": "beginner",
+  "content_type": "usage",
+  "status": "skipped",
+  "used_stub": false,
+  "source_candidates": [
+    {
+      "source_name": "markdownguide",
+      "url": "https://www.markdownguide.org/basic-syntax/",
+      "description": "direct documentation page"
+    },
+    {
+      "source_name": "github-docs",
+      "url": "https://docs.github.com/en/get-started/writing-on-github",
+      "description": "direct documentation page"
+    }
+  ],
+  "source_url": "https://www.w3schools.com/search/search.php?search=Markdown+usage",
+  "source_name": null,
+  "tags": [],
+  "subject_metadata": {},
+  "updated_at": "2026-05-08T17:09:50.852431+00:00"
+}

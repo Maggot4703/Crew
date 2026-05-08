@@ -1,0 +1,24 @@
+{
+  "subject": "tkinter_guide",
+  "level": "beginner",
+  "content_type": "usage",
+  "status": "skipped",
+  "used_stub": false,
+  "source_candidates": [
+    {
+      "source_name": "python-docs",
+      "url": "https://docs.python.org/3/library/tkinter.html",
+      "description": "direct documentation page"
+    },
+    {
+      "source_name": "tkdocs",
+      "url": "https://tkdocs.com/tutorial/",
+      "description": "direct documentation page"
+    }
+  ],
+  "source_url": "https://www.w3schools.com/search/search.php?search=tkinter_guide+usage",
+  "source_name": null,
+  "tags": [],
+  "subject_metadata": {},
+  "updated_at": "2026-05-08T17:09:50.895535+00:00"
+}

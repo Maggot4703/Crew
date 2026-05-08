@@ -47,6 +47,13 @@ Crew Manager is a data processing and GUI tool for managing crew or NPC data. It
   `CARDCUTTER/CardCutter/` for generated `Cars*.png` outputs and `Cars1_rectangles/` tiles, unless
   overridden with `CREW_INPUT_DIR`, `CREW_OUTPUT_DIR`, `--input-dir`, or `--output-dir`.
 
+## Documentation
+
+- `docs/README.md` - documentation build notes for the production Crew app
+- `docs/index.rst` - Sphinx landing page
+- `ReadMine.py` - production ReadMine generator
+- `Reading Now/README.md` - generated ReadMine output layout
+
 ## Development
 
 - Code is formatted with [black](https://github.com/psf/black).
@@ -69,6 +76,21 @@ Run a single test:
 ```bash
 pytest tests/test_basic.py::TestBasicApp::test_module_imports
 ```
+
+### ReadMine and targeted test runs
+
+Some test runs in `CREW/Crew` currently hit a package import problem via `CREW/Crew/__init__.py`, which can interrupt broad `pytest` collection before the target test file runs.
+
+When that happens, targeted direct execution is often more reliable for ReadMine-focused work:
+
+```bash
+cd /home/me/Notebooks/CREW/Crew
+python -m py_compile ReadMine.py tests/test_readmine_features.py tests/test_readmine_progress.py
+python tests/test_readmine_features.py
+python tests/test_readmine_progress.py
+```
+
+Use the normal `pytest` flow when it works for the area you are changing, but keep the direct test path in mind for ReadMine-specific validation.
 
 ## Chat windows: current state
 

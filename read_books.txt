@@ -1,3 +1,12 @@
+# One subject per line.
+# Optional format:
+# Subject Name | source=mdn,python-docs | tags=frontend,reference | difficulty=medium | https://example.com/page
+#
+# Examples:
+# JSON | source=python-docs,mdn | tags=data,serialization
+# Docker | source=docker-docs | difficulty=beginner
+# uv | https://docs.astral.sh/uv/
+
 CSS
 Databases
 Docker

@@ -1,2 +1,0 @@
-https://www.w3schools.com/search/search.php?search=git+examples
-https://www.programiz.com/search/git

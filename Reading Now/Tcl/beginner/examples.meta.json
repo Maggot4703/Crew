@@ -1,0 +1,19 @@
+{
+  "subject": "Tcl",
+  "level": "beginner",
+  "content_type": "examples",
+  "status": "skipped",
+  "used_stub": false,
+  "source_candidates": [
+    {
+      "source_name": "tcl-docs",
+      "url": "https://www.tcl-lang.org/man/tcl/TclCmd/contents.htm",
+      "description": "direct documentation page"
+    }
+  ],
+  "source_url": "https://www.w3schools.com/search/search.php?search=Tcl+examples",
+  "source_name": null,
+  "tags": [],
+  "subject_metadata": {},
+  "updated_at": "2026-05-08T17:09:50.894400+00:00"
+}

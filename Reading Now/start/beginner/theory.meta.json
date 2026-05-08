@@ -1,0 +1,19 @@
+{
+  "subject": "start",
+  "level": "beginner",
+  "content_type": "theory",
+  "status": "skipped",
+  "used_stub": false,
+  "source_candidates": [
+    {
+      "source_name": "github-docs",
+      "url": "https://docs.github.com/en/get-started/start-your-journey",
+      "description": "direct documentation page"
+    }
+  ],
+  "source_url": "https://www.w3schools.com/search/search.php?search=start",
+  "source_name": null,
+  "tags": [],
+  "subject_metadata": {},
+  "updated_at": "2026-05-08T17:09:50.890799+00:00"
+}

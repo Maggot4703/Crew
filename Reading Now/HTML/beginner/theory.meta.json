@@ -1,0 +1,24 @@
+{
+  "subject": "HTML",
+  "level": "beginner",
+  "content_type": "theory",
+  "status": "skipped",
+  "used_stub": false,
+  "source_candidates": [
+    {
+      "source_name": "mdn",
+      "url": "https://developer.mozilla.org/en-US/docs/Web/HTML",
+      "description": "direct documentation page"
+    },
+    {
+      "source_name": "w3schools",
+      "url": "https://www.w3schools.com/html/",
+      "description": "direct documentation page"
+    }
+  ],
+  "source_url": "https://www.w3schools.com/search/search.php?search=HTML",
+  "source_name": null,
+  "tags": [],
+  "subject_metadata": {},
+  "updated_at": "2026-05-08T17:09:50.847184+00:00"
+}

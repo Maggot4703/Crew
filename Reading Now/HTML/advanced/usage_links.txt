@@ -1,2 +1,0 @@
-https://www.w3schools.com/search/search.php?search=HTML+usage
-https://stackoverflow.com/questions/tagged/html

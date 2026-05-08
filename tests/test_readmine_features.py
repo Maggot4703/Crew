@@ -12,7 +12,7 @@ sys.path.insert(0, str(project_root))
 
 from ReadMine import (  # noqa: E402
     CONTENT_TYPES,
-    LEVELS,
+    DEFAULT_OUTPUT_LEVELS,
     DocumentationFetcher,
     SubjectRequest,
     build_source_candidates,
@@ -25,7 +25,7 @@ class FailingFetcher(DocumentationFetcher):
     """Inject one deterministic failure to exercise status tracking."""
 
     def create_content(self, subject, level, ctype):
-        if level == "advanced" and ctype == "examples":
+        if level == "beginner" and ctype == "examples":
             raise RuntimeError("simulated failure")
         return super().create_content(subject, level, ctype)
 
@@ -68,7 +68,7 @@ class TestReadMineFeatures(unittest.TestCase):
                 use_web=False,
             ).process()
 
-            expected_items = len(LEVELS) * len(CONTENT_TYPES)
+            expected_items = len(DEFAULT_OUTPUT_LEVELS) * len(CONTENT_TYPES)
             self.assertEqual(summary["generated"], expected_items - 1)
             self.assertEqual(summary["failed"], 1)
             self.assertEqual(summary["stub_generated"], expected_items - 1)
@@ -79,7 +79,7 @@ class TestReadMineFeatures(unittest.TestCase):
             self.assertTrue(metadata["used_stub"])
 
             progress = json.loads(progress_file.read_text(encoding="utf-8"))
-            failed_item = progress["items"]["css::advanced::examples"]
+            failed_item = progress["items"]["css::beginner::examples"]
             self.assertEqual(failed_item["status"], "failed")
             self.assertEqual(failed_item["error"], "simulated failure")
 
@@ -119,6 +119,31 @@ class TestReadMineFeatures(unittest.TestCase):
             self.assertIn("items", subject_progress)
             self.assertIn("failed_items", subject_progress)
             self.assertIn("css::beginner::theory", subject_progress["items"])
+            self.assertNotIn("css::advanced::examples", progress["items"])
+
+    def test_process_prunes_intermediate_and_advanced_output_directories(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            base_dir = tmp_path / "Reading Now"
+            progress_file = tmp_path / "progress.json"
+            subjects_file = tmp_path / "subjects.txt"
+            subjects_file.write_text("CSS\n", encoding="utf-8")
+
+            for level in ("intermediate", "advanced"):
+                level_dir = base_dir / "CSS" / level
+                level_dir.mkdir(parents=True, exist_ok=True)
+                (level_dir / "theory.txt").write_text("stale\n", encoding="utf-8")
+
+            DocumentationFetcher(
+                base_dir=base_dir,
+                progress_file=progress_file,
+                subjects_file=subjects_file,
+                use_web=False,
+            ).process()
+
+            self.assertTrue((base_dir / "CSS" / "beginner").exists())
+            self.assertFalse((base_dir / "CSS" / "intermediate").exists())
+            self.assertFalse((base_dir / "CSS" / "advanced").exists())
 
     def test_format_readmine_summary_is_concise_and_informative(self):
         message = format_readmine_summary(
