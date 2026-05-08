@@ -422,19 +422,19 @@ pivot = df.pivot(index='city', columns='gender', values='salary')
 
 # Pivot table with aggregation
 pivot = pd.pivot_table(
-    df, 
-    index='city', 
+    df,
+    index='city',
     columns='gender',
-    values='salary', 
+    values='salary',
     aggfunc='mean'
 )
 
 # Multiple values and aggregations
 pivot = pd.pivot_table(
-    df, 
-    index=['city', 'department'], 
+    df,
+    index=['city', 'department'],
     columns='gender',
-    values=['salary', 'age'], 
+    values=['salary', 'age'],
     aggfunc={'salary': 'mean', 'age': ['min', 'max']}
 )
 ```
@@ -509,7 +509,7 @@ unstacked = df.unstack()  # Second level of index becomes columns
 ### Melt
 ```python
 # Melt: Convert columns to rows (wide to long)
-melted = pd.melt(df, 
+melted = pd.melt(df,
                 id_vars=['name', 'city'],  # Columns to keep as is
                 value_vars=['2020', '2021', '2022'],  # Columns to "melt"
                 var_name='year',  # Name for variable column
@@ -763,9 +763,9 @@ df.plot(figsize=(10, 6), title='My Plot')
 
 # Labels and legend
 df.plot(
-    x='date', 
+    x='date',
     y='value',
-    xlabel='Date', 
+    xlabel='Date',
     ylabel='Value',
     legend=True
 )
@@ -853,27 +853,27 @@ df.to_sql(
 def analyze_sales_data(filepath):
     # 1. Load data
     df = pd.read_csv(filepath)
-    
+
     # 2. Clean data
     df = df.dropna()
     df['date'] = pd.to_datetime(df['date'])
     df['amount'] = df['amount'].astype(float)
-    
+
     # 3. Feature engineering
     df['month'] = df['date'].dt.month
     df['year'] = df['date'].dt.year
     df['is_weekend'] = df['date'].dt.dayofweek >= 5
-    
+
     # 4. Aggregation
     monthly_sales = df.groupby(['year', 'month']).agg({
         'amount': ['sum', 'mean', 'count'],
         'customer_id': 'nunique'
     })
-    
+
     # 5. Analysis
     top_products = df.groupby('product_id')['amount'].sum().nlargest(5)
     sales_growth = monthly_sales['amount']['sum'].pct_change()
-    
+
     return {
         'monthly_sales': monthly_sales,
         'top_products': top_products,
@@ -889,31 +889,31 @@ def forecast_sales(df):
     df['date'] = pd.to_datetime(df['date'])
     df = df.set_index('date')
     daily_sales = df.resample('D')['sales'].sum()
-    
+
     # 2. Handle missing values
     daily_sales = daily_sales.fillna(daily_sales.rolling(7, min_periods=1).mean())
-    
+
     # 3. Extract features
     daily_sales = pd.DataFrame(daily_sales)
     daily_sales['day_of_week'] = daily_sales.index.dayofweek
     daily_sales['month'] = daily_sales.index.month
     daily_sales['year'] = daily_sales.index.year
-    
+
     # 4. Add lag features
     for lag in [1, 7, 14, 28]:
         daily_sales[f'lag_{lag}'] = daily_sales['sales'].shift(lag)
-    
+
     # 5. Moving averages
     for window in [7, 14, 28]:
         daily_sales[f'ma_{window}'] = daily_sales['sales'].rolling(window).mean()
-    
+
     # 6. Remove rows with NaN due to lag features
     daily_sales = daily_sales.dropna()
-    
+
     # 7. Split into features and target
     features = daily_sales.drop('sales', axis=1)
     target = daily_sales['sales']
-    
+
     return features, target
 ```
 
@@ -923,29 +923,29 @@ def forecast_sales(df):
 def transform_data(df):
     # Make a copy to avoid modifying the original
     result = df.copy()
-    
+
     # 1. Drop unnecessary columns
     result.drop(['id', 'created_at'], axis=1, inplace=True)
-    
+
     # 2. Handle missing values differently for each column
     result['numeric_col'].fillna(result['numeric_col'].median(), inplace=True)
     result['categorical_col'].fillna('Unknown', inplace=True)
-    
+
     # 3. Create new features
     result['ratio'] = result['value_a'] / result['value_b']
     result['log_value'] = np.log1p(result['value'])
-    
+
     # 4. Encode categorical variables
     for col in ['category1', 'category2']:
         dummies = pd.get_dummies(result[col], prefix=col, drop_first=True)
         result = pd.concat([result, dummies], axis=1)
         result.drop(col, axis=1, inplace=True)
-    
+
     # 5. Normalize numeric features
     numeric_cols = ['value_a', 'value_b', 'ratio']
     for col in numeric_cols:
         result[col] = (result[col] - result[col].mean()) / result[col].std()
-    
+
     return result
 ```
 

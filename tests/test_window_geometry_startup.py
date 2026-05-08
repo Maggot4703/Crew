@@ -26,6 +26,11 @@ class TestWindowGeometryStartup(unittest.TestCase):
         geometry = CrewGUI.build_centered_geometry(640, 700)
         self.assertEqual(geometry, "800x800+0+0")
 
+    def test_build_0101_window_size_matches_graphical_layout(self):
+        """0101 browser window should fit the 600px layout plus browser chrome."""
+        size = CrewGUI.build_0101_window_size()
+        self.assertEqual(size, (720, 1180))
+
     def test_config_defaults_match_startup_window_size(self):
         """Configuration defaults should align with startup geometry."""
         self.assertEqual(Config.DEFAULT_CONFIG["window_size"], "800x800")

@@ -20,16 +20,16 @@ Notes:
 - Logs are written to crew_app.log.
 """
 
-import csv
-import os
-import pandas as pd
-from PIL import Image, ImageDraw
-import logging
-import tkinter as tk  # Add this import
-import math
 import argparse
+import csv
+import logging
+import math
+import os
+import tkinter as tk  # Add this import
 from typing import Any, List, Optional, Union
-from PIL import ImageColor
+
+import pandas as pd
+from PIL import Image, ImageColor, ImageDraw
 
 # Constants required by tests
 DEFAULT_GRID_COLOR = "lightgrey"

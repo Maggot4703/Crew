@@ -9,7 +9,7 @@ import json
 import logging
 import re
 from pathlib import Path
-from typing import Any, Dict, Union, Optional
+from typing import Any, Dict, Optional, Union
 
 # Import custom errors for proper error handling
 try:
@@ -18,6 +18,7 @@ except ImportError:
     # Fallback if errors module not available or not in a package context
     class ConfigError(Exception):
         pass
+
 
 # Setup logger for this module
 logger = logging.getLogger(__name__)
@@ -86,7 +87,9 @@ class Config:
         """
         self.config_dir = Path(config_dir)
         self.config_file_path = self.config_dir / config_filename
-        self.config_dir.mkdir(parents=True, exist_ok=True)  # Ensure config directory exists
+        self.config_dir.mkdir(
+            parents=True, exist_ok=True
+        )  # Ensure config directory exists
         self.config: Dict[str, Any] = self.load_config()
 
     def load_config(self) -> Dict[str, Any]:
@@ -126,7 +129,9 @@ class Config:
         """Validate the loaded configuration against the schema."""
         validated_config = {}
         for key, rules in self.VALIDATION_SCHEMA.items():
-            value = config.get(key, self.DEFAULT_CONFIG.get(key))  # Fallback to default if key missing in loaded
+            value = config.get(
+                key, self.DEFAULT_CONFIG.get(key)
+            )  # Fallback to default if key missing in loaded
 
             if not isinstance(value, rules["type"]):
                 raise ConfigError(
@@ -158,7 +163,9 @@ class Config:
         # Check for unknown keys (optional, could be logged as warning)
         for key in config:
             if key not in self.VALIDATION_SCHEMA:
-                logger.warning(f"Unknown configuration key '{key}' found in config file.")
+                logger.warning(
+                    f"Unknown configuration key '{key}' found in config file."
+                )
                 # Decide whether to include them or not. For now, we'll include them.
                 validated_config[key] = config[key]
 
@@ -171,7 +178,8 @@ class Config:
             logger.info(f"Configuration saved to {self.config_file_path}")
         except Exception as e:
             logger.error(
-                f"Error saving configuration to {self.config_file_path}: {e}", exc_info=True
+                f"Error saving configuration to {self.config_file_path}: {e}",
+                exc_info=True,
             )
             # Optionally raise a ConfigError here if saving is critical
 
@@ -228,7 +236,7 @@ class Config:
 
     def get_window_geometry(self) -> Optional[tuple[int, int, int, int]]:
         """Parse window_size and return as (width, height, x_offset, y_offset).
-           x_offset and y_offset are not in current config, returning 0,0 for them.
+        x_offset and y_offset are not in current config, returning 0,0 for them.
         """
         size_str = self.get("window_size")
         if size_str and isinstance(size_str, str) and "x" in size_str:

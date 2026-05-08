@@ -1,11 +1,15 @@
-import logging
-import pandas as pd
 import csv
+import logging
 from typing import Any, List, Optional
+
+import pandas as pd
 
 logger = logging.getLogger(__name__)
 
-def read_file(filename: str, encoding: str = "utf-8", show_error_popup: bool = False) -> str:
+
+def read_file(
+    filename: str, encoding: str = "utf-8", show_error_popup: bool = False
+) -> str:
     """
     Read the contents of a text file with robust error handling and optional GUI popup.
     :param filename: Path to the file to read
@@ -45,12 +49,14 @@ def _show_file_error_popup(message: str):
     try:
         import tkinter as tk
         from tkinter import messagebox
+
         root = tk.Tk()
         root.withdraw()
         messagebox.showerror("File Read Error", message)
         root.destroy()
     except Exception as e:
         logger.error(f"Failed to show error popup: {e}")
+
 
 def read_csv_builtin(filename: str) -> list:
     if not filename or not isinstance(filename, str):
@@ -73,6 +79,7 @@ def read_csv_builtin(filename: str) -> list:
         )
         return []
 
+
 def read_csv_pandas(filename: str):
     if not filename or not isinstance(filename, str):
         logger.error("Invalid filename provided for read_csv_pandas.")
@@ -92,6 +99,7 @@ def read_csv_pandas(filename: str):
             f"Error reading CSV file {filename} with pandas: {e}", exc_info=True
         )
         return None
+
 
 def read_excel(filename: str, sheet_name: str = None):
     if not filename or not isinstance(filename, str):

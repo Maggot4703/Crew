@@ -1,82 +1,74 @@
 [
   {
-    "sender": "Captain",
-    "recipients": [
-      "Captain",
-      "Computer",
-      "Pilot",
-      "Navigator",
-      "Doctor",
-      "Trader",
-      "Gunner",
-      "Chief",
-      "Tech"
-    ],
-    "text": "Attention - we have a job going to Roup",
-    "timestamp": "2026-04-12T21:08:52.698196"
+    "sender": "You",
+    "message": "[Voice error]"
   },
   {
-    "sender": "Captain",
-    "recipients": [
-      "Computer"
-    ],
-    "text": "ok",
-    "timestamp": "2026-04-12T21:09:24.284547"
+    "sender": "Bot",
+    "message": "If you're having trouble, check the Troubleshooting menu or crew_app.log for details."
   },
   {
-    "sender": "Captain",
-    "recipients": [
-      "Pilot"
-    ],
-    "text": "ok",
-    "timestamp": "2026-04-12T21:09:39.021054"
+    "sender": "You",
+    "message": "Troubleshooting"
   },
   {
-    "sender": "Captain",
-    "recipients": [
-      "Navigator"
-    ],
-    "text": "ok",
-    "timestamp": "2026-04-12T21:09:59.029982"
+    "sender": "Bot",
+    "message": "If you're having trouble, check the Troubleshooting menu or crew_app.log for details."
   },
   {
-    "sender": "Captain",
-    "recipients": [
-      "Doctor"
-    ],
-    "text": "ok",
-    "timestamp": "2026-04-12T21:10:44.855986"
+    "sender": "You",
+    "message": "hello"
   },
   {
-    "sender": "Captain",
-    "recipients": [
-      "Trader"
-    ],
-    "text": "ok",
-    "timestamp": "2026-04-12T21:10:52.704297"
+    "sender": "Bot",
+    "message": "Good afternoon! How can I assist you with Crew today?"
   },
   {
-    "sender": "Captain",
-    "recipients": [
-      "Gunner"
-    ],
-    "text": "ok",
-    "timestamp": "2026-04-12T21:11:02.032673"
+    "sender": "You",
+    "message": "/help"
   },
   {
-    "sender": "Captain",
-    "recipients": [
-      "Chief"
-    ],
-    "text": "ok",
-    "timestamp": "2026-04-12T21:11:11.820145"
+    "sender": "Bot",
+    "message": "Available commands: /help, /clear, /about, /version. Ask about Crew features, troubleshooting, or usage."
   },
   {
-    "sender": "Captain",
-    "recipients": [
-      "Tech"
-    ],
-    "text": "ok",
-    "timestamp": "2026-04-12T21:11:27.713771"
+    "sender": "You",
+    "message": "skills"
+  },
+  {
+    "sender": "Bot",
+    "message": "I'm here to help! Try asking about features, troubleshooting, or type /help."
+  },
+  {
+    "sender": "You",
+    "message": "ml."
+  },
+  {
+    "sender": "Bot",
+    "message": "I'm here to help! Try asking about features, troubleshooting, or type /help."
+  },
+  {
+    "sender": "You",
+    "message": "hey"
+  },
+  {
+    "sender": "Bot",
+    "message": "Good afternoon! How can I assist you with Crew today?"
+  },
+  {
+    "sender": "You",
+    "message": "/help"
+  },
+  {
+    "sender": "Bot",
+    "message": "Available commands: /help, /clear, /about, /version. Ask about Crew features, troubleshooting, or usage."
+  },
+  {
+    "sender": "You",
+    "message": "Crew features"
+  },
+  {
+    "sender": "Bot",
+    "message": "Crew supports image processing, CSV/Excel import, grid overlays, script running, and more."
   }
 ]

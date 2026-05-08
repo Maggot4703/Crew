@@ -1,12 +1,17 @@
 """
 Test suite for FileManager module (file_manager.py).
 """
-import unittest
-import sys, os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from file_manager import FileManager
-import tempfile
+
 import os
+import sys
+import unittest
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+import os
+import tempfile
+
+from file_manager import FileManager
+
 
 class TestFileManager(unittest.TestCase):
     def setUp(self):
@@ -48,6 +53,7 @@ class TestFileManager(unittest.TestCase):
     def test_is_text_file(self):
         self.assertTrue(self.fm.is_text_file(self.test_txt))
         self.assertFalse(self.fm.is_text_file(self.test_csv))
+
 
 if __name__ == "__main__":
     unittest.main()

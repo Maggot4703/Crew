@@ -1,0 +1,1358 @@
+.
+├── audio_manager.py
+├── bot.json
+├── cache.py
+├── cli.py
+├── config.json
+├── config.py
+├── CONTRIBUTING.md
+├── crew_app.log
+├── crew_auth.py
+├── Crew.code-workspace
+├── Crew.csv
+├── crew_database.db
+├── crew_data.db
+├── crew_gui.log
+├── crew.jupyterlab-workspace
+├── Crew.py
+├── crew.txt
+├── data
+│   ├── AI.csv
+│   ├── arcs
+│   │   ├── arcs.csv
+│   │   ├── arcs.py
+│   │   ├── __pycache__
+│   │   │   ├── arcs.cpython-311.pyc
+│   │   │   └── arcs.cpython-314.pyc
+│   │   ├── Star Wars Episode IV  A New Hope (1977).txt
+│   │   └── Stories.txt
+│   ├── arcs.csv
+│   ├── CLASS.csv
+│   ├── clones
+│   │   ├── clones.csv
+│   │   ├── clones.py
+│   │   └── __pycache__
+│   │       ├── clones.cpython-311.pyc
+│   │       └── clones.cpython-314.pyc
+│   ├── clones.csv
+│   ├── columns
+│   │   ├── columns.csv
+│   │   ├── columns.py
+│   │   └── __pycache__
+│   │       ├── columns.cpython-311.pyc
+│   │       └── columns.cpython-314.pyc
+│   ├── columns.csv
+│   ├── COMPANY.csv
+│   ├── Crew.csv
+│   ├── encounters
+│   │   ├── encounters.csv
+│   │   ├── encounters.py
+│   │   └── __pycache__
+│   │       ├── encounters.cpython-311.pyc
+│   │       └── encounters.cpython-314.pyc
+│   ├── encounters.csv
+│   ├── HTML
+│   │   ├── html.csv
+│   │   ├── html.py
+│   │   └── __pycache__
+│   │       ├── html.cpython-311.pyc
+│   │       └── html.cpython-314.pyc
+│   ├── LIKENESS.csv
+│   ├── links
+│   │   ├── JSON
+│   │   │   ├── json.csv
+│   │   │   ├── json.py
+│   │   │   └── __pycache__
+│   │   │       ├── json.cpython-311.pyc
+│   │   │       └── json.cpython-314.pyc
+│   │   ├── links,csv
+│   │   └── links,py
+│   ├── links.csv
+│   ├── locations
+│   │   ├── boughene
+│   │   ├── efate
+│   │   ├── feri
+│   │   ├── jewell
+│   │   ├── jump
+│   │   ├── locations.csv
+│   │   ├── locations.py
+│   │   ├── lysen
+│   │   ├── __pycache__
+│   │   │   ├── locations.cpython-311.pyc
+│   │   │   └── locations.cpython-314.pyc
+│   │   ├── regina
+│   │   ├── roup
+│   │   └── StarPort.txt
+│   ├── locations.csv
+│   ├── lowers
+│   │   ├── lowers,csv
+│   │   └── lowers,py
+│   ├── lowers.csv
+│   ├── mindmaps
+│   │   ├── mindmap.md
+│   │   ├── mindmap.pdf
+│   │   ├── mindmaps.csv
+│   │   └── mindmaps,py
+│   ├── mindmaps.csv
+│   ├── music
+│   │   ├── music.csv
+│   │   ├── music.py
+│   │   └── __pycache__
+│   │       ├── music.cpython-311.pyc
+│   │       └── music.cpython-314.pyc
+│   ├── music.csv
+│   ├── MUSIC.csv
+│   ├── NPC.csv
+│   ├── npcs
+│   │   ├── Bar Staff.txt
+│   │   ├── Dusty Bin - UNION RULES 4 Bots.txt
+│   │   ├── Fast Freddie.txt
+│   │   ├── npcs.csv
+│   │   ├── npcs.py
+│   │   └── __pycache__
+│   │       ├── npcs.cpython-311.pyc
+│   │       └── npcs.cpython-314.pyc
+│   ├── npcs.csv
+│   ├── npcs.xls
+│   ├── nps.csv
+│   ├── PRIMUS.csv
+│   ├── QUOTE.csv
+│   ├── RANK.csv
+│   ├── ROLE.csv
+│   ├── r-s
+│   │   ├── r-s.csv
+│   │   └── r-s,py
+│   ├── R-S.csv
+│   ├── schedules
+│   │   ├── __pycache__
+│   │   │   ├── schedules.cpython-311.pyc
+│   │   │   └── schedules.cpython-314.pyc
+│   │   ├── schedules.csv
+│   │   ├── schedules.py
+│   │   ├── Sky Rig.csv
+│   │   └── Sky Rig.txt
+│   ├── schedules.csv
+│   ├── scratch
+│   │   ├── __pycache__
+│   │   │   ├── scratch.cpython-311.pyc
+│   │   │   └── scratch.cpython-314.pyc
+│   │   ├── scratch.csv
+│   │   └── scratch.py
+│   ├── Scratch.csv
+│   ├── scratch.xlsx
+│   ├── SECUNDUS.csv
+│   ├── sequences
+│   │   ├── __pycache__
+│   │   │   ├── sequences.cpython-311.pyc
+│   │   │   └── sequences.cpython-314.pyc
+│   │   ├── sequences.csv
+│   │   └── sequences.py
+│   ├── sequences.csv
+│   ├── SHIP.csv
+│   ├── SQUAD.csv
+│   ├── SYSTEM.csv
+│   ├── TERTIUS.csv
+│   ├── tlinks
+│   │   ├── __pycache__
+│   │   │   ├── tlinks.cpython-311.pyc
+│   │   │   └── tlinks.cpython-314.pyc
+│   │   ├── tlinks.csv
+│   │   └── tlinks.py
+│   ├── tlinks.csv
+│   ├── tmp
+│   ├── VEHICLE.csv
+│   └── WORK.csv
+├── database_manager.py
+├── data_manager.py
+├── dirlist.txt
+├── disk-cleanup.sh
+├── dummy_bmps
+│   ├── dummy_pngs
+│   │   └── test.png
+│   ├── error_test.bmp
+│   └── test.bmp
+├── enhanced_features.py
+├── enhanced_fetch_docs.py
+├── error_handler.py
+├── errors.py
+├── event_manager.py
+├── events.py
+├── file_manager.py
+├── file_utils.py
+├── final_verification.py
+├── find-space-hogs.sh
+├── get-pip.py
+├── ghk.txt
+├── ghk.txt.pub
+├── github_setup.md
+├── globals.py
+├── gui.asc
+├── gui copy.py
+├── gui_copy.py
+├── gui_main_function.py
+├── gui_output.log
+├── gui.py
+├── GUI_RESTORATION_COMPLETE.md
+├── HELP.txt
+├── history.json
+├── hyperlinks.txt
+├── ide_auto_update_chat.txt
+├── image_utils.py
+├── image_utils_test.py
+├── import unittest.py
+├── __init__
+├── __init__.py
+├── input
+│   ├── cars1.png
+│   ├── Cars1.png
+│   ├── Cars2.png
+│   ├── Cars3.png
+│   ├── Cars4.png
+│   ├── Cars5.png
+│   ├── Cars6.png
+│   ├── Cars7.png
+│   └── Psi.ico
+├── install_tts.sh
+├── launch_gui.py
+├── LAYOUT_CHANGES.md
+├── layout.py
+├── log_analyzer.py
+├── logic.py
+├── mcp_example.py
+├── mcp.py
+├── mcp_service.py
+├── message_router.py
+├── output
+├── PLANS
+│   ├── crew_global_refactor_and_test_plan.md
+│   ├── crew_gui_enhancements_plan.md
+│   ├── crew_template_v2.md -> /home/me/Notebooks/CREW/DESIGN/PLANS/crew_template_v2.md
+│   ├── crew_test_coverage_and_gaps.md
+│   ├── crew_test_run_summary_2026-04-11.md
+│   ├── skills_db.csv -> /home/me/Notebooks/CREW/DESIGN/PLANS/skills_db.csv
+│   ├── templates
+│   │   └── npc_template.txt
+│   ├── training_log.csv -> /home/me/Notebooks/CREW/DESIGN/PLANS/training_log.csv
+│   └── untitled
+├── project_summary.md
+├── __pycache__
+│   ├── ai_service.cpython-311.pyc
+│   ├── any_month.cpython-311.pyc
+│   ├── audio_manager.cpython-314.pyc
+│   ├── bmp2png.cpython-311.pyc
+│   ├── bmp2png.cpython-314.pyc
+│   ├── cache.cpython-311.pyc
+│   ├── cache.cpython-314.pyc
+│   ├── cli.cpython-314.pyc
+│   ├── config.cpython-311.pyc
+│   ├── config.cpython-314.pyc
+│   ├── create_documentation.cpython-311.pyc
+│   ├── crew_auth.cpython-314.pyc
+│   ├── Crew.cpython-311.pyc
+│   ├── Crew.cpython-314.pyc
+│   ├── crew_fix.cpython-311.pyc
+│   ├── Crew_fixed.cpython-311.pyc
+│   ├── Crew_simple.cpython-311.pyc
+│   ├── Crew.test.cpython-311.pyc
+│   ├── database_manager.cpython-311.pyc
+│   ├── database_manager.cpython-314.pyc
+│   ├── data_manager.cpython-311.pyc
+│   ├── data_manager.cpython-314.pyc
+│   ├── debug_nan.cpython-311.pyc
+│   ├── enhanced_features.cpython-311.pyc
+│   ├── enhanced_features.cpython-314.pyc
+│   ├── error_handler.cpython-311.pyc
+│   ├── error_handler.cpython-314.pyc
+│   ├── errors.cpython-311.pyc
+│   ├── errors.cpython-314.pyc
+│   ├── event_manager.cpython-311.pyc
+│   ├── event_manager.cpython-314.pyc
+│   ├── events.cpython-311.pyc
+│   ├── events.cpython-314.pyc
+│   ├── fetch_docs.cpython-311.pyc
+│   ├── fetch_documentation.cpython-311.pyc
+│   ├── file_manager.cpython-311.pyc
+│   ├── file_manager.cpython-314.pyc
+│   ├── file_utils.cpython-314.pyc
+│   ├── final_implementation_report.cpython-311.pyc
+│   ├── final_verification.cpython-311.pyc
+│   ├── get-pip.cpython-311.pyc
+│   ├── get-pip.cpython-314.pyc
+│   ├── globals.cpython-311.pyc
+│   ├── globals.cpython-314.pyc
+│   ├── gui copy.cpython-311.pyc
+│   ├── gui_copy.cpython-311.pyc
+│   ├── gui copy.cpython-314.pyc
+│   ├── gui_copy.cpython-314.pyc
+│   ├── gui.cpython-311.pyc
+│   ├── gui.cpython-314.pyc
+│   ├── gui_fixed.cpython-311.pyc
+│   ├── gui_main_function.cpython-314.pyc
+│   ├── guiQT.cpython-311.pyc
+│   ├── gui.test.cpython-311.pyc
+│   ├── image_utils.cpython-314.pyc
+│   ├── image_utils_test.cpython-314.pyc
+│   ├── image_utils_test.cpython-314-pytest-9.0.2.pyc
+│   ├── image_utils_test.cpython-314-pytest-9.0.3.pyc
+│   ├── import unittest.cpython-311.pyc
+│   ├── __init__.cpython-314.pyc
+│   ├── launch_gui.cpython-314.pyc
+│   ├── layout.cpython-311.pyc
+│   ├── layout.cpython-314.pyc
+│   ├── log_analyzer.cpython-311.pyc
+│   ├── log_analyzer.cpython-314.pyc
+│   ├── logic.cpython-311.pyc
+│   ├── logic.cpython-314.pyc
+│   ├── mcp.cpython-311.pyc
+│   ├── mcp.cpython-314.pyc
+│   ├── mcp_example.cpython-311.pyc
+│   ├── mcp_service.cpython-311.pyc
+│   ├── mcp_service.cpython-314.pyc
+│   ├── message_router.cpython-314.pyc
+│   ├── output.txt.cpython-311.pyc
+│   ├── python Crew.cpython-314.pyc
+│   ├── ReadMine_completion_report.cpython-311.pyc
+│   ├── ReadMine_completion_report.cpython-314.pyc
+│   ├── read_use_file_cli.cpython-311.pyc
+│   ├── read_use_file.cpython-311.pyc
+│   ├── read_use_file.cpython-314.pyc
+│   ├── refactoring_verification.cpython-311.pyc
+│   ├── refactoring_verification.cpython-314.pyc
+│   ├── run_crew_safe.cpython-311.pyc
+│   ├── run_gui.cpython-314.pyc
+│   ├── save_simple.cpython-311.pyc
+│   ├── script_manager.cpython-311.pyc
+│   ├── script_manager.cpython-314.pyc
+│   ├── state_manager.cpython-311.pyc
+│   ├── state_manager.cpython-314.pyc
+│   ├── storySearch.cpython-311.pyc
+│   ├── storySearch.cpython-314.pyc
+│   ├── syntax_check.cpython-311.pyc
+│   ├── test_auto_import.cpython-311.pyc
+│   ├── test_column_visibility.cpython-311.pyc
+│   ├── test_gui.cpython-311.pyc
+│   ├── test_image_utils_test.cpython-314.pyc
+│   ├── test_image_utils_test.cpython-314-pytest-9.0.2.pyc
+│   ├── test_image_utils_test.cpython-314-pytest-9.0.3.pyc
+│   ├── test_layout.cpython-311.pyc
+│   ├── test_options_menu.cpython-314.pyc
+│   ├── test_options_menu.cpython-314-pytest-9.0.2.pyc
+│   ├── test_options_menu.cpython-314-pytest-9.0.3.pyc
+│   ├── test_script_demo.cpython-311.pyc
+│   ├── test_script_error.cpython-311.pyc
+│   ├── test_tk_dialog.cpython-314-pytest-9.0.2.pyc
+│   ├── test_tk_dialog.cpython-314-pytest-9.0.3.pyc
+│   ├── test_tts.cpython-311.pyc
+│   ├── traveller5_scraper.cpython-311.pyc
+│   ├── traveller5_scraper.cpython-314.pyc
+│   ├── tts_manager.cpython-311.pyc
+│   ├── tts_manager.cpython-314.pyc
+│   ├── ui_manager.cpython-311.pyc
+│   ├── ui_manager.cpython-314.pyc
+│   ├── untitled.cpython-311.pyc
+│   ├── untitled.cpython-314.pyc
+│   ├── utils.cpython-311.pyc
+│   ├── utils.cpython-314.pyc
+│   ├── verify_autoimport.cpython-311.pyc
+│   ├── verify_gui_status.cpython-311.pyc
+│   └── verify_script_loading.cpython-311.pyc
+├── python Crew.py
+├── read_books.txt
+├── Reading Now
+│   ├── CSS
+│   │   ├── advanced
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── beginner
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── examples.txt
+│   │   ├── intermediate
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── links.txt
+│   │   ├── theory.txt
+│   │   └── usage.txt
+│   ├── Databases
+│   │   ├── advanced
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── beginner
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── examples.txt
+│   │   ├── intermediate
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── links.txt
+│   │   ├── theory.txt
+│   │   └── usage.txt
+│   ├── Docker
+│   │   ├── advanced
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── beginner
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── examples.txt
+│   │   ├── intermediate
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── links.txt
+│   │   ├── theory.txt
+│   │   └── usage.txt
+│   ├── DockerHub
+│   │   ├── advanced
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── beginner
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── examples.txt
+│   │   ├── intermediate
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── links.txt
+│   │   ├── theory.txt
+│   │   └── usage.txt
+│   ├── git
+│   │   ├── advanced
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── beginner
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── examples.txt
+│   │   ├── intermediate
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── links.txt
+│   │   ├── theory.txt
+│   │   └── usage.txt
+│   ├── github
+│   │   ├── advanced
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── beginner
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── examples.txt
+│   │   ├── intermediate
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── links.txt
+│   │   ├── theory.txt
+│   │   └── usage.txt
+│   ├── harrison_tribute
+│   │   ├── advanced
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── beginner
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── examples.txt
+│   │   ├── intermediate
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── links.txt
+│   │   ├── theory.txt
+│   │   └── usage.txt
+│   ├── HTML
+│   │   ├── advanced
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── beginner
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── examples.txt
+│   │   ├── intermediate
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── links.txt
+│   │   ├── theory.txt
+│   │   └── usage.txt
+│   ├── Javascript
+│   │   ├── advanced
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── beginner
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── examples.txt
+│   │   ├── intermediate
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── links.txt
+│   │   ├── theory.txt
+│   │   └── usage.txt
+│   ├── JSON
+│   │   ├── advanced
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── beginner
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── examples.txt
+│   │   ├── intermediate
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── links.txt
+│   │   ├── theory.txt
+│   │   └── usage.txt
+│   ├── Markdown
+│   │   ├── advanced
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── beginner
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── examples.txt
+│   │   ├── intermediate
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── links.txt
+│   │   ├── theory.txt
+│   │   └── usage.txt
+│   ├── MCP
+│   │   ├── advanced
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── beginner
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── examples.txt
+│   │   ├── intermediate
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── links.txt
+│   │   ├── theory.txt
+│   │   └── usage.txt
+│   ├── pandas_DataFrames
+│   │   ├── advanced
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── beginner
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── examples.txt
+│   │   ├── intermediate
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── links.txt
+│   │   ├── theory.txt
+│   │   └── usage.txt
+│   ├── pandas_guide
+│   │   ├── advanced
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── beginner
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── examples.txt
+│   │   ├── intermediate
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── links.txt
+│   │   ├── theory.txt
+│   │   └── usage.txt
+│   ├── PDFs
+│   │   ├── advanced
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── beginner
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── examples.txt
+│   │   ├── intermediate
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── links.txt
+│   │   ├── theory.txt
+│   │   └── usage.txt
+│   ├── PIL
+│   │   ├── advanced
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── beginner
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── examples.txt
+│   │   ├── intermediate
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── links.txt
+│   │   ├── theory.txt
+│   │   └── usage.txt
+│   ├── Sabbat
+│   │   ├── advanced
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── beginner
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── examples.txt
+│   │   ├── intermediate
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── links.txt
+│   │   ├── theory.txt
+│   │   └── usage.txt
+│   ├── SQL
+│   │   ├── advanced
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── beginner
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── examples.txt
+│   │   ├── intermediate
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── links.txt
+│   │   ├── theory.txt
+│   │   └── usage.txt
+│   ├── start
+│   │   ├── advanced
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── beginner
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── examples.txt
+│   │   ├── intermediate
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── links.txt
+│   │   ├── theory.txt
+│   │   └── usage.txt
+│   ├── streamlit
+│   │   ├── advanced
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── beginner
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── examples.txt
+│   │   ├── intermediate
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── links.txt
+│   │   ├── theory.txt
+│   │   └── usage.txt
+│   ├── Tcl
+│   │   ├── advanced
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── beginner
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── examples.txt
+│   │   ├── intermediate
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── links.txt
+│   │   ├── theory.txt
+│   │   └── usage.txt
+│   ├── tkinter_guide
+│   │   ├── advanced
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── beginner
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── examples.txt
+│   │   ├── intermediate
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── links.txt
+│   │   ├── theory.txt
+│   │   └── usage.txt
+│   ├── uv
+│   │   ├── advanced
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── beginner
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── examples.txt
+│   │   ├── intermediate
+│   │   │   ├── examples_links.txt
+│   │   │   ├── examples.txt
+│   │   │   ├── theory_links.txt
+│   │   │   ├── theory.txt
+│   │   │   ├── usage_links.txt
+│   │   │   └── usage.txt
+│   │   ├── links.txt
+│   │   ├── theory.txt
+│   │   └── usage.txt
+│   └── VSCode
+│       ├── advanced
+│       │   ├── examples_links.txt
+│       │   ├── examples.txt
+│       │   ├── theory_links.txt
+│       │   ├── theory.txt
+│       │   ├── usage_links.txt
+│       │   └── usage.txt
+│       ├── beginner
+│       │   ├── examples_links.txt
+│       │   ├── examples.txt
+│       │   ├── theory_links.txt
+│       │   ├── theory.txt
+│       │   ├── usage_links.txt
+│       │   └── usage.txt
+│       ├── examples.txt
+│       ├── intermediate
+│       │   ├── examples_links.txt
+│       │   ├── examples.txt
+│       │   ├── theory_links.txt
+│       │   ├── theory.txt
+│       │   ├── usage_links.txt
+│       │   └── usage.txt
+│       ├── links.txt
+│       ├── theory.txt
+│       └── usage.txt
+├── README.md
+├── readmine_progress.json
+├── ReadMine.py
+├── read_use_file_cli.py
+├── read_use_file_cli_venv.sh
+├── read_use_file.log
+├── read_use_file.py
+├── read_use_file_venv.sh
+├── read_use.sh
+├── read_use_venv.sh
+├── recording.wav
+├── refactoring_verification.py
+├── requirements.txt
+├── RESTORATION_SUCCESS.txt
+├── run_gui.py
+├── run_readmine.sh
+├── run_tts_tests.py
+├── sample_crew.csv
+├── script_manager.py
+├── scripts
+│   ├── any_month.py
+│   ├── bmp2png.py
+│   ├── dummy_bmps
+│   │   ├── error_test.bmp
+│   │   └── test.bmp
+│   ├── dummy_pngs
+│   │   └── test.png
+│   ├── fetch_docs.py
+│   ├── __init__.py
+│   ├── __pycache__
+│   │   ├── any_month.cpython-311.pyc
+│   │   ├── any_month.cpython-314.pyc
+│   │   ├── bmp2png.cpython-311.pyc
+│   │   ├── bmp2png.cpython-314.pyc
+│   │   ├── fetch_docs.cpython-311.pyc
+│   │   ├── fetch_docs.cpython-314.pyc
+│   │   └── __init__.cpython-314.pyc
+│   └── sample_script.py
+├── setup.cfg
+├── Show available files.sh
+├── startup.txt
+├── state_manager.py
+├── storySearch.py
+├── test_image_utils_test.py
+├── test_options_menu.py
+├── tests
+│   ├── conftest.py
+│   ├── crew_app.log
+│   ├── __pycache__
+│   │   ├── conftest.cpython-314-pytest-9.0.2.pyc
+│   │   ├── conftest.cpython-314-pytest-9.0.3.pyc
+│   │   ├── test_auto_import.cpython-311.pyc
+│   │   ├── test_auto_import.cpython-311-pytest-8.3.5.pyc
+│   │   ├── test_auto_import.cpython-314.pyc
+│   │   ├── test_auto_import.cpython-314-pytest-9.0.2.pyc
+│   │   ├── test_auto_import.cpython-314-pytest-9.0.3.pyc
+│   │   ├── test_basic.cpython-311.pyc
+│   │   ├── test_basic.cpython-311-pytest-8.3.5.pyc
+│   │   ├── test_basic.cpython-314.pyc
+│   │   ├── test_basic.cpython-314-pytest-9.0.2.pyc
+│   │   ├── test_basic.cpython-314-pytest-9.0.3.pyc
+│   │   ├── test_bmp2png.cpython-311.pyc
+│   │   ├── test_bmp2png.cpython-311-pytest-8.3.5.pyc
+│   │   ├── test_bmp2png.cpython-314.pyc
+│   │   ├── test_bmp2png.cpython-314-pytest-9.0.2.pyc
+│   │   ├── test_cache.cpython-311.pyc
+│   │   ├── test_cache.cpython-311-pytest-8.3.5.pyc
+│   │   ├── test_cache.cpython-314.pyc
+│   │   ├── test_cache.cpython-314-pytest-9.0.2.pyc
+│   │   ├── test_cache.cpython-314-pytest-9.0.3.pyc
+│   │   ├── test_cli_copy.cpython-314.pyc
+│   │   ├── test_cli_copy.cpython-314-pytest-9.0.2.pyc
+│   │   ├── test_cli.cpython-314.pyc
+│   │   ├── test_column_visibility.cpython-311.pyc
+│   │   ├── test_column_visibility.cpython-311-pytest-8.3.5.pyc
+│   │   ├── test_column_visibility.cpython-314.pyc
+│   │   ├── test_column_visibility.cpython-314-pytest-9.0.2.pyc
+│   │   ├── test_column_visibility.cpython-314-pytest-9.0.3.pyc
+│   │   ├── test_config.cpython-311.pyc
+│   │   ├── test_config.cpython-311-pytest-8.3.5.pyc
+│   │   ├── test_config.cpython-314.pyc
+│   │   ├── test_config.cpython-314-pytest-9.0.2.pyc
+│   │   ├── test_config.cpython-314-pytest-9.0.3.pyc
+│   │   ├── test_crew_main.cpython-311.pyc
+│   │   ├── test_crew_main.cpython-311-pytest-8.3.5.pyc
+│   │   ├── test_crew_main.cpython-314.pyc
+│   │   ├── test_crew_main.cpython-314-pytest-9.0.2.pyc
+│   │   ├── test_crew_main.cpython-314-pytest-9.0.3.pyc
+│   │   ├── test_database_manager.cpython-311.pyc
+│   │   ├── test_database_manager.cpython-311-pytest-8.3.5.pyc
+│   │   ├── test_database_manager.cpython-314.pyc
+│   │   ├── test_database_manager.cpython-314-pytest-9.0.2.pyc
+│   │   ├── test_database_manager.cpython-314-pytest-9.0.3.pyc
+│   │   ├── test_data_files_copy.cpython-314.pyc
+│   │   ├── test_data_files_copy.cpython-314-pytest-9.0.2.pyc
+│   │   ├── test_data_handling.cpython-311.pyc
+│   │   ├── test_data_handling.cpython-311-pytest-8.3.5.pyc
+│   │   ├── test_data_handling.cpython-314.pyc
+│   │   ├── test_data_handling.cpython-314-pytest-9.0.2.pyc
+│   │   ├── test_data_handling.cpython-314-pytest-9.0.3.pyc
+│   │   ├── test_data_loading.cpython-311.pyc
+│   │   ├── test_data_loading.cpython-311-pytest-8.3.5.pyc
+│   │   ├── test_data_loading.cpython-314.pyc
+│   │   ├── test_data_loading.cpython-314-pytest-9.0.2.pyc
+│   │   ├── test_data_loading.cpython-314-pytest-9.0.3.pyc
+│   │   ├── test_data_loading_fix.cpython-311.pyc
+│   │   ├── test_data_loading_fix.cpython-311-pytest-8.3.5.pyc
+│   │   ├── test_data_loading_fix.cpython-314.pyc
+│   │   ├── test_data_loading_fix.cpython-314-pytest-9.0.2.pyc
+│   │   ├── test_data_loading_fix.cpython-314-pytest-9.0.3.pyc
+│   │   ├── test_data_manager.cpython-314.pyc
+│   │   ├── test_data_manager.cpython-314-pytest-9.0.2.pyc
+│   │   ├── test_enhanced_features.cpython-314.pyc
+│   │   ├── test_enhanced_features.cpython-314-pytest-9.0.2.pyc
+│   │   ├── test_error_handler.cpython-314.pyc
+│   │   ├── test_error_handler.cpython-314-pytest-9.0.2.pyc
+│   │   ├── test_errors.cpython-311.pyc
+│   │   ├── test_errors.cpython-311-pytest-8.3.5.pyc
+│   │   ├── test_errors.cpython-314.pyc
+│   │   ├── test_errors.cpython-314-pytest-9.0.2.pyc
+│   │   ├── test_errors.cpython-314-pytest-9.0.3.pyc
+│   │   ├── test_event_manager.cpython-314.pyc
+│   │   ├── test_event_manager.cpython-314-pytest-9.0.2.pyc
+│   │   ├── test_events.cpython-314.pyc
+│   │   ├── test_events.cpython-314-pytest-9.0.2.pyc
+│   │   ├── test_extra_functionality.cpython-311.pyc
+│   │   ├── test_extra_functionality.cpython-311-pytest-8.3.5.pyc
+│   │   ├── test_extra_functionality.cpython-314.pyc
+│   │   ├── test_extra_functionality.cpython-314-pytest-9.0.2.pyc
+│   │   ├── test_extra_functionality.cpython-314-pytest-9.0.3.pyc
+│   │   ├── test_file_manager.cpython-314.pyc
+│   │   ├── test_file_manager.cpython-314-pytest-9.0.2.pyc
+│   │   ├── test_file_utils.cpython-314.pyc
+│   │   ├── test_file_utils.cpython-314-pytest-9.0.2.pyc
+│   │   ├── test_file_utils.cpython-314-pytest-9.0.3.pyc
+│   │   ├── test_geometry.cpython-311.pyc
+│   │   ├── test_geometry.cpython-311-pytest-8.3.5.pyc
+│   │   ├── test_geometry.cpython-314.pyc
+│   │   ├── test_geometry.cpython-314-pytest-9.0.2.pyc
+│   │   ├── test_geometry.cpython-314-pytest-9.0.3.pyc
+│   │   ├── test_globals.cpython-311.pyc
+│   │   ├── test_globals.cpython-311-pytest-8.3.5.pyc
+│   │   ├── test_globals.cpython-314.pyc
+│   │   ├── test_globals.cpython-314-pytest-9.0.2.pyc
+│   │   ├── test_globals.cpython-314-pytest-9.0.3.pyc
+│   │   ├── test_gui_basic.cpython-311.pyc
+│   │   ├── test_gui_basic.cpython-311-pytest-8.3.5.pyc
+│   │   ├── test_gui_basic.cpython-314.pyc
+│   │   ├── test_gui_basic.cpython-314-pytest-9.0.2.pyc
+│   │   ├── test_gui_basic.cpython-314-pytest-9.0.3.pyc
+│   │   ├── test_gui_complete.cpython-311.pyc
+│   │   ├── test_gui_complete.cpython-311-pytest-8.3.5.pyc
+│   │   ├── test_gui_complete.cpython-314.pyc
+│   │   ├── test_gui_complete.cpython-314-pytest-9.0.2.pyc
+│   │   ├── test_gui_complete.cpython-314-pytest-9.0.3.pyc
+│   │   ├── test_gui.cpython-311.pyc
+│   │   ├── test_gui.cpython-311-pytest-8.3.5.pyc
+│   │   ├── test_gui.cpython-314.pyc
+│   │   ├── test_gui.cpython-314-pytest-9.0.2.pyc
+│   │   ├── test_gui.cpython-314-pytest-9.0.3.pyc
+│   │   ├── test_gui_functionality.cpython-311.pyc
+│   │   ├── test_gui_functionality.cpython-311-pytest-8.3.5.pyc
+│   │   ├── test_gui_functionality.cpython-314.pyc
+│   │   ├── test_gui_functionality.cpython-314-pytest-9.0.2.pyc
+│   │   ├── test_gui_functionality.cpython-314-pytest-9.0.3.pyc
+│   │   ├── test_gui_layout.cpython-311.pyc
+│   │   ├── test_gui_layout.cpython-311-pytest-8.3.5.pyc
+│   │   ├── test_gui_layout.cpython-314.pyc
+│   │   ├── test_gui_layout.cpython-314-pytest-9.0.2.pyc
+│   │   ├── test_gui_layout.cpython-314-pytest-9.0.3.pyc
+│   │   ├── test_gui_preprocessing.cpython-311.pyc
+│   │   ├── test_gui_preprocessing.cpython-311-pytest-8.3.5.pyc
+│   │   ├── test_gui_preprocessing.cpython-314.pyc
+│   │   ├── test_gui_preprocessing.cpython-314-pytest-9.0.2.pyc
+│   │   ├── test_gui_preprocessing.cpython-314-pytest-9.0.3.pyc
+│   │   ├── test_gui_save_load.cpython-311.pyc
+│   │   ├── test_gui_save_load.cpython-311-pytest-8.3.5.pyc
+│   │   ├── test_gui_save_load.cpython-314.pyc
+│   │   ├── test_gui_save_load.cpython-314-pytest-9.0.2.pyc
+│   │   ├── test_gui_save_load.cpython-314-pytest-9.0.3.pyc
+│   │   ├── test_gui_simple.cpython-311.pyc
+│   │   ├── test_gui_simple.cpython-311-pytest-8.3.5.pyc
+│   │   ├── test_gui_simple.cpython-314.pyc
+│   │   ├── test_gui_simple.cpython-314-pytest-9.0.2.pyc
+│   │   ├── test_gui_simple.cpython-314-pytest-9.0.3.pyc
+│   │   ├── test_image_processing.cpython-311.pyc
+│   │   ├── test_image_processing.cpython-311-pytest-8.3.5.pyc
+│   │   ├── test_image_processing.cpython-314.pyc
+│   │   ├── test_image_processing.cpython-314-pytest-9.0.2.pyc
+│   │   ├── test_image_processing.cpython-314-pytest-9.0.3.pyc
+│   │   ├── test_image_utils.cpython-314.pyc
+│   │   ├── test_image_utils.cpython-314-pytest-9.0.2.pyc
+│   │   ├── test_image_utils.cpython-314-pytest-9.0.3.pyc
+│   │   ├── test_layout.cpython-311.pyc
+│   │   ├── test_layout.cpython-311-pytest-8.3.5.pyc
+│   │   ├── test_layout.cpython-314.pyc
+│   │   ├── test_layout.cpython-314-pytest-9.0.2.pyc
+│   │   ├── test_layout.cpython-314-pytest-9.0.3.pyc
+│   │   ├── test_logging_copy.cpython-314.pyc
+│   │   ├── test_logging_copy.cpython-314-pytest-9.0.2.pyc
+│   │   ├── test_mcp_service.cpython-311.pyc
+│   │   ├── test_mcp_service.cpython-311-pytest-8.3.5.pyc
+│   │   ├── test_mcp_service.cpython-314.pyc
+│   │   ├── test_mcp_service.cpython-314-pytest-9.0.2.pyc
+│   │   ├── test_mcp_service.cpython-314-pytest-9.0.3.pyc
+│   │   ├── test_script_demo.cpython-311.pyc
+│   │   ├── test_script_demo.cpython-311-pytest-8.3.5.pyc
+│   │   ├── test_script_demo.cpython-314.pyc
+│   │   ├── test_script_demo.cpython-314-pytest-9.0.2.pyc
+│   │   ├── test_script_demo.cpython-314-pytest-9.0.3.pyc
+│   │   ├── test_script_error.cpython-311.pyc
+│   │   ├── test_script_error.cpython-311-pytest-8.3.5.pyc
+│   │   ├── test_script_error.cpython-314.pyc
+│   │   ├── test_script_error.cpython-314-pytest-9.0.2.pyc
+│   │   ├── test_script_error.cpython-314-pytest-9.0.3.pyc
+│   │   ├── test_script_loading.cpython-311.pyc
+│   │   ├── test_script_loading.cpython-311-pytest-8.3.5.pyc
+│   │   ├── test_script_loading.cpython-314.pyc
+│   │   ├── test_script_loading.cpython-314-pytest-9.0.2.pyc
+│   │   ├── test_script_loading.cpython-314-pytest-9.0.3.pyc
+│   │   ├── test_script_manager.cpython-314.pyc
+│   │   ├── test_script_manager.cpython-314-pytest-9.0.2.pyc
+│   │   ├── test_state_manager.cpython-314.pyc
+│   │   ├── test_state_manager.cpython-314-pytest-9.0.2.pyc
+│   │   ├── test_storysearch.cpython-311.pyc
+│   │   ├── test_storysearch.cpython-311-pytest-8.3.5.pyc
+│   │   ├── test_storysearch.cpython-314.pyc
+│   │   ├── test_storysearch.cpython-314-pytest-9.0.2.pyc
+│   │   ├── test_storysearch.cpython-314-pytest-9.0.3.pyc
+│   │   ├── test_tkinter_minimal.cpython-311.pyc
+│   │   ├── test_tkinter_minimal.cpython-311-pytest-8.3.5.pyc
+│   │   ├── test_tkinter_minimal.cpython-314.pyc
+│   │   ├── test_tkinter_minimal.cpython-314-pytest-9.0.2.pyc
+│   │   ├── test_tkinter_minimal.cpython-314-pytest-9.0.3.pyc
+│   │   ├── test_traveller5_scraper.cpython-311.pyc
+│   │   ├── test_traveller5_scraper.cpython-311-pytest-8.3.5.pyc
+│   │   ├── test_traveller5_scraper.cpython-314.pyc
+│   │   ├── test_traveller5_scraper.cpython-314-pytest-9.0.2.pyc
+│   │   ├── test_traveller5_scraper.cpython-314-pytest-9.0.3.pyc
+│   │   ├── test_tts_clean.cpython-311.pyc
+│   │   ├── test_tts_clean.cpython-311-pytest-8.3.5.pyc
+│   │   ├── test_tts_clean.cpython-314.pyc
+│   │   ├── test_tts_clean.cpython-314-pytest-9.0.2.pyc
+│   │   ├── test_tts_clean.cpython-314-pytest-9.0.3.pyc
+│   │   ├── test_tts_comprehensive.cpython-311.pyc
+│   │   ├── test_tts_comprehensive.cpython-311-pytest-8.3.5.pyc
+│   │   ├── test_tts_comprehensive.cpython-314.pyc
+│   │   ├── test_tts_comprehensive.cpython-314-pytest-9.0.2.pyc
+│   │   ├── test_tts_comprehensive.cpython-314-pytest-9.0.3.pyc
+│   │   ├── test_tts.cpython-311.pyc
+│   │   ├── test_tts.cpython-311-pytest-8.3.5.pyc
+│   │   ├── test_tts.cpython-314-pytest-9.0.2.pyc
+│   │   ├── test_tts_details.cpython-311.pyc
+│   │   ├── test_tts_details.cpython-311-pytest-8.3.5.pyc
+│   │   ├── test_tts_details.cpython-314.pyc
+│   │   ├── test_tts_details.cpython-314-pytest-9.0.2.pyc
+│   │   ├── test_tts_details.cpython-314-pytest-9.0.3.pyc
+│   │   ├── test_tts_manager.cpython-314.pyc
+│   │   ├── test_tts_manager.cpython-314-pytest-9.0.2.pyc
+│   │   ├── test_tts_menu.cpython-311.pyc
+│   │   ├── test_tts_menu.cpython-311-pytest-8.3.5.pyc
+│   │   ├── test_tts_menu.cpython-314.pyc
+│   │   ├── test_tts_menu.cpython-314-pytest-9.0.2.pyc
+│   │   ├── test_tts_menu.cpython-314-pytest-9.0.3.pyc
+│   │   ├── test_ui_manager.cpython-314.pyc
+│   │   ├── test_ui_manager.cpython-314-pytest-9.0.2.pyc
+│   │   ├── test_window_geometry_startup.cpython-311.pyc
+│   │   ├── test_window_geometry_startup.cpython-314.pyc
+│   │   ├── test_window_geometry_startup.cpython-314-pytest-9.0.2.pyc
+│   │   └── test_window_geometry_startup.cpython-314-pytest-9.0.3.pyc
+│   ├── test_auto_import.py
+│   ├── test_basic.py
+│   ├── test_bmp2png.disabled
+│   ├── test_cache.py
+│   ├── test_cli_copy.py
+│   ├── test_column_visibility.py
+│   ├── test_config.py
+│   ├── test_crew_main.py
+│   ├── test_database_manager.py
+│   ├── test_data_files_copy.py
+│   ├── test_data_handling.py
+│   ├── test_data_loading_fix.py
+│   ├── test_data_loading.py
+│   ├── test_data_manager.py
+│   ├── test_enhanced_features.py
+│   ├── test_error_handler.py
+│   ├── test_errors.py
+│   ├── test_event_manager.py
+│   ├── test_events.py
+│   ├── test_extra_functionality.py
+│   ├── test_file_manager.py
+│   ├── test_file_utils.py
+│   ├── test_geometry.py
+│   ├── test_globals.py
+│   ├── test_gui_basic.py
+│   ├── test_gui_complete.py
+│   ├── test_gui_functionality.py
+│   ├── test_gui_layout.py
+│   ├── test_gui_preprocessing.py
+│   ├── test_gui.py
+│   ├── test_gui_save_load.py
+│   ├── test_gui_simple.py
+│   ├── test_image_processing.py
+│   ├── test_image_utils.py
+│   ├── test_layout.py
+│   ├── test_logging_copy.py
+│   ├── test_mcp_service.py
+│   ├── test_script_demo.py
+│   ├── test_script_error.py
+│   ├── test_script_loading.py
+│   ├── test_script_manager.py
+│   ├── test_state_manager.py
+│   ├── test_storysearch.py
+│   ├── test_tkinter_minimal.py
+│   ├── test_traveller5_scraper.py
+│   ├── test_tts_clean.py
+│   ├── test_tts_comprehensive.py
+│   ├── test_tts_details.py
+│   ├── test_tts.disabled
+│   ├── test_tts_manager.py
+│   ├── test_tts_menu.py
+│   ├── test_ui_manager.py
+│   └── test_window_geometry_startup.py
+├── test_tk_dialog.py
+├── the_travellers_overview.txt
+├── traveller5_links.json
+├── traveller5_scraper.py
+├── tts_manager.py
+├── TTS_MIGRATION_SUMMARY.md
+├── TTS_TESTS_SUMMARY.md
+├── TTS_TEST_SUITE_COMPLETE.md
+├── tts_troubleshooting_log.md
+├── ui_manager.py
+├── untitled
+├── untitled.py
+├── untitled.txt
+├── use
+│   ├── use-CSS.txt
+│   ├── use-Databases.txt
+│   ├── use-DockerHub.txt
+│   ├── use-Docker.txt
+│   ├── use-github.txt
+│   ├── use-git.txt
+│   ├── use-harrison_tribute.txt
+│   ├── use-HTML.txt
+│   ├── use-its_raining_men_lyrics.txt
+│   ├── use-Javascript.txt
+│   ├── use-JSON.txt
+│   ├── use-Markdown.txt
+│   ├── use-MCP.txt
+│   ├── use-pandas_DataFrames.txt
+│   ├── use-pandas_guide.txt
+│   ├── use-PDFs.txt
+│   ├── use-PIL.txt
+│   ├── use-Sabbat.txt
+│   ├── use-SQL.txt
+│   ├── use-start.txt
+│   ├── use-streamlit.txt
+│   ├── use-Tcl copy.txt
+│   ├── use-Tcl.txt
+│   ├── use-the_best_of_enemies_lyrics.txt
+│   ├── use-tkinter_guide.txt
+│   ├── use-uv.txt
+│   └── use-VSCode.txt
+├── USE_FILE_READER_README.md
+├── utils.py
+├── verify_gui_status.py
+├── verify_refactoring.py
+├── view_sizes.json
+├── window_state.json
+└── x
+
+153 directories, 1203 files

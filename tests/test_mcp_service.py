@@ -1,21 +1,19 @@
-
-
 import json
+import os
+import sys
 import unittest
-import numpy as np
-import pandas as pd
 from unittest.mock import MagicMock, patch
 
+import numpy as np
+import pandas as pd
 
-import sys
-import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import mcp_service
 
 # Import the tested functions directly for test scope
 from mcp_service import (
-    gather_context_data_from_dataframe,
     format_data_as_mcp,
+    gather_context_data_from_dataframe,
     get_mcp_context_for_npcs,
 )
 
@@ -103,18 +101,14 @@ class TestCustomEncoder(unittest.TestCase):
     def test_encoder_with_complex_dataframe_output(self):
         """Test encoder with complex DataFrame conversion output."""
         # Create DataFrame with various pandas types
-        df = pd.DataFrame({
-            "name": ["Alice", "Bob"],
-            "start_date": [
-                pd.Timestamp("2020-01-01"),
-                pd.Timestamp("2021-01-01")
-            ],
-            "duration": [
-                pd.Timedelta(days=100),
-                pd.Timedelta(days=200)
-            ],
-            "score": [95.5, np.nan],
-        })
+        df = pd.DataFrame(
+            {
+                "name": ["Alice", "Bob"],
+                "start_date": [pd.Timestamp("2020-01-01"), pd.Timestamp("2021-01-01")],
+                "duration": [pd.Timedelta(days=100), pd.Timedelta(days=200)],
+                "score": [95.5, np.nan],
+            }
+        )
 
         # Convert to dict (simulating gather_context_data_from_dataframe)
         dict_data = df.to_dict(orient="records")
@@ -191,10 +185,7 @@ class TestFormatDataAsMcp(unittest.TestCase):
 
         self.assertEqual(result["version"], "1.0.0")
         self.assertEqual(result["context_type"], "application_data_snapshot")
-        self.assertEqual(
-            result["payload"][0]["data_source_identifier"],
-            "test_source"
-        )
+        self.assertEqual(result["payload"][0]["data_source_identifier"], "test_source")
         self.assertEqual(result["payload"][0]["item_count"], 0)
         self.assertEqual(result["payload"][0]["items"], [])
 
@@ -214,10 +205,7 @@ class TestFormatDataAsMcp(unittest.TestCase):
     def test_formatting_error(self, mock_logger):
         """Test error handling during MCP formatting."""
         # Force an error by patching pd.Timestamp.now()
-        with patch(
-            "pandas.Timestamp.now",
-            side_effect=Exception("Timestamp error")
-        ):
+        with patch("pandas.Timestamp.now", side_effect=Exception("Timestamp error")):
             result = format_data_as_mcp([{"test": "data"}], "test_source")
 
             self.assertEqual(result, {})
@@ -331,10 +319,7 @@ class TestMcpServiceIntegration(unittest.TestCase):
             "AGE": [25, 30],
             "ACTIVE": [True, False],
             "SALARY": [50000.50, 75000.75],
-            "START_DATE": [
-                pd.Timestamp("2020-01-01"),
-                pd.Timestamp("2021-06-15")
-            ],
+            "START_DATE": [pd.Timestamp("2020-01-01"), pd.Timestamp("2021-06-15")],
         }
         df = pd.DataFrame(mixed_data)
 

@@ -222,7 +222,7 @@ services:
       - db
     environment:
       - DATABASE_URL=postgres://postgres:password@db:5432/mydb
-  
+
   db:
     image: postgres:13
     volumes:

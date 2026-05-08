@@ -450,14 +450,14 @@ namespace eval MyProject {
     # Namespace variables
     variable version "1.0"
     variable author "John Doe"
-    
+
     # Namespace procedure
     proc about {} {
         variable version
         variable author
         puts "MyProject version $version by $author"
     }
-    
+
     # Procedure that can be exported
     proc calculate {a b} {
         return [expr {$a * $b + 5}]
@@ -485,7 +485,7 @@ package provide mylib 1.0
 namespace eval ::mylib {
     # Public procedures
     namespace export sum difference
-    
+
     # Private procedures
     proc _validate {arg} {
         if {![string is double $arg]} {
@@ -493,7 +493,7 @@ namespace eval ::mylib {
         }
         return $arg
     }
-    
+
     # Public interfaces
     proc sum {args} {
         set total 0
@@ -503,7 +503,7 @@ namespace eval ::mylib {
         }
         return $total
     }
-    
+
     proc difference {a b} {
         set a [_validate $a]
         set b [_validate $b]
@@ -534,7 +534,7 @@ package require Tk
 button .btn -text "Start Process" -command {
     .btn configure -state disabled
     .status configure -text "Processing..."
-    
+
     # Schedule task to run after 100ms
     # (simulating a long operation)
     after 2000 {

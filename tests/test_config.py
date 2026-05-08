@@ -11,12 +11,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 
+# Import patch for mocking
+from unittest.mock import patch
 
 # Import Config from config.py
 from config import Config
-
-# Import patch for mocking
-from unittest.mock import patch
 
 
 class TestConfig(unittest.TestCase):
@@ -25,6 +24,7 @@ class TestConfig(unittest.TestCase):
     def setUp(self):
         """Set up test environment before each test."""
         import tempfile
+
         self.tempfile = tempfile
         self.test_dir = self.tempfile.mkdtemp()
         self.config_path = Path(self.test_dir) / "config.json"
@@ -32,6 +32,7 @@ class TestConfig(unittest.TestCase):
     def tearDown(self):
         """Clean up test environment after each test."""
         import shutil
+
         if self.test_dir and Path(self.test_dir).exists():
             shutil.rmtree(self.test_dir, ignore_errors=True)
 
@@ -52,6 +53,7 @@ class TestConfig(unittest.TestCase):
         self.assertEqual(defaults["min_window_size"], "800x800")
         self.assertEqual(defaults["data_dir"], "data")
         self.assertEqual(defaults["log_level"], "INFO")
+        self.assertEqual(defaults["scratchpad_text"], "")
         self.assertTrue(defaults["auto_save"])
         self.assertIsInstance(defaults["column_widths"], dict)
 

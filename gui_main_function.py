@@ -1,10 +1,9 @@
-import tkinter as tk
 import logging
 import math
+import tkinter as tk
 from pathlib import Path
 
 from gui import CrewGUI
-
 
 logger = logging.getLogger(__name__)
 

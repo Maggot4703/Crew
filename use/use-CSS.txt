@@ -43,7 +43,7 @@ h1 {
             color: blue;
             font-size: 16px;
         }
-        
+
         .highlight {
             background-color: yellow;
         }
@@ -201,7 +201,7 @@ div {
     /* Content dimensions */
     width: 300px;
     height: 200px;
-    
+
     /* Padding (inside) */
     padding-top: 10px;
     padding-right: 20px;
@@ -213,7 +213,7 @@ div {
     padding: 10px 20px;
     /* Shorthand: all sides */
     padding: 10px;
-    
+
     /* Border */
     border-width: 2px;
     border-style: solid;
@@ -222,7 +222,7 @@ div {
     border: 2px solid black;
     /* Individual sides */
     border-top: 1px dashed red;
-    
+
     /* Margin (outside) */
     margin-top: 10px;
     margin-right: 20px;
@@ -272,7 +272,7 @@ body {
     font-weight: normal; /* normal, bold, 100-900 */
     font-style: normal; /* normal, italic, oblique */
     font-variant: normal; /* normal, small-caps */
-    
+
     /* Shorthand */
     font: italic bold 16px/1.5 'Helvetica', Arial, sans-serif;
     /* font-style font-weight font-size/line-height font-family */
@@ -331,27 +331,27 @@ p {
 .bg-properties {
     /* Background color */
     background-color: #f0f0f0;
-    
+
     /* Background image */
     background-image: url('image.jpg');
-    
+
     /* Background repeat */
     background-repeat: repeat; /* repeat, repeat-x, repeat-y, no-repeat */
-    
+
     /* Background position */
     background-position: center center; /* x y positions */
-    
+
     /* Background size */
     background-size: cover; /* cover, contain, or explicit dimensions */
-    
+
     /* Background attachment */
     background-attachment: fixed; /* scroll, fixed, local */
-    
+
     /* Background shorthand */
     background: #f0f0f0 url('image.jpg') no-repeat center/cover;
-    
+
     /* Multiple backgrounds */
-    background: 
+    background:
         url('overlay.png') center/contain no-repeat,
         linear-gradient(to bottom, rgba(0,0,0,0.5), rgba(0,0,0,0)),
         url('background.jpg') center/cover no-repeat;
@@ -362,10 +362,10 @@ p {
     /* Linear gradient */
     background-image: linear-gradient(to right, red, yellow);
     background-image: linear-gradient(45deg, red, yellow);
-    
+
     /* Radial gradient */
     background-image: radial-gradient(circle, red, yellow);
-    
+
     /* Repeating gradient */
     background-image: repeating-linear-gradient(45deg, red, red 10px, yellow 10px, yellow 20px);
 }
@@ -392,26 +392,26 @@ p {
 .position-values {
     /* Static (default) */
     position: static; /* Normal flow, not affected by top/right/bottom/left */
-    
+
     /* Relative */
     position: relative; /* Positioned relative to normal position */
     top: 10px;
     left: 20px;
-    
+
     /* Absolute */
     position: absolute; /* Positioned relative to nearest positioned ancestor */
     top: 20px;
     right: 20px;
-    
+
     /* Fixed */
     position: fixed; /* Positioned relative to viewport, stays in place when scrolling */
     bottom: 20px;
     right: 20px;
-    
+
     /* Sticky */
     position: sticky; /* Hybrid of relative and fixed */
     top: 0; /* Sticks to top when scrolled to */
-    
+
     /* Z-index */
     z-index: 100; /* Controls stacking order of positioned elements */
 }
@@ -448,22 +448,22 @@ Flexbox is a one-dimensional layout method designed for laying out items in rows
 /* Parent (flex container) */
 .container {
     display: flex; /* or inline-flex */
-    
+
     /* Direction */
     flex-direction: row; /* row, row-reverse, column, column-reverse */
-    
+
     /* Wrapping */
     flex-wrap: nowrap; /* nowrap, wrap, wrap-reverse */
-    
+
     /* Shorthand for direction and wrap */
     flex-flow: row wrap;
-    
+
     /* Horizontal alignment */
     justify-content: flex-start; /* flex-start, flex-end, center, space-between, space-around, space-evenly */
-    
+
     /* Vertical alignment */
     align-items: stretch; /* stretch, flex-start, flex-end, center, baseline */
-    
+
     /* Multi-line alignment */
     align-content: stretch; /* stretch, flex-start, flex-end, center, space-between, space-around */
 }
@@ -472,22 +472,22 @@ Flexbox is a one-dimensional layout method designed for laying out items in rows
 .item {
     /* Order */
     order: 0; /* Default 0, can be negative */
-    
+
     /* Flexibility growth factor */
     flex-grow: 0; /* Default 0, proportion of extra space to take up */
-    
+
     /* Flexibility shrink factor */
     flex-shrink: 1; /* Default 1, proportion of space to give up */
-    
+
     /* Initial size */
     flex-basis: auto; /* Initial size before growing/shrinking */
-    
+
     /* Shorthand for grow, shrink, basis */
     flex: 0 1 auto; /* default */
     flex: 1; /* 1 0 0% - take up all available space equally */
     flex: auto; /* 1 1 auto */
     flex: none; /* 0 0 auto - make inflexible */
-    
+
     /* Individual alignment (overrides container's align-items) */
     align-self: auto; /* auto, flex-start, flex-end, center, baseline, stretch */
 }
@@ -537,34 +537,34 @@ CSS Grid is a two-dimensional layout system designed for complex layouts.
 /* Parent (grid container) */
 .container {
     display: grid;
-    
+
     /* Define columns */
     grid-template-columns: 100px 200px 100px; /* 3 columns with fixed widths */
     grid-template-columns: 1fr 2fr 1fr; /* 3 columns in proportion 1:2:1 */
     grid-template-columns: repeat(3, 1fr); /* 3 equal columns */
     grid-template-columns: minmax(100px, 1fr) 2fr; /* Min 100px, max 1fr + 2fr column */
     grid-template-columns: auto 1fr auto; /* auto-sized, flexible, auto-sized */
-    
+
     /* Define rows */
     grid-template-rows: 100px auto 100px; /* Fixed, flexible, fixed */
     grid-template-rows: repeat(3, 100px); /* 3 equal rows */
-    
+
     /* Gap between cells */
     grid-column-gap: 20px; /* Horizontal gap */
     grid-row-gap: 10px; /* Vertical gap */
     grid-gap: 10px 20px; /* Shorthand: row-gap column-gap */
     gap: 10px; /* Modern shorthand for all gaps */
-    
+
     /* Alignment of all items */
     justify-items: stretch; /* stretch, start, end, center */
     align-items: stretch; /* stretch, start, end, center */
-    
+
     /* Alignment of entire grid */
     justify-content: center; /* start, end, center, stretch, space-around, space-between, space-evenly */
     align-content: center; /* start, end, center, stretch, space-around, space-between, space-evenly */
-    
+
     /* Named template areas */
-    grid-template-areas: 
+    grid-template-areas:
         "header header header"
         "sidebar content content"
         "footer footer footer";
@@ -577,20 +577,20 @@ CSS Grid is a two-dimensional layout system designed for complex layouts.
     grid-column-end: 3; /* or span 2 */
     grid-row-start: 2;
     grid-row-end: 4; /* or span 2 */
-    
+
     /* Shorthand for column placement */
     grid-column: 1 / 3; /* start / end */
     grid-column: 1 / span 2; /* start / span */
-    
+
     /* Shorthand for row placement */
     grid-row: 2 / 4; /* start / end */
-    
+
     /* Super shorthand for column and row */
     grid-area: 2 / 1 / 4 / 3; /* row-start / column-start / row-end / column-end */
-    
+
     /* Placement by template area */
     grid-area: header; /* Uses named area from grid-template-areas */
-    
+
     /* Individual alignment (overrides container values) */
     justify-self: center; /* stretch, start, end, center */
     align-self: center; /* stretch, start, end, center */
@@ -668,21 +668,21 @@ CSS Grid is a two-dimensional layout system designed for complex layouts.
 .responsive-units {
     /* Percentage - relative to parent */
     width: 50%; /* Half of parent width */
-    
+
     /* Viewport units */
     width: 50vw; /* 50% of viewport width */
     height: 50vh; /* 50% of viewport height */
     min-height: 100vh; /* Full viewport height */
-    
+
     /* Viewport minimum/maximum */
     width: 50vmin; /* 50% of viewport's smaller dimension */
     height: 50vmax; /* 50% of viewport's larger dimension */
-    
+
     /* Font relative units */
     margin: 1em; /* Relative to font-size of the element */
     padding: 1.5rem; /* Relative to font-size of root element */
     letter-spacing: 0.1em; /* Relative to font-size of element */
-    
+
     /* Responsive font sizing */
     font-size: calc(16px + 1vw); /* Base size plus viewport-relative increment */
     font-size: clamp(1rem, 2.5vw, 2rem); /* Min, preferred, max */
@@ -705,12 +705,12 @@ img {
 }
 
 /* Art direction with picture element (HTML) */
-/* 
+/*
 <picture>
     <source media="(min-width: 1200px)" srcset="large.jpg">
     <source media="(min-width: 768px)" srcset="medium.jpg">
     <img src="small.jpg" alt="Responsive image">
-</picture> 
+</picture>
 */
 ```
 
@@ -772,15 +772,15 @@ img {
     width: 100px;
     height: 100px;
     background-color: blue;
-    
+
     /* Individual transition properties */
     transition-property: width, background-color;
     transition-duration: 0.3s;
     transition-timing-function: ease-in-out;
     transition-delay: 0.1s;
-    
+
     /* Shorthand */
-    transition: width 0.3s ease-in-out, 
+    transition: width 0.3s ease-in-out,
                background-color 0.5s ease 0.1s;
                /* property duration timing-function delay */
 }
@@ -812,7 +812,7 @@ img {
         transform: translateX(-100%);
         opacity: 0;
     }
-    
+
     /* Ending state (100%) */
     to {
         transform: translateX(0);
@@ -844,7 +844,7 @@ img {
     animation-direction: normal; /* normal, reverse, alternate, alternate-reverse */
     animation-fill-mode: forwards; /* none, forwards, backwards, both */
     animation-play-state: running; /* running, paused */
-    
+
     /* Shorthand */
     animation: slide-in 1s ease-out 0.5s 1 normal forwards;
     /* name duration timing-function delay iteration-count direction fill-mode */
@@ -852,7 +852,7 @@ img {
 
 /* Multiple animations */
 .multi-animated {
-    animation: 
+    animation:
         slide-in 1s ease-out,
         pulse 2s infinite ease-in-out 1s;
 }
@@ -870,29 +870,29 @@ img {
     transform: translateX(20px); /* Move horizontally */
     transform: translateY(-20px); /* Move vertically */
     transform: translate(20px, -20px); /* Move in both directions */
-    
+
     transform: scale(1.5); /* Scale uniformly */
     transform: scaleX(1.5); /* Scale horizontally */
     transform: scaleY(0.8); /* Scale vertically */
     transform: scale(1.5, 0.8); /* Scale in both directions */
-    
+
     transform: rotate(45deg); /* Rotate clockwise */
     transform: rotate(-45deg); /* Rotate counter-clockwise */
-    
+
     transform: skewX(10deg); /* Skew horizontally */
     transform: skewY(10deg); /* Skew vertically */
     transform: skew(10deg, 5deg); /* Skew in both directions */
-    
+
     /* 3D Transforms */
     transform: rotateX(45deg); /* Rotate around X-axis */
     transform: rotateY(45deg); /* Rotate around Y-axis */
     transform: rotateZ(45deg); /* Rotate around Z-axis (same as rotate) */
-    
+
     transform: perspective(500px) rotateY(45deg); /* Add perspective */
-    
+
     /* Multiple transforms */
     transform: translateY(20px) rotate(45deg) scale(1.5);
-    
+
     /* Transform origin */
     transform-origin: center; /* Default */
     transform-origin: top left; /* From top-left corner */
@@ -1237,11 +1237,11 @@ $padding-base: 15px;
 .container {
   max-width: 1200px;
   margin: 0 auto;
-  
+
   .header {
     background-color: $primary-color;
     padding: $padding-base;
-    
+
     h1 {
       font-size: 2em;
     }
@@ -1285,7 +1285,7 @@ $padding-base: 15px;
 // Conditionals
 @mixin text-color($bg-color) {
   background-color: $bg-color;
-  
+
   @if (lightness($bg-color) > 50%) {
     color: #333; // Dark text for light backgrounds
   } @else {

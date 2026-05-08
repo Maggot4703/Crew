@@ -9,12 +9,12 @@ cd "$SCRIPT_DIR" || exit 1
 if [ ! -d ".venv" ]; then
     echo "Virtual environment not found. Setting up .venv..."
     python3 ReadMine.py --setup-venv
-    
+
     if [ $? -ne 0 ]; then
         echo "Failed to set up virtual environment. Exiting."
         exit 1
     fi
-    
+
     echo "Virtual environment set up successfully."
 fi
 

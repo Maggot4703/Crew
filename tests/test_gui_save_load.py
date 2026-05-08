@@ -1,14 +1,16 @@
 import os
-import tempfile
-import unittest
-import tkinter as tk
-from unittest.mock import patch
-from pathlib import Path
 
 # Ensure gui.py is importable
 import sys
+import tempfile
+import tkinter as tk
+import unittest
+from pathlib import Path
+from unittest.mock import MagicMock, patch
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 import gui
+
 
 class TestCrewGUISaveLoad(unittest.TestCase):
     def setUp(self):
@@ -53,6 +55,26 @@ class TestCrewGUISaveLoad(unittest.TestCase):
         # Process the event loop to allow root.after callbacks to run
         self.root.update()  # This will process pending events
         mock_showerror.assert_called()
+
+    def test_scratchpad_text_is_saved_to_config(self):
+        self.app.config = MagicMock()
+        self.app.scratchpad_text.delete("1.0", tk.END)
+        self.app.scratchpad_text.insert("1.0", "temporary notes")
+
+        self.app._save_scratchpad_text()
+
+        self.app.config.set.assert_called_with("scratchpad_text", "temporary notes")
+
+    def test_scratchpad_text_loads_from_config(self):
+        self.app.config = MagicMock()
+        self.app.config.get.return_value = "saved scratchpad text"
+
+        self.app._load_scratchpad_text()
+
+        self.assertEqual(
+            self.app.scratchpad_text.get("1.0", "end-1c"), "saved scratchpad text"
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

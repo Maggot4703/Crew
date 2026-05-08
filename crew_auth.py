@@ -4,6 +4,7 @@ crew_auth.py
 
 Simple user authentication for Crew chat system.
 """
+
 import hashlib
 from typing import Optional
 

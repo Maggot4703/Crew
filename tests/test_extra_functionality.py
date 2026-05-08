@@ -1,12 +1,13 @@
 """Tests for extra functionality additions in Crew.py."""
 
 import csv
+import os
+import sys
 from pathlib import Path
 
 from PIL import Image
 
-import sys, os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from Crew import crop_from_annotations, hex_to_rgb, process_images
 
 
@@ -57,11 +58,15 @@ def test_crop_from_annotations_skips_invalid_rows(tmp_path):
     ]
 
     with csv_path.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=["name", "x", "y", "width", "height"])
+        writer = csv.DictWriter(
+            handle, fieldnames=["name", "x", "y", "width", "height"]
+        )
         writer.writeheader()
         writer.writerows(rows)
 
-    saved = crop_from_annotations(str(image_path), str(csv_path), str(output_dir), output_format="png")
+    saved = crop_from_annotations(
+        str(image_path), str(csv_path), str(output_dir), output_format="png"
+    )
 
     assert len(saved) == 2
     assert (output_dir / "valid_1.png").exists()

@@ -3,10 +3,13 @@ Test suite for DataManager module (data_manager.py).
 Covers core data loading, filtering, sorting, and observer notification.
 """
 
+import os
+import sys
 import unittest
-import sys, os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from data_manager import DataManager, FilterConfig, SortKey
+
 
 class TestDataManager(unittest.TestCase):
     def setUp(self):
@@ -26,8 +29,10 @@ class TestDataManager(unittest.TestCase):
 
     def test_register_and_notify_observer(self):
         calls = []
+
         def observer(state):
             calls.append(state)
+
         self.manager.register_observer(observer)
         self.manager._notify_observers()
         self.assertTrue(len(calls) > 0)
@@ -39,6 +44,7 @@ class TestDataManager(unittest.TestCase):
         self.assertTrue(result)
 
     # Add more tests for filtering, sorting, and edge cases as needed
+
 
 if __name__ == "__main__":
     unittest.main()

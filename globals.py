@@ -7,6 +7,8 @@ different parts of the application. Use with caution to avoid
 tightly coupling modules.
 """
 
+from pathlib import Path
+
 # Example Global Variables (replace with actual globals used in your project)
 
 # --- Application Settings ---
@@ -220,17 +222,19 @@ DEFAULT_GRID_COLOR = "lightgrey"
 DEFAULT_LINE_COLOR = "red"
 DEFAULT_GRID_SIZE = (42, 32)
 
-INPUT_DIR = "/home/me/BACKUP/PROJECTS/CardCutter/gimp"
-OUTPUT_DIR = "output"
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+_CARDCUTTER_DIR = _REPO_ROOT / "CARDCUTTER" / "CardCutter"
+INPUT_DIR = str(_CARDCUTTER_DIR / "gimp")
+OUTPUT_DIR = str(_CARDCUTTER_DIR)
 
 IMAGE_FILES = [
-    "_cars1.png",
-    "_cars1+.png",
-    "_cars2.png",
-    "_cars3.png",
-    "_cars57+.png",
-    "_cars78+.png",
-    "_cars114+.png",
+    "Cars1.png",
+    "Cars2.png",
+    "Cars3.png",
+    "Cars4.png",
+    "Cars5.png",
+    "Cars6.png",
+    "Cars7.png",
 ]
 
 GRID_SIZES = [(42, 32), (28, 16), (40, 32), (44, 34), (14, 22), (32, 16), (28, 16)]

@@ -4,11 +4,11 @@ Legacy compatibility launcher for Crew GUI.
 
 Canonical startup is gui_main_function.main. Keep this file as a thin wrapper.
 """
+
 import logging
 import sys
 
 from gui_main_function import main as launch_main
-
 
 logger = logging.getLogger(__name__)
 

@@ -11,8 +11,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-import sys, os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import os
+import sys
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import globals
 
 
@@ -64,6 +66,23 @@ class TestGlobals(unittest.TestCase):
         self.assertEqual(globals.BIKE, "Bike")
         self.assertEqual(globals.CAR, "Car")
         self.assertEqual(globals.TRUCK, "Truck")
+
+    def test_cardcutter_integration_defaults(self):
+        """Test Crew defaults that point at the local CardCutter workspace."""
+        self.assertTrue(globals.INPUT_DIR.endswith("/CARDCUTTER/CardCutter/gimp"))
+        self.assertTrue(globals.OUTPUT_DIR.endswith("/CARDCUTTER/CardCutter"))
+        self.assertEqual(
+            globals.IMAGE_FILES,
+            [
+                "Cars1.png",
+                "Cars2.png",
+                "Cars3.png",
+                "Cars4.png",
+                "Cars5.png",
+                "Cars6.png",
+                "Cars7.png",
+            ],
+        )
 
 
 if __name__ == "__main__":

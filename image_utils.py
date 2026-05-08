@@ -1,7 +1,8 @@
-import os
 import logging
-from PIL import Image, ImageDraw, ImageColor
+import os
 from typing import Any, List, Optional
+
+from PIL import Image, ImageColor, ImageDraw
 
 DEFAULT_GRID_COLOR = "lightgrey"
 DEFAULT_LINE_COLOR = "red"
@@ -9,6 +10,7 @@ DEFAULT_GRID_SIZE = (42, 32)
 IMAGE_DIMENSIONS = (800, 600)
 
 logger = logging.getLogger(__name__)
+
 
 def mark_line(
     image=None,
@@ -34,6 +36,7 @@ def mark_line(
     except Exception as e:
         logger.error(f"Error in mark_line: {e}", exc_info=True)
         return None
+
 
 def overlay_grid(
     image_path: str,
@@ -76,6 +79,7 @@ def overlay_grid(
     except Exception as e:
         logger.error(f"Error in overlay_grid for {image_path}: {e}", exc_info=True)
         return None
+
 
 def process_images(
     image_directory: str,
@@ -128,6 +132,7 @@ def process_images(
     logger.info("Processed %d images into %s", len(saved_paths), output_directory)
     return saved_paths
 
+
 def crop_from_annotations(
     image_path: str,
     annotations_csv: str,
@@ -155,6 +160,7 @@ def crop_from_annotations(
         return saved_paths
     image_width, image_height = source_image.size
     import csv
+
     with open(annotations_csv, "r", encoding="utf-8", newline="") as handle:
         reader = csv.DictReader(handle)
         for row_number, row in enumerate(reader, start=2):
@@ -205,6 +211,7 @@ def crop_from_annotations(
     logger.info("Saved %d cropped regions to %s", len(saved_paths), output_directory)
     return saved_paths
 
+
 def markHorizontalLine(
     x1: int, y1: int, x2: int, y2: int, color: str = "red", thickness: int = 1
 ):
@@ -215,6 +222,7 @@ def markHorizontalLine(
         logger.error(f"Error in markHorizontalLine: {e}", exc_info=True)
         return None
 
+
 def overlayGrid(
     image_path: str,
     grid_color: str = DEFAULT_GRID_COLOR,
@@ -222,17 +230,20 @@ def overlayGrid(
 ):
     return overlay_grid(image_path, grid_color, grid_size)
 
+
 def _resolve_color(color_value: Any) -> Any:
     if isinstance(color_value, tuple) and len(color_value) == 3:
         return color_value
     rgb = hex_to_rgb(color_value)
     return rgb
 
+
 def _build_save_kwargs(extension: str, quality: int) -> dict:
     ext = extension.lower().lstrip(".")
     if ext in {"jpg", "jpeg", "webp"}:
         return {"quality": quality}
     return {}
+
 
 def hex_to_rgb(hex_color: str) -> tuple:
     try:

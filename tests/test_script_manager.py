@@ -4,12 +4,16 @@ Covers script file discovery, validation, and execution.
 """
 
 import unittest
+
 from script_manager import ScriptManager
+
 
 class TestScriptManager(unittest.TestCase):
     def setUp(self):
         # Provide a dummy UI callback
-        self.manager = ScriptManager(scripts_dir="/tmp", ui_callback=lambda msg, err: None)
+        self.manager = ScriptManager(
+            scripts_dir="/tmp", ui_callback=lambda msg, err: None
+        )
 
     def test_get_script_files(self):
         result = self.manager.get_script_files()
@@ -17,7 +21,7 @@ class TestScriptManager(unittest.TestCase):
 
     def test_validate_script_dir(self):
         # Use the correct method name as implemented
-        if hasattr(self.manager, 'validate_script_dir'):
+        if hasattr(self.manager, "validate_script_dir"):
             valid, msg = self.manager.validate_script_dir()
         else:
             valid, msg = self.manager.validate_script_directory()
@@ -25,6 +29,7 @@ class TestScriptManager(unittest.TestCase):
         self.assertIsInstance(msg, str)
 
     # Add more tests for script execution and error handling as needed
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -3,6 +3,7 @@
 Simple utility to read use-*.txt files aloud
 Enhanced with better voice handling and interruption support
 """
+
 import argparse
 import glob
 import os

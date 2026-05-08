@@ -25,18 +25,23 @@ class Test0101LaunchFallback(unittest.TestCase):
             side_effect=RuntimeError("ssh target unavailable")
         )
         app._launch_local_0101_server = MagicMock(
-            return_value=("started", "http://localhost:8080/0101.html")
+            return_value=(
+                "started",
+                "http://localhost:8080/index.html?launch=local&state=started&host=localhost",
+            )
         )
 
         app._launch_0101_server()
 
         app._launch_local_0101_server.assert_called_once_with()
-        app._open_0101_url.assert_called_once_with("http://localhost:8080/0101.html")
+        app._open_0101_url.assert_called_once_with(
+            "http://localhost:8080/index.html?launch=local&state=started&host=localhost"
+        )
         app._show_0101_launch_error.assert_not_called()
         app.update_status.assert_called_once()
         status_message = app.update_status.call_args.args[0]
         self.assertIn("using local server", status_message)
-        self.assertIn("http://localhost:8080/0101.html", status_message)
+        self.assertIn("http://localhost:8080/index.html", status_message)
 
     @patch("gui.subprocess.run")
     def test_launch_remote_0101_server_syncs_project_before_starting(self, mock_run):
@@ -64,7 +69,10 @@ class Test0101LaunchFallback(unittest.TestCase):
         status, remote_url = app._launch_remote_0101_server()
 
         self.assertEqual(status, "started")
-        self.assertEqual(remote_url, "http://192.168.1.50:8080/0101.html")
+        self.assertEqual(
+            remote_url,
+            "http://192.168.1.50:8080/index.html?launch=remote&state=started&host=192.168.1.50",
+        )
         rsync_call = next(
             call for call in mock_run.call_args_list if call.args[0][0] == "rsync"
         )
@@ -75,11 +83,12 @@ class Test0101LaunchFallback(unittest.TestCase):
 
     def test_build_0101_window_title_candidates_includes_url_fragments(self):
         candidates = CrewGUI._build_0101_window_title_candidates(
-            "http://192.168.0.8:8080/0101.html"
+            "http://192.168.0.8:8080/index.html?launch=remote&state=started&host=192.168.0.8"
         )
 
+        self.assertIn("0101 Navigator", candidates)
         self.assertIn("0101", candidates)
-        self.assertIn("0101.html", candidates)
+        self.assertIn("index.html", candidates)
         self.assertIn("192.168.0.8:8080", candidates)
         self.assertIn("192.168.0.8", candidates)
 
@@ -89,11 +98,16 @@ class Test0101LaunchFallback(unittest.TestCase):
         app._resize_0101_window_async = MagicMock()
         app._activate_existing_0101_window = MagicMock(return_value=False)
 
-        app._open_0101_url("http://192.168.0.8:8080/0101.html")
+        app._open_0101_url(
+            "http://192.168.0.8:8080/index.html?launch=remote&state=started&host=192.168.0.8"
+        )
 
-        mock_open.assert_called_once_with("http://192.168.0.8:8080/0101.html", new=0)
+        mock_open.assert_called_once_with(
+            "http://192.168.0.8:8080/index.html?launch=remote&state=started&host=192.168.0.8",
+            new=0,
+        )
         app._resize_0101_window_async.assert_called_once_with(
-            "http://192.168.0.8:8080/0101.html"
+            "http://192.168.0.8:8080/index.html?launch=remote&state=started&host=192.168.0.8"
         )
 
     @patch("webbrowser.open")
@@ -102,14 +116,16 @@ class Test0101LaunchFallback(unittest.TestCase):
         app._resize_0101_window_async = MagicMock()
         app._activate_existing_0101_window = MagicMock(return_value=True)
 
-        app._open_0101_url("http://192.168.0.8:8080/0101.html")
+        app._open_0101_url(
+            "http://192.168.0.8:8080/index.html?launch=remote&state=started&host=192.168.0.8"
+        )
 
         app._activate_existing_0101_window.assert_called_once_with(
-            "http://192.168.0.8:8080/0101.html"
+            "http://192.168.0.8:8080/index.html?launch=remote&state=started&host=192.168.0.8"
         )
         mock_open.assert_not_called()
         app._resize_0101_window_async.assert_called_once_with(
-            "http://192.168.0.8:8080/0101.html"
+            "http://192.168.0.8:8080/index.html?launch=remote&state=started&host=192.168.0.8"
         )
 
     @patch("gui.shutil.which")
@@ -131,7 +147,9 @@ class Test0101LaunchFallback(unittest.TestCase):
             subprocess.CompletedProcess(args=[], returncode=0, stdout="", stderr=""),
         ]
 
-        reused = app._activate_existing_0101_window("http://192.168.0.8:8080/0101.html")
+        reused = app._activate_existing_0101_window(
+            "http://192.168.0.8:8080/index.html?launch=remote&state=started&host=192.168.0.8"
+        )
 
         self.assertTrue(reused)
         self.assertEqual(

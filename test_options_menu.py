@@ -1,6 +1,8 @@
-import unittest
 import tkinter as tk
+import unittest
+
 from gui import CrewGUI
+
 
 class TestOptionsMenu(unittest.TestCase):
     def setUp(self):
@@ -34,6 +36,7 @@ class TestOptionsMenu(unittest.TestCase):
         ok_btn = dialog.winfo_children()[2]
         ok_btn.invoke()
         self.assertEqual(self.app.user_status["msg"], "Busy")
+
 
 if __name__ == "__main__":
     unittest.main()

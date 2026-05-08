@@ -4,7 +4,9 @@ Covers initialization, speech, and settings management.
 """
 
 import unittest
+
 from tts_manager import TTSManager
+
 
 class TestTTSManager(unittest.TestCase):
     def setUp(self):
@@ -22,6 +24,7 @@ class TestTTSManager(unittest.TestCase):
             self.fail(f"speak_text() raised {e}")
 
     # Add more tests for pause, resume, stop, and settings as needed
+
 
 if __name__ == "__main__":
     unittest.main()

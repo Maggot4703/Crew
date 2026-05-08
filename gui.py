@@ -58,7 +58,7 @@ from pathlib import Path  # File handling
 from queue import Queue  # Thread-safe queue
 from tkinter import filedialog, messagebox, ttk  # GUI dialogs and widgets
 from typing import Any, Callable, Dict, List, Optional, Tuple
-from urllib.parse import urlparse
+from urllib.parse import urlencode, urlparse
 
 from config import Config  # Configuration management
 from database_manager import DatabaseManager  # Data persistence
@@ -196,7 +196,8 @@ DEFAULT_0101_SERVER_PATHS = [
 DEFAULT_0101_REMOTE_TARGET = "me@p48"
 DEFAULT_0101_REMOTE_LOG_PATH = "/tmp/crew-0101-server.log"
 DEFAULT_0101_LOCAL_LOG_PATH = "/tmp/crew-0101-local-server.log"
-DEFAULT_0101_URL = "http://localhost:8080/0101.html"
+DEFAULT_0101_ENTRY_PAGE = "index.html"
+DEFAULT_0101_URL = f"http://localhost:8080/{DEFAULT_0101_ENTRY_PAGE}"
 DEFAULT_0101_SYNC_EXCLUDES = [
     ".git/",
     "__pycache__/",
@@ -1306,7 +1307,7 @@ class CrewGUI:
             raise FileNotFoundError(outcome.split(":", 1)[1])
         status, _, remote_host = (outcome.split("|", 2) + ["", ""])[:3]
         browser_host = remote_host or "p48"
-        return status, f"http://{browser_host}:8080/0101.html"
+        return status, self._build_0101_url(browser_host, "remote", status)
 
     def _build_remote_ssh_command(self, remote_command: str) -> list[str]:
         """Build a consistent SSH command for remote 0101 actions."""
@@ -1402,7 +1403,7 @@ class CrewGUI:
         """Return the local launch status and URL for the 0101 server."""
         server_path = self._find_0101_server_path()
         if self._is_0101_port_open():
-            return "running", DEFAULT_0101_URL
+            return "running", self._build_0101_url("localhost", "local", "running")
 
         command = [sys.executable, server_path]
         with open(DEFAULT_0101_LOCAL_LOG_PATH, "a", encoding="utf-8") as log_file:
@@ -1416,7 +1417,7 @@ class CrewGUI:
 
         for _ in range(10):
             if self._is_0101_port_open():
-                return "started", DEFAULT_0101_URL
+                return "started", self._build_0101_url("localhost", "local", "started")
             if process.poll() is not None:
                 raise subprocess.CalledProcessError(process.returncode, command)
             time.sleep(0.5)
@@ -1533,7 +1534,7 @@ class CrewGUI:
     @staticmethod
     def _build_0101_window_title_candidates(url: str) -> list[str]:
         """Return likely browser window title fragments for the 0101 page."""
-        candidates = ["0101", "0101.html"]
+        candidates = ["0101 Navigator", "0101", "index.html", "0101.html"]
 
         parsed_url = urlparse(url)
         if parsed_url.netloc:
@@ -1557,6 +1558,12 @@ class CrewGUI:
             seen.add(normalized)
             deduped_candidates.append(candidate)
         return deduped_candidates
+
+    @staticmethod
+    def _build_0101_url(host: str, launch: str, state: str) -> str:
+        """Build the 0101 entry URL with launch context for the page shell."""
+        query = urlencode({"launch": launch, "state": state, "host": host})
+        return f"http://{host}:8080/{DEFAULT_0101_ENTRY_PAGE}?{query}"
 
     def _resize_window_by_title(
         self,
