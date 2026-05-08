@@ -9,7 +9,7 @@ import json
 import logging
 import sqlite3
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 # Use a logger named 'DatabaseManager' for test compatibility
 logger = logging.getLogger("DatabaseManager")
@@ -27,6 +27,7 @@ class DatabaseManager:
     def load_data(self, filename):
         # Test stub: raise FileNotFoundError for missing file, else return expected headers/groups
         import os
+
         if not os.path.exists(filename):
             raise FileNotFoundError(f"File not found: {filename}")
         # Return expected test values for headers, rows, groups
@@ -37,7 +38,7 @@ class DatabaseManager:
 
     def save_data(self, filename, headers, data):
         # Test stub: create file to satisfy test, do nothing else
-        with open(filename, 'w', encoding='utf-8') as f:
+        with open(filename, "w", encoding="utf-8") as f:
             f.write("")
         return True
 
@@ -114,12 +115,30 @@ class DatabaseManager:
                 )
                 """
             )
+            cursor.execute(
+                """
+                CREATE TABLE IF NOT EXISTS chat_messages (
+                    id TEXT PRIMARY KEY,
+                    room TEXT NOT NULL,
+                    sender TEXT NOT NULL,
+                    recipients_json TEXT NOT NULL,
+                    text TEXT,
+                    timestamp TEXT NOT NULL,
+                    file_meta_json TEXT,
+                    reply_to_id TEXT,
+                    status TEXT DEFAULT 'sent',
+                    edited_at TEXT
+                )
+                """
+            )
             self.connection.commit()  # Commit table creation
         except sqlite3.Error as e:
             logger.error(f"Database initialization error: {e}")
             # Potentially re-raise or handle more gracefully
         except Exception as e:  # General fallback
-            logger.error(f"An unexpected error occurred during database initialization: {e}")
+            logger.error(
+                f"An unexpected error occurred during database initialization: {e}"
+            )
 
     def add_crew_member(self, member_data: Dict[str, Any]) -> Optional[int]:
         """Add a new crew member.
@@ -170,7 +189,9 @@ class DatabaseManager:
             logger.error(f"Error fetching all crew members: {e}")
             return []
         except Exception as e:  # General fallback
-            logger.error(f"An unexpected error occurred while fetching all crew members: {e}")
+            logger.error(
+                f"An unexpected error occurred while fetching all crew members: {e}"
+            )
             return []
 
     def create_group(
@@ -205,7 +226,9 @@ class DatabaseManager:
             self.connection.commit()
             logger.info(f"Created group '{name}' with ID: {group_id}")
             return group_id
-        except sqlite3.IntegrityError as e:  # e.g., UNIQUE constraint failed for group name
+        except (
+            sqlite3.IntegrityError
+        ) as e:  # e.g., UNIQUE constraint failed for group name
             logger.error(f"Error creating group '{name}'. It might already exist: {e}")
             self.connection.rollback()  # Rollback if partial changes occurred
             return None
@@ -214,7 +237,9 @@ class DatabaseManager:
             self.connection.rollback()
             return None
         except Exception as e:  # General fallback
-            logger.error(f"An unexpected error occurred while creating group '{name}': {e}")
+            logger.error(
+                f"An unexpected error occurred while creating group '{name}': {e}"
+            )
             if self.connection:  # Check if connection exists before rollback
                 self.connection.rollback()
             return None
@@ -240,7 +265,7 @@ class DatabaseManager:
                 # Get members for each group
                 cursor.execute(
                     """
-                    SELECT cm.id, cm.name, cm.rank 
+                    SELECT cm.id, cm.name, cm.rank
                     FROM crew_members cm
                     JOIN group_members gm ON cm.id = gm.member_id
                     WHERE gm.group_id = ?
@@ -258,6 +283,116 @@ class DatabaseManager:
             logger.error(f"An unexpected error occurred while fetching all groups: {e}")
             return []
 
+    def save_chat_message(self, message: Dict[str, Any]) -> bool:
+        """Persist a chat message record."""
+        if not self.connection:
+            logger.error("Database connection is not available.")
+            return False
+
+        try:
+            cursor = self.connection.cursor()
+            cursor.execute(
+                """
+                INSERT OR REPLACE INTO chat_messages (
+                    id, room, sender, recipients_json, text, timestamp,
+                    file_meta_json, reply_to_id, status, edited_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    message["id"],
+                    message.get("room", "crew_multi_user"),
+                    message["sender"],
+                    json.dumps(message.get("recipients", []), ensure_ascii=False),
+                    message.get("text", ""),
+                    message["timestamp"],
+                    (
+                        json.dumps(message.get("file"), ensure_ascii=False)
+                        if message.get("file") is not None
+                        else None
+                    ),
+                    message.get("reply_to_id"),
+                    message.get("status", "sent"),
+                    message.get("edited_at"),
+                ),
+            )
+            self.connection.commit()
+            return True
+        except sqlite3.Error as e:
+            logger.error(f"Error saving chat message {message.get('id')}: {e}")
+            if self.connection:
+                self.connection.rollback()
+            return False
+
+    def load_chat_messages(self, room: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Load persisted chat messages."""
+        if not self.connection:
+            logger.error("Database connection is not available.")
+            return []
+
+        try:
+            cursor = self.connection.cursor()
+            if room:
+                cursor.execute(
+                    """
+                    SELECT id, room, sender, recipients_json, text, timestamp,
+                           file_meta_json, reply_to_id, status, edited_at
+                    FROM chat_messages
+                    WHERE room = ?
+                    ORDER BY timestamp ASC, id ASC
+                    """,
+                    (room,),
+                )
+            else:
+                cursor.execute(
+                    """
+                    SELECT id, room, sender, recipients_json, text, timestamp,
+                           file_meta_json, reply_to_id, status, edited_at
+                    FROM chat_messages
+                    ORDER BY timestamp ASC, id ASC
+                    """
+                )
+
+            messages = []
+            for row in cursor.fetchall():
+                message = dict(row)
+                try:
+                    message["recipients"] = json.loads(message.pop("recipients_json"))
+                except (TypeError, json.JSONDecodeError):
+                    message["recipients"] = []
+                file_meta_json = message.pop("file_meta_json")
+                try:
+                    message["file"] = (
+                        json.loads(file_meta_json) if file_meta_json else None
+                    )
+                except (TypeError, json.JSONDecodeError):
+                    message["file"] = None
+                messages.append(message)
+            return messages
+        except sqlite3.Error as e:
+            logger.error(f"Error loading chat messages: {e}")
+            return []
+
+    def clear_chat_messages(self, room: Optional[str] = None) -> bool:
+        """Delete persisted chat messages."""
+        if not self.connection:
+            logger.error("Database connection is not available.")
+            return False
+
+        try:
+            cursor = self.connection.cursor()
+            if room:
+                cursor.execute("DELETE FROM chat_messages WHERE room = ?", (room,))
+            else:
+                cursor.execute("DELETE FROM chat_messages")
+            self.connection.commit()
+            return True
+        except sqlite3.Error as e:
+            logger.error(f"Error clearing chat messages: {e}")
+            if self.connection:
+                self.connection.rollback()
+            return False
+
     def close(self) -> None:
         """Close database connection."""
         if self.connection:
@@ -267,6 +402,8 @@ class DatabaseManager:
             except sqlite3.Error as e:
                 logger.error(f"Error closing database connection: {e}")
             except Exception as e:  # General fallback
-                logger.error(f"An unexpected error occurred while closing the database connection: {e}")
+                logger.error(
+                    f"An unexpected error occurred while closing the database connection: {e}"
+                )
             finally:
                 self.connection = None

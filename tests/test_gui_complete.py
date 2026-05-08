@@ -10,6 +10,7 @@ import os
 import sys
 import tkinter as tk
 import unittest
+from tkinter import ttk
 from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -25,14 +26,20 @@ class TestGUIRecordMenu(unittest.TestCase):
             found.extend(self._find_widgets_by_type(child, widget_types))
         return found
 
+    def _find_widget_by_text(self, root_widget, widget_types, text):
+        for widget in self._find_widgets_by_type(root_widget, widget_types):
+            if widget.cget("text") == text:
+                return widget
+        return None
+
     def test_crew_chat_window_buttons(self):
-        """Test that Crew Chat window contains the 5-button interface with correct labels and tooltips."""
+        """Test that Crew Chat exposes the clearer audio control labels."""
         chat_win = self.gui.open_crew_chat_window()
         self.assertIsNotNone(chat_win, "open_crew_chat_window() returned None")
         if chat_win is not None:
             buttons = self._find_widgets_by_type(chat_win, (tk.Button, tk.Checkbutton))
             button_labels = [b.cget("text") for b in buttons]
-            expected_labels = {"SET", "START/STOP", "SAVE/LOAD", "Rec/Play", "?"}
+            expected_labels = {"Mic", "Record", "Save", "Record / Play", "?"}
             found_labels = set(button_labels)
             self.assertTrue(
                 expected_labels.issubset(found_labels),
@@ -45,13 +52,13 @@ class TestGUIRecordMenu(unittest.TestCase):
                 )
 
     def test_chatbot_dialog_buttons(self):
-        """Test that Chatbot dialog contains the 5-button interface with correct labels and tooltips."""
+        """Test that Chatbot exposes the clearer audio control labels."""
         dialog = self.gui.open_chatbot_dialog()
         self.assertIsNotNone(dialog, "open_chatbot_dialog() returned None")
         if dialog is not None:
             buttons = self._find_widgets_by_type(dialog, (tk.Button, tk.Checkbutton))
             button_labels = [b.cget("text") for b in buttons]
-            expected_labels = {"SET", "START/STOP", "SAVE/LOAD", "Rec/Play", "?"}
+            expected_labels = {"Mic", "Record", "Save", "Record / Play", "?"}
             found_labels = set(button_labels)
             self.assertTrue(
                 expected_labels.issubset(found_labels),
@@ -62,6 +69,40 @@ class TestGUIRecordMenu(unittest.TestCase):
                 self.assertIsNotNone(
                     tooltip, f"Button '{b.cget('text')}' missing tooltip"
                 )
+
+    def test_crew_chat_audio_labels_switch_with_mode(self):
+        chat_win = self.gui.open_crew_chat_window()
+        mode_toggle = self._find_widget_by_text(
+            chat_win, (tk.Checkbutton,), "Record / Play"
+        )
+        self.assertIsNotNone(mode_toggle)
+
+        mode_toggle.invoke()
+
+        labels = {
+            widget.cget("text")
+            for widget in self._find_widgets_by_type(
+                chat_win, (tk.Button, tk.Checkbutton)
+            )
+        }
+        self.assertTrue({"Source", "Play", "Load", "Record / Play"}.issubset(labels))
+
+    def test_chatbot_audio_labels_switch_with_mode(self):
+        dialog = self.gui.open_chatbot_dialog()
+        mode_toggle = self._find_widget_by_text(
+            dialog, (tk.Checkbutton,), "Record / Play"
+        )
+        self.assertIsNotNone(mode_toggle)
+
+        mode_toggle.invoke()
+
+        labels = {
+            widget.cget("text")
+            for widget in self._find_widgets_by_type(
+                dialog, (tk.Button, tk.Checkbutton)
+            )
+        }
+        self.assertTrue({"Source", "Play", "Load", "Record / Play"}.issubset(labels))
 
     def test_unified_menu_structure(self):
         """Test that the unified 'Talk' and 'Chat' menus are present in the menu bar."""
@@ -104,6 +145,29 @@ class TestGUIRecordMenu(unittest.TestCase):
         self.assertEqual(profiles[0]["id"], "voice-f1")
         self.assertEqual(profiles[0]["gender"], "female")
         self.assertIn("en-us", profiles[0]["label"].lower())
+
+    def test_vertical_mousewheel_handler_scrolls_up_and_down(self):
+        widget = MagicMock()
+        widget.yview_scroll = MagicMock()
+
+        event_up = type("Event", (), {"delta": 120, "num": None})()
+        event_down = type("Event", (), {"delta": -120, "num": None})()
+
+        self.assertEqual(self.gui._on_vertical_mousewheel(event_up, widget), "break")
+        self.assertEqual(self.gui._on_vertical_mousewheel(event_down, widget), "break")
+
+        self.assertEqual(widget.yview_scroll.call_args_list[0].args, (-1, "units"))
+        self.assertEqual(widget.yview_scroll.call_args_list[1].args, (1, "units"))
+
+    def test_bottom_workspace_tabs_use_dark_notebook_style(self):
+        self.assertEqual(
+            self.gui.right_workspace_tabs.cget("style"), "Bottom.TNotebook"
+        )
+        style = ttk.Style(self.root)
+        self.assertEqual(
+            style.lookup("Bottom.TNotebook.Tab", "background", ("selected",)),
+            "#21262d",
+        )
 
     def setUp(self):
         self.root = tk.Tk()

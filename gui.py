@@ -53,14 +53,17 @@ import threading  # Thread support
 import time  # Time functions
 import tkinter as tk  # GUI framework
 import tkinter.font as tkfont  # Font handling
+import uuid
 from pathlib import Path  # File handling
 from queue import Queue  # Thread-safe queue
 from tkinter import filedialog, messagebox, ttk  # GUI dialogs and widgets
 from typing import Any, Callable, Dict, List, Optional, Tuple
+from urllib.parse import urlparse
 
 from config import Config  # Configuration management
 from database_manager import DatabaseManager  # Data persistence
 from message_router import CrewMessageRouter  # Message routing
+from mobile_remote import CrewMobileRemoteServer
 
 
 # --- MAIN FUNCTION FOR TEST COMPLIANCE ---
@@ -177,10 +180,14 @@ logging.basicConfig(
 DEFAULT_MAIN_WINDOW_WIDTH = 800
 DEFAULT_MAIN_WINDOW_HEIGHT = 800
 DEFAULT_MAIN_WINDOW_SIZE = f"{DEFAULT_MAIN_WINDOW_WIDTH}x{DEFAULT_MAIN_WINDOW_HEIGHT}"
+DEFAULT_LEFT_PANEL_WIDTH = 220
+READMINE_OUTPUT_DIR = Path(__file__).resolve().parent / "Reading Now"
 DEFAULT_0101_CONTENT_WIDTH = 600
 DEFAULT_0101_CONTENT_HEIGHT = 1020
 DEFAULT_0101_WINDOW_WIDTH = 720
 DEFAULT_0101_WINDOW_HEIGHT = 1180
+DEFAULT_0101_SSH_CONNECT_TIMEOUT = 5
+DEFAULT_0101_REMOTE_COMMAND_TIMEOUT = 30
 DEFAULT_0101_SERVER_PATHS = [
     "/home/me/Desktop/0101/0101/src/public_html/server.py",
     "/home/me/Desktop/0101-001/0101/src/public_html/server.py",
@@ -706,6 +713,30 @@ class CrewGUI:
         style.map("Treeview.Heading", background=[("active", DARK_INPUT_BG)])
         style.configure("TPanedwindow", background=DARK_WINDOW_BG)
         style.configure(
+            "Bottom.TNotebook",
+            background=DARK_WINDOW_BG,
+            borderwidth=0,
+            tabmargins=(2, 2, 2, 0),
+        )
+        style.configure(
+            "Bottom.TNotebook.Tab",
+            background="#141a24",
+            foreground=DARK_TEXT,
+            borderwidth=0,
+            padding=(12, 6),
+        )
+        style.map(
+            "Bottom.TNotebook.Tab",
+            background=[
+                ("selected", DARK_INPUT_BG),
+                ("active", "#1a2230"),
+            ],
+            foreground=[
+                ("selected", DARK_TEXT),
+                ("active", DARK_TEXT),
+            ],
+        )
+        style.configure(
             "TScrollbar",
             background=DARK_PANEL_BG,
             troughcolor=DARK_WINDOW_BG,
@@ -885,11 +916,9 @@ class CrewGUI:
                     f"Warning: SpeechRecognition or PyAudio not available. STT disabled. ({e})"
                 )
 
-            # Initialize Crew message router
-            self.message_router = CrewMessageRouter()
-
             # Initialize database manager for crew/user data
             self.db_manager = DatabaseManager()
+            self.message_router = CrewMessageRouter(self.db_manager)
 
             # Define scripts directory and create it if it doesn't exist
             # Also create a sample script for testing if the directory is new
@@ -949,7 +978,6 @@ class CrewGUI:
             self._apply_dark_theme(self.root)
             self._configure_dark_menu(self.menu_bar)
 
-            self.message_router = CrewMessageRouter()
             self._recording_process = None
             self._last_recording_path = None
 
@@ -998,67 +1026,6 @@ class CrewGUI:
         file_menu.add_separator()
         file_menu.add_command(label="Exit", command=self._on_app_exit)
 
-        # Talk menu (Record + Speech)
-        talk_menu = tk.Menu(self.menu_bar, tearoff=0)
-        self.menu_bar.add_cascade(label="🗣️ Talk", menu=talk_menu)
-        talk_menu.add_command(label="Start Recording", command=self._start_recording)
-        talk_menu.add_command(
-            label="Stop Recording", command=self._stop_recording, state="disabled"
-        )
-        talk_menu.add_separator()
-        talk_menu.add_command(
-            label="Load Recording...", command=self._load_recording_file
-        )
-        talk_menu.add_command(
-            label="Play Last Recording", command=self._play_recording, state="disabled"
-        )
-        talk_menu.add_command(
-            label="Save Recording As...",
-            command=self._save_recording_as,
-            state="disabled",
-        )
-        talk_menu.add_separator()
-        if TTS_AVAILABLE:
-            talk_menu.add_command(
-                label="Read Selection (Ctrl+Shift+R)", command=self._read_selected_item
-            )
-            talk_menu.add_command(
-                label="Read All Details (Ctrl+Shift+A)", command=self._read_all_details
-            )
-            talk_menu.add_command(
-                label="Read Status (Ctrl+Shift+S)", command=self._read_status
-            )
-            talk_menu.add_command(
-                label="Read Item Type (Ctrl+Shift+T)", command=self._read_item_type
-            )
-            talk_menu.add_separator()
-            talk_menu.add_command(label="Stop Reading", command=self._stop_reading)
-            talk_menu.add_separator()
-            talk_menu.add_command(
-                label="Save Speech to File...", command=self._save_speech_to_file
-            )
-            talk_menu.add_command(
-                label="Speech Settings...", command=self.show_speech_settings_dialog
-            )
-        self._record_menu = talk_menu
-
-        # Chat menu
-        chat_menu = tk.Menu(self.menu_bar, tearoff=0)
-        self.menu_bar.add_cascade(label="💬 Chat", menu=chat_menu)
-        chat_menu.add_command(label="Open Chatbot...", command=self.open_chatbot_dialog)
-        chat_menu.add_command(
-            label="Open Crew Chat...", command=self.open_crew_chat_window
-        )
-
-        # Docs menu
-        doc_menu = tk.Menu(self.menu_bar, tearoff=0)
-        self.menu_bar.add_cascade(label="📚 Docs", menu=doc_menu)
-        doc_menu.add_command(label="Fetch Docs (ReadMine)", command=self._run_readmine)
-        doc_menu.add_command(label="Browse Docs...", command=self._browse_docs)
-        doc_menu.add_command(
-            label="Open Docs Folder", command=self._open_documentation_folder
-        )
-
         # Edit menu
         edit_menu = tk.Menu(self.menu_bar, tearoff=0)
         self.menu_bar.add_cascade(label="Edit", menu=edit_menu)
@@ -1084,32 +1051,102 @@ class CrewGUI:
         self.menu_bar.add_cascade(label="View", menu=view_menu)
         view_menu.add_command(label="Refresh (F5)", command=self._refresh_views)
         view_menu.add_separator()
-
-        # Add column visibility submenu
         self.column_visibility_menu = tk.Menu(view_menu, tearoff=0)
         view_menu.add_cascade(label="Columns", menu=self.column_visibility_menu)
 
-        # Add script selector submenu
-        self.script_menu = tk.Menu(
-            view_menu, tearoff=0, postcommand=self._update_script_menu
-        )
-        view_menu.add_cascade(label="Run Script", menu=self.script_menu)
+        # Tools menu
+        tools_menu = tk.Menu(self.menu_bar, tearoff=0)
+        self.menu_bar.add_cascade(label="Tools", menu=tools_menu)
 
-        # Server menu (now under View)
-        server_menu = tk.Menu(view_menu, tearoff=0)
+        speech_menu = tk.Menu(tools_menu, tearoff=0)
+        tools_menu.add_cascade(label="Speech", menu=speech_menu)
+        speech_menu.add_command(label="Start Recording", command=self._start_recording)
+        speech_menu.add_command(
+            label="Stop Recording", command=self._stop_recording, state="disabled"
+        )
+        speech_menu.add_separator()
+        speech_menu.add_command(
+            label="Load Recording...", command=self._load_recording_file
+        )
+        speech_menu.add_command(
+            label="Play Last Recording", command=self._play_recording, state="disabled"
+        )
+        speech_menu.add_command(
+            label="Save Recording As...",
+            command=self._save_recording_as,
+            state="disabled",
+        )
+        speech_menu.add_separator()
+        if TTS_AVAILABLE:
+            speech_menu.add_command(
+                label="Read Selection (Ctrl+Shift+R)", command=self._read_selected_item
+            )
+            speech_menu.add_command(
+                label="Read All Details (Ctrl+Shift+A)", command=self._read_all_details
+            )
+            speech_menu.add_command(
+                label="Read Status (Ctrl+Shift+S)", command=self._read_status
+            )
+            speech_menu.add_command(
+                label="Read Item Type (Ctrl+Shift+T)", command=self._read_item_type
+            )
+            speech_menu.add_separator()
+            speech_menu.add_command(label="Stop Reading", command=self._stop_reading)
+            speech_menu.add_separator()
+            speech_menu.add_command(
+                label="Save Speech to File...", command=self._save_speech_to_file
+            )
+            speech_menu.add_command(
+                label="Speech Settings...", command=self.show_speech_settings_dialog
+            )
+        self._record_menu = speech_menu
+
+        chat_menu = tk.Menu(tools_menu, tearoff=0)
+        tools_menu.add_cascade(label="Chat", menu=chat_menu)
+        chat_menu.add_command(label="Open Chatbot...", command=self.open_chatbot_dialog)
+        chat_menu.add_command(
+            label="Open Crew Chat...", command=self.open_crew_chat_window
+        )
+
+        mobile_remote_menu = tk.Menu(tools_menu, tearoff=0)
+        tools_menu.add_cascade(label="Mobile Remote", menu=mobile_remote_menu)
+        mobile_remote_menu.add_command(
+            label="Start Mobile Remote...", command=self.start_mobile_remote
+        )
+        mobile_remote_menu.add_command(
+            label="Stop Mobile Remote", command=self.stop_mobile_remote
+        )
+        mobile_remote_menu.add_separator()
+        mobile_remote_menu.add_command(
+            label="Show Mobile Remote URL", command=self.show_mobile_remote_url
+        )
+
+        docs_menu = tk.Menu(tools_menu, tearoff=0)
+        tools_menu.add_cascade(label="Docs", menu=docs_menu)
+        docs_menu.add_command(label="Fetch Docs (ReadMine)", command=self._run_readmine)
+        docs_menu.add_command(label="Browse Docs...", command=self._browse_docs)
+        docs_menu.add_command(
+            label="Open Docs Folder", command=self._open_documentation_folder
+        )
+
+        self.script_menu = tk.Menu(
+            tools_menu, tearoff=0, postcommand=self._update_script_menu
+        )
+        tools_menu.add_cascade(label="Scripts", menu=self.script_menu)
+
+        server_menu = tk.Menu(tools_menu, tearoff=0)
         server_menu.add_command(
             label="Launch 0101 on p48 (fallback local)",
             command=self._launch_0101_server,
         )
-        view_menu.add_cascade(label="Server", menu=server_menu)
+        tools_menu.add_cascade(label="Server", menu=server_menu)
 
-        # Diagnostics menu (under View)
         try:
-            diagnostics_menu = tk.Menu(view_menu, tearoff=0)
+            diagnostics_menu = tk.Menu(tools_menu, tearoff=0)
             diagnostics_menu.add_command(
                 label="Show Feature Status", command=self.show_diagnostics_dialog
             )
-            view_menu.add_cascade(label="Diagnostics", menu=diagnostics_menu)
+            tools_menu.add_cascade(label="Diagnostics", menu=diagnostics_menu)
         except Exception as e:
             logging.error(f"Failed to create Diagnostics menu: {e}")
 
@@ -1255,13 +1292,13 @@ class CrewGUI:
                 "-o",
                 "BatchMode=yes",
                 "-o",
-                "ConnectTimeout=5",
+                f"ConnectTimeout={DEFAULT_0101_SSH_CONNECT_TIMEOUT}",
                 DEFAULT_0101_REMOTE_TARGET,
                 remote_command,
             ],
             capture_output=True,
             text=True,
-            timeout=15,
+            timeout=DEFAULT_0101_REMOTE_COMMAND_TIMEOUT,
             check=True,
         )
         outcome = result.stdout.strip() or "started"
@@ -1278,7 +1315,7 @@ class CrewGUI:
             "-o",
             "BatchMode=yes",
             "-o",
-            "ConnectTimeout=5",
+            f"ConnectTimeout={DEFAULT_0101_SSH_CONNECT_TIMEOUT}",
             DEFAULT_0101_REMOTE_TARGET,
             remote_command,
         ]
@@ -1307,7 +1344,7 @@ class CrewGUI:
             self._build_remote_ssh_command(resolve_command),
             capture_output=True,
             text=True,
-            timeout=15,
+            timeout=DEFAULT_0101_REMOTE_COMMAND_TIMEOUT,
             check=True,
         )
         return result.stdout.strip() or DEFAULT_0101_SERVER_PATHS[0]
@@ -1327,7 +1364,7 @@ class CrewGUI:
             ),
             capture_output=True,
             text=True,
-            timeout=15,
+            timeout=DEFAULT_0101_REMOTE_COMMAND_TIMEOUT,
             check=True,
         )
 
@@ -1336,7 +1373,7 @@ class CrewGUI:
             "-az",
             "--delete",
             "-e",
-            "ssh -o BatchMode=yes -o ConnectTimeout=5",
+            f"ssh -o BatchMode=yes -o ConnectTimeout={DEFAULT_0101_SSH_CONNECT_TIMEOUT}",
         ]
         for pattern in DEFAULT_0101_SYNC_EXCLUDES:
             rsync_command.extend(["--exclude", pattern])
@@ -1403,11 +1440,79 @@ class CrewGUI:
             return False
 
     def _open_0101_url(self, url: str) -> None:
-        """Open 0101 in the browser and resize the new window."""
+        """Open 0101 in the browser, reusing an existing 0101 window when possible."""
         import webbrowser
 
-        webbrowser.open_new(url)
-        self._resize_0101_window_async()
+        if self._activate_existing_0101_window(url):
+            self._resize_0101_window_async(url)
+            return
+        webbrowser.open(url, new=0)
+        self._resize_0101_window_async(url)
+
+    def _activate_existing_0101_window(self, url: str) -> bool:
+        """Focus an existing 0101 browser window instead of opening a duplicate."""
+        title_candidates = self._build_0101_window_title_candidates(url)
+        label = title_candidates[0] if title_candidates else "0101"
+
+        if shutil.which("wmctrl"):
+            try:
+                list_result = subprocess.run(
+                    ["wmctrl", "-l"],
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                )
+                matching_window_id = self._find_wmctrl_window_id(
+                    list_result.stdout, title_candidates
+                )
+                if matching_window_id:
+                    subprocess.run(
+                        ["wmctrl", "-i", "-a", matching_window_id],
+                        check=True,
+                        capture_output=True,
+                        text=True,
+                    )
+                    logging.info(
+                        "Reused existing '%s' browser window via wmctrl.", label
+                    )
+                    return True
+            except subprocess.CalledProcessError:
+                pass
+
+        if shutil.which("xdotool"):
+            for title in title_candidates:
+                try:
+                    search_result = subprocess.run(
+                        ["xdotool", "search", "--name", title],
+                        check=True,
+                        capture_output=True,
+                        text=True,
+                    )
+                except subprocess.CalledProcessError:
+                    continue
+                window_ids = [
+                    window_id
+                    for window_id in search_result.stdout.splitlines()
+                    if window_id.strip()
+                ]
+                if not window_ids:
+                    continue
+                target_window = window_ids[-1]
+                try:
+                    subprocess.run(
+                        ["xdotool", "windowactivate", target_window],
+                        check=True,
+                        capture_output=True,
+                        text=True,
+                    )
+                    logging.info(
+                        "Reused existing '%s' browser window via xdotool.", label
+                    )
+                    return True
+                except subprocess.CalledProcessError:
+                    continue
+
+        return False
 
     def _show_0101_launch_error(self, error_message: str) -> None:
         """Display the final 0101 launch error to the user."""
@@ -1415,32 +1520,79 @@ class CrewGUI:
 
         messagebox.showerror("Server Launch Error", error_message)
 
-    def _resize_0101_window_async(self) -> None:
+    def _resize_0101_window_async(self, url: str) -> None:
         """Resize the newly opened 0101 browser window in the background."""
         width, height = self.build_0101_window_size()
+        title_candidates = self._build_0101_window_title_candidates(url)
         threading.Thread(
             target=self._resize_window_by_title,
-            args=("0101", width, height),
+            args=(title_candidates, width, height),
             daemon=True,
         ).start()
 
+    @staticmethod
+    def _build_0101_window_title_candidates(url: str) -> list[str]:
+        """Return likely browser window title fragments for the 0101 page."""
+        candidates = ["0101", "0101.html"]
+
+        parsed_url = urlparse(url)
+        if parsed_url.netloc:
+            candidates.append(parsed_url.netloc)
+        if parsed_url.hostname:
+            candidates.append(parsed_url.hostname)
+        if parsed_url.path:
+            path_name = Path(parsed_url.path).name
+            if path_name:
+                candidates.append(path_name)
+        candidates.append(url)
+
+        deduped_candidates = []
+        seen = set()
+        for candidate in candidates:
+            if not candidate:
+                continue
+            normalized = candidate.lower()
+            if normalized in seen:
+                continue
+            seen.add(normalized)
+            deduped_candidates.append(candidate)
+        return deduped_candidates
+
     def _resize_window_by_title(
         self,
-        window_title: str,
+        window_title: str | list[str],
         width: int,
         height: int,
         attempts: int = 10,
         delay_seconds: float = 0.5,
     ) -> bool:
         """Resize a desktop window by title using available Linux window tools."""
+        title_candidates = (
+            [window_title] if isinstance(window_title, str) else list(window_title)
+        )
+        label = title_candidates[0] if title_candidates else "window"
+
         if shutil.which("wmctrl"):
             for _ in range(attempts):
                 try:
+                    list_result = subprocess.run(
+                        ["wmctrl", "-l"],
+                        check=True,
+                        capture_output=True,
+                        text=True,
+                    )
+                    matching_window_id = self._find_wmctrl_window_id(
+                        list_result.stdout, title_candidates
+                    )
+                    if not matching_window_id:
+                        time.sleep(delay_seconds)
+                        continue
                     subprocess.run(
                         [
                             "wmctrl",
+                            "-i",
                             "-r",
-                            window_title,
+                            matching_window_id,
                             "-e",
                             f"0,-1,-1,{width},{height}",
                         ],
@@ -1450,34 +1602,32 @@ class CrewGUI:
                     )
                     logging.info(
                         "Resized '%s' window to %sx%s using wmctrl.",
-                        window_title,
+                        label,
                         width,
                         height,
                     )
                     return True
                 except subprocess.CalledProcessError:
                     time.sleep(delay_seconds)
-            logging.warning(
-                "Could not find '%s' window to resize with wmctrl.", window_title
-            )
-            return False
 
         if shutil.which("xdotool"):
             for _ in range(attempts):
-                try:
-                    search_result = subprocess.run(
-                        ["xdotool", "search", "--name", window_title],
-                        check=True,
-                        capture_output=True,
-                        text=True,
-                    )
+                for title in title_candidates:
+                    try:
+                        search_result = subprocess.run(
+                            ["xdotool", "search", "--name", title],
+                            check=True,
+                            capture_output=True,
+                            text=True,
+                        )
+                    except subprocess.CalledProcessError:
+                        continue
                     window_ids = [
                         window_id
                         for window_id in search_result.stdout.splitlines()
                         if window_id.strip()
                     ]
                     if not window_ids:
-                        time.sleep(delay_seconds)
                         continue
                     target_window = window_ids[-1]
                     subprocess.run(
@@ -1494,23 +1644,40 @@ class CrewGUI:
                     )
                     logging.info(
                         "Resized '%s' window to %sx%s using xdotool.",
-                        window_title,
+                        label,
                         width,
                         height,
                     )
                     return True
-                except subprocess.CalledProcessError:
-                    time.sleep(delay_seconds)
+                time.sleep(delay_seconds)
             logging.warning(
-                "Could not find '%s' window to resize with xdotool.", window_title
+                "Could not find any 0101 browser window to resize with xdotool."
             )
             return False
 
         logging.warning(
             "Automatic resize skipped for '%s': install wmctrl or xdotool.",
-            window_title,
+            label,
         )
         return False
+
+    @staticmethod
+    def _find_wmctrl_window_id(
+        window_list_output: str, title_candidates: list[str]
+    ) -> str:
+        """Return the wmctrl window id whose listed title matches any candidate."""
+        lowered_candidates = [
+            candidate.lower() for candidate in title_candidates if candidate
+        ]
+        for line in window_list_output.splitlines():
+            parts = line.split(None, 3)
+            if len(parts) < 4:
+                continue
+            window_id, _, _, window_title = parts
+            lowered_title = window_title.lower()
+            if any(candidate in lowered_title for candidate in lowered_candidates):
+                return window_id
+        return ""
 
     def open_crew_chat_window(self):
         # Import UserStrategy for chat logic
@@ -1519,11 +1686,13 @@ class CrewGUI:
         # Instantiate strategy with current LLM backend
         llm_backend = getattr(self, "llm_backend_var", None)
         backend = llm_backend.get() if llm_backend else "ollama"
-        self.user_strategy = UserStrategy(llm_backend=backend)
+        user_strategy = UserStrategy(llm_backend=backend)
+        chat_room = "crew_multi_user"
+        current_user = {"name": "Captain"}
 
         def undo_last_message():
-            user = self.logged_in_user["name"]
-            if self.message_router.undo_last_user_message(user):
+            user = current_user["name"]
+            if self.message_router.undo_last_user_message(user, room=chat_room):
                 refresh_messages()
                 status_var.set("Last message undone.")
             else:
@@ -1539,9 +1708,9 @@ class CrewGUI:
         def redraw_messages():
             chat_display.config(state="normal")
             chat_display.delete(1.0, tk.END)
-            msgs = self.message_router.get_messages()
+            msgs = self.message_router.get_messages(room=chat_room)
             if filter_my_messages[0]:
-                msgs = [m for m in msgs if m["sender"] == self.logged_in_user["name"]]
+                msgs = [m for m in msgs if m["sender"] == current_user["name"]]
             for m in msgs:
                 append_chat(
                     m["sender"],
@@ -1549,6 +1718,7 @@ class CrewGUI:
                     m.get("text", ""),
                     m.get("file"),
                     m.get("timestamp"),
+                    notify=False,
                 )
             chat_display.config(state="disabled")
             status_var.set("Messages redrawn.")
@@ -1694,6 +1864,7 @@ class CrewGUI:
         chat_display.tag_configure(
             "divider", foreground=DARK_MUTED_TEXT, font=("Consolas", 8)
         )
+        self._bind_vertical_mousewheel(chat_display)
         ToolTip(
             chat_display, "Displays all chat messages, files, and system notifications."
         )
@@ -1710,7 +1881,7 @@ class CrewGUI:
             query = filter_var.get().strip().lower()
             chat_display.config(state="normal")
             chat_display.delete(1.0, tk.END)
-            for m in self.message_router.get_messages():
+            for m in self.message_router.get_messages(room=chat_room):
                 if (
                     query in m["sender"].lower()
                     or any(query in r.lower() for r in m["recipients"])
@@ -1718,7 +1889,11 @@ class CrewGUI:
                     or ("file" in m and query in m["file"]["filename"].lower())
                 ):
                     append_chat(
-                        m["sender"], m["recipients"], m.get("text", ""), m.get("file")
+                        m["sender"],
+                        m["recipients"],
+                        m.get("text", ""),
+                        m.get("file"),
+                        notify=False,
                     )
             chat_display.config(state="disabled")
 
@@ -1732,63 +1907,95 @@ class CrewGUI:
         rec_play_var = tk.BooleanVar(value=True)  # True=Record, False=Play
 
         def on_toggle_rec_play():
-            if rec_play_var.get():
-                start_stop_btn.config(text="START")
-                save_load_btn.config(text="SAVE")
-            else:
-                start_stop_btn.config(text="STOP")
-                save_load_btn.config(text="LOAD")
+            refresh_audio_controls()
 
         rec_play_chk = tk.Checkbutton(
             entry_frame,
-            text="Rec/Play",
+            text="Record / Play",
             variable=rec_play_var,
             command=on_toggle_rec_play,
         )
         rec_play_chk.pack(side="left", padx=(0, 8))
-        ToolTip(rec_play_chk, "Toggle between Record and Play mode for this window.")
+        ToolTip(rec_play_chk, "Toggle between record mode and playback mode.")
 
-        # SET: Microphone setup button
-        set_btn = tk.Button(
+        # Mode-specific action buttons
+        source_btn = tk.Button(
             entry_frame,
-            text="SET",
-            width=4,
-            command=lambda: self.root.after(0, self.show_microphone_selection_dialog),
+            text="Mic",
+            width=8,
         )
-        set_btn.pack(side="left", padx=(0, 4))
-        ToolTip(set_btn, "Set up/select microphone device.")
+        source_btn.pack(side="left", padx=(0, 4))
+        source_tooltip = ToolTip(source_btn, "Choose the microphone for recording.")
 
-        # START/STOP: Recording or Playing
-        def start_stop_action():
+        def primary_action():
             if rec_play_var.get():
-                self._start_recording()
-                status_var.set("Recording started.")
+                if self._recording_process is not None:
+                    self._stop_recording()
+                    status_var.set("Recording stopped.")
+                else:
+                    self._start_recording()
+                    status_var.set("Recording started.")
             else:
                 self._play_recording()
                 status_var.set("Playback started.")
+            refresh_audio_controls()
 
-        start_stop_btn = tk.Button(
-            entry_frame, text="START/STOP", width=10, command=start_stop_action
+        primary_btn = tk.Button(
+            entry_frame, text="Record", width=14, command=primary_action
         )
-        start_stop_btn.pack(side="left", padx=(0, 4))
-        ToolTip(start_stop_btn, "Start/Stop recording or playback depending on mode.")
+        primary_btn.pack(side="left", padx=(0, 4))
+        primary_tooltip = ToolTip(
+            primary_btn, "Start recording. Press again to stop and save it."
+        )
 
-        # SAVE/LOAD: Save or Load file
-        def save_load_action():
+        def secondary_action():
             if rec_play_var.get():
                 self._save_recording_as()
                 status_var.set("Recording saved.")
             else:
-                # For now, just show a message (implement load logic as needed)
-                messagebox.showinfo("Load", "Load functionality not yet implemented.")
+                self._load_recording_file()
+                status_var.set("Recording loaded.")
 
-        save_load_btn = tk.Button(
-            entry_frame, text="SAVE/LOAD", width=10, command=save_load_action
+        secondary_btn = tk.Button(
+            entry_frame, text="Save", width=8, command=secondary_action
         )
-        save_load_btn.pack(side="left", padx=(0, 4))
-        ToolTip(
-            save_load_btn, "Save recording (Rec) or load file (Play) depending on mode."
+        secondary_btn.pack(side="left", padx=(0, 4))
+        secondary_tooltip = ToolTip(
+            secondary_btn, "Save the current recording to a file."
         )
+
+        def refresh_audio_controls() -> None:
+            if rec_play_var.get():
+                source_btn.config(
+                    text="Mic",
+                    command=lambda: self.root.after(
+                        0, self.show_microphone_selection_dialog
+                    ),
+                )
+                source_tooltip.text = "Choose the microphone for recording."
+                primary_btn.config(
+                    text=(
+                        "Stop Recording"
+                        if self._recording_process is not None
+                        else "Record"
+                    )
+                )
+                primary_tooltip.text = (
+                    "Stop the current recording."
+                    if self._recording_process is not None
+                    else "Start recording. Press again to stop and save it."
+                )
+                secondary_btn.config(text="Save")
+                secondary_tooltip.text = "Save the current recording to a file."
+            else:
+                source_btn.config(text="Source", command=self._load_recording_file)
+                source_tooltip.text = "Choose the recording file or source to play."
+                primary_btn.config(text="Play")
+                primary_tooltip.text = "Play the current recording."
+                secondary_btn.config(text="Load")
+                secondary_tooltip.text = "Load a recording file from disk."
+
+        refresh_audio_controls()
 
         recipient_var = tk.StringVar(value="All")
         recipient_menu = tk.OptionMenu(entry_frame, recipient_var, "All", *user_names)
@@ -1924,7 +2131,7 @@ class CrewGUI:
         if getattr(self, "tts_available", False):
 
             def speak_last_bot_reply():
-                msgs = self.message_router.get_messages()
+                msgs = self.message_router.get_messages(room=chat_room)
                 last = None
                 for m in reversed(msgs):
                     if m["sender"] in ("Bot", "Computer") and m.get("text"):
@@ -1945,11 +2152,13 @@ class CrewGUI:
             speaker_btn.pack(side="left", padx=(0, 4))
             ToolTip(speaker_btn, "Read aloud the last bot reply.")
 
-        # --- User state (no authentication) ---
-        self.logged_in_user = {"name": user_names[0]}
-        self.user_status = {"msg": ""}
+        # --- User state (per window) ---
+        current_user["name"] = user_names[0]
+        user_status = {"msg": ""}
 
-        def append_chat(sender, recipients, msg, file_meta=None, timestamp=None):
+        def append_chat(
+            sender, recipients, msg, file_meta=None, timestamp=None, notify=True
+        ):
             chat_display.config(state="normal")
             avatar_map = {
                 "Captain": "🧑‍✈️",
@@ -1988,7 +2197,7 @@ class CrewGUI:
                 chat_display.insert(
                     tk.END, f"   [File: {file_meta['filename']}]\n", "file"
                 )
-                chat_display.tag_add(file_tag, f"end-2l", f"end-1l")
+                chat_display.tag_add(file_tag, "end-2l", "end-1l")
                 chat_display.tag_bind(
                     file_tag,
                     "<Button-1>",
@@ -1998,7 +2207,7 @@ class CrewGUI:
             chat_display.see(tk.END)
             chat_display.config(state="disabled")
             # Notification hook: show popup if message is from another user
-            if sender != self.logged_in_user["name"] and not mute_notifications[0]:
+            if notify and sender != current_user["name"] and not mute_notifications[0]:
                 self._show_chat_notification(f"New message from {sender}")
             status_var.set(f"Last message from {sender} at {time.strftime('%H:%M:%S')}")
 
@@ -2015,14 +2224,16 @@ class CrewGUI:
         self._show_chat_notification = _show_chat_notification.__get__(self)
 
         def send_message(event=None):
-            sender = self.logged_in_user["name"]
+            sender = current_user["name"]
             recipient_val = recipient_var.get().strip()
             if recipient_val == "All":
-                recipients = user_names
+                recipients = [name for name in user_names if name != sender]
             elif recipient_val in user_names:
                 recipients = [recipient_val]
             else:
                 recipients = [recipient_val]
+            if not recipients:
+                recipients = [sender]
             msg = user_entry.get().strip()
             file_meta = None
             if attached_file["path"]:
@@ -2030,12 +2241,18 @@ class CrewGUI:
                     os.path.expanduser("~"), ".crew_chat_files"
                 )
                 os.makedirs(chat_files_dir, exist_ok=True)
-                dest_path = os.path.join(chat_files_dir, attached_file["filename"])
+                source_path = Path(attached_file["path"])
+                stored_filename = (
+                    f"{source_path.stem}-{uuid.uuid4().hex}{source_path.suffix}"
+                )
+                dest_path = os.path.join(chat_files_dir, stored_filename)
                 try:
                     shutil.copy2(attached_file["path"], dest_path)
                     file_meta = {
                         "filepath": dest_path,
                         "filename": attached_file["filename"],
+                        "stored_filename": stored_filename,
+                        "size_bytes": os.path.getsize(dest_path),
                     }
                 except Exception as e:
                     print(f"Failed to copy attached file: {e}")
@@ -2046,39 +2263,48 @@ class CrewGUI:
             if not (msg or file_meta) or not recipients:
                 return
             # Use UserStrategy to process message
-            response = self.user_strategy.process_message(msg)
+            response = user_strategy.process_message(msg) if msg else ""
             self.message_router.send_message(
-                sender, recipients, msg if msg else "[File sent]", file_meta=file_meta
+                sender,
+                recipients,
+                msg if msg else "[File sent]",
+                file_meta=file_meta,
+                room=chat_room,
             )
             append_chat(sender, recipients, msg, file_meta)
             # Optionally, display bot response (if needed)
             if response:
                 self.message_router.send_message(
-                    self.user_strategy.name, [sender], response
+                    user_strategy.name, [sender], response, room=chat_room
                 )
-                append_chat(self.user_strategy.name, [sender], response)
+                append_chat(user_strategy.name, [sender], response)
             user_entry.delete(0, tk.END)
+            refresh_audio_controls()
             status_var.set(f"Message sent at {time.strftime('%H:%M:%S')}")
 
         def refresh_messages():
             chat_display.config(state="normal")
             chat_display.delete(1.0, tk.END)
-            for m in self.message_router.get_messages():
+            for m in self.message_router.get_messages(room=chat_room):
                 append_chat(
-                    m["sender"], m["recipients"], m.get("text", ""), m.get("file")
+                    m["sender"],
+                    m["recipients"],
+                    m.get("text", ""),
+                    m.get("file"),
+                    notify=False,
                 )
             status_var.set("Messages refreshed.")
             chat_display.config(state="disabled")
 
         def update_user(event=None):
-            self.logged_in_user["name"] = login_user_var.get().strip()
+            current_user["name"] = login_user_var.get().strip()
             login_status.config(
-                text=f"Chatting as {self.logged_in_user['name']}", fg="#228B22"
+                text=f"Chatting as {current_user['name']}", fg="#228B22"
             )
             user_entry.config(state="normal")
             send_btn.config(state="normal")
             attach_btn.config(state="normal")
-            status_var.set(f"User set to {self.logged_in_user['name']}")
+            status_var.set(f"User set to {current_user['name']}")
 
         login_btn = tk.Button(login_frame, text="Set User", command=update_user)
         login_btn.pack(side="left", padx=(8, 0))
@@ -2144,13 +2370,13 @@ class CrewGUI:
             dialog.resizable(False, False)
             tk.Label(dialog, text="Enter new username:").pack(pady=(12, 4))
             entry = tk.Entry(dialog)
-            entry.insert(0, self.logged_in_user["name"])
+            entry.insert(0, current_user["name"])
             entry.pack(padx=12, pady=4)
 
             def set_username():
                 new_name = entry.get().strip()
                 if new_name:
-                    self.logged_in_user["name"] = new_name
+                    current_user["name"] = new_name
                     login_status.config(text=f"Chatting as {new_name}", fg="#228B22")
                     status_var.set(f"Username changed to {new_name}")
                     dialog.destroy()
@@ -2185,7 +2411,10 @@ class CrewGUI:
         options_menu.add_command(label="Refresh Messages", command=refresh_messages)
         options_menu.add_command(
             label="Clear All Messages",
-            command=lambda: (self.message_router.clear_messages(), refresh_messages()),
+            command=lambda: (
+                self.message_router.clear_messages(room=chat_room),
+                refresh_messages(),
+            ),
         )
         options_menu.add_command(label="Undo Last Message", command=undo_last_message)
         options_menu.add_separator()
@@ -2284,7 +2513,7 @@ class CrewGUI:
             try:
                 with open(file_path, "w", encoding="utf-8") as f:
                     json.dump(
-                        self.message_router.get_messages(),
+                        self.message_router.get_messages(room=chat_room),
                         f,
                         ensure_ascii=False,
                         indent=2,
@@ -2308,13 +2537,14 @@ class CrewGUI:
                     imported = json.load(f)
                 if not isinstance(imported, list):
                     raise ValueError("Invalid chat history format.")
-                self.message_router.clear_messages()
+                self.message_router.clear_messages(room=chat_room)
                 for m in imported:
                     self.message_router.send_message(
                         m.get("sender", "Unknown"),
                         m.get("recipients", ["All"]),
                         m.get("text", ""),
                         m.get("file", None),
+                        room=chat_room,
                     )
                 refresh_messages()
                 messagebox.showinfo(
@@ -2327,10 +2557,13 @@ class CrewGUI:
 
         def copy_all_messages():
             try:
-                all_msgs = self.message_router.get_messages()
+                all_msgs = self.message_router.get_messages(room=chat_room)
                 lines = []
                 for m in all_msgs:
-                    line = f"{m['sender']} → {', '.join(m['recipients'])}: {m.get('text','')}"
+                    line = (
+                        f"{m['sender']} → {', '.join(m['recipients'])}: "
+                        f"{m.get('text', '')}"
+                    )
                     if m.get("file"):
                         line += f" [File: {m['file']['filename']}]"
                     lines.append(line)
@@ -2404,9 +2637,12 @@ class CrewGUI:
         options_menu.add_command(label="About Crew Chat", command=show_about)
 
         # Initial load: show welcome if no messages
-        if not self.message_router.get_messages():
+        if not self.message_router.get_messages(room=chat_room):
             self.message_router.send_message(
-                "Bot", ["All"], "Welcome to Crew Chat! Start your conversation below."
+                "Bot",
+                ["All"],
+                "Welcome to Crew Chat! Start your conversation below.",
+                room=chat_room,
             )
         refresh_messages()
         user_entry.focus_set()
@@ -2453,7 +2689,7 @@ class CrewGUI:
 
         llm_backend = getattr(self, "llm_backend_var", None)
         backend = llm_backend.get() if llm_backend else "ollama"
-        self.referee_strategy = RefereeStrategy(llm_backend=backend)
+        referee_strategy = RefereeStrategy(llm_backend=backend)
 
         chat_win = tk.Toplevel(self.root)
         chat_win.title("Crew Chatbot")
@@ -2491,6 +2727,7 @@ class CrewGUI:
             font=("Consolas", 10),
         )
         chat_display.pack(fill="both", expand=True, padx=8, pady=(8, 0))
+        self._bind_vertical_mousewheel(chat_display)
         ToolTip(
             chat_display, "Chat history. Messages from you and the bot appear here."
         )
@@ -2526,6 +2763,7 @@ class CrewGUI:
                 }
             )
         last_bot_reply = [conversation[-1]["message"]]
+        bot_request_in_flight = [False]
 
         def save_history():
             try:
@@ -2548,32 +2786,61 @@ class CrewGUI:
             for item in conversation:
                 sender = item.get("sender", "Bot")
                 message = item.get("message", "")
+                if item.get("pending"):
+                    sender = "Bot"
+                    message = f"{message}..."
                 if not query or query in sender.lower() or query in message.lower():
                     chat_display.insert(tk.END, f"{sender}: {message}\n")
             chat_display.config(state="disabled")
 
-        def bot_reply(user_msg):
+        def bot_reply_task(user_msg):
             try:
-                reply = self.generate_bot_reply(user_msg)
+                return self.generate_bot_reply(user_msg)
             except Exception as exc:
                 logger.warning("Chatbot reply generation failed: %s", exc)
-                reply = self.referee_strategy.process_message(user_msg)
-            conversation.append({"sender": "Bot", "message": reply})
+                return referee_strategy.process_message(user_msg)
+
+        def on_bot_reply(reply):
+            bot_request_in_flight[0] = False
+            if not chat_win.winfo_exists():
+                return
+            for item in reversed(conversation):
+                if item.get("pending"):
+                    item["sender"] = "Bot"
+                    item["message"] = reply
+                    item.pop("pending", None)
+                    break
+            else:
+                conversation.append({"sender": "Bot", "message": reply})
             last_bot_reply[0] = reply
-            append_chat("Bot", reply)
+            redraw_messages()
             save_history()
+            send_btn.config(state="normal")
+            user_entry.config(state="normal")
             status_var.set("Bot replied.")
+            user_entry.focus_set()
 
         def send_message(event=None):
             user_msg = user_entry.get().strip()
             if not user_msg:
                 status_var.set("Type a message before sending.")
                 return "break"
+            if bot_request_in_flight[0]:
+                status_var.set("Wait for the current reply to finish.")
+                return "break"
             conversation.append({"sender": "You", "message": user_msg})
             append_chat("You", user_msg)
+            conversation.append(
+                {"sender": "Bot", "message": "Thinking", "pending": True}
+            )
+            redraw_messages()
             user_entry.delete(0, tk.END)
-            bot_reply(user_msg)
             save_history()
+            bot_request_in_flight[0] = True
+            send_btn.config(state="disabled")
+            user_entry.config(state="disabled")
+            status_var.set("Bot is thinking...")
+            self.run_in_background(bot_reply_task, user_msg, callback=on_bot_reply)
             user_entry.focus_set()
             return "break"
 
@@ -2767,15 +3034,20 @@ class CrewGUI:
 
         rec_play_var = tk.BooleanVar(value=True)
 
-        def start_stop_action():
+        def primary_action():
             if rec_play_var.get():
-                self._start_recording()
-                status_var.set("Recording started.")
+                if self._recording_process is not None:
+                    self._stop_recording()
+                    status_var.set("Recording stopped.")
+                else:
+                    self._start_recording()
+                    status_var.set("Recording started.")
             else:
                 self._play_recording()
                 status_var.set("Playback started.")
+            refresh_audio_controls()
 
-        def save_load_action():
+        def secondary_action():
             if rec_play_var.get():
                 self._save_recording_as()
                 status_var.set("Recording saved.")
@@ -2783,34 +3055,71 @@ class CrewGUI:
                 self._load_recording_file()
                 status_var.set("Recording loaded.")
 
-        set_btn = tk.Button(
+        source_btn = tk.Button(
             entry_frame,
-            text="SET",
-            width=4,
-            command=lambda: self.root.after(0, self.show_microphone_selection_dialog),
+            text="Mic",
+            width=8,
         )
-        set_btn.pack(side="left", padx=(0, 4))
-        ToolTip(set_btn, "Set up/select microphone device.")
+        source_btn.pack(side="left", padx=(0, 4))
+        source_tooltip = ToolTip(source_btn, "Choose the microphone for recording.")
 
-        start_stop_btn = tk.Button(
-            entry_frame, text="START/STOP", width=10, command=start_stop_action
+        primary_btn = tk.Button(
+            entry_frame, text="Record", width=14, command=primary_action
         )
-        start_stop_btn.pack(side="left", padx=(0, 4))
-        ToolTip(start_stop_btn, "Start recording or play the current recording.")
+        primary_btn.pack(side="left", padx=(0, 4))
+        primary_tooltip = ToolTip(
+            primary_btn, "Start recording. Press again to stop and save it."
+        )
 
-        save_load_btn = tk.Button(
-            entry_frame, text="SAVE/LOAD", width=10, command=save_load_action
+        secondary_btn = tk.Button(
+            entry_frame, text="Save", width=8, command=secondary_action
         )
-        save_load_btn.pack(side="left", padx=(0, 4))
-        ToolTip(save_load_btn, "Save the current recording or load one from disk.")
+        secondary_btn.pack(side="left", padx=(0, 4))
+        secondary_tooltip = ToolTip(
+            secondary_btn, "Save the current recording to a file."
+        )
+
+        def refresh_audio_controls() -> None:
+            if rec_play_var.get():
+                source_btn.config(
+                    text="Mic",
+                    command=lambda: self.root.after(
+                        0, self.show_microphone_selection_dialog
+                    ),
+                )
+                source_tooltip.text = "Choose the microphone for recording."
+                primary_btn.config(
+                    text=(
+                        "Stop Recording"
+                        if self._recording_process is not None
+                        else "Record"
+                    )
+                )
+                primary_tooltip.text = (
+                    "Stop the current recording."
+                    if self._recording_process is not None
+                    else "Start recording. Press again to stop and save it."
+                )
+                secondary_btn.config(text="Save")
+                secondary_tooltip.text = "Save the current recording to a file."
+            else:
+                source_btn.config(text="Source", command=self._load_recording_file)
+                source_tooltip.text = "Choose the recording file or source to play."
+                primary_btn.config(text="Play")
+                primary_tooltip.text = "Play the current recording."
+                secondary_btn.config(text="Load")
+                secondary_tooltip.text = "Load a recording file from disk."
+
+        refresh_audio_controls()
 
         rec_play_chk = tk.Checkbutton(
             entry_frame,
-            text="Rec/Play",
+            text="Record / Play",
             variable=rec_play_var,
+            command=refresh_audio_controls,
         )
         rec_play_chk.pack(side="left", padx=(0, 8))
-        ToolTip(rec_play_chk, "Toggle between recording mode and playback mode.")
+        ToolTip(rec_play_chk, "Toggle between record mode and playback mode.")
 
         user_entry = tk.Entry(entry_frame, font=("Consolas", 10))
         user_entry.pack(side="left", fill="x", expand=True, padx=(0, 8))
@@ -3036,12 +3345,9 @@ class CrewGUI:
         if "csv" in msg or "excel" in msg:
             return "You can import CSV or Excel files using the File menu."
         if "script" in msg:
-            return "To run a script, use the 'Run Script' option in the View menu."
+            return "To run a script, use Tools > Scripts."
         if "server" in msg:
-            return (
-                "To launch 0101, use View > Server > Launch 0101 on p48 "
-                "(fallback local)."
-            )
+            return "To launch 0101, use Tools > Server > Launch 0101 on p48 (fallback local)."
         if "feature" in msg:
             return "Crew supports image processing, CSV/Excel import, grid overlays, script running, and more."
         if "trouble" in msg or "error" in msg:
@@ -3260,27 +3566,39 @@ class CrewGUI:
 
         def task():
             try:
-                script_path = os.path.join(
-                    os.path.dirname(os.path.abspath(__file__)), "ReadMine.py"
-                )
-                result = subprocess.run(
-                    [sys.executable, script_path], capture_output=True, text=True
-                )
-                return (
-                    "Docs updated."
-                    if result.returncode == 0
-                    else f"Error: {result.stderr}"
-                )
-            except Exception as e:
-                return str(e)
+                from ReadMine import DocumentationFetcher, format_readmine_summary
 
-        self.run_in_background(
-            task, callback=lambda m: messagebox.showinfo("ReadMine", m)
-        )
+                summary = DocumentationFetcher(base_dir=READMINE_OUTPUT_DIR).process()
+                summary["message"] = format_readmine_summary(summary)
+                return summary
+            except Exception as e:
+                logging.exception("ReadMine failed")
+                return {
+                    "subjects_total": 0,
+                    "generated": 0,
+                    "skipped": 0,
+                    "failed": 1,
+                    "stub_generated": 0,
+                    "fetched_generated": 0,
+                    "output_dir": str(READMINE_OUTPUT_DIR),
+                    "subjects": {},
+                    "message": f"ReadMine failed: {e}",
+                }
+
+        def callback(summary):
+            message = summary.get("message", "ReadMine finished.")
+            has_failures = summary.get("failed", 0) > 0
+            self.update_status(message, error=has_failures)
+            if has_failures:
+                messagebox.showwarning("ReadMine", message)
+            else:
+                messagebox.showinfo("ReadMine", message)
+
+        self.run_in_background(task, callback=callback)
 
     def _browse_docs(self):
         """Select a documentation file to display in the details view."""
-        doc_dir = os.path.join(os.getcwd(), "Reading Now")
+        doc_dir = str(READMINE_OUTPUT_DIR)
         fp = filedialog.askopenfilename(
             initialdir=doc_dir, filetypes=[("Text", "*.txt")]
         )
@@ -3292,7 +3610,7 @@ class CrewGUI:
 
     def _open_documentation_folder(self):
         """Open the documentation directory in the system explorer."""
-        doc_dir = os.path.join(os.getcwd(), "Reading Now")
+        doc_dir = str(READMINE_OUTPUT_DIR)
         if os.path.isdir(doc_dir):
             if sys.platform == "win32":
                 os.startfile(doc_dir)
@@ -3307,18 +3625,130 @@ class CrewGUI:
             "Crew Quick Start Guide:\n\n"
             "- Open or import images and data using the File menu.\n"
             "- Use the Edit and View menus to filter, refresh, and customize columns.\n"
-            "- Use the Speech menu to have data read aloud or save speech to a file.\n"
-            "- Use the Diagnostics menu to check feature status.\n"
+            "- Use the Tools menu for speech, chat, scripts, docs, and server actions.\n"
+            "- Use Tools > Diagnostics to check feature status.\n"
             "- For more help, see Troubleshooting.\n"
         )
         from tkinter import messagebox
 
         messagebox.showinfo("Quick Start", msg)
 
+    def _run_on_ui_thread(self, func: Callable[[], Any], timeout: float = 10.0) -> Any:
+        """Run a callable on the Tk main thread and return its result."""
+        if threading.current_thread() is threading.main_thread():
+            return func()
+
+        result_queue: Queue = Queue(maxsize=1)
+
+        def invoke() -> None:
+            try:
+                result_queue.put((True, func()))
+            except Exception as exc:
+                result_queue.put((False, exc))
+
+        self.root.after(0, invoke)
+        success, value = result_queue.get(timeout=timeout)
+        if success:
+            return value
+        raise value
+
+    def get_mobile_remote_status(self) -> Dict[str, Any]:
+        """Return a compact status payload for the mobile remote."""
+        return {
+            "app": "Crew",
+            "status": getattr(self, "latest_status_message", "Ready"),
+            "tts_available": bool(getattr(self, "tts_engine", None)),
+            "chat_messages": len(
+                self.message_router.get_messages(room="crew_multi_user")
+            ),
+            "remote_url": (
+                self.mobile_remote_server.access_url
+                if self.mobile_remote_server
+                else ""
+            ),
+        }
+
+    def handle_mobile_remote_action(
+        self, action: str, payload: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        """Handle LAN mobile remote actions safely on the Tk thread."""
+        payload = payload or {}
+
+        def run_action() -> Dict[str, Any]:
+            if action == "open_chatbot":
+                self.open_chatbot_dialog()
+                return {"ok": True, "message": "Crew Chatbot opened."}
+            if action == "open_crew_chat":
+                self.open_crew_chat_window()
+                return {"ok": True, "message": "Crew Chat opened."}
+            if action == "read_status":
+                self._read_status()
+                return {"ok": True, "message": "Reading status aloud."}
+            if action == "stop_reading":
+                self._stop_reading()
+                return {"ok": True, "message": "Stopped reading."}
+            if action == "show_about":
+                self.show_about()
+                return {"ok": True, "message": "About dialog opened."}
+            if action == "send_crew_message":
+                text = str(payload.get("text", "")).strip()
+                if not text:
+                    return {"ok": False, "message": "Message text is required."}
+                sender = str(payload.get("sender", "Mobile")).strip() or "Mobile"
+                recipient = str(payload.get("recipient", "All")).strip() or "All"
+                self.message_router.send_message(
+                    sender, [recipient], text, room="crew_multi_user"
+                )
+                self.update_status(f"Remote message sent from {sender} to {recipient}.")
+                return {"ok": True, "message": "Crew message sent."}
+            return {"ok": False, "message": f"Unknown action: {action}"}
+
+        try:
+            result = self._run_on_ui_thread(run_action)
+        except Exception as exc:
+            logging.error("Mobile remote action failed: %s", exc)
+            return {"ok": False, "message": str(exc)}
+        return result
+
+    def start_mobile_remote(self) -> None:
+        """Start the Crew LAN mobile remote."""
+        if self.mobile_remote_server is not None:
+            messagebox.showinfo(
+                "Mobile Remote Running", self.mobile_remote_server.access_url
+            )
+            self.update_status("Mobile remote already running.")
+            return
+
+        self.mobile_remote_server = CrewMobileRemoteServer(
+            status_callback=self.get_mobile_remote_status,
+            action_callback=self.handle_mobile_remote_action,
+        )
+        url = self.mobile_remote_server.start()
+        self.update_status("Mobile remote started.")
+        messagebox.showinfo(
+            "Crew Mobile Remote", f"Open this URL on your phone:\n\n{url}"
+        )
+
+    def stop_mobile_remote(self) -> None:
+        """Stop the Crew LAN mobile remote."""
+        if self.mobile_remote_server is None:
+            self.update_status("Mobile remote is not running.")
+            return
+        self.mobile_remote_server.stop()
+        self.mobile_remote_server = None
+        self.update_status("Mobile remote stopped.")
+
+    def show_mobile_remote_url(self) -> None:
+        """Show the Crew LAN mobile remote URL."""
+        if self.mobile_remote_server is None:
+            messagebox.showinfo("Crew Mobile Remote", "Start the mobile remote first.")
+            return
+        messagebox.showinfo("Crew Mobile Remote", self.mobile_remote_server.access_url)
+
     def show_troubleshooting(self):
         msg = (
             "Troubleshooting Tips:\n\n"
-            "- If a feature is missing, check the Diagnostics menu.\n"
+            "- If a feature is missing, check Tools > Diagnostics.\n"
             "- For speech issues, ensure your system audio is working and dependencies are installed.\n"
             "- If you see errors, check crew_app.log or crew_gui.log for details.\n"
             "- For further help, consult the README or contact support.\n"
@@ -3426,6 +3856,45 @@ class CrewGUI:
         except Exception as e:
             logging.error(f"Error setting up event bindings: {e}")
 
+    def _on_vertical_mousewheel(self, event: tk.Event, widget: tk.Widget) -> str:
+        """Scroll a widget vertically using mouse wheel input."""
+        try:
+            if not hasattr(widget, "yview_scroll"):
+                return "break"
+
+            delta = 0
+            if getattr(event, "delta", 0):
+                delta = -1 if event.delta > 0 else 1
+            elif getattr(event, "num", None) == 4:
+                delta = -1
+            elif getattr(event, "num", None) == 5:
+                delta = 1
+
+            if delta:
+                widget.yview_scroll(delta, "units")
+            return "break"
+        except Exception as e:
+            logging.error(f"Mouse wheel scroll error: {e}")
+            return "break"
+
+    def _bind_vertical_mousewheel(self, widget: tk.Widget) -> None:
+        """Enable vertical mouse wheel scrolling for a widget."""
+        widget.bind(
+            "<MouseWheel>",
+            lambda event, target=widget: self._on_vertical_mousewheel(event, target),
+            add="+",
+        )
+        widget.bind(
+            "<Button-4>",
+            lambda event, target=widget: self._on_vertical_mousewheel(event, target),
+            add="+",
+        )
+        widget.bind(
+            "<Button-5>",
+            lambda event, target=widget: self._on_vertical_mousewheel(event, target),
+            add="+",
+        )
+
     def _apply_main_window_geometry(self) -> None:
         """Force the main window to use the required centered startup size."""
         screen_width = self.root.winfo_screenwidth()
@@ -3508,6 +3977,9 @@ class CrewGUI:
 
     def _on_app_exit(self) -> None:
         try:
+            if self.mobile_remote_server is not None:
+                self.mobile_remote_server.stop()
+                self.mobile_remote_server = None
             self.save_window_state()
         finally:
             self.root.destroy()
@@ -3591,6 +4063,8 @@ class CrewGUI:
             value=False
         )  # Default to case-insensitive
         self._scratchpad_save_job: Optional[str] = None
+        self.latest_status_message = "Ready"
+        self.mobile_remote_server: Optional[CrewMobileRemoteServer] = None
 
     def create_main_layout(self) -> None:
         # Configure root window
@@ -3612,8 +4086,8 @@ class CrewGUI:
         self.paned_window = ttk.PanedWindow(self.main_frame, orient="horizontal")
         self.paned_window.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
 
-        # Left panel with fixed narrow width
-        self.left_frame = ttk.Frame(self.paned_window, width=140)  # Halved width
+        # Left panel with a wider default width for controls and filters
+        self.left_frame = ttk.Frame(self.paned_window, width=DEFAULT_LEFT_PANEL_WIDTH)
         self.left_frame.grid_propagate(False)  # Prevent frame from shrinking
 
         # Right panel
@@ -3630,12 +4104,16 @@ class CrewGUI:
         self.left_frame.grid_rowconfigure(0, weight=1)
         self.left_frame.grid_columnconfigure(0, weight=1)
 
-        # Split right panel into Data/Details
+        # Split right panel into Data and a tabbed workspace for details/notes
         self.paned_right = ttk.PanedWindow(self.right_frame, orient="vertical")
         self.paned_right.grid(row=0, column=0, sticky="nsew")
         # Ensure the right_frame fills the area for its PanedWindow
         self.right_frame.grid_rowconfigure(0, weight=1)
         self.right_frame.grid_columnconfigure(0, weight=1)
+
+        self.right_workspace_tabs = ttk.Notebook(
+            self.paned_right, style="Bottom.TNotebook"
+        )
 
     def create_all_widgets(self) -> None:
         try:
@@ -3688,6 +4166,7 @@ class CrewGUI:
             if error:
                 message = f"❌ {message}"
 
+            self.latest_status_message = message
             self.status_var.set(message)
             self.root.update_idletasks()
 
@@ -3798,6 +4277,7 @@ class CrewGUI:
             )
             scrollbar.pack(side="right", fill="y")
             self.group_list.configure(yscrollcommand=scrollbar.set)
+            self._bind_vertical_mousewheel(self.group_list)
         except Exception as e:
             logging.error(f"Failed to create group section: {e}")
             raise
@@ -3901,10 +4381,8 @@ class CrewGUI:
 
     def create_scratchpad_section(self) -> None:
         try:
-            scratchpad_frame = ttk.LabelFrame(
-                self.paned_right, text="Scratchpad", padding="5"
-            )
-            self.paned_right.add(scratchpad_frame, weight=2)
+            scratchpad_frame = ttk.Frame(self.right_workspace_tabs, padding="5")
+            self.right_workspace_tabs.add(scratchpad_frame, text="Scratchpad")
 
             toolbar = ttk.Frame(scratchpad_frame)
             toolbar.grid(row=0, column=0, sticky="ew", pady=(0, 5))
@@ -3941,6 +4419,7 @@ class CrewGUI:
             self.scratchpad_text.configure(yscrollcommand=scratchpad_scroll.set)
             self.scratchpad_text.grid(row=0, column=0, sticky="nsew")
             scratchpad_scroll.grid(row=0, column=1, sticky="ns")
+            self._bind_vertical_mousewheel(self.scratchpad_text)
 
             self.scratchpad_menu = tk.Menu(self.root, tearoff=0)
             self.scratchpad_menu.add_command(
@@ -4078,6 +4557,7 @@ class CrewGUI:
             self.data_table.grid(row=0, column=0, sticky="nsew")
             y_scroll.grid(row=0, column=1, sticky="ns")
             x_scroll.grid(row=1, column=0, sticky="ew")
+            self._bind_vertical_mousewheel(self.data_table)
 
             # Configure style to ensure proper scrolling
             style = ttk.Style()
@@ -4112,10 +4592,11 @@ class CrewGUI:
 
     def create_details_section(self) -> None:
         try:
-            details_frame = ttk.LabelFrame(
-                self.paned_right, text="Details View", padding="5"
-            )
-            self.paned_right.add(details_frame, weight=5)
+            if str(self.right_workspace_tabs) not in self.paned_right.panes():
+                self.paned_right.add(self.right_workspace_tabs, weight=5)
+
+            details_frame = ttk.Frame(self.right_workspace_tabs, padding="5")
+            self.right_workspace_tabs.add(details_frame, text="Details")
 
             # Create container frame for text and scrollbar
             text_frame = ttk.Frame(details_frame)
@@ -4149,6 +4630,7 @@ class CrewGUI:
             # Grid layout with scrollbar
             self.details_text.grid(row=0, column=0, sticky="nsew")
             details_scroll.grid(row=0, column=1, sticky="ns")
+            self._bind_vertical_mousewheel(self.details_text)
 
             # Set initial content
             self.details_text.insert(
