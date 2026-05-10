@@ -936,11 +936,12 @@ class CrewGUI:
                 self.stt_recognizer = sr.Recognizer()
                 self.stt_available = True
                 logger.info("STT (Speech-to-Text) initialized successfully")
+                print(f"✅ STT INITIALIZED: self.stt_available = {self.stt_available}")
             except Exception as e:
                 self.stt_recognizer = None
                 self.stt_available = False
                 error_msg = f"SpeechRecognition or PyAudio not available. STT disabled. ({type(e).__name__}: {e})"
-                print(f"Warning: {error_msg}")
+                print(f"❌ STT INIT FAILED: {error_msg}")
                 logger.warning(error_msg)
 
             # Initialize database manager for crew/user data
@@ -2261,10 +2262,10 @@ class CrewGUI:
                                 audio = recognizer.listen(
                                     source,
                                     timeout=self._get_stt_setting(
-                                        "listen_timeout", 5.0
+                                        "listen_timeout", 15.0
                                     ),
                                     phrase_time_limit=self._get_stt_setting(
-                                        "phrase_time_limit", 8.0
+                                        "phrase_time_limit", 30.0
                                     ),
                                 )
                             except Exception as listen_err:
@@ -2272,7 +2273,9 @@ class CrewGUI:
                                 entry_widget.delete(0, tk.END)
                                 entry_widget.insert(0, "[Listen error]")
                                 logger.warning("STT listen error: %s", listen_err)
-                                print(f"[DEBUG] STT Listen error in Multi-User Chat: {type(listen_err).__name__}: {listen_err}")
+                                print(
+                                    f"[DEBUG] STT Listen error in Multi-User Chat: {type(listen_err).__name__}: {listen_err}"
+                                )
                                 status_var.set("Voice recognition error.")
                                 parent_win.update()
                                 return
@@ -2891,6 +2894,7 @@ class CrewGUI:
         chat_win.title("Crew Chatbot")
         chat_win.geometry("500x600")
         chat_win.resizable(True, True)
+        logger.info(f"🔍 Chatbot window created. STT available: {self.stt_available}")
 
         history_path = os.path.join(os.path.expanduser("~"), ".crew_chat_history.json")
 
@@ -3053,6 +3057,75 @@ class CrewGUI:
             save_history()
             status_var.set("Chatbot history cleared.")
 
+        def load_wav_for_stt(entry_widget, parent_win):
+            """Load a WAV file and run STT on it for testing."""
+            if not self.stt_available:
+                status_var.set("Speech recognition is unavailable.")
+                return
+
+            wav_file = filedialog.askopenfilename(
+                title="Select WAV file for speech recognition",
+                filetypes=[("WAV files", "*.wav"), ("All files", "*.*")],
+            )
+            if not wav_file:
+                return
+
+            import speech_recognition as sr
+
+            def recognize_from_file():
+                recognizer = self.stt_recognizer
+                try:
+
+                    def set_loading():
+                        entry_widget.config(state="disabled")
+                        entry_widget.delete(0, tk.END)
+                        entry_widget.insert(0, "Loading WAV...")
+
+                    parent_win.after(0, set_loading)
+
+                    with sr.AudioFile(wav_file) as source:
+                        audio = recognizer.record(source)
+
+                    def set_recognizing():
+                        entry_widget.delete(0, tk.END)
+                        entry_widget.insert(0, "Recognizing...")
+
+                    parent_win.after(0, set_recognizing)
+
+                    result_text = self._recognize_stt_audio(recognizer, audio)
+
+                    def set_result():
+                        logger.info(f"[WAV] About to display: '{result_text}'")
+                        try:
+                            entry_widget.config(state="normal")
+                            entry_widget.delete(0, tk.END)
+                            entry_widget.insert(0, result_text)
+                            status_var.set(f"Recognized: {result_text}")
+                            logger.info(
+                                f"[WAV] Text inserted into entry widget and status bar"
+                            )
+                        except Exception as widget_err:
+                            logger.error(f"[WAV] Display error: {widget_err}")
+
+                    parent_win.after(0, set_result)
+                except Exception as exc:
+                    logger.warning("WAV recognition failed: %s", exc)
+
+                    def set_error():
+                        entry_widget.delete(0, tk.END)
+                        entry_widget.insert(0, "[WAV error]")
+                        status_var.set("WAV recognition error.")
+
+                    parent_win.after(0, set_error)
+                finally:
+
+                    def reset_ui():
+                        entry_widget.config(state="normal")
+
+                    parent_win.after(0, reset_ui)
+
+            threading.Thread(target=recognize_from_file, daemon=True).start()
+
         def speak_last_bot_reply():
             if self.tts_available and last_bot_reply[0]:
                 try:
@@ -3062,15 +3135,32 @@ class CrewGUI:
                     logger.warning("TTS error: %s", exc)
                     status_var.set("TTS error.")
 
+        # Track recording state for all mic operations
+        recording_state = {"active": False, "recognizer": None}
+        mic_btn_ref = {"btn": None}  # Store button reference
+
         def recognize_speech_to_entry(entry_widget, parent_win):
             if not self.stt_available:
                 status_var.set("Speech recognition is unavailable.")
                 return
 
+            import threading
+
             import speech_recognition as sr
+
+            # Toggle recording state
+            if recording_state["active"]:
+                # Stop recording
+                recording_state["active"] = False
+                status_var.set("Stopping recording...")
+                return
+
+            # Start recording
+            recording_state["active"] = True
 
             def recognize():
                 recognizer = self.stt_recognizer
+                recording_state["recognizer"] = recognizer
                 mic_index = getattr(self, "selected_mic_index", None)
                 src = None
                 try:
@@ -3080,39 +3170,103 @@ class CrewGUI:
                         else sr.Microphone()
                     )
                     with src as source:
-                        entry_widget.config(state="disabled")
-                        entry_widget.delete(0, tk.END)
-                        entry_widget.insert(0, "Listening...")
-                        parent_win.update()
+                        # Set UI to listening state
+                        def set_listening():
+                            entry_widget.config(state="disabled")
+                            entry_widget.delete(0, tk.END)
+                            entry_widget.insert(0, "Listening... (click STOP to end)")
+                            if mic_btn_ref["btn"]:
+                                mic_btn_ref["btn"].config(text="⏹ STOP")
+
+                        parent_win.after(0, set_listening)
+
                         self._prepare_stt_source(recognizer, source)
-                        audio = recognizer.listen(
-                            source,
-                            timeout=self._get_stt_setting("listen_timeout", 5.0),
-                            phrase_time_limit=self._get_stt_setting(
-                                "phrase_time_limit", 8.0
-                            ),
-                        )
-                        entry_widget.delete(0, tk.END)
-                        entry_widget.insert(0, "Recognizing...")
-                        parent_win.update()
-                        text = self._recognize_stt_audio(recognizer, audio)
-                        entry_widget.delete(0, tk.END)
-                        entry_widget.insert(0, text)
-                        status_var.set("Voice recognized.")
+
+                        # Listen - will be interrupted when user clicks STOP or timeout
+                        try:
+                            audio = recognizer.listen(
+                                source,
+                                timeout=self._get_stt_setting("listen_timeout", 15.0),
+                                phrase_time_limit=self._get_stt_setting(
+                                    "phrase_time_limit",
+                                    60.0,  # Increased to 60s for longer phrases
+                                ),
+                            )
+                        except sr.exceptions.RequestError as e:
+                            logger.error(f"[Mic] Listen error: {e}")
+
+                            def set_error():
+                                entry_widget.config(state="normal")
+                                entry_widget.delete(0, tk.END)
+                                status_var.set(f"[Listen error: {e}]")
+                                if mic_btn_ref["btn"]:
+                                    mic_btn_ref["btn"].config(text="🎤")
+                                recording_state["active"] = False
+
+                            parent_win.after(0, set_error)
+                            return
+
+                        if not recording_state["active"]:
+                            logger.info("[Mic] Recording stopped by user")
+
+                            def set_stopped():
+                                entry_widget.config(state="normal")
+                                status_var.set("Recording stopped.")
+                                if mic_btn_ref["btn"]:
+                                    mic_btn_ref["btn"].config(text="🎤")
+
+                            parent_win.after(0, set_stopped)
+                            return
+
+                        # Set UI to recognizing state
+                        def set_recognizing():
+                            entry_widget.delete(0, tk.END)
+                            entry_widget.insert(0, "Recognizing...")
+
+                        parent_win.after(0, set_recognizing)
+
+                        result_text = self._recognize_stt_audio(recognizer, audio)
+
+                        # Set UI to show result in both entry widget and status bar
+                        def set_result():
+                            logger.info(f"[Mic] About to display: '{result_text}'")
+                            try:
+                                entry_widget.config(state="normal")
+                                entry_widget.delete(0, tk.END)
+                                entry_widget.insert(0, result_text)
+                                entry_widget.config(state="normal")
+                                status_var.set(f"Recognized: {result_text}")
+                                logger.info(
+                                    f"[Mic] Text inserted into entry widget and status bar"
+                                )
+                                # Reset button
+                                if mic_btn_ref["btn"]:
+                                    mic_btn_ref["btn"].config(text="🎤")
+                                recording_state["active"] = False
+                            except Exception as widget_err:
+                                logger.error(f"[Mic] Display error: {widget_err}")
+
+                        parent_win.after(0, set_result)
                 except Exception as exc:
                     logger.warning("Chatbot speech recognition failed: %s", exc)
-                    print(f"[DEBUG] Chatbot STT Error: {type(exc).__name__}: {exc}")
-                    entry_widget.delete(0, tk.END)
-                    entry_widget.insert(0, "[Voice error]")
-                    status_var.set("Voice recognition error.")
+
+                    def set_error():
+                        entry_widget.delete(0, tk.END)
+                        entry_widget.insert(0, "[Voice error]")
+                        status_var.set("Voice recognition error.")
+
+                    parent_win.after(0, set_error)
                 finally:
                     try:
                         if src is not None and hasattr(src, "close"):
                             src.close()
                     except Exception as cleanup_exc:
                         logger.debug("Cleanup error in Chatbot speech: %s", cleanup_exc)
-                    entry_widget.config(state="normal")
-                    parent_win.update()
+
+                    def reset_ui():
+                        entry_widget.config(state="normal")
+
+                    parent_win.after(0, reset_ui)
 
             threading.Thread(target=recognize, daemon=True).start()
 
@@ -3342,14 +3496,36 @@ class CrewGUI:
         ToolTip(help_btn, "Show help for the chatbot dialog.")
 
         if self.stt_available:
+            logger.info(f"✅ Creating mic button - STT is available")
+            # Create button with toggle command
             mic_btn = tk.Button(
                 row2_frame,
                 text="🎤",
                 width=2,
-                command=lambda: recognize_speech_to_entry(user_entry, chat_win),
+            )
+            mic_btn_ref["btn"] = mic_btn  # Store reference for state changes
+            # Set the command after button is created so we can reference it
+            mic_btn.config(
+                command=lambda: recognize_speech_to_entry(user_entry, chat_win)
             )
             mic_btn.pack(side="left", padx=(0, 4))
-            ToolTip(mic_btn, "Voice input: dictate your message.")
+            ToolTip(
+                mic_btn, "Voice input: click to start, click STOP to end recording."
+            )
+
+            # Add WAV file button for testing
+            wav_btn = tk.Button(
+                row2_frame,
+                text="📁",
+                width=2,
+                command=lambda: load_wav_for_stt(user_entry, chat_win),
+            )
+            wav_btn.pack(side="left", padx=(0, 4))
+            ToolTip(wav_btn, "Load WAV file and run STT (for testing).")
+        else:
+            logger.warning(
+                f"❌ NOT creating mic button - STT unavailable ({self.stt_available})"
+            )
 
         if self.tts_available:
             speaker_btn = tk.Button(
@@ -6699,11 +6875,26 @@ class CrewGUI:
         """Recognize speech from audio with the configured backend."""
         try:
             result = recognizer.recognize_google(audio)
-            print(f"[DEBUG] Google STT result: '{result}'")
-            return result
+            logger.info(f"Google STT result: '{result}'")
+            if result.strip():
+                return result
+            else:
+                logger.warning("Google STT returned empty string")
+                return "[No speech detected]"
         except Exception as e:
-            print(f"[DEBUG] Google STT error: {type(e).__name__}: {e}")
-            raise
+            error_type = type(e).__name__
+            error_str = str(e).lower()
+            logger.warning(f"Google STT error - {error_type}: {e}")
+
+            # Handle specific exception types
+            if error_type == "UnknownValueError":
+                return "[Could not understand speech]"
+            elif error_type == "RequestError":
+                return "[Network or API error]"
+            elif "offline" in error_str or "network" in error_str:
+                return "[Network/offline error]"
+            else:
+                return f"[STT Error: {error_type}]"
 
     def _test_tts(self) -> None:
         if not TTS_AVAILABLE or not self.tts_engine:
