@@ -65,6 +65,26 @@ from database_manager import DatabaseManager  # Data persistence
 from message_router import CrewMessageRouter  # Message routing
 from mobile_remote import CrewMobileRemoteServer
 
+try:
+    from ollama_client import OllamaClient  # Ollama API client (Phase 5.3)
+except ImportError:
+    OllamaClient = None
+
+# Optional audio imports (Phase 5.6)
+try:
+    import speech_recognition as sr
+
+    SPEECH_RECOGNITION_AVAILABLE = True
+except ImportError:
+    SPEECH_RECOGNITION_AVAILABLE = False
+
+try:
+    import pyttsx3
+
+    TTS_AVAILABLE = True
+except ImportError:
+    TTS_AVAILABLE = False
+
 
 # --- MAIN FUNCTION FOR TEST COMPLIANCE ---
 def main():
@@ -1317,14 +1337,10 @@ class CrewGUI:
         messagebox.showinfo("Keyboard Shortcuts", msg)
 
     def show_online_docs(self):
-        import webbrowser
-
-        webbrowser.open_new_tab("https://github.com/Maggot4703/Crew")
+        self._open_url_in_browser("https://github.com/Maggot4703/Crew")
 
     def open_github_issues(self):
-        import webbrowser
-
-        webbrowser.open_new_tab("https://github.com/Maggot4703/Crew/issues")
+        self._open_url_in_browser("https://github.com/Maggot4703/Crew/issues")
 
     def show_contact_support(self):
         msg = (
@@ -1543,13 +1559,35 @@ class CrewGUI:
 
     def _open_0101_url(self, url: str) -> None:
         """Open 0101 in the browser, reusing an existing 0101 window when possible."""
-        import webbrowser
-
         if self._activate_existing_0101_window(url):
             self._resize_0101_window_async(url)
             return
-        webbrowser.open(url, new=0)
+        self._open_url_in_browser(url)
         self._resize_0101_window_async(url)
+
+    @staticmethod
+    def _preferred_browser_command() -> list[str] | None:
+        """Return the best available browser command, preferring Brave."""
+        for candidate in ("brave-browser", "brave-browser-stable", "brave"):
+            browser = shutil.which(candidate)
+            if browser:
+                return [browser]
+        return None
+
+    def _open_url_in_browser(self, url: str) -> None:
+        """Open a URL in Brave when installed, otherwise fall back to webbrowser."""
+        browser_command = self._preferred_browser_command()
+        if browser_command:
+            subprocess.Popen(
+                browser_command + [url],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            return
+
+        import webbrowser
+
+        webbrowser.open_new_tab(url)
 
     def _activate_existing_0101_window(self, url: str) -> bool:
         """Focus an existing 0101 browser window instead of opening a duplicate."""
@@ -2296,9 +2334,7 @@ class CrewGUI:
             if file_meta:
 
                 def open_file_callback(path=file_meta["filepath"]):
-                    import webbrowser
-
-                    webbrowser.open(f"file://{os.path.abspath(path)}")
+                    self._open_url_in_browser(Path(path).resolve().as_uri())
 
                 file_tag = f"file_{chat_display.index(tk.END)}"
                 chat_display.insert(
@@ -6653,3 +6689,1037 @@ if __name__ == "__main__":
         # Fallback to a simple error message if GUI initialization fails
         print(f"Error: {e}")
         input("Press Enter to exit...")
+
+    # ─────────────────────────────────────────────────────────────
+    # RECORD MENU HANDLERS (Phase 3)
+    # ─────────────────────────────────────────────────────────────
+
+    def _start_recording(self) -> None:
+        """Start recording audio from microphone."""
+        try:
+            import speech_recognition as sr
+
+            if not hasattr(self, "recognizer"):
+                self.recognizer = sr.Recognizer()
+
+            logging.info("Recording started...")
+            self.status_var.set("🔴 Recording... (say something)")
+
+            try:
+                with sr.Microphone() as source:
+                    # Adjust for ambient noise
+                    self.recognizer.adjust_for_ambient_noise(source, duration=0.5)
+                    audio = self.recognizer.listen(source, timeout=10)
+
+                    # Store audio for playback
+                    self.recording_audio = audio
+                    self.status_var.set("✅ Recording stopped - click ▶️ to play")
+                    logging.info("Recording captured successfully")
+
+            except sr.UnknownValueError:
+                self.status_var.set("❌ No speech detected")
+            except sr.RequestError as e:
+                self.status_var.set(f"❌ Service error: {e}")
+        except ImportError:
+            self.status_var.set("⚠️ speech_recognition not installed")
+        except Exception as e:
+            self.status_var.set(f"❌ Record error: {e}")
+            logging.error(f"Recording error: {e}")
+
+    def _stop_recording(self) -> None:
+        """Stop ongoing recording."""
+        self.status_var.set("⏹️ Recording stopped")
+        logging.info("Recording stopped via menu")
+
+    def _play_recording(self) -> None:
+        """Play back the last recording using speech recognition."""
+        if not hasattr(self, "recording_audio") or self.recording_audio is None:
+            self.status_var.set("⚠️ No recording available to play")
+            return
+
+        try:
+            import speech_recognition as sr
+
+            if not hasattr(self, "recognizer"):
+                self.recognizer = sr.Recognizer()
+
+            self.status_var.set("🔍 Transcribing recording...")
+
+            try:
+                text = self.recognizer.recognize_google(self.recording_audio)
+
+                # Speak back the recognized text
+                if self.tts_manager:
+                    self.tts_manager.speak(text)
+                    self.status_var.set(f"▶️ Playback: '{text[:50]}...'")
+                    logging.info(f"Played recording: {text}")
+                else:
+                    self.status_var.set(f"📝 Transcript: {text}")
+
+            except sr.UnknownValueError:
+                self.status_var.set("❌ Could not understand audio")
+            except sr.RequestError as e:
+                self.status_var.set(f"❌ Transcription error: {e}")
+        except Exception as e:
+            self.status_var.set(f"❌ Playback error: {e}")
+            logging.error(f"Playback error: {e}")
+
+    # ─────────────────────────────────────────────────────────────
+    # TALK MENU HANDLERS (Phase 3)
+    # ─────────────────────────────────────────────────────────────
+
+    def _speak_selection(self) -> None:
+        """Speak the selected tree item using TTS."""
+        try:
+            selection = self.tree.selection()
+            if not selection:
+                self.status_var.set("⚠️ No item selected")
+                return
+
+            item_id = selection[0]
+            item_text = self.tree.item(item_id, "text")
+
+            if not self.tts_manager:
+                self.status_var.set("⚠️ TTS not available")
+                return
+
+            self.status_var.set(f"🔊 Speaking: '{item_text[:30]}...'")
+            self.tts_manager.speak(item_text)
+            logging.info(f"Spoke selection: {item_text[:50]}")
+
+        except Exception as e:
+            self.status_var.set(f"❌ Speak error: {e}")
+            logging.error(f"Speak selection error: {e}")
+
+    def _speak_all(self) -> None:
+        """Speak all details of selected item using TTS."""
+        try:
+            selection = self.tree.selection()
+            if not selection:
+                self.status_var.set("⚠️ No item selected")
+                return
+
+            # Get all detail text from details pane
+            if hasattr(self, "details_text"):
+                full_text = self.details_text.get("1.0", "end").strip()
+            else:
+                full_text = ""
+
+            if not full_text:
+                self.status_var.set("⚠️ No details to speak")
+                return
+
+            if not self.tts_manager:
+                self.status_var.set("⚠️ TTS not available")
+                return
+
+            self.status_var.set("🔊 Speaking all details...")
+            self.tts_manager.speak(full_text)
+            logging.info(f"Spoke {len(full_text)} characters of details")
+
+        except Exception as e:
+            self.status_var.set(f"❌ Speak error: {e}")
+            logging.error(f"Speak all error: {e}")
+
+    # ─────────────────────────────────────────────────────────────
+    # CHAT MENU HANDLERS (Phase 3)
+    # ─────────────────────────────────────────────────────────────
+
+    def open_chatbot_dialog(self) -> None:
+        """Open a chatbot dialog for conversation with ollama AI."""
+        try:
+            import logging
+            import threading
+            import tkinter.scrolledtext as scrolledtext
+
+            import requests
+
+            # Language dictionary for multi-language support (Phase 5.5)
+            LANGUAGE_PROMPTS = {
+                "en": "You are a helpful AI assistant.",
+                "es": "Eres un asistente de IA útil.",
+                "fr": "Vous êtes un assistant IA utile.",
+                "de": "Sie sind ein hilfreicher KI-Assistent.",
+                "it": "Sei un assistente AI utile.",
+                "ja": "あなたは役に立つAIアシスタントです。",
+                "zh": "你是一个有用的AI助手。",
+                "ru": "Вы полезный помощник ИИ.",
+            }
+
+            LANGUAGE_NAMES = {
+                "en": "🇬🇧 English",
+                "es": "🇪🇸 Spanish",
+                "fr": "🇫🇷 French",
+                "de": "🇩🇪 German",
+                "it": "🇮🇹 Italian",
+                "ja": "🇯🇵 Japanese",
+                "zh": "🇨🇳 Chinese",
+                "ru": "🇷🇺 Russian",
+            }
+
+            chat_window = tk.Toplevel(self.root)
+            chat_window.title("Chatbot - Crew Chat (Ollama)")
+            chat_window.geometry("750x600")
+            chat_window.resizable(True, True)
+
+            # ─────────────────────────────────────────────────────────────
+            # TITLE BAR
+            # ─────────────────────────────────────────────────────────────
+            title_frame = tk.Frame(chat_window, bg="#2d2d30")
+            title_frame.pack(fill=tk.X)
+            title_label = tk.Label(
+                title_frame,
+                text="💬 Chatbot Assistant (Powered by Ollama)",
+                bg="#2d2d30",
+                fg="white",
+                font=("Arial", 11, "bold"),
+                pady=8,
+            )
+            title_label.pack()
+
+            # ─────────────────────────────────────────────────────────────
+            # MODEL SELECTOR (Phase 5.1)
+            # ─────────────────────────────────────────────────────────────
+            model_frame = tk.Frame(chat_window, bg="#3e3e42", height=35)
+            model_frame.pack(fill=tk.X, padx=8, pady=(0, 8))
+
+            model_label = tk.Label(
+                model_frame, text="Model:", bg="#3e3e42", fg="white", font=("Arial", 9)
+            )
+            model_label.pack(side=tk.LEFT, padx=4, pady=4)
+
+            # Get available models from ollama
+            available_models = ["deepseek-r1:1.5b", "gemma4:latest"]  # fallback list
+            current_model = self.config.get("chatbot", {}).get(
+                "model", "deepseek-r1:1.5b"
+            )
+
+            try:
+                response = requests.get("http://localhost:11434/api/tags", timeout=3)
+                if response.status_code == 200:
+                    data = response.json()
+                    available_models = [m["name"] for m in data.get("models", [])]
+            except Exception as e:
+                logging.warning(f"Could not fetch models from ollama: {e}")
+
+            model_var = tk.StringVar(value=current_model)
+
+            model_dropdown = ttk.Combobox(
+                model_frame,
+                textvariable=model_var,
+                values=available_models,
+                state="readonly",
+                width=30,
+                font=("Arial", 9),
+            )
+            model_dropdown.pack(side=tk.LEFT, padx=4, pady=4, fill=tk.X, expand=True)
+
+            # ─────────────────────────────────────────────────────────────
+            # CHAT HISTORY DISPLAY
+            # ─────────────────────────────────────────────────────────────
+            history_frame = tk.Frame(chat_window)
+            history_frame.pack(fill=tk.BOTH, expand=True, padx=8, pady=8)
+
+            scrollbar = tk.Scrollbar(history_frame)
+            scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+            history_text = scrolledtext.ScrolledText(
+                history_frame,
+                state="normal",
+                height=20,
+                wrap=tk.WORD,
+                yscrollcommand=scrollbar.set,
+            )
+            history_text.pack(fill=tk.BOTH, expand=True)
+            scrollbar.config(command=history_text.yview)
+
+            history_text.insert(tk.END, "💡 Chat started. Ask me anything!\n")
+            history_text.config(state="disabled")
+
+            # Input frame
+            input_frame = tk.Frame(chat_window)
+            input_frame.pack(fill=tk.X, padx=8, pady=8)
+
+            user_input = tk.Entry(input_frame, font=("Arial", 10))
+            user_input.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 8))
+
+            # ─────────────────────────────────────────────────────────────
+            # AUDIO BUTTONS (Phase 5.6)
+            # ─────────────────────────────────────────────────────────────
+
+            recording_state = {
+                "is_recording": False,
+                "recognizer": None,
+                "audio_text": "",
+            }
+            playback_state = {"is_playing": False, "engine": None}
+
+            def record_audio():
+                """Record audio and transcribe to text (Phase 5.6)."""
+                if not SPEECH_RECOGNITION_AVAILABLE:
+                    messagebox.showerror(
+                        "Audio Error",
+                        "speech_recognition library not installed.\nRun: pip install SpeechRecognition",
+                    )
+                    return
+
+                if recording_state["is_recording"]:
+                    # Stop recording
+                    recording_state["is_recording"] = False
+                    mic_btn.config(bg="#666666", text="🎤 Record")
+                    return
+
+                # Start recording
+                recording_state["is_recording"] = True
+                mic_btn.config(bg="#d9534f", text="⏹ Recording...")
+                chat_window.update()
+
+                def capture_audio():
+                    try:
+                        recognizer = sr.Recognizer()
+                        with sr.Microphone() as source:
+                            # Adjust for ambient noise
+                            recognizer.adjust_for_ambient_noise(source, duration=1)
+
+                            history_text.config(state="normal")
+                            history_text.insert(tk.END, "\n🎤 Listening...\n")
+                            history_text.config(state="disabled")
+                            chat_window.update()
+
+                            # Listen for audio (max 30 seconds)
+                            audio = recognizer.listen(source, timeout=30)
+
+                        if not recording_state["is_recording"]:
+                            return
+
+                        # Transcribe using Google Speech Recognition (free, no API key needed)
+                        try:
+                            text = recognizer.recognize_google(audio)
+
+                            history_text.config(state="normal")
+                            history_text.insert(tk.END, f"✅ Recognized: {text}\n")
+                            history_text.config(state="disabled")
+
+                            # Auto-populate input field
+                            user_input.delete(0, tk.END)
+                            user_input.insert(0, text)
+
+                        except sr.UnknownValueError:
+                            history_text.config(state="normal")
+                            history_text.insert(
+                                tk.END, "❌ Could not understand audio\n"
+                            )
+                            history_text.config(state="disabled")
+                        except sr.RequestError as e:
+                            history_text.config(state="normal")
+                            history_text.insert(
+                                tk.END, f"❌ Speech service error: {e}\n"
+                            )
+                            history_text.config(state="disabled")
+
+                    except Exception as e:
+                        history_text.config(state="normal")
+                        history_text.insert(
+                            tk.END, f"❌ Recording error: {str(e)[:60]}\n"
+                        )
+                        history_text.config(state="disabled")
+
+                    finally:
+                        recording_state["is_recording"] = False
+                        mic_btn.config(bg="#666666", text="🎤 Record")
+
+                thread = threading.Thread(target=capture_audio, daemon=True)
+                thread.start()
+
+            mic_btn = tk.Button(
+                input_frame,
+                text="🎤 Record",
+                width=10,
+                bg="#666666",
+                fg="white",
+                command=record_audio,
+                state="normal" if SPEECH_RECOGNITION_AVAILABLE else "disabled",
+            )
+            mic_btn.pack(side=tk.LEFT, padx=4)
+
+            send_btn = tk.Button(
+                input_frame, text="Send", width=8, bg="#0e639c", fg="white"
+            )
+            send_btn.pack(side=tk.RIGHT, padx=(0, 4))
+
+            # Cancel button (Phase 5.3) - disabled by default, enables during streaming
+            def cancel_streaming():
+                """Cancel ongoing stream generation (Phase 5.3)."""
+                setattr(cancel_btn, "_cancelled", True)
+                cancel_btn.config(state="disabled")
+
+            cancel_btn = tk.Button(
+                input_frame,
+                text="⛔ Cancel",
+                width=10,
+                bg="#c44e1c",
+                fg="white",
+                state="disabled",
+                command=cancel_streaming,
+            )
+            cancel_btn.pack(side=tk.RIGHT, padx=4)
+
+            clear_btn = tk.Button(
+                input_frame,
+                text="Clear",
+                width=8,
+                bg="#666666",
+                fg="white",
+                command=lambda: (
+                    history_text.config(state="normal"),
+                    history_text.delete(1.0, tk.END),
+                    history_text.insert(tk.END, "💡 Chat cleared.\n"),
+                    history_text.config(state="disabled"),
+                ),
+            )
+            clear_btn.pack(side=tk.RIGHT)
+
+            # ─────────────────────────────────────────────────────────────
+            # SETTINGS BUTTON & DIALOG (Phase 5.2)
+            # ─────────────────────────────────────────────────────────────
+
+            def show_settings_dialog():
+                """Open advanced settings dialog (Phase 5.2 + 5.5 language)."""
+                settings_window = tk.Toplevel(chat_window)
+                settings_window.title("Chatbot Settings")
+                settings_window.geometry(
+                    "400x420"
+                )  # Increased height for language selector
+                settings_window.transient(chat_window)
+                settings_window.grab_set()
+
+                # Load current settings from config
+                config_settings = self.config.get("chatbot", {})
+                temp_default = config_settings.get("temperature", 0.7)
+                tokens_default = config_settings.get("max_tokens", 200)
+                prompt_default = config_settings.get(
+                    "system_prompt", "You are a helpful AI assistant."
+                )
+                language_default = config_settings.get("language", "en")
+
+                # Temperature slider
+                temp_frame = tk.Frame(settings_window)
+                temp_frame.pack(fill=tk.X, padx=10, pady=10)
+
+                tk.Label(
+                    temp_frame,
+                    text="🔥 Temperature (Creativity):",
+                    font=("Arial", 10, "bold"),
+                ).pack(anchor=tk.W)
+                temp_var = tk.DoubleVar(value=temp_default)
+                tk.Scale(
+                    temp_frame,
+                    from_=0.0,
+                    to=1.0,
+                    orient=tk.HORIZONTAL,
+                    variable=temp_var,
+                    resolution=0.1,
+                    length=300,
+                ).pack(fill=tk.X, pady=5)
+                tk.Label(
+                    temp_frame,
+                    text="0.0 = Deterministic  |  1.0 = Creative",
+                    font=("Arial", 8, "italic"),
+                ).pack(anchor=tk.W)
+
+                # Max tokens slider
+                tokens_frame = tk.Frame(settings_window)
+                tokens_frame.pack(fill=tk.X, padx=10, pady=10)
+
+                tk.Label(
+                    tokens_frame,
+                    text="📝 Max Tokens (Response Length):",
+                    font=("Arial", 10, "bold"),
+                ).pack(anchor=tk.W)
+                tokens_var = tk.IntVar(value=tokens_default)
+                tk.Scale(
+                    tokens_frame,
+                    from_=10,
+                    to=500,
+                    orient=tk.HORIZONTAL,
+                    variable=tokens_var,
+                    length=300,
+                ).pack(fill=tk.X, pady=5)
+                tk.Label(
+                    tokens_frame,
+                    text="10 = Short  |  500 = Long",
+                    font=("Arial", 8, "italic"),
+                ).pack(anchor=tk.W)
+
+                # System prompt text
+                prompt_frame = tk.Frame(settings_window)
+                prompt_frame.pack(fill=tk.X, padx=10, pady=10)
+
+                tk.Label(
+                    prompt_frame, text="🤖 System Prompt:", font=("Arial", 10, "bold")
+                ).pack(anchor=tk.W)
+                prompt_text = tk.Text(
+                    prompt_frame, height=4, width=40, font=("Arial", 9)
+                )
+                prompt_text.insert(1.0, prompt_default)
+                prompt_text.pack(fill=tk.BOTH, expand=True, pady=5)
+
+                # Language selector (Phase 5.5)
+                lang_frame = tk.Frame(settings_window)
+                lang_frame.pack(fill=tk.X, padx=10, pady=10)
+
+                tk.Label(
+                    lang_frame, text="🌐 Language:", font=("Arial", 10, "bold")
+                ).pack(anchor=tk.W)
+                lang_var = tk.StringVar(value=language_default)
+                lang_dropdown = ttk.Combobox(
+                    lang_frame,
+                    textvariable=lang_var,
+                    values=list(LANGUAGE_NAMES.values()),
+                    state="readonly",
+                    width=30,
+                )
+                lang_dropdown.pack(fill=tk.X, pady=5)
+
+                # Buttons
+                button_frame = tk.Frame(settings_window)
+                button_frame.pack(fill=tk.X, padx=10, pady=10)
+
+                def apply_settings():
+                    """Save settings to config."""
+                    if "chatbot" not in self.config.config:
+                        self.config.config["chatbot"] = {}
+
+                    self.config.config["chatbot"]["temperature"] = temp_var.get()
+                    self.config.config["chatbot"]["max_tokens"] = tokens_var.get()
+                    self.config.config["chatbot"]["system_prompt"] = prompt_text.get(
+                        1.0, tk.END
+                    ).strip()
+
+                    # Convert language name back to code (Phase 5.5)
+                    lang_display = lang_var.get()
+                    lang_code = next(
+                        (k for k, v in LANGUAGE_NAMES.items() if v == lang_display),
+                        "en",
+                    )
+                    self.config.config["chatbot"]["language"] = lang_code
+
+                    self.config.save()
+
+                    history_text.config(state="normal")
+                    history_text.insert(
+                        tk.END,
+                        f"\n⚙️  Settings updated:\n"
+                        f"   • Temperature: {temp_var.get()}\n"
+                        f"   • Max tokens: {tokens_var.get()}\n"
+                        f"   • Language: {lang_display}\n",
+                    )
+                    history_text.see(tk.END)
+                    history_text.config(state="disabled")
+
+                    settings_window.destroy()
+
+                tk.Button(
+                    button_frame,
+                    text="Apply",
+                    width=10,
+                    bg="#0e639c",
+                    fg="white",
+                    command=apply_settings,
+                ).pack(side=tk.LEFT, padx=4)
+
+                tk.Button(
+                    button_frame,
+                    text="Cancel",
+                    width=10,
+                    bg="#666666",
+                    fg="white",
+                    command=settings_window.destroy,
+                ).pack(side=tk.LEFT)
+
+            settings_btn = tk.Button(
+                input_frame,
+                text="⚙️  Settings",
+                width=10,
+                bg="#666666",
+                fg="white",
+                command=show_settings_dialog,
+            )
+            settings_btn.pack(side=tk.RIGHT, padx=4)
+
+            # ─────────────────────────────────────────────────────────────
+            # SPEAKER BUTTON FOR TEXT-TO-SPEECH (Phase 5.6)
+            # ─────────────────────────────────────────────────────────────
+
+            last_bot_response = {"text": ""}  # Store last response for TTS
+
+            def play_audio():
+                """Play last bot response as speech (Phase 5.6)."""
+                if not TTS_AVAILABLE:
+                    messagebox.showerror(
+                        "Audio Error",
+                        "pyttsx3 library not installed.\nRun: pip install pyttsx3",
+                    )
+                    return
+
+                if not last_bot_response["text"]:
+                    messagebox.showwarning(
+                        "Audio", "No bot response to play. Ask the bot something first."
+                    )
+                    return
+
+                if playback_state["is_playing"]:
+                    # Stop playback
+                    playback_state["is_playing"] = False
+                    speaker_btn.config(bg="#666666", text="🔊 Speak")
+                    return
+
+                playback_state["is_playing"] = True
+                speaker_btn.config(bg="#0e9d58", text="⏹ Speaking...")
+                chat_window.update()
+
+                def speak_text():
+                    try:
+                        engine = pyttsx3.init()
+                        playback_state["engine"] = engine
+
+                        # Get language for voice
+                        config_settings = self.config.get("chatbot", {})
+                        language = config_settings.get("language", "en")
+
+                        # Set voice properties
+                        engine.setProperty("rate", 150)  # Speed
+                        engine.setProperty("volume", 0.9)  # Volume (0.0 to 1.0)
+
+                        # Try to set language (some languages not supported)
+                        try:
+                            if language == "es":
+                                voices = engine.getProperty("voices")
+                                for voice in voices:
+                                    if "spanish" in voice.name.lower():
+                                        engine.setProperty("voice", voice.id)
+                                        break
+                        except:
+                            pass
+
+                        # Speak
+                        history_text.config(state="normal")
+                        history_text.insert(tk.END, "🔊 Speaking...\n")
+                        history_text.config(state="disabled")
+                        chat_window.update()
+
+                        engine.say(last_bot_response["text"])
+                        engine.runAndWait()
+
+                        if playback_state["is_playing"]:
+                            history_text.config(state="normal")
+                            history_text.insert(tk.END, "✅ Playback complete\n")
+                            history_text.config(state="disabled")
+
+                    except Exception as e:
+                        history_text.config(state="normal")
+                        history_text.insert(
+                            tk.END, f"❌ Playback error: {str(e)[:60]}\n"
+                        )
+                        history_text.config(state="disabled")
+
+                    finally:
+                        playback_state["is_playing"] = False
+                        speaker_btn.config(bg="#666666", text="🔊 Speak")
+
+                thread = threading.Thread(target=speak_text, daemon=True)
+                thread.start()
+
+            speaker_btn = tk.Button(
+                input_frame,
+                text="🔊 Speak",
+                width=10,
+                bg="#666666",
+                fg="white",
+                command=play_audio,
+                state="normal" if TTS_AVAILABLE else "disabled",
+            )
+            speaker_btn.pack(side=tk.RIGHT, padx=4)
+
+            # ─────────────────────────────────────────────────────────────
+            # EXPORT BUTTON & DIALOG (Phase 5.4)
+            # ─────────────────────────────────────────────────────────────
+
+            def export_conversation():
+                """Export conversation in Markdown/JSON/PDF format (Phase 5.4)."""
+                # Get all text from history
+                full_text = history_text.get(1.0, tk.END)
+
+                # Parse messages
+                lines = full_text.split("\n")
+                conversations = []
+                current_role = None
+                current_content = []
+
+                for line in lines:
+                    if line.startswith("👤 You:"):
+                        # Save previous message
+                        if current_role and current_content:
+                            conversations.append(
+                                {
+                                    "role": current_role,
+                                    "content": "\n".join(current_content).strip(),
+                                }
+                            )
+                        current_role = "user"
+                        current_content = [line.replace("👤 You:", "").strip()]
+                    elif line.startswith("🤖 Bot:"):
+                        # Save previous message
+                        if current_role and current_content:
+                            conversations.append(
+                                {
+                                    "role": current_role,
+                                    "content": "\n".join(current_content).strip(),
+                                }
+                            )
+                        current_role = "bot"
+                        current_content = [line.replace("🤖 Bot:", "").strip()]
+                    elif (
+                        current_role
+                        and line
+                        and not line.startswith(("📊", "💡", "📌", "⏳", "❌"))
+                    ):
+                        current_content.append(line)
+
+                # Add last message
+                if current_role and current_content:
+                    conversations.append(
+                        {
+                            "role": current_role,
+                            "content": "\n".join(current_content).strip(),
+                        }
+                    )
+
+                if not conversations:
+                    messagebox.showwarning("Export", "No conversations to export")
+                    return
+
+                # Show export format dialog
+                export_window = tk.Toplevel(chat_window)
+                export_window.title("Export Conversation")
+                export_window.geometry("300x200")
+                export_window.transient(chat_window)
+                export_window.grab_set()
+
+                frame = tk.Frame(export_window)
+                frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+                tk.Label(
+                    frame, text="Select export format:", font=("Arial", 11, "bold")
+                ).pack(anchor=tk.W, pady=10)
+
+                format_var = tk.StringVar(value="markdown")
+
+                tk.Radiobutton(
+                    frame,
+                    text="📄 Markdown (.md)",
+                    variable=format_var,
+                    value="markdown",
+                ).pack(anchor=tk.W)
+                tk.Radiobutton(
+                    frame, text="📋 JSON (.json)", variable=format_var, value="json"
+                ).pack(anchor=tk.W)
+                try:
+                    import reportlab
+
+                    tk.Radiobutton(
+                        frame, text="📕 PDF (.pdf)", variable=format_var, value="pdf"
+                    ).pack(anchor=tk.W)
+                except ImportError:
+                    tk.Label(frame, text="📕 PDF (requires reportlab)", fg="gray").pack(
+                        anchor=tk.W
+                    )
+
+                button_frame = tk.Frame(frame)
+                button_frame.pack(fill=tk.X, pady=10)
+
+                def do_export():
+                    """Perform the export with selected format."""
+                    fmt = format_var.get()
+
+                    # Get file extension
+                    ext_map = {"markdown": ".md", "json": ".json", "pdf": ".pdf"}
+                    ext = ext_map.get(fmt, ".txt")
+
+                    # File dialog
+                    file_path = filedialog.asksaveasfilename(
+                        defaultextension=ext,
+                        filetypes=[
+                            (
+                                (
+                                    "Markdown"
+                                    if fmt == "markdown"
+                                    else "JSON" if fmt == "json" else "PDF"
+                                ),
+                                f"*{ext}",
+                            ),
+                            ("All files", "*.*"),
+                        ],
+                    )
+
+                    if not file_path:
+                        return
+
+                    try:
+                        if fmt == "markdown":
+                            # Generate Markdown
+                            import datetime
+
+                            timestamp = datetime.datetime.now().strftime(
+                                "%Y-%m-%d %H:%M:%S"
+                            )
+                            md_content = f"# Chat Conversation - {timestamp}\n\n"
+                            md_content += f"**Model:** {model_var.get()}\n\n"
+
+                            for msg in conversations:
+                                if msg["role"] == "user":
+                                    md_content += f"## 👤 You\n{msg['content']}\n\n"
+                                else:
+                                    md_content += (
+                                        f"## 🤖 Bot\n{msg['content']}\n\n---\n\n"
+                                    )
+
+                            with open(file_path, "w") as f:
+                                f.write(md_content)
+
+                        elif fmt == "json":
+                            # Generate JSON
+                            import datetime
+
+                            export_data = {
+                                "timestamp": datetime.datetime.now().isoformat(),
+                                "model": model_var.get(),
+                                "conversations": conversations,
+                            }
+                            with open(file_path, "w") as f:
+                                json.dump(export_data, f, indent=2)
+
+                        elif fmt == "pdf":
+                            # Generate PDF (requires reportlab)
+                            try:
+                                from reportlab.lib.pagesizes import letter
+                                from reportlab.lib.styles import (
+                                    ParagraphStyle,
+                                    getSampleStyleSheet,
+                                )
+                                from reportlab.lib.units import inch
+                                from reportlab.platypus import (
+                                    Paragraph,
+                                    SimpleDocTemplate,
+                                    Spacer,
+                                )
+
+                                doc = SimpleDocTemplate(file_path, pagesize=letter)
+                                elements = []
+                                styles = getSampleStyleSheet()
+
+                                # Title
+                                title = Paragraph(
+                                    "<b>Chat Conversation Export</b>",
+                                    styles["Heading1"],
+                                )
+                                elements.append(title)
+                                elements.append(Spacer(1, 0.2 * inch))
+
+                                # Messages
+                                for msg in conversations:
+                                    role_text = (
+                                        "You" if msg["role"] == "user" else "Bot"
+                                    )
+                                    para = Paragraph(
+                                        f"<b>{role_text}:</b> {msg['content']}",
+                                        styles["BodyText"],
+                                    )
+                                    elements.append(para)
+                                    elements.append(Spacer(1, 0.1 * inch))
+
+                                doc.build(elements)
+                            except ImportError:
+                                messagebox.showerror(
+                                    "Export",
+                                    "reportlab not installed. Export as JSON instead.",
+                                )
+                                return
+
+                        messagebox.showinfo(
+                            "Export", f"Conversation exported to:\n{file_path}"
+                        )
+                        export_window.destroy()
+
+                    except Exception as e:
+                        messagebox.showerror("Export Error", str(e))
+
+                tk.Button(
+                    button_frame,
+                    text="Export",
+                    width=10,
+                    bg="#0e639c",
+                    fg="white",
+                    command=do_export,
+                ).pack(side=tk.LEFT, padx=4)
+                tk.Button(
+                    button_frame,
+                    text="Cancel",
+                    width=10,
+                    bg="#666666",
+                    fg="white",
+                    command=export_window.destroy,
+                ).pack(side=tk.LEFT)
+
+            export_btn = tk.Button(
+                input_frame,
+                text="💾 Export",
+                width=10,
+                bg="#4a7c4e",
+                fg="white",
+                command=export_conversation,
+            )
+            export_btn.pack(side=tk.RIGHT, padx=4)
+
+            def send_message():
+                msg = user_input.get().strip()
+                if not msg:
+                    return
+
+                # Get currently selected model
+                selected_model = model_var.get()
+
+                # Add user message to history
+                history_text.config(state="normal")
+                history_text.insert(tk.END, f"\n👤 You: {msg}\n")
+                history_text.see(tk.END)
+                history_text.config(state="disabled")
+                user_input.delete(0, tk.END)
+                send_btn.config(state="disabled")
+                cancel_btn.config(state="normal")  # Enable cancel button (Phase 5.3)
+
+                # Add thinking message
+                history_text.config(state="normal")
+                thinking_msg_idx = history_text.index(tk.END)
+                history_text.insert(tk.END, "\n🤖 Bot (thinking...)")
+                history_text.config(state="disabled")
+
+                # Call ollama in background thread with streaming (Phase 5.3)
+                def get_response():
+                    try:
+                        # Get settings from config (Phase 5.2 + 5.5 language)
+                        config_settings = self.config.get("chatbot", {})
+                        temperature = config_settings.get("temperature", 0.7)
+                        max_tokens = config_settings.get("max_tokens", 200)
+                        language = config_settings.get("language", "en")
+
+                        # Get language-specific system prompt (Phase 5.5)
+                        system_prompt = LANGUAGE_PROMPTS.get(
+                            language, LANGUAGE_PROMPTS["en"]
+                        )
+
+                        # Prepend system prompt to user message
+                        prompt_with_system = f"{system_prompt}\n\nUser: {msg}"
+
+                        # Create ollama client with selected model and settings
+                        client = OllamaClient(
+                            model=selected_model, temperature=temperature
+                        )
+
+                        # Stream response
+                        full_response = ""
+                        history_text.config(state="normal")
+
+                        # First, delete the "thinking..." message
+                        history_text.delete(thinking_msg_idx, tk.END)
+                        response_start_idx = history_text.index(tk.END)
+                        history_text.insert(tk.END, "\n🤖 Bot: ")
+
+                        # Stream chunks
+                        for chunk in client.stream(
+                            prompt_with_system, include_history=False
+                        ):
+                            if getattr(cancel_btn, "_cancelled", False):
+                                break
+
+                            full_response += chunk
+                            # Update UI with chunk
+                            history_text.insert(tk.END, chunk)
+                            history_text.see(tk.END)
+                            chat_window.update()  # Keep UI responsive
+
+                        # Add word/char count (Phase 5.3)
+                        word_count = len(full_response.split())
+                        char_count = len(full_response)
+                        history_text.insert(
+                            tk.END, f"\n📊 ({word_count} words, {char_count} chars)"
+                        )
+
+                        # Store response for TTS playback (Phase 5.6)
+                        last_bot_response["text"] = full_response.strip()
+
+                        history_text.see(tk.END)
+                        history_text.config(state="disabled")
+
+                    except Exception as e:
+                        history_text.config(state="normal")
+                        error_msg = str(e)[:100]
+                        # Replace thinking message with error
+                        history_text.delete(thinking_msg_idx, tk.END)
+                        history_text.insert(tk.END, f"\n❌ Bot: Error - {error_msg}\n")
+                        history_text.see(tk.END)
+                        history_text.config(state="disabled")
+                    finally:
+                        send_btn.config(state="normal")
+                        cancel_btn.config(state="disabled")
+                        setattr(cancel_btn, "_cancelled", False)
+
+                thread = threading.Thread(target=get_response, daemon=True)
+                thread.start()
+
+            # Model change handler (Phase 5.1)
+            def on_model_change(event=None):
+                """Handle model selection change."""
+                new_model = model_var.get()
+                # Save to config
+                if "chatbot" not in self.config.config:
+                    self.config.config["chatbot"] = {}
+                self.config.config["chatbot"]["model"] = new_model
+                self.config.save()
+                history_text.config(state="normal")
+                history_text.insert(tk.END, f"\n📌 Switched to model: {new_model}\n")
+                history_text.see(tk.END)
+                history_text.config(state="disabled")
+
+            model_var.trace_add("write", on_model_change)
+
+            send_btn.config(command=send_message)
+
+            # Bind Enter key
+            user_input.bind("<Return>", lambda e: send_message())
+            user_input.focus()
+
+        except Exception as e:
+            logging.error(f"Chatbot dialog error: {e}")
+            messagebox.showerror("Chatbot Error", f"Failed to open chatbot: {e}")
+
+            self.status_var.set("💬 Chatbot window opened")
+            logging.info("Chatbot dialog opened")
+
+        except Exception as e:
+            self.status_var.set(f"❌ Chatbot error: {e}")
+            logging.error(f"Chatbot error: {e}")
+
+    def _show_chat_history(self) -> None:
+        """Display previous chat conversations."""
+        try:
+            # Placeholder for loading chat history from database
+            self.status_var.set("📜 Chat history feature (loading...)")
+            logging.info("Chat history requested")
+
+            # Future: Load from database/file system
+            # For now, just show status
+
+        except Exception as e:
+            self.status_var.set(f"❌ History error: {e}")
+            logging.error(f"Chat history error: {e}")
