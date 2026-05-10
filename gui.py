@@ -3213,8 +3213,13 @@ class CrewGUI:
             user_entry.config(font=font)
             status_var.set("Font size decreased.")
 
+        # --- 3-row layout for Chatbot ---
         entry_frame = tk.Frame(chat_win)
         entry_frame.pack(fill="x", padx=8, pady=8)
+
+        # Row 1: Recording controls
+        row1_frame = tk.Frame(entry_frame)
+        row1_frame.pack(fill="x", pady=(0, 4))
 
         rec_play_var = tk.BooleanVar(value=True)
 
@@ -3240,7 +3245,7 @@ class CrewGUI:
                 status_var.set("Recording loaded.")
 
         source_btn = tk.Button(
-            entry_frame,
+            row1_frame,
             text="Mic",
             width=8,
         )
@@ -3248,7 +3253,7 @@ class CrewGUI:
         source_tooltip = ToolTip(source_btn, "Choose the microphone for recording.")
 
         primary_btn = tk.Button(
-            entry_frame, text="Record", width=14, command=primary_action
+            row1_frame, text="Record", width=14, command=primary_action
         )
         primary_btn.pack(side="left", padx=(0, 4))
         primary_tooltip = ToolTip(
@@ -3256,7 +3261,7 @@ class CrewGUI:
         )
 
         secondary_btn = tk.Button(
-            entry_frame, text="Save", width=8, command=secondary_action
+            row1_frame, text="Save", width=8, command=secondary_action
         )
         secondary_btn.pack(side="left", padx=(0, 4))
         secondary_tooltip = ToolTip(
@@ -3297,7 +3302,7 @@ class CrewGUI:
         refresh_audio_controls()
 
         rec_play_chk = tk.Checkbutton(
-            entry_frame,
+            row1_frame,
             text="Record / Play",
             variable=rec_play_var,
             command=refresh_audio_controls,
@@ -3305,23 +3310,21 @@ class CrewGUI:
         rec_play_chk.pack(side="left", padx=(0, 8))
         ToolTip(rec_play_chk, "Toggle between record mode and playback mode.")
 
-        user_entry = tk.Entry(entry_frame, font=("Consolas", 10))
-        user_entry.pack(side="left", fill="x", expand=True, padx=(0, 8))
-        ToolTip(user_entry, "Type your message here. Press Enter to send.")
+        # Row 2: Action buttons
+        row2_frame = tk.Frame(entry_frame)
+        row2_frame.pack(fill="x", pady=(0, 4))
 
-        send_btn = tk.Button(entry_frame, text="Send", width=8, command=send_message)
+        send_btn = tk.Button(row2_frame, text="Send", width=8, command=send_message)
         send_btn.pack(side="left", padx=(0, 4))
         ToolTip(send_btn, "Send your message (or press Enter).")
 
-        help_btn = tk.Button(entry_frame, text="?", width=3, command=show_chatbot_help)
+        help_btn = tk.Button(row2_frame, text="?", width=3, command=show_chatbot_help)
         help_btn.pack(side="left", padx=(0, 4))
         ToolTip(help_btn, "Show help for the chatbot dialog.")
 
-        user_entry.bind("<Return>", send_message)
-
         if self.stt_available:
             mic_btn = tk.Button(
-                entry_frame,
+                row2_frame,
                 text="🎤",
                 width=2,
                 command=lambda: recognize_speech_to_entry(user_entry, chat_win),
@@ -3331,13 +3334,23 @@ class CrewGUI:
 
         if self.tts_available:
             speaker_btn = tk.Button(
-                entry_frame,
+                row2_frame,
                 text="🔊",
                 width=2,
                 command=speak_last_bot_reply,
             )
             speaker_btn.pack(side="left", padx=(0, 4))
             ToolTip(speaker_btn, "Read aloud the last bot reply.")
+
+        # Row 3: User entry (message input)
+        row3_frame = tk.Frame(entry_frame)
+        row3_frame.pack(fill="both", expand=True)
+
+        user_entry = tk.Entry(row3_frame, font=("Consolas", 10))
+        user_entry.pack(side="left", fill="both", expand=True)
+        ToolTip(user_entry, "Type your message here. Press Enter to send.")
+
+        user_entry.bind("<Return>", send_message)
 
         menu_bar = tk.Menu(chat_win, tearoff=0)
         chat_win.config(menu=menu_bar)
