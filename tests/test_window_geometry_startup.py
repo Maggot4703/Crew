@@ -36,8 +36,8 @@ class TestWindowGeometryStartup(unittest.TestCase):
         self.assertEqual(Config.DEFAULT_CONFIG["window_size"], "800x800")
         self.assertEqual(Config.DEFAULT_CONFIG["min_window_size"], "800x800")
 
-    def test_load_window_state_ignores_saved_geometry(self):
-        """Saved geometry should not override the forced centered startup size."""
+    def test_load_window_state_uses_saved_geometry_if_valid(self):
+        """Saved valid geometry should be restored, not overridden."""
         app = CrewGUI.__new__(CrewGUI)
         app.root = MagicMock()
         app.root.winfo_screenwidth.return_value = 1920
@@ -53,8 +53,8 @@ class TestWindowGeometryStartup(unittest.TestCase):
 
         app.load_window_state()
 
-        app.root.geometry.assert_called_with("800x800+560+140")
-        app.root.minsize.assert_called_with(800, 800)
+        app.root.geometry.assert_called_with("1020x1080")
+        app.root.minsize.assert_called_with(800, 600)
 
 
 if __name__ == "__main__":

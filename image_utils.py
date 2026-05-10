@@ -263,3 +263,48 @@ def hex_to_rgb(hex_color: str) -> tuple:
     except Exception as e:
         logger.error(f"Error converting hex to RGB '{hex_color}': {e}", exc_info=True)
         return (0, 0, 0)
+
+
+def rgb_to_hex(rgb: tuple) -> str:
+    """Convert RGB tuple to hex color string."""
+    try:
+        if not isinstance(rgb, tuple) or len(rgb) != 3:
+            raise ValueError("RGB value must be a tuple of 3 integers")
+        r, g, b = rgb
+        if not all(isinstance(val, int) and 0 <= val <= 255 for val in (r, g, b)):
+            raise ValueError("RGB values must be integers between 0 and 255")
+        hex_color = f"#{r:02X}{g:02X}{b:02X}"
+        logger.debug(f"Converted RGB {rgb} to hex {hex_color}")
+        return hex_color
+    except ValueError as e:
+        logger.error(f"Invalid RGB format '{rgb}': {e}")
+        return "#000000"
+    except Exception as e:
+        logger.error(f"Error converting RGB to hex '{rgb}': {e}", exc_info=True)
+        return "#000000"
+
+
+def calculate_hexagon_points(center: tuple, radius: int) -> List[tuple]:
+    """Calculate the 6 corner points of a hexagon."""
+    import math
+    try:
+        if not isinstance(center, tuple) or len(center) != 2:
+            raise ValueError("Center must be a tuple of (x, y)")
+        if not isinstance(radius, (int, float)) or radius < 0:
+            raise ValueError("Radius must be a non-negative number")
+        
+        cx, cy = center
+        points = []
+        for i in range(6):
+            angle = i * 60 * (math.pi / 180)
+            x = cx + radius * math.cos(angle)
+            y = cy + radius * math.sin(angle)
+            points.append((int(x), int(y)))
+        logger.debug(f"Calculated hexagon points for center {center} with radius {radius}")
+        return points
+    except ValueError as e:
+        logger.error(f"Invalid hexagon parameters: {e}")
+        return [(center[0], center[1])] * 6 if center else [(0, 0)] * 6
+    except Exception as e:
+        logger.error(f"Error calculating hexagon points: {e}", exc_info=True)
+        return [(center[0], center[1])] * 6 if center else [(0, 0)] * 6

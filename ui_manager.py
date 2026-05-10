@@ -158,6 +158,9 @@ class UIManager:
             self._create_edit_menu()
             self._create_view_menu()
             self._create_tts_menu()
+            self._create_record_menu()
+            self._create_talk_menu()
+            self._create_chat_menu()
 
             logging.info("Menu bar created successfully")
 
@@ -267,6 +270,62 @@ class UIManager:
                 )
         except Exception as e:
             logging.warning(f"TTS menu creation failed: {e}")
+
+    def _create_record_menu(self) -> None:
+        """Create the Record menu."""
+        try:
+            record_menu = tk.Menu(self.gui.menu_bar, tearoff=0)
+            self.gui.menu_bar.add_cascade(label="Record", menu=record_menu)
+            
+            record_menu.add_command(
+                label="Start Recording",
+                command=getattr(self.gui, "_start_recording", lambda: None),
+            )
+            record_menu.add_command(
+                label="Stop Recording",
+                command=getattr(self.gui, "_stop_recording", lambda: None),
+            )
+            record_menu.add_separator()
+            record_menu.add_command(
+                label="Play Recording",
+                command=getattr(self.gui, "_play_recording", lambda: None),
+            )
+        except Exception as e:
+            logging.warning(f"Record menu creation failed: {e}")
+
+    def _create_talk_menu(self) -> None:
+        """Create the Talk menu."""
+        try:
+            talk_menu = tk.Menu(self.gui.menu_bar, tearoff=0)
+            self.gui.menu_bar.add_cascade(label="Talk", menu=talk_menu)
+            
+            talk_menu.add_command(
+                label="Speak Selection",
+                command=getattr(self.gui, "_speak_selection", lambda: None),
+            )
+            talk_menu.add_command(
+                label="Speak All",
+                command=getattr(self.gui, "_speak_all", lambda: None),
+            )
+        except Exception as e:
+            logging.warning(f"Talk menu creation failed: {e}")
+
+    def _create_chat_menu(self) -> None:
+        """Create the Chat menu."""
+        try:
+            chat_menu = tk.Menu(self.gui.menu_bar, tearoff=0)
+            self.gui.menu_bar.add_cascade(label="Chat", menu=chat_menu)
+            
+            chat_menu.add_command(
+                label="Open Chatbot",
+                command=getattr(self.gui, "open_chatbot_dialog", lambda: None),
+            )
+            chat_menu.add_command(
+                label="Chat History",
+                command=getattr(self.gui, "_show_chat_history", lambda: None),
+            )
+        except Exception as e:
+            logging.warning(f"Chat menu creation failed: {e}")
 
     def create_control_section(self) -> ttk.LabelFrame:
         """Create the control section with buttons."""

@@ -3,6 +3,8 @@ import logging
 import os
 import sys
 
+from image_utils import overlay_grid
+
 
 def create_cli_parser():
     parser = argparse.ArgumentParser(description="Crew CLI")
@@ -49,6 +51,22 @@ def create_cli_parser():
     )
     parser_crop.add_argument(
         "--quality", type=int, default=95, help="Image quality (default: 95)"
+    )
+
+    # grid-image
+    parser_grid = subparsers.add_parser("grid-image", help="Apply grid overlay to image")
+    parser_grid.add_argument(
+        "--image-path", type=str, required=True, help="Path to input image"
+    )
+    parser_grid.add_argument(
+        "--output-path", type=str, required=True, help="Path to save output image"
+    )
+    parser_grid.add_argument(
+        "--grid-size", type=int, nargs=2, default=[42, 32],
+        help="Grid size (width height), default: 42 32"
+    )
+    parser_grid.add_argument(
+        "--grid-color", type=str, default="blue", help="Grid color name, default: blue"
     )
 
     return parser
@@ -201,3 +219,45 @@ def handle_crop_csv(args, logger):
     logger.info(f"Saved {len(saved)} crop(s) to {args.output_dir}")
     print(f"Saved {len(saved)} crop(s)")
     return 0
+
+
+@cli_command("grid-image")
+def handle_grid_image(args, logger):
+    """Apply grid overlay to an image."""
+    logger.info(f"Running grid-image with: {args.image_path} -> {args.output_path}")
+    
+    if not os.path.isfile(args.image_path):
+        logger.error(f"Image file not found: {args.image_path}")
+        print(f"[ERROR] Image file not found: {args.image_path}", file=sys.stderr)
+        return 1
+    
+    try:
+        from PIL import Image
+        
+        # Load image
+        img = Image.open(args.image_path)
+        grid_width, grid_height = args.grid_size
+        grid_color = args.grid_color
+        
+        # Apply grid overlay
+        result = overlay_grid(img, grid_size=(grid_width, grid_height), color=grid_color)
+        
+        # Save result
+        result.save(args.output_path)
+        
+        logger.info(f"Grid saved to {args.output_path}")
+        print(f"Grid overlay saved to {args.output_path}")
+        return 0
+        
+    except FileNotFoundError as e:
+        logger.error(f"File not found: {e}")
+        print(f"[ERROR] File not found: {e}", file=sys.stderr)
+        return 1
+    except PermissionError as e:
+        logger.error(f"Permission denied: {e}")
+        print(f"[ERROR] Permission denied: {e}", file=sys.stderr)
+        return 1
+    except Exception as e:
+        logger.error(f"Failed to apply grid: {e}")
+        print(f"[ERROR] Failed to apply grid: {e}", file=sys.stderr)
+        return 1

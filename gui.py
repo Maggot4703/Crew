@@ -1196,6 +1196,9 @@ class CrewGUI:
             command=self._open_documentation_folder,
         )
         help_menu.add_separator()
+        help_menu.add_command(label="Open WebUI", command=self.open_openwebui)
+        help_menu.add_command(label="Brave Browser", command=self.open_brave_browser)
+        help_menu.add_separator()
         help_menu.add_command(label="Project on GitHub", command=self.show_online_docs)
         help_menu.add_command(label="GitHub Issues", command=self.open_github_issues)
         help_menu.add_command(
@@ -1341,6 +1344,26 @@ class CrewGUI:
 
     def open_github_issues(self):
         self._open_url_in_browser("https://github.com/Maggot4703/Crew/issues")
+
+    def open_openwebui(self):
+        self._open_url_in_browser("http://127.0.0.1:3000")
+
+    def open_brave_browser(self):
+        browser_command = self._preferred_browser_command()
+        if browser_command:
+            subprocess.Popen(
+                browser_command,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            return
+
+        from tkinter import messagebox
+
+        messagebox.showwarning(
+            "Brave Browser",
+            "Brave browser is not installed or not available on PATH.",
+        )
 
     def show_contact_support(self):
         msg = (
@@ -1567,8 +1590,8 @@ class CrewGUI:
 
     @staticmethod
     def _preferred_browser_command() -> list[str] | None:
-        """Return the best available browser command, preferring Brave."""
-        for candidate in ("brave-browser", "brave-browser-stable", "brave"):
+        """Return the best available browser command, preferring Chromium."""
+        for candidate in ("chromium", "chromium-browser", "google-chrome", "brave-browser", "brave-browser-stable", "brave"):
             browser = shutil.which(candidate)
             if browser:
                 return [browser]

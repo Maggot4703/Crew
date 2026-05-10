@@ -8,8 +8,7 @@ from .Crew import (
     calculate_hexagon_points,
     hex_to_rgb,
     main,
-    read_csv_builtin,
-    read_file,
     rgb_to_hex,
-    spacer,
 )
+from .file_utils import read_csv_builtin, read_file
+from .utils import spacer

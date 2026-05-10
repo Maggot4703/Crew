@@ -35,6 +35,7 @@ if TYPE_CHECKING:
     from PIL import Image
 
 from utils import log_progress_md, show_user_error, spacer
+from file_utils import read_file, read_csv_builtin
 
 # Local imports (absolute only)
 try:
@@ -44,11 +45,25 @@ try:
         DEFAULT_LINE_COLOR,
         IMAGE_DIMENSIONS,
         _resolve_color,
+        crop_from_annotations,
+        hex_to_rgb,
+        process_images,
+        rgb_to_hex,
+        calculate_hexagon_points,
+        overlay_grid,
     )
 except ImportError as e:
     raise ImportError(
         "Failed to import image_utils. Ensure it is in the PYTHONPATH."
     ) from e
+
+# Optional: Ollama AI client (may fail if requests not available)
+try:
+    from ollama_client import OllamaClient
+    OLLAMA_AVAILABLE = True
+except ImportError:
+    OLLAMA_AVAILABLE = False
+    OllamaClient = None
 
 # --- Utility Functions ---
 
@@ -134,6 +149,19 @@ __all__ = [
     "DEFAULT_LINE_COLOR",
     "DEFAULT_GRID_SIZE",
     "IMAGE_DIMENSIONS",
+    "crop_from_annotations",
+    "hex_to_rgb",
+    "process_images",
+    "rgb_to_hex",
+    "calculate_hexagon_points",
+    "mark_line",
+    "overlay_grid",
+    "read_file",
+    "read_csv_builtin",
+    "log_progress_md",
+    "show_user_error",
+    "spacer",
+    "OllamaClient",
 ]
 
 

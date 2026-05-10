@@ -32,6 +32,7 @@ ENV/
 *.swp
 *.swo
 *~
+*.jupyterlab-workspace
 
 # OS
 .DS_Store
@@ -49,6 +50,17 @@ crew_config.json
 temp/
 tmp/
 *.tmp
+.ipynb_checkpoints/
+
+# Local runtime state
+.auto_import_cache.json
+config.json
+history.json
+readmine_progress.json
+view_sizes.json
+window_state.json
+recording.wav
+speech.wav
 
 # Keep data directory structure but exclude contents
 #data/*
