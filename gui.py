@@ -2909,8 +2909,9 @@ class CrewGUI:
             bg=DARK_INPUT_BG,
             fg=DARK_TEXT,
             font=("Consolas", 10),
+            height=12,
         )
-        chat_display.pack(fill="both", expand=True, padx=8, pady=(8, 0))
+        chat_display.pack(fill="both", expand=True, padx=8, pady=(4, 4))
         self._bind_vertical_mousewheel(chat_display)
         ToolTip(
             chat_display, "Chat history. Messages from you and the bot appear here."
