@@ -3061,19 +3061,19 @@ class CrewGUI:
                 recognizer = self.stt_recognizer
                 mic_index = getattr(self, "selected_mic_index", None)
                 try:
-                    source = (
+                    src = (
                         sr.Microphone(device_index=mic_index)
                         if mic_index is not None
                         else sr.Microphone()
                     )
-                    with source as src:
+                    with src as source:
                         entry_widget.config(state="disabled")
                         entry_widget.delete(0, tk.END)
                         entry_widget.insert(0, "Listening...")
                         parent_win.update()
-                        self._prepare_stt_source(recognizer, src)
+                        self._prepare_stt_source(recognizer, source)
                         audio = recognizer.listen(
-                            src,
+                            source,
                             timeout=self._get_stt_setting("listen_timeout", 5.0),
                             phrase_time_limit=self._get_stt_setting(
                                 "phrase_time_limit", 8.0
@@ -3087,7 +3087,7 @@ class CrewGUI:
                         entry_widget.insert(0, text)
                         status_var.set("Voice recognized.")
                 except Exception as exc:
-                    logger.warning("Chatbot speech recognition failed: %s", exc)
+                    logger.warning("Multi-User Chat speech recognition failed: %s", exc)
                     entry_widget.delete(0, tk.END)
                     entry_widget.insert(0, "[Voice error]")
                     status_var.set("Voice recognition error.")
