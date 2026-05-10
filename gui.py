@@ -2271,6 +2271,7 @@ class CrewGUI:
                                 entry_widget.delete(0, tk.END)
                                 entry_widget.insert(0, "[Listen error]")
                                 logger.warning("STT listen error: %s", listen_err)
+                                print(f"[DEBUG] STT Listen error in Multi-User Chat: {type(listen_err).__name__}: {listen_err}")
                                 status_var.set("Voice recognition error.")
                                 parent_win.update()
                                 return
@@ -3099,6 +3100,7 @@ class CrewGUI:
                         status_var.set("Voice recognized.")
                 except Exception as exc:
                     logger.warning("Chatbot speech recognition failed: %s", exc)
+                    print(f"[DEBUG] Chatbot STT Error: {type(exc).__name__}: {exc}")
                     entry_widget.delete(0, tk.END)
                     entry_widget.insert(0, "[Voice error]")
                     status_var.set("Voice recognition error.")
@@ -6694,7 +6696,13 @@ class CrewGUI:
 
     def _recognize_stt_audio(self, recognizer: Any, audio: Any) -> str:
         """Recognize speech from audio with the configured backend."""
-        return recognizer.recognize_google(audio)
+        try:
+            result = recognizer.recognize_google(audio)
+            print(f"[DEBUG] Google STT result: '{result}'")
+            return result
+        except Exception as e:
+            print(f"[DEBUG] Google STT error: {type(e).__name__}: {e}")
+            raise
 
     def _test_tts(self) -> None:
         if not TTS_AVAILABLE or not self.tts_engine:
