@@ -2244,7 +2244,9 @@ class CrewGUI:
                             entry_widget.config(state="normal")
                             entry_widget.delete(0, tk.END)
                             entry_widget.insert(0, "[Mic unavailable]")
-                            print(f"STT error: Could not open microphone: {mic_err}")
+                            logger.warning(
+                                "STT error - could not open microphone: %s", mic_err
+                            )
                             status_var.set("Microphone unavailable or busy.")
                             parent_win.update()
                             return
@@ -2268,7 +2270,7 @@ class CrewGUI:
                                 entry_widget.config(state="normal")
                                 entry_widget.delete(0, tk.END)
                                 entry_widget.insert(0, "[Listen error]")
-                                print(f"STT error: {listen_err}")
+                                logger.warning("STT listen error: %s", listen_err)
                                 status_var.set("Voice recognition error.")
                                 parent_win.update()
                                 return
@@ -2283,15 +2285,23 @@ class CrewGUI:
                             except Exception as recog_err:
                                 entry_widget.delete(0, tk.END)
                                 entry_widget.insert(0, "[Recognition error]")
-                                print(f"STT error: {recog_err}")
+                                logger.warning("STT recognition error: %s", recog_err)
                                 status_var.set("Voice recognition error.")
                     except Exception as e:
                         entry_widget.config(state="normal")
                         entry_widget.delete(0, tk.END)
                         entry_widget.insert(0, "[Voice error]")
-                        print(f"STT error: {e}")
+                        logger.warning("STT error: %s", e)
                         status_var.set("Voice recognition error.")
                     finally:
+                        try:
+                            if src is not None and hasattr(src, "close"):
+                                src.close()
+                        except Exception as cleanup_exc:
+                            logger.debug(
+                                "Cleanup error in Multi-User Chat speech: %s",
+                                cleanup_exc,
+                            )
                         entry_widget.config(state="normal")
                         parent_win.update()
 
@@ -3060,6 +3070,7 @@ class CrewGUI:
             def recognize():
                 recognizer = self.stt_recognizer
                 mic_index = getattr(self, "selected_mic_index", None)
+                src = None
                 try:
                     src = (
                         sr.Microphone(device_index=mic_index)
@@ -3092,6 +3103,11 @@ class CrewGUI:
                     entry_widget.insert(0, "[Voice error]")
                     status_var.set("Voice recognition error.")
                 finally:
+                    try:
+                        if src is not None and hasattr(src, "close"):
+                            src.close()
+                    except Exception as cleanup_exc:
+                        logger.debug("Cleanup error in Chatbot speech: %s", cleanup_exc)
                     entry_widget.config(state="normal")
                     parent_win.update()
 
