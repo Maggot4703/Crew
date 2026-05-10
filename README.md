@@ -111,6 +111,8 @@ Important implementation notes for future work:
 
 For Raspberry Pi 500 / Raspberry Pi 4B work, the safest path is to keep these Tk windows as lightweight clients and move model inference into a separate local-network service. That preserves the current GUI behavior while allowing retries, streaming, backend switching, and offline fallbacks to be added incrementally.
 
+The Open WebUI host mapping now treats `me@home` as the Crew-side companion and uses `llama3.2:1b` as the shared small Ollama model.
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
