@@ -1591,7 +1591,14 @@ class CrewGUI:
     @staticmethod
     def _preferred_browser_command() -> list[str] | None:
         """Return the best available browser command, preferring Chromium."""
-        for candidate in ("chromium", "chromium-browser", "google-chrome", "brave-browser", "brave-browser-stable", "brave"):
+        for candidate in (
+            "chromium",
+            "chromium-browser",
+            "google-chrome",
+            "brave-browser",
+            "brave-browser-stable",
+            "brave",
+        ):
             browser = shutil.which(candidate)
             if browser:
                 return [browser]
@@ -2068,9 +2075,13 @@ class CrewGUI:
 
         filter_entry.bind("<Return>", lambda e: filter_messages())
 
-        # --- Standardized 5-button interface ---
+        # --- Standardized 5-button interface (3-row layout) ---
         entry_frame = tk.Frame(chat_win)
         entry_frame.pack(fill="x", padx=8, pady=8)
+
+        # Row 1: Recording controls
+        row1_frame = tk.Frame(entry_frame)
+        row1_frame.pack(fill="x", pady=(0, 4))
 
         # Rec/Play mode checkbox (per window)
         rec_play_var = tk.BooleanVar(value=True)  # True=Record, False=Play
@@ -2079,7 +2090,7 @@ class CrewGUI:
             refresh_audio_controls()
 
         rec_play_chk = tk.Checkbutton(
-            entry_frame,
+            row1_frame,
             text="Record / Play",
             variable=rec_play_var,
             command=on_toggle_rec_play,
@@ -2089,7 +2100,7 @@ class CrewGUI:
 
         # Mode-specific action buttons
         source_btn = tk.Button(
-            entry_frame,
+            row1_frame,
             text="Mic",
             width=8,
         )
@@ -2110,7 +2121,7 @@ class CrewGUI:
             refresh_audio_controls()
 
         primary_btn = tk.Button(
-            entry_frame, text="Record", width=14, command=primary_action
+            row1_frame, text="Record", width=14, command=primary_action
         )
         primary_btn.pack(side="left", padx=(0, 4))
         primary_tooltip = ToolTip(
@@ -2126,7 +2137,7 @@ class CrewGUI:
                 status_var.set("Recording loaded.")
 
         secondary_btn = tk.Button(
-            entry_frame, text="Save", width=8, command=secondary_action
+            row1_frame, text="Save", width=8, command=secondary_action
         )
         secondary_btn.pack(side="left", padx=(0, 4))
         secondary_tooltip = ToolTip(
@@ -2166,16 +2177,15 @@ class CrewGUI:
 
         refresh_audio_controls()
 
+        # Row 2: Recipient and action buttons
+        row2_frame = tk.Frame(entry_frame)
+        row2_frame.pack(fill="x", pady=(0, 4))
+
         recipient_var = tk.StringVar(value="All")
-        recipient_menu = tk.OptionMenu(entry_frame, recipient_var, "All", *user_names)
+        recipient_menu = tk.OptionMenu(row2_frame, recipient_var, "All", *user_names)
         recipient_menu.config(width=10)
         recipient_menu.pack(side="left", padx=(0, 8))
         ToolTip(recipient_menu, "Choose who should receive your next message.")
-
-        # User entry (center, expands)
-        user_entry = tk.Entry(entry_frame, font=("Consolas", 10))
-        user_entry.pack(side="left", fill="x", expand=True, padx=(0, 8))
-        ToolTip(user_entry, "Type your message here. Press Enter to send.")
 
         # Attach File button
         attached_file = {"path": None, "filename": None}
@@ -2206,7 +2216,7 @@ class CrewGUI:
                 attached_file["filename"] = None
                 attach_btn.config(text="Attach File")
 
-        attach_btn = tk.Button(entry_frame, text="Attach File", command=attach_file)
+        attach_btn = tk.Button(row2_frame, text="Attach File", command=attach_file)
         attach_btn.pack(side="left", padx=(0, 8))
         ToolTip(attach_btn, "Attach a file to send with your message.")
 
@@ -2288,7 +2298,7 @@ class CrewGUI:
                 threading.Thread(target=recognize, daemon=True).start()
 
             mic_btn = tk.Button(
-                entry_frame,
+                row2_frame,
                 text="🎤",
                 width=2,
                 command=lambda: recognize_speech_to_entry(user_entry, chat_win),
@@ -2315,10 +2325,18 @@ class CrewGUI:
                         status_var.set("TTS error.")
 
             speaker_btn = tk.Button(
-                entry_frame, text="🔊", width=2, command=speak_last_bot_reply
+                row2_frame, text="🔊", width=2, command=speak_last_bot_reply
             )
             speaker_btn.pack(side="left", padx=(0, 4))
             ToolTip(speaker_btn, "Read aloud the last bot reply.")
+
+        # Row 3: User entry (message input)
+        row3_frame = tk.Frame(entry_frame)
+        row3_frame.pack(fill="both", expand=True)
+
+        user_entry = tk.Entry(row3_frame, font=("Consolas", 10))
+        user_entry.pack(side="left", fill="both", expand=True)
+        ToolTip(user_entry, "Type your message here. Press Enter to send.")
 
         # --- User state (per window) ---
         current_user["name"] = user_names[0]
