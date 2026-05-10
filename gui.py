@@ -3087,7 +3087,7 @@ class CrewGUI:
                         entry_widget.insert(0, text)
                         status_var.set("Voice recognized.")
                 except Exception as exc:
-                    logger.warning("Multi-User Chat speech recognition failed: %s", exc)
+                    logger.warning("Chatbot speech recognition failed: %s", exc)
                     entry_widget.delete(0, tk.END)
                     entry_widget.insert(0, "[Voice error]")
                     status_var.set("Voice recognition error.")
