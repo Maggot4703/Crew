@@ -935,12 +935,13 @@ class CrewGUI:
 
                 self.stt_recognizer = sr.Recognizer()
                 self.stt_available = True
+                logger.info("STT (Speech-to-Text) initialized successfully")
             except Exception as e:
                 self.stt_recognizer = None
                 self.stt_available = False
-                print(
-                    f"Warning: SpeechRecognition or PyAudio not available. STT disabled. ({e})"
-                )
+                error_msg = f"SpeechRecognition or PyAudio not available. STT disabled. ({type(e).__name__}: {e})"
+                print(f"Warning: {error_msg}")
+                logger.warning(error_msg)
 
             # Initialize database manager for crew/user data
             self.db_manager = DatabaseManager()
