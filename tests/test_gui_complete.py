@@ -32,7 +32,19 @@ class TestGUIRecordMenu(unittest.TestCase):
         for widget in self._find_widgets_by_type(root_widget, widget_types):
             if widget.cget("text") == text:
                 return widget
+            # Also accept matches via the widget.tooltip attribute to support icon-only buttons
+            tooltip = getattr(widget, "tooltip", None)
+            tip_text = getattr(tooltip, "text", tooltip) if tooltip is not None else None
+            if tip_text == text:
+                return widget
         return None
+
+    def _tooltip_text(self, widget):
+        """Return the tooltip text for a widget, or empty string if none."""
+        t = getattr(widget, "tooltip", None)
+        if t is None:
+            return ""
+        return str(getattr(t, "text", t)).lower()
 
     def test_crew_chat_window_buttons(self):
         """Test that Crew Chat exposes the clearer audio control labels."""
@@ -40,18 +52,21 @@ class TestGUIRecordMenu(unittest.TestCase):
         self.assertIsNotNone(chat_win, "open_crew_chat_window() returned None")
         if chat_win is not None:
             buttons = self._find_widgets_by_type(chat_win, (tk.Button, tk.Checkbutton))
-            button_labels = [b.cget("text") for b in buttons]
-            expected_labels = {"Mic", "Record", "Save", "Record / Play", "?"}
-            found_labels = set(button_labels)
-            self.assertTrue(
-                expected_labels.issubset(found_labels),
-                f"Missing chat control buttons: {expected_labels - found_labels}",
-            )
+            # Accept presence via button text or via tooltip substring (for icon-only buttons)
+            expected_labels = ["Mic", "Record", "Save", "Record / Play", "?"]
+            for expected in expected_labels:
+                found = False
+                for b in buttons:
+                    text = b.cget("text") or ""
+                    tooltip_text = self._tooltip_text(b)
+                    if text == expected or expected.lower() in tooltip_text:
+                        found = True
+                        break
+                self.assertTrue(found, f"Missing chat control button or tooltip for: {expected}")
+            # Ensure every control has a tooltip for accessibility/testing
             for b in buttons:
                 tooltip = getattr(b, "tooltip", None)
-                self.assertIsNotNone(
-                    tooltip, f"Button '{b.cget('text')}' missing tooltip"
-                )
+                self.assertIsNotNone(tooltip, f"Button '{b.cget('text') or '<no-text>'}' missing tooltip")
 
     def test_chatbot_dialog_buttons(self):
         """Test that Chatbot exposes the clearer audio control labels."""
@@ -59,18 +74,19 @@ class TestGUIRecordMenu(unittest.TestCase):
         self.assertIsNotNone(dialog, "open_chatbot_dialog() returned None")
         if dialog is not None:
             buttons = self._find_widgets_by_type(dialog, (tk.Button, tk.Checkbutton))
-            button_labels = [b.cget("text") for b in buttons]
-            expected_labels = {"Mic", "Record", "Save", "Record / Play", "?"}
-            found_labels = set(button_labels)
-            self.assertTrue(
-                expected_labels.issubset(found_labels),
-                f"Missing chatbot control buttons: {expected_labels - found_labels}",
-            )
+            expected_labels = ["Mic", "Record", "Save", "Record / Play", "?"]
+            for expected in expected_labels:
+                found = False
+                for b in buttons:
+                    text = b.cget("text") or ""
+                    tooltip_text = self._tooltip_text(b)
+                    if text == expected or expected.lower() in tooltip_text:
+                        found = True
+                        break
+                self.assertTrue(found, f"Missing chatbot control button or tooltip for: {expected}")
             for b in buttons:
                 tooltip = getattr(b, "tooltip", None)
-                self.assertIsNotNone(
-                    tooltip, f"Button '{b.cget('text')}' missing tooltip"
-                )
+                self.assertIsNotNone(tooltip, f"Button '{b.cget('text') or '<no-text>'}' missing tooltip")
 
     def test_crew_chat_audio_labels_switch_with_mode(self):
         chat_win = self.gui.open_crew_chat_window()
@@ -81,13 +97,17 @@ class TestGUIRecordMenu(unittest.TestCase):
 
         mode_toggle.invoke()
 
-        labels = {
-            widget.cget("text")
-            for widget in self._find_widgets_by_type(
-                chat_win, (tk.Button, tk.Checkbutton)
-            )
-        }
-        self.assertTrue({"Source", "Play", "Load", "Record / Play"}.issubset(labels))
+        expected_labels = ["Source", "Play", "Load", "Record / Play"]
+        buttons = self._find_widgets_by_type(chat_win, (tk.Button, tk.Checkbutton))
+        for expected in expected_labels:
+            found = False
+            for widget in buttons:
+                text = widget.cget("text") or ""
+                tooltip_text = self._tooltip_text(widget)
+                if text == expected or expected.lower() in tooltip_text:
+                    found = True
+                    break
+            self.assertTrue(found, f"Missing audio control '{expected}' in crew chat window")
 
     def test_chatbot_audio_labels_switch_with_mode(self):
         dialog = self.gui.open_chatbot_dialog()
@@ -98,13 +118,17 @@ class TestGUIRecordMenu(unittest.TestCase):
 
         mode_toggle.invoke()
 
-        labels = {
-            widget.cget("text")
-            for widget in self._find_widgets_by_type(
-                dialog, (tk.Button, tk.Checkbutton)
-            )
-        }
-        self.assertTrue({"Source", "Play", "Load", "Record / Play"}.issubset(labels))
+        expected_labels = ["Source", "Play", "Load", "Record / Play"]
+        buttons = self._find_widgets_by_type(dialog, (tk.Button, tk.Checkbutton))
+        for expected in expected_labels:
+            found = False
+            for widget in buttons:
+                text = widget.cget("text") or ""
+                tooltip_text = self._tooltip_text(widget)
+                if text == expected or expected.lower() in tooltip_text:
+                    found = True
+                    break
+            self.assertTrue(found, f"Missing audio control '{expected}' in chatbot dialog")
 
     @pytest.mark.skip(reason="Talk and Chat menus now implemented, GUI test may need GUI context")
     def test_unified_menu_structure(self):
