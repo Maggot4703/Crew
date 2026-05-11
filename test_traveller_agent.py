@@ -2,6 +2,7 @@
 """
 Unit tests for TravellerAgent integration with Travellermap API and Traveller Wiki.
 """
+
 import unittest
 
 from traveller_agent import TravellerAgent

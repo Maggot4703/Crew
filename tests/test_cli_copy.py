@@ -39,24 +39,33 @@ def test_cli_invalid_command(capsys):
 # Example for grid-image (does not actually write files)
 def test_cli_grid_image(monkeypatch, tmp_path, capsys):
     from unittest.mock import MagicMock, patch
-    
+
     dummy_image = tmp_path / "dummy.png"
     output_image = tmp_path / "output.png"
-    
+
     # Mock PIL.Image.open to return a mock image
     mock_image = MagicMock()
     mock_image.save = MagicMock()
-    
+
     # Create dummy image file (doesn't need to be valid)
     dummy_image.write_bytes(b"\x89PNG\r\n\x1a\n")
-    
+
     # Patch PIL.Image.open and overlay_grid
-    with patch("PIL.Image.open", return_value=mock_image), \
-         patch("cli.overlay_grid", return_value=mock_image):
+    with patch("PIL.Image.open", return_value=mock_image), patch(
+        "cli.overlay_grid", return_value=mock_image
+    ):
         parser = cli_mod.create_cli_parser()
-        args = parser.parse_args(["grid-image", "--image-path", str(dummy_image), "--output-path", str(output_image)])
+        args = parser.parse_args(
+            [
+                "grid-image",
+                "--image-path",
+                str(dummy_image),
+                "--output-path",
+                str(output_image),
+            ]
+        )
         code = cli_mod.run_cli(args)
-        
+
         assert code == 0, f"Exit code {code}"
         mock_image.save.assert_called_once()
 

@@ -5,7 +5,9 @@ from __future__ import annotations
 from typing import Any
 
 
-def initialize_gui(root: Any | None = None, *, title: str = "Crew Manager") -> dict[str, Any]:
+def initialize_gui(
+    root: Any | None = None, *, title: str = "Crew Manager"
+) -> dict[str, Any]:
     """Apply a minimal layout configuration and report what was configured.
 
     The production GUI layout lives in ``gui.py``. This helper exists so older

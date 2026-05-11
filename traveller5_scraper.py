@@ -78,8 +78,12 @@ class Traveller5Scraper:
         return {
             "name": normalized,
             "url": ship_url,
-            "tonnage": self._pseudo_rating(normalized, prefix="ship-tonnage", minimum=100, maximum=5000),
-            "class": "Scout/Courier" if "scout" in normalized.lower() else "Free Trader",
+            "tonnage": self._pseudo_rating(
+                normalized, prefix="ship-tonnage", minimum=100, maximum=5000
+            ),
+            "class": (
+                "Scout/Courier" if "scout" in normalized.lower() else "Free Trader"
+            ),
         }
 
     def scrape_world_info(self, world_name: str, sector: str = None) -> dict | None:
@@ -111,7 +115,9 @@ class Traveller5Scraper:
             f"{self._pseudo_rating(normalized, prefix='gov', minimum=0, maximum=9)}"
             f"{self._pseudo_rating(normalized, prefix='law', minimum=0, maximum=9)}-"
             f"{chr(ord('A') + self._pseudo_rating(normalized, prefix='tech', minimum=0, maximum=13))}",
-            "population": self._pseudo_rating(normalized, prefix="population", minimum=1, maximum=9999),
+            "population": self._pseudo_rating(
+                normalized, prefix="population", minimum=1, maximum=9999
+            ),
         }
 
     def save_data_to_json(self, data: dict, filename: str):
@@ -123,7 +129,9 @@ class Traveller5Scraper:
             filename (str): The name of the file to save the data to.
         """
         path = Path(filename)
-        path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+        path.write_text(
+            json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
 
 
 # Example Usage (if this script were to be run directly):

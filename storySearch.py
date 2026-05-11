@@ -138,7 +138,9 @@ class StorySearch:
         return [
             story
             for story in self.story_data
-            if any(query == character.lower() for character in story.get("characters", []))
+            if any(
+                query == character.lower() for character in story.get("characters", [])
+            )
         ]
 
     def find_by_theme(self, theme: str) -> list:
