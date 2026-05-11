@@ -287,12 +287,13 @@ def rgb_to_hex(rgb: tuple) -> str:
 def calculate_hexagon_points(center: tuple, radius: int) -> List[tuple]:
     """Calculate the 6 corner points of a hexagon."""
     import math
+
     try:
         if not isinstance(center, tuple) or len(center) != 2:
             raise ValueError("Center must be a tuple of (x, y)")
         if not isinstance(radius, (int, float)) or radius < 0:
             raise ValueError("Radius must be a non-negative number")
-        
+
         cx, cy = center
         points = []
         for i in range(6):
@@ -300,7 +301,9 @@ def calculate_hexagon_points(center: tuple, radius: int) -> List[tuple]:
             x = cx + radius * math.cos(angle)
             y = cy + radius * math.sin(angle)
             points.append((int(x), int(y)))
-        logger.debug(f"Calculated hexagon points for center {center} with radius {radius}")
+        logger.debug(
+            f"Calculated hexagon points for center {center} with radius {radius}"
+        )
         return points
     except ValueError as e:
         logger.error(f"Invalid hexagon parameters: {e}")

@@ -276,7 +276,7 @@ class UIManager:
         try:
             record_menu = tk.Menu(self.gui.menu_bar, tearoff=0)
             self.gui.menu_bar.add_cascade(label="Record", menu=record_menu)
-            
+
             record_menu.add_command(
                 label="Start Recording",
                 command=getattr(self.gui, "_start_recording", lambda: None),
@@ -298,7 +298,7 @@ class UIManager:
         try:
             talk_menu = tk.Menu(self.gui.menu_bar, tearoff=0)
             self.gui.menu_bar.add_cascade(label="Talk", menu=talk_menu)
-            
+
             talk_menu.add_command(
                 label="Speak Selection",
                 command=getattr(self.gui, "_speak_selection", lambda: None),
@@ -315,7 +315,7 @@ class UIManager:
         try:
             chat_menu = tk.Menu(self.gui.menu_bar, tearoff=0)
             self.gui.menu_bar.add_cascade(label="Chat", menu=chat_menu)
-            
+
             chat_menu.add_command(
                 label="Open Chatbot",
                 command=getattr(self.gui, "open_chatbot_dialog", lambda: None),

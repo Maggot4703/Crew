@@ -34,8 +34,8 @@ from typing import TYPE_CHECKING, Optional
 if TYPE_CHECKING:
     from PIL import Image
 
+from file_utils import read_csv_builtin, read_file
 from utils import log_progress_md, show_user_error, spacer
-from file_utils import read_file, read_csv_builtin
 
 # Local imports (absolute only)
 try:
@@ -45,12 +45,12 @@ try:
         DEFAULT_LINE_COLOR,
         IMAGE_DIMENSIONS,
         _resolve_color,
+        calculate_hexagon_points,
         crop_from_annotations,
         hex_to_rgb,
+        overlay_grid,
         process_images,
         rgb_to_hex,
-        calculate_hexagon_points,
-        overlay_grid,
     )
 except ImportError as e:
     raise ImportError(
@@ -60,6 +60,7 @@ except ImportError as e:
 # Optional: Ollama AI client (may fail if requests not available)
 try:
     from ollama_client import OllamaClient
+
     OLLAMA_AVAILABLE = True
 except ImportError:
     OLLAMA_AVAILABLE = False
@@ -280,6 +281,7 @@ def overlay_grid(
             "Could not overlay grid on image. Please check your input and " "try again."
         )
         return None
+
 
 def get_version() -> str:
     """

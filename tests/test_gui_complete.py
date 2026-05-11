@@ -34,7 +34,9 @@ class TestGUIRecordMenu(unittest.TestCase):
                 return widget
             # Also accept matches via the widget.tooltip attribute to support icon-only buttons
             tooltip = getattr(widget, "tooltip", None)
-            tip_text = getattr(tooltip, "text", tooltip) if tooltip is not None else None
+            tip_text = (
+                getattr(tooltip, "text", tooltip) if tooltip is not None else None
+            )
             if tip_text == text:
                 return widget
         return None
@@ -62,11 +64,15 @@ class TestGUIRecordMenu(unittest.TestCase):
                     if text == expected or expected.lower() in tooltip_text:
                         found = True
                         break
-                self.assertTrue(found, f"Missing chat control button or tooltip for: {expected}")
+                self.assertTrue(
+                    found, f"Missing chat control button or tooltip for: {expected}"
+                )
             # Ensure every control has a tooltip for accessibility/testing
             for b in buttons:
                 tooltip = getattr(b, "tooltip", None)
-                self.assertIsNotNone(tooltip, f"Button '{b.cget('text') or '<no-text>'}' missing tooltip")
+                self.assertIsNotNone(
+                    tooltip, f"Button '{b.cget('text') or '<no-text>'}' missing tooltip"
+                )
 
     def test_chatbot_dialog_buttons(self):
         """Test that Chatbot exposes the clearer audio control labels."""
@@ -83,10 +89,14 @@ class TestGUIRecordMenu(unittest.TestCase):
                     if text == expected or expected.lower() in tooltip_text:
                         found = True
                         break
-                self.assertTrue(found, f"Missing chatbot control button or tooltip for: {expected}")
+                self.assertTrue(
+                    found, f"Missing chatbot control button or tooltip for: {expected}"
+                )
             for b in buttons:
                 tooltip = getattr(b, "tooltip", None)
-                self.assertIsNotNone(tooltip, f"Button '{b.cget('text') or '<no-text>'}' missing tooltip")
+                self.assertIsNotNone(
+                    tooltip, f"Button '{b.cget('text') or '<no-text>'}' missing tooltip"
+                )
 
     def test_crew_chat_audio_labels_switch_with_mode(self):
         chat_win = self.gui.open_crew_chat_window()
@@ -107,7 +117,9 @@ class TestGUIRecordMenu(unittest.TestCase):
                 if text == expected or expected.lower() in tooltip_text:
                     found = True
                     break
-            self.assertTrue(found, f"Missing audio control '{expected}' in crew chat window")
+            self.assertTrue(
+                found, f"Missing audio control '{expected}' in crew chat window"
+            )
 
     def test_chatbot_audio_labels_switch_with_mode(self):
         dialog = self.gui.open_chatbot_dialog()
@@ -128,9 +140,13 @@ class TestGUIRecordMenu(unittest.TestCase):
                 if text == expected or expected.lower() in tooltip_text:
                     found = True
                     break
-            self.assertTrue(found, f"Missing audio control '{expected}' in chatbot dialog")
+            self.assertTrue(
+                found, f"Missing audio control '{expected}' in chatbot dialog"
+            )
 
-    @pytest.mark.skip(reason="Talk and Chat menus now implemented, GUI test may need GUI context")
+    @pytest.mark.skip(
+        reason="Talk and Chat menus now implemented, GUI test may need GUI context"
+    )
     def test_unified_menu_structure(self):
         """Test that the unified 'Talk' and 'Chat' menus are present in the menu bar."""
         menu_labels = []
@@ -208,10 +224,9 @@ class TestGUIRecordMenu(unittest.TestCase):
     def test_record_menu_exists(self):
         """Test that Record menu methods exist and can be called."""
         # Check that the _create_record_menu method exists
-        self.assertTrue(hasattr(self.gui.root, 'winfo_exists'))
+        self.assertTrue(hasattr(self.gui.root, "winfo_exists"))
         # Try to access the menu (even if it's not visible, the method should exist)
-        self.assertTrue(hasattr(self.gui, 'menu_bar'))
-
+        self.assertTrue(hasattr(self.gui, "menu_bar"))
 
     def test_start_stop_recording(self):
         # Patch audio_manager, pyaudio, and speech_recognition to simulate device lookup and recording

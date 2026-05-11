@@ -1,5 +1,5 @@
-import os
 import logging
+import os
 from unittest import mock
 
 import pytest
@@ -15,9 +15,11 @@ def test_log_progress_md_appends(caplog):
     with caplog.at_level(logging.INFO):
         log_progress_md("Test message 1")
         log_progress_md("Test message 2")
-    
+
     # Check that both messages were logged
-    assert any("Test message 1" in record.message for record in caplog.records), f"Records: {[r.message for r in caplog.records]}"
+    assert any(
+        "Test message 1" in record.message for record in caplog.records
+    ), f"Records: {[r.message for r in caplog.records]}"
     assert any("Test message 2" in record.message for record in caplog.records)
     # Check that the [PROGRESS] prefix is added
     assert any("[PROGRESS]" in record.message for record in caplog.records)

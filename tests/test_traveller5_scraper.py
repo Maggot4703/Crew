@@ -7,7 +7,6 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-from pathlib import Path
 
 # Add the parent directory to the path to import from the main module
 sys.path.insert(0, str(Path(__file__).parent.parent))

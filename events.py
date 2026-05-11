@@ -7,7 +7,8 @@ from typing import Any
 
 
 def setup_event_handlers(
-    target: Any | None = None, bindings: Iterable[tuple[str, Callable[..., Any]]] | None = None
+    target: Any | None = None,
+    bindings: Iterable[tuple[str, Callable[..., Any]]] | None = None,
 ) -> int:
     """Attach a simple list of event bindings to a target widget.
 

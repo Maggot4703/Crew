@@ -54,7 +54,9 @@ def create_cli_parser():
     )
 
     # grid-image
-    parser_grid = subparsers.add_parser("grid-image", help="Apply grid overlay to image")
+    parser_grid = subparsers.add_parser(
+        "grid-image", help="Apply grid overlay to image"
+    )
     parser_grid.add_argument(
         "--image-path", type=str, required=True, help="Path to input image"
     )
@@ -62,8 +64,11 @@ def create_cli_parser():
         "--output-path", type=str, required=True, help="Path to save output image"
     )
     parser_grid.add_argument(
-        "--grid-size", type=int, nargs=2, default=[42, 32],
-        help="Grid size (width height), default: 42 32"
+        "--grid-size",
+        type=int,
+        nargs=2,
+        default=[42, 32],
+        help="Grid size (width height), default: 42 32",
     )
     parser_grid.add_argument(
         "--grid-color", type=str, default="blue", help="Grid color name, default: blue"
@@ -225,30 +230,32 @@ def handle_crop_csv(args, logger):
 def handle_grid_image(args, logger):
     """Apply grid overlay to an image."""
     logger.info(f"Running grid-image with: {args.image_path} -> {args.output_path}")
-    
+
     if not os.path.isfile(args.image_path):
         logger.error(f"Image file not found: {args.image_path}")
         print(f"[ERROR] Image file not found: {args.image_path}", file=sys.stderr)
         return 1
-    
+
     try:
         from PIL import Image
-        
+
         # Load image
         img = Image.open(args.image_path)
         grid_width, grid_height = args.grid_size
         grid_color = args.grid_color
-        
+
         # Apply grid overlay
-        result = overlay_grid(img, grid_size=(grid_width, grid_height), color=grid_color)
-        
+        result = overlay_grid(
+            img, grid_size=(grid_width, grid_height), color=grid_color
+        )
+
         # Save result
         result.save(args.output_path)
-        
+
         logger.info(f"Grid saved to {args.output_path}")
         print(f"Grid overlay saved to {args.output_path}")
         return 0
-        
+
     except FileNotFoundError as e:
         logger.error(f"File not found: {e}")
         print(f"[ERROR] File not found: {e}", file=sys.stderr)
