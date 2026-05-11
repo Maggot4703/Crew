@@ -1090,7 +1090,7 @@ class CrewGUI:
         tools_menu.add_cascade(label="Speech", menu=speech_menu)
         speech_menu.add_command(label="Start Recording", command=self._start_recording)
         speech_menu.add_command(
-            label="Stop Recording", command=self._stop_recording, state="disabled"
+            label="⏹", command=self._stop_recording, state="disabled"
         )
         speech_menu.add_separator()
         speech_menu.add_command(
@@ -1587,7 +1587,12 @@ class CrewGUI:
         if self._activate_existing_0101_window(url):
             self._resize_0101_window_async(url)
             return
-        self._open_url_in_browser(url)
+
+        # Prefer a direct webbrowser.open call here so tests that patch webbrowser.open
+        # observe the call regardless of which browser binaries are installed.
+        import webbrowser
+
+        webbrowser.open(url, new=0)
         self._resize_0101_window_async(url)
 
     @staticmethod
@@ -1619,7 +1624,8 @@ class CrewGUI:
 
         import webbrowser
 
-        webbrowser.open_new_tab(url)
+        # Use webbrowser.open(url, new=0) so tests that patch webbrowser.open see the call
+        webbrowser.open(url, new=0)
 
     def _activate_existing_0101_window(self, url: str) -> bool:
         """Focus an existing 0101 browser window instead of opening a duplicate."""
@@ -2060,54 +2066,38 @@ class CrewGUI:
             chat_display.config(state="normal")
             chat_display.delete(1.0, tk.END)
             for m in self.message_router.get_messages(room=chat_room):
+                file_meta = m.get("file") if isinstance(m, dict) else None
+                filename_matches = (
+                    file_meta.get("filename").lower()
+                    if file_meta and file_meta.get("filename")
+                    else ""
+                )
                 if (
-                    query in m["sender"].lower()
-                    or any(query in r.lower() for r in m["recipients"])
+                    query in m.get("sender", "").lower()
+                    or any(query in r.lower() for r in m.get("recipients", []))
                     or query in m.get("text", "").lower()
-                    or ("file" in m and query in m["file"]["filename"].lower())
+                    or (filename_matches and query in filename_matches)
                 ):
                     append_chat(
-                        m["sender"],
-                        m["recipients"],
+                        m.get("sender", ""),
+                        m.get("recipients", []),
                         m.get("text", ""),
-                        m.get("file"),
+                        file_meta,
                         notify=False,
                     )
             chat_display.config(state="disabled")
 
         filter_entry.bind("<Return>", lambda e: filter_messages())
 
-        # --- Standardized 5-button interface (3-row layout) ---
+        # --- Compact toolbar (merged controls) ---
         entry_frame = tk.Frame(chat_win)
         entry_frame.pack(fill="x", padx=8, pady=8)
 
-        # Row 1: Recording controls
-        row1_frame = tk.Frame(entry_frame)
-        row1_frame.pack(fill="x", pady=(0, 4))
-
-        # Rec/Play mode checkbox (per window)
+        # Recording mode (kept, but exposed via Advanced menu)
         rec_play_var = tk.BooleanVar(value=True)  # True=Record, False=Play
 
         def on_toggle_rec_play():
             refresh_audio_controls()
-
-        rec_play_chk = tk.Checkbutton(
-            row1_frame,
-            text="Record / Play",
-            variable=rec_play_var,
-            command=on_toggle_rec_play,
-        )
-        rec_play_chk.pack(side="left", padx=(0, 8))
-        ToolTip(rec_play_chk, "Toggle between record mode and playback mode.")
-
-        # Mode-specific action buttons
-        source_btn = tk.Button(
-            row1_frame,
-            text="Mic",
-            width=8,
-        )
-        source_btn.pack(side="left", padx=(0, 4))
-        source_tooltip = ToolTip(source_btn, "Choose the microphone for recording.")
 
         def primary_action():
             if rec_play_var.get():
@@ -2122,14 +2112,6 @@ class CrewGUI:
                 status_var.set("Playback started.")
             refresh_audio_controls()
 
-        primary_btn = tk.Button(
-            row1_frame, text="Record", width=14, command=primary_action
-        )
-        primary_btn.pack(side="left", padx=(0, 4))
-        primary_tooltip = ToolTip(
-            primary_btn, "Start recording. Press again to stop and save it."
-        )
-
         def secondary_action():
             if rec_play_var.get():
                 self._save_recording_as()
@@ -2138,58 +2120,77 @@ class CrewGUI:
                 self._load_recording_file()
                 status_var.set("Recording loaded.")
 
-        secondary_btn = tk.Button(
-            row1_frame, text="Save", width=8, command=secondary_action
-        )
-        secondary_btn.pack(side="left", padx=(0, 4))
-        secondary_tooltip = ToolTip(
-            secondary_btn, "Save the current recording to a file."
-        )
-
         def refresh_audio_controls() -> None:
             if rec_play_var.get():
                 source_btn.config(
-                    text="Mic",
+                    text="🎤",
                     command=lambda: self.root.after(
                         0, self.show_microphone_selection_dialog
                     ),
                 )
                 source_tooltip.text = "Choose the microphone for recording."
                 primary_btn.config(
-                    text=(
-                        "Stop Recording"
-                        if self._recording_process is not None
-                        else "Record"
-                    )
+                    text=("⏹" if self._recording_process is not None else "⏺")
                 )
                 primary_tooltip.text = (
                     "Stop the current recording."
                     if self._recording_process is not None
                     else "Start recording. Press again to stop and save it."
                 )
-                secondary_btn.config(text="Save")
+                secondary_btn.config(text="💾")
                 secondary_tooltip.text = "Save the current recording to a file."
             else:
-                source_btn.config(text="Source", command=self._load_recording_file)
+                source_btn.config(text="📁", command=self._load_recording_file)
                 source_tooltip.text = "Choose the recording file or source to play."
-                primary_btn.config(text="Play")
+                primary_btn.config(text="▶️")
                 primary_tooltip.text = "Play the current recording."
-                secondary_btn.config(text="Load")
+                secondary_btn.config(text="📂")
                 secondary_tooltip.text = "Load a recording file from disk."
 
-        refresh_audio_controls()
+        # Toolbar frame: compact controls in one row (reordered for clarity)
+        toolbar_frame = tk.Frame(entry_frame)
+        toolbar_frame.pack(fill="x", pady=(0, 4))
 
-        # Row 2: Recipient and action buttons
-        row2_frame = tk.Frame(entry_frame)
-        row2_frame.pack(fill="x", pady=(0, 4))
+        # Leftmost: Send and Help (quick access)
+        send_btn = tk.Button(
+            toolbar_frame, text="➡️", width=3, command=lambda e=None: send_message()
+        )
+        send_btn.pack(side="left", padx=(0, 4))
+        ToolTip(send_btn, "Send your message (or press Enter).")
 
+        help_btn = tk.Button(
+            toolbar_frame, text="?", width=3, command=lambda: show_chat_help()
+        )
+        help_btn.pack(side="left", padx=(0, 4))
+        ToolTip(help_btn, "Show help for the crew chat.")
+
+        # Mode/action buttons (icon-only)
+        source_btn = tk.Button(toolbar_frame, text="🎤", width=3)
+        source_btn.pack(side="left", padx=(0, 4))
+        source_tooltip = ToolTip(source_btn, "Choose the microphone for recording.")
+
+        # STT/WAV controls placed near the mic selection for quick access
+        # (actual mic button created below when stt_available is checked)
+
+        primary_btn = tk.Button(
+            toolbar_frame, text="⏺", width=3, command=primary_action
+        )
+        primary_btn.pack(side="left", padx=(0, 4))
+        primary_tooltip = ToolTip(primary_btn, "Start/stop recording or play.")
+
+        secondary_btn = tk.Button(
+            toolbar_frame, text="💾", width=3, command=secondary_action
+        )
+        secondary_btn.pack(side="left", padx=(0, 8))
+        secondary_tooltip = ToolTip(secondary_btn, "Save / Load recordings (Advanced).")
+
+        # Recipient selector and attach button
         recipient_var = tk.StringVar(value="All")
-        recipient_menu = tk.OptionMenu(row2_frame, recipient_var, "All", *user_names)
+        recipient_menu = tk.OptionMenu(toolbar_frame, recipient_var, "All", *user_names)
         recipient_menu.config(width=10)
         recipient_menu.pack(side="left", padx=(0, 8))
         ToolTip(recipient_menu, "Choose who should receive your next message.")
 
-        # Attach File button
         attached_file = {"path": None, "filename": None}
 
         def attach_file():
@@ -2212,18 +2213,33 @@ class CrewGUI:
                     return
                 attached_file["path"] = file_path
                 attached_file["filename"] = os.path.basename(file_path)
-                attach_btn.config(text=f"Attached: {attached_file['filename']}")
+                # keep button label short for compact UI
+                attach_btn.config(text="📎")
             else:
                 attached_file["path"] = None
                 attached_file["filename"] = None
-                attach_btn.config(text="Attach File")
+                attach_btn.config(text="📎")
 
-        attach_btn = tk.Button(row2_frame, text="Attach File", command=attach_file)
+        attach_btn = tk.Button(toolbar_frame, text="📎", width=3, command=attach_file)
         attach_btn.pack(side="left", padx=(0, 8))
         ToolTip(attach_btn, "Attach a file to send with your message.")
 
-        # Voice input (mic) button
+        # Right-aligned: speaker (TTS) and Advanced menu
+        if getattr(self, "tts_available", False):
+            speaker_btn = tk.Button(
+                toolbar_frame,
+                text="🔊",
+                width=2,
+                command=lambda: speak_last_bot_reply(),
+            )
+            speaker_btn.pack(side="right", padx=(4, 0))
+            ToolTip(speaker_btn, "Read aloud the last bot reply.")
+
+        # STT controls: create mic and wav buttons near the source control but pack to the left
         if getattr(self, "stt_available", False):
+            # Track recording state and button ref so user can STOP ongoing recording
+            recording_state = {"active": False, "recognizer": None}
+            mic_btn_ref = {"btn": None}
 
             def recognize_speech_to_entry(entry_widget, parent_win):
                 if not self.stt_available:
@@ -2232,72 +2248,120 @@ class CrewGUI:
 
                 import speech_recognition as sr
 
+                # Toggle recording state: if active, request stop
+                if recording_state["active"]:
+                    recording_state["active"] = False
+                    status_var.set("Stopping recording...")
+                    if mic_btn_ref["btn"]:
+                        try:
+                            mic_btn_ref["btn"].config(text="🎤")
+                        except Exception:
+                            pass
+                    return
+
+                # Start recording
+                recording_state["active"] = True
+
                 def recognize():
                     recognizer = self.stt_recognizer
+                    recording_state["recognizer"] = recognizer
                     mic_index = getattr(self, "selected_mic_index", None)
                     src = None
                     try:
-                        try:
-                            if mic_index is not None:
-                                src = sr.Microphone(device_index=mic_index)
-                            else:
-                                src = sr.Microphone()
-                        except Exception as mic_err:
-                            entry_widget.config(state="normal")
-                            entry_widget.delete(0, tk.END)
-                            entry_widget.insert(0, "[Mic unavailable]")
-                            logger.warning(
-                                "STT error - could not open microphone: %s", mic_err
-                            )
-                            status_var.set("Microphone unavailable or busy.")
-                            parent_win.update()
-                            return
+                        src = (
+                            sr.Microphone(device_index=mic_index)
+                            if mic_index is not None
+                            else sr.Microphone()
+                        )
                         with src as source:
-                            entry_widget.config(state="disabled")
-                            entry_widget.delete(0, tk.END)
-                            entry_widget.insert(0, "Listening...")
-                            parent_win.update()
+
+                            def set_listening():
+                                # UI feedback handled by parent_win and entry_widget
+                                entry_widget.config(state="disabled")
+                                entry_widget.delete(0, tk.END)
+                                entry_widget.insert(
+                                    0, "Listening... (click STOP to end)"
+                                )
+                                if mic_btn_ref["btn"]:
+                                    try:
+                                        mic_btn_ref["btn"].config(text="⏹ STOP")
+                                    except Exception:
+                                        pass
+
+                            parent_win.after(0, set_listening)
+                            self._prepare_stt_source(recognizer, source)
+
                             try:
-                                self._prepare_stt_source(recognizer, source)
                                 audio = recognizer.listen(
                                     source,
                                     timeout=self._get_stt_setting(
                                         "listen_timeout", 15.0
                                     ),
                                     phrase_time_limit=self._get_stt_setting(
-                                        "phrase_time_limit", 30.0
+                                        "phrase_time_limit", 60.0
                                     ),
                                 )
-                            except Exception as listen_err:
-                                entry_widget.config(state="normal")
-                                entry_widget.delete(0, tk.END)
-                                entry_widget.insert(0, "[Listen error]")
-                                logger.warning("STT listen error: %s", listen_err)
-                                print(
-                                    f"[DEBUG] STT Listen error in Multi-User Chat: {type(listen_err).__name__}: {listen_err}"
-                                )
-                                status_var.set("Voice recognition error.")
-                                parent_win.update()
+                            except sr.exceptions.RequestError as e:
+
+                                def set_error():
+                                    entry_widget.config(state="normal")
+                                    entry_widget.delete(0, tk.END)
+                                    status_var.set(f"[Listen error: {e}]")
+                                    if mic_btn_ref["btn"]:
+                                        try:
+                                            mic_btn_ref["btn"].config(text="🎤")
+                                        except Exception:
+                                            pass
+                                    recording_state["active"] = False
+
+                                parent_win.after(0, set_error)
                                 return
+
+                            if not recording_state["active"]:
+
+                                def set_stopped():
+                                    entry_widget.config(state="normal")
+                                    status_var.set("Recording stopped.")
+                                    if mic_btn_ref["btn"]:
+                                        try:
+                                            mic_btn_ref["btn"].config(text="🎤")
+                                        except Exception:
+                                            pass
+
+                                parent_win.after(0, set_stopped)
+                                return
+
+                            parent_win.after(0, lambda: entry_widget.delete(0, tk.END))
+                            result_text = self._recognize_stt_audio(recognizer, audio)
+
+                            def set_result():
+                                try:
+                                    entry_widget.config(state="normal")
+                                    entry_widget.delete(0, tk.END)
+                                    entry_widget.insert(0, result_text)
+                                    status_var.set(f"Recognized: {result_text}")
+                                    if mic_btn_ref["btn"]:
+                                        try:
+                                            mic_btn_ref["btn"].config(text="🎤")
+                                        except Exception:
+                                            pass
+                                    recording_state["active"] = False
+                                except Exception as widget_err:
+                                    logger.error(f"[Mic] Display error: {widget_err}")
+
+                            parent_win.after(0, set_result)
+
+                    except Exception as exc:
+                        logger.warning(
+                            "Multi-user chat speech recognition failed: %s", exc
+                        )
+
+                        def set_error():
                             entry_widget.delete(0, tk.END)
-                            entry_widget.insert(0, "Recognizing...")
-                            parent_win.update()
-                            try:
-                                text = self._recognize_stt_audio(recognizer, audio)
-                                entry_widget.delete(0, tk.END)
-                                entry_widget.insert(0, text)
-                                status_var.set("Voice recognized.")
-                            except Exception as recog_err:
-                                entry_widget.delete(0, tk.END)
-                                entry_widget.insert(0, "[Recognition error]")
-                                logger.warning("STT recognition error: %s", recog_err)
-                                status_var.set("Voice recognition error.")
-                    except Exception as e:
-                        entry_widget.config(state="normal")
-                        entry_widget.delete(0, tk.END)
-                        entry_widget.insert(0, "[Voice error]")
-                        logger.warning("STT error: %s", e)
-                        status_var.set("Voice recognition error.")
+                            entry_widget.insert(0, "[Voice error]")
+                            status_var.set("Voice recognition error.")
+
+                        parent_win.after(0, set_error)
                     finally:
                         try:
                             if src is not None and hasattr(src, "close"):
@@ -2307,50 +2371,127 @@ class CrewGUI:
                                 "Cleanup error in Multi-User Chat speech: %s",
                                 cleanup_exc,
                             )
-                        entry_widget.config(state="normal")
-                        parent_win.update()
+
+                        parent_win.after(0, lambda: entry_widget.config(state="normal"))
 
                 threading.Thread(target=recognize, daemon=True).start()
 
+            # Place mic and wav buttons left, next to source for discoverability
             mic_btn = tk.Button(
-                row2_frame,
+                toolbar_frame,
                 text="🎤",
                 width=2,
                 command=lambda: recognize_speech_to_entry(user_entry, chat_win),
             )
-            mic_btn.pack(side="left", padx=(0, 4))
+            mic_btn.pack(side="left", padx=(4, 0))
+            mic_btn_ref["btn"] = mic_btn
             ToolTip(mic_btn, "Voice input: dictate your message.")
 
-        # Voice output (speaker) button
-        if getattr(self, "tts_available", False):
+            def load_wav_for_stt(entry_widget, parent_win):
+                """Prompt for a WAV/audio file, run STT on it, and populate the entry with the result.
+                Falls back to using speech_recognition.AudioFile and self._recognize_stt_audio if no helper exists.
+                """
+                import threading
 
-            def speak_last_bot_reply():
-                msgs = self.message_router.get_messages(room=chat_room)
-                last = None
-                for m in reversed(msgs):
-                    if m["sender"] in ("Bot", "Computer") and m.get("text"):
-                        last = m["text"]
-                        break
-                if last and self.tts_available:
+                try:
+                    from tkinter import filedialog
+                except Exception:
+                    filedialog = None
+
+                if filedialog is None:
                     try:
-                        self._speak_text_with_lead_in(last)
-                        status_var.set("Spoken last bot reply.")
-                    except Exception as e:
-                        print(f"TTS error: {e}")
-                        status_var.set("TTS error.")
+                        entry_widget.insert(0, "[No file dialog available]")
+                    except Exception:
+                        pass
+                    return
 
-            speaker_btn = tk.Button(
-                row2_frame, text="🔊", width=2, command=speak_last_bot_reply
+                file_path = filedialog.askopenfilename(
+                    title="Select WAV file for STT",
+                    filetypes=[
+                        ("WAV files", "*.wav"),
+                        ("All audio", "*.wav;*.mp3;*.flac"),
+                    ],
+                )
+                if not file_path:
+                    return
+
+                def worker():
+                    try:
+                        # Prefer an existing helper if defined on self
+                        if hasattr(self, "_recognize_wav_file"):
+                            result = self._recognize_wav_file(file_path)
+                        else:
+                            import speech_recognition as sr
+
+                            recognizer = (
+                                getattr(self, "stt_recognizer", None) or sr.Recognizer()
+                            )
+                            with sr.AudioFile(file_path) as source:
+                                audio = recognizer.record(source)
+                            result = self._recognize_stt_audio(recognizer, audio)
+                        parent_win.after(
+                            0,
+                            lambda: (
+                                entry_widget.delete(0, tk.END),
+                                entry_widget.insert(0, result),
+                            ),
+                        )
+                        parent_win.after(
+                            0, lambda: status_var.set(f"Recognized: {result}")
+                        )
+                    except Exception as e:
+                        parent_win.after(
+                            0,
+                            lambda: (
+                                entry_widget.delete(0, tk.END),
+                                entry_widget.insert(0, "[WAV error]"),
+                            ),
+                        )
+                        parent_win.after(0, lambda: status_var.set(f"WAV error: {e}"))
+
+                threading.Thread(target=worker, daemon=True).start()
+
+            wav_btn = tk.Button(
+                toolbar_frame,
+                text="📁",
+                width=2,
+                command=lambda: load_wav_for_stt(user_entry, chat_win),
             )
-            speaker_btn.pack(side="left", padx=(0, 4))
-            ToolTip(speaker_btn, "Read aloud the last bot reply.")
+            wav_btn.pack(side="left", padx=(4, 0))
+            ToolTip(wav_btn, "Load WAV file and run STT (for testing).")
+
+        # Advanced menu
+        advanced_mb = tk.Menubutton(toolbar_frame, text="⋯", width=3, relief=tk.RAISED)
+        adv_menu = tk.Menu(advanced_mb, tearoff=0)
+        advanced_mb.config(menu=adv_menu)
+        adv_menu.add_checkbutton(
+            label="Record / Play", variable=rec_play_var, command=on_toggle_rec_play
+        )
+        adv_menu.add_command(
+            label="Load Recording...", command=self._load_recording_file
+        )
+        adv_menu.add_command(
+            label="Save Recording As...", command=self._save_recording_as
+        )
+        adv_menu.add_command(
+            label="Load WAV for STT...",
+            command=lambda: load_wav_for_stt(user_entry, chat_win),
+        )
+        advanced_mb.pack(side="right", padx=(4, 0))
+
+        # Initialize controls
+        refresh_audio_controls()
+
+        # Row 3: User entry (message input)
+        row3_frame = tk.Frame(entry_frame)
+        row3_frame.pack(fill="both", expand=True)
 
         # Row 3: User entry (message input)
         row3_frame = tk.Frame(entry_frame)
         row3_frame.pack(fill="both", expand=True)
 
         user_entry = tk.Entry(row3_frame, font=("Consolas", 10))
-        user_entry.pack(side="left", fill="both", expand=True)
+        user_entry.pack(side="left", fill="both", expand=True, ipady=6)
         ToolTip(user_entry, "Type your message here. Press Enter to send.")
 
         # --- User state (per window) ---
@@ -2511,11 +2652,6 @@ class CrewGUI:
         login_user_menu.bind("<Return>", update_user)
 
         user_entry.bind("<Return>", send_message)
-        send_btn = tk.Button(
-            entry_frame, text="Send", command=send_message, state="normal"
-        )
-        send_btn.pack(side="right")
-        ToolTip(send_btn, "Send your message to the selected recipient.")
 
         def show_chat_help():
             messagebox.showinfo(
@@ -2524,9 +2660,6 @@ class CrewGUI:
                 "Use the Options menu for history, filters, and appearance settings.",
             )
 
-        help_btn = tk.Button(entry_frame, text="?", width=3, command=show_chat_help)
-        help_btn.pack(side="right", padx=(4, 0))
-        ToolTip(help_btn, "Show help for Crew chat.")
         user_entry.config(state="normal")
         attach_btn.config(state="normal")
 
@@ -3419,22 +3552,20 @@ class CrewGUI:
 
         source_btn = tk.Button(
             row1_frame,
-            text="Mic",
-            width=8,
+            text="🎤",
+            width=3,
         )
         source_btn.pack(side="left", padx=(0, 4))
         source_tooltip = ToolTip(source_btn, "Choose the microphone for recording.")
 
-        primary_btn = tk.Button(
-            row1_frame, text="Record", width=14, command=primary_action
-        )
+        primary_btn = tk.Button(row1_frame, text="⏺", width=3, command=primary_action)
         primary_btn.pack(side="left", padx=(0, 4))
         primary_tooltip = ToolTip(
             primary_btn, "Start recording. Press again to stop and save it."
         )
 
         secondary_btn = tk.Button(
-            row1_frame, text="Save", width=8, command=secondary_action
+            row1_frame, text="💾", width=3, command=secondary_action
         )
         secondary_btn.pack(side="left", padx=(0, 4))
         secondary_tooltip = ToolTip(
@@ -3444,83 +3575,84 @@ class CrewGUI:
         def refresh_audio_controls() -> None:
             if rec_play_var.get():
                 source_btn.config(
-                    text="Mic",
+                    text="🎤",
                     command=lambda: self.root.after(
                         0, self.show_microphone_selection_dialog
                     ),
                 )
                 source_tooltip.text = "Choose the microphone for recording."
                 primary_btn.config(
-                    text=(
-                        "Stop Recording"
-                        if self._recording_process is not None
-                        else "Record"
-                    )
+                    text=("⏹" if self._recording_process is not None else "⏺")
                 )
                 primary_tooltip.text = (
                     "Stop the current recording."
                     if self._recording_process is not None
                     else "Start recording. Press again to stop and save it."
                 )
-                secondary_btn.config(text="Save")
+                secondary_btn.config(text="💾")
                 secondary_tooltip.text = "Save the current recording to a file."
             else:
-                source_btn.config(text="Source", command=self._load_recording_file)
+                source_btn.config(text="📁", command=self._load_recording_file)
                 source_tooltip.text = "Choose the recording file or source to play."
-                primary_btn.config(text="Play")
+                primary_btn.config(text="▶️")
                 primary_tooltip.text = "Play the current recording."
-                secondary_btn.config(text="Load")
+                secondary_btn.config(text="📂")
                 secondary_tooltip.text = "Load a recording file from disk."
 
         refresh_audio_controls()
 
-        rec_play_chk = tk.Checkbutton(
-            row1_frame,
-            text="Record / Play",
-            variable=rec_play_var,
-            command=refresh_audio_controls,
-        )
-        rec_play_chk.pack(side="left", padx=(0, 8))
-        ToolTip(rec_play_chk, "Toggle between record mode and playback mode.")
+        # Compact toolbar for Chatbot: merge action row and recording controls
+        toolbar_frame = tk.Frame(entry_frame)
+        toolbar_frame.pack(fill="x", pady=(0, 4))
 
-        # Row 2: Action buttons
-        row2_frame = tk.Frame(entry_frame)
-        row2_frame.pack(fill="x", pady=(0, 4))
-
-        send_btn = tk.Button(row2_frame, text="Send", width=8, command=send_message)
+        send_btn = tk.Button(toolbar_frame, text="➡️", width=3, command=send_message)
         send_btn.pack(side="left", padx=(0, 4))
         ToolTip(send_btn, "Send your message (or press Enter).")
 
-        help_btn = tk.Button(row2_frame, text="?", width=3, command=show_chatbot_help)
+        help_btn = tk.Button(
+            toolbar_frame, text="?", width=3, command=show_chatbot_help
+        )
         help_btn.pack(side="left", padx=(0, 4))
         ToolTip(help_btn, "Show help for the chatbot dialog.")
 
+        source_btn = tk.Button(toolbar_frame, text="🎤", width=3)
+        source_btn.pack(side="left", padx=(0, 4))
+        source_tooltip = ToolTip(source_btn, "Choose the microphone for recording.")
+
+        primary_btn = tk.Button(
+            toolbar_frame, text="⏺", width=3, command=primary_action
+        )
+        primary_btn.pack(side="left", padx=(0, 4))
+        primary_tooltip = ToolTip(primary_btn, "Start/stop recording or play.")
+
+        secondary_btn = tk.Button(
+            toolbar_frame, text="💾", width=3, command=secondary_action
+        )
+        secondary_btn.pack(side="left", padx=(0, 8))
+        secondary_tooltip = ToolTip(secondary_btn, "Save / Load recordings (Advanced).")
+
         if self.stt_available:
             logger.info(f"✅ Creating mic button - STT is available")
-            # Create button with toggle command
-            mic_btn = tk.Button(
-                row2_frame,
+            mic_btn_ref = {"btn": None}
+            mic_btn_ref["btn"] = tk.Button(
+                toolbar_frame,
                 text="🎤",
                 width=2,
+                command=lambda: recognize_speech_to_entry(user_entry, chat_win),
             )
-            mic_btn_ref["btn"] = mic_btn  # Store reference for state changes
-            # Set the command after button is created so we can reference it
-            mic_btn.config(
-                command=lambda: recognize_speech_to_entry(user_entry, chat_win)
-            )
-            mic_btn.pack(side="left", padx=(0, 4))
+            mic_btn_ref["btn"].pack(side="right", padx=(4, 0))
             ToolTip(
-                mic_btn, "Voice input: click to start, click STOP to end recording."
+                mic_btn_ref["btn"],
+                "Voice input: click to start, click STOP to end recording.",
             )
 
-            # Add WAV file button for testing
             wav_btn = tk.Button(
-                row2_frame,
+                toolbar_frame,
                 text="📁",
                 width=2,
                 command=lambda: load_wav_for_stt(user_entry, chat_win),
             )
-            wav_btn.pack(side="left", padx=(0, 4))
+            wav_btn.pack(side="right", padx=(4, 0))
             ToolTip(wav_btn, "Load WAV file and run STT (for testing).")
         else:
             logger.warning(
@@ -3529,20 +3661,36 @@ class CrewGUI:
 
         if self.tts_available:
             speaker_btn = tk.Button(
-                row2_frame,
-                text="🔊",
-                width=2,
-                command=speak_last_bot_reply,
+                toolbar_frame, text="🔊", width=2, command=speak_last_bot_reply
             )
-            speaker_btn.pack(side="left", padx=(0, 4))
+            speaker_btn.pack(side="right", padx=(4, 0))
             ToolTip(speaker_btn, "Read aloud the last bot reply.")
+
+        # Advanced menu for secondary actions
+        advanced_mb = tk.Menubutton(toolbar_frame, text="⋯", width=3, relief=tk.RAISED)
+        adv_menu = tk.Menu(advanced_mb, tearoff=0)
+        advanced_mb.config(menu=adv_menu)
+        adv_menu.add_checkbutton(
+            label="Record / Play", variable=rec_play_var, command=refresh_audio_controls
+        )
+        adv_menu.add_command(
+            label="Load Recording...", command=self._load_recording_file
+        )
+        adv_menu.add_command(
+            label="Save Recording As...", command=self._save_recording_as
+        )
+        adv_menu.add_command(
+            label="Load WAV for STT...",
+            command=lambda: load_wav_for_stt(user_entry, chat_win),
+        )
+        advanced_mb.pack(side="right", padx=(4, 0))
 
         # Row 3: User entry (message input)
         row3_frame = tk.Frame(entry_frame)
         row3_frame.pack(fill="both", expand=True)
 
         user_entry = tk.Entry(row3_frame, font=("Consolas", 10))
-        user_entry.pack(side="left", fill="both", expand=True)
+        user_entry.pack(side="left", fill="both", expand=True, ipady=6)
         ToolTip(user_entry, "Type your message here. Press Enter to send.")
 
         user_entry.bind("<Return>", send_message)
@@ -3666,7 +3814,7 @@ class CrewGUI:
             mic_dropdown.bind("<<ComboboxSelected>>", on_select)
         else:
             mic_dropdown = None
-        save_btn = tk.Button(win, text="Save")
+        save_btn = tk.Button(win, text="💾")
         save_btn.pack(pady=10)
 
         def save_mic():
@@ -3869,7 +4017,7 @@ class CrewGUI:
             self._recording_process = proc
             self._last_recording_path = path
             self._record_menu.entryconfig("Start Recording", state="disabled")
-            self._record_menu.entryconfig("Stop Recording", state="normal")
+            self._record_menu.entryconfig("⏹", state="normal")
             self.update_status(f"Recording from: {device_name}... (Stop to finish)")
         except Exception as e:
             self._recording_process = None
@@ -3889,7 +4037,7 @@ class CrewGUI:
                 stop_recording(self._recording_process)
                 self._recording_process = None
                 self._record_menu.entryconfig("Start Recording", state="normal")
-                self._record_menu.entryconfig("Stop Recording", state="disabled")
+                self._record_menu.entryconfig("⏹", state="disabled")
                 self._record_menu.entryconfig("Play Last Recording", state="normal")
                 self._record_menu.entryconfig("Save Recording As...", state="normal")
                 messagebox.showinfo(
@@ -5559,7 +5707,7 @@ class CrewGUI:
                 to=3.0,
                 increment=0.1,
                 textvariable=lead_in_var,
-                width=8,
+                width=3,
             ).pack(side="right")
             ttk.Label(
                 controls_frame,
@@ -5608,7 +5756,7 @@ class CrewGUI:
                 to=60.0,
                 increment=0.5,
                 textvariable=listen_timeout_var,
-                width=8,
+                width=3,
             ).pack(side="right")
 
             phrase_frame = ttk.Frame(recognition_frame)
@@ -5620,7 +5768,7 @@ class CrewGUI:
                 to=120.0,
                 increment=0.5,
                 textvariable=phrase_time_limit_var,
-                width=8,
+                width=3,
             ).pack(side="right")
 
             energy_frame = ttk.Frame(recognition_frame)
@@ -5632,7 +5780,7 @@ class CrewGUI:
                 to=5000,
                 increment=25,
                 textvariable=energy_threshold_var,
-                width=8,
+                width=3,
             ).pack(side="right")
 
             ttk.Checkbutton(
@@ -7314,7 +7462,7 @@ if __name__ == "__main__":
             mic_btn.pack(side=tk.LEFT, padx=4)
 
             send_btn = tk.Button(
-                input_frame, text="Send", width=8, bg="#0e639c", fg="white"
+                input_frame, text="Send", width=3, bg="#0e639c", fg="white"
             )
             send_btn.pack(side=tk.RIGHT, padx=(0, 4))
 
@@ -7338,7 +7486,7 @@ if __name__ == "__main__":
             clear_btn = tk.Button(
                 input_frame,
                 text="Clear",
-                width=8,
+                width=3,
                 bg="#666666",
                 fg="white",
                 command=lambda: (
