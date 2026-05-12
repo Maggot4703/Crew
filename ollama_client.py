@@ -12,7 +12,7 @@ Usage:
 
 import json
 import logging
-from typing import Any, Dict, Generator, List, Optional
+from typing import Dict, Generator, List
 
 import requests
 

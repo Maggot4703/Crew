@@ -1,3 +1,4 @@
+# flake8: noqa: E402
 """
 Test suite for Events module (events.py).
 Covers event handler setup and invocation.

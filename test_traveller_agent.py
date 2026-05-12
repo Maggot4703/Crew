@@ -1,3 +1,4 @@
+# flake8: noqa: E402
 # test_traveller_agent.py
 """
 Unit tests for TravellerAgent integration with Travellermap API and Traveller Wiki.

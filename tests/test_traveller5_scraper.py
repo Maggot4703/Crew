@@ -1,3 +1,4 @@
+# flake8: noqa: E402
 #!/usr/bin/python3
 """
 Test module for traveller5_scraper functionality.

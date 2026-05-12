@@ -22,7 +22,6 @@ Notes:
 """
 
 # Utility functions moved to utils.py
-import csv
 import importlib
 import logging
 import os
@@ -48,7 +47,6 @@ try:
         calculate_hexagon_points,
         crop_from_annotations,
         hex_to_rgb,
-        overlay_grid,
         process_images,
         rgb_to_hex,
     )

@@ -1,3 +1,4 @@
+# flake8: noqa: E402
 """
 Test suite for StateManager module (state_manager.py).
 Covers window state loading, saving, and column width management.

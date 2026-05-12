@@ -1,5 +1,4 @@
-import os
-import sys
+# flake8: noqa: E402
 import unittest
 from argparse import Namespace
 

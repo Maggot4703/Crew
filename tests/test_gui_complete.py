@@ -1,3 +1,4 @@
+# flake8: noqa: E402
 """
 Unit tests for Crew GUI recording menu and recording logic.
 Covers:

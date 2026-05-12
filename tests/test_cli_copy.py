@@ -1,8 +1,7 @@
+# flake8: noqa: E402
 import os
 import sys
 from unittest import mock
-
-import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import cli as cli_mod

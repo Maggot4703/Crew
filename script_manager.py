@@ -228,7 +228,9 @@ class ScriptManager:
                         0, lambda: self._handle_script_result(result, script_name)
                     )
                 except Exception as e:
-                    root.after(0, lambda: self._handle_script_error(e, script_name))
+                    root.after(
+                        0, lambda err=e: self._handle_script_error(err, script_name)
+                    )
 
             threading.Thread(target=target, daemon=True).start()
 

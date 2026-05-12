@@ -1,3 +1,4 @@
+# flake8: noqa: E402
 """
 Test suite for UIManager module (ui_manager.py).
 Covers widget registration, layout creation, and status updates.

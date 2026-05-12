@@ -5,7 +5,7 @@ Enhanced features and utilities for the NPCs Data Processing Tool.
 import logging
 import subprocess
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict
 
 logger = logging.getLogger(__name__)
 
@@ -21,32 +21,32 @@ def check_dependencies() -> Dict[str, bool]:
     }
 
     try:
-        import pandas
-
+        import importlib
+        importlib.import_module("pandas")
         dependencies["pandas"] = True
     except ImportError:
-        pass
+        dependencies["pandas"] = False
 
     try:
-        from PIL import Image
-
+        import importlib
+        importlib.import_module("PIL")
         dependencies["PIL"] = True
     except ImportError:
-        pass
+        dependencies["PIL"] = False
 
     try:
-        import ijson
-
+        import importlib
+        importlib.import_module("ijson")
         dependencies["ijson"] = True
     except ImportError:
-        pass
+        dependencies["ijson"] = False
 
     try:
-        import speech_recognition
-
+        import importlib
+        importlib.import_module("speech_recognition")
         dependencies["SpeechRecognition"] = True
     except ImportError:
-        pass
+        dependencies["SpeechRecognition"] = False
 
     try:
         result = subprocess.run(["git", "--version"], capture_output=True)
@@ -123,7 +123,8 @@ def run_diagnostics() -> Dict[str, any]:
             cwd=project_dir,
         )
         diagnostics["git_clean"] = len(result.stdout.strip()) == 0
-    except:
+    except Exception as e:
+        logger.warning(f"Could not determine git status: {e}")
         diagnostics["git_clean"] = False
 
     return diagnostics

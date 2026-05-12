@@ -8,8 +8,6 @@ import sys
 import time
 from pathlib import Path
 
-import requests
-
 
 class DocumentationFetcher:
     def __init__(self, base_dir="Reading Now"):

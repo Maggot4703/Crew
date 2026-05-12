@@ -1,3 +1,4 @@
+# flake8: noqa: E402
 """
 Test script for verifying the visibility of columns in a GUI or data table.
 

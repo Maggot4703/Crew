@@ -4,6 +4,12 @@ import os
 import sys
 
 from image_utils import overlay_grid
+from utils import crop_from_annotations, process_csv_data, process_excel_data
+
+try:
+    from deepseek_integration import deepseek_code_query
+except ImportError:
+    from .deepseek_integration import deepseek_code_query
 
 
 def create_cli_parser():
@@ -78,13 +84,6 @@ def create_cli_parser():
 
 
 # DeepSeek integration
-try:
-    from deepseek_integration import deepseek_code_query
-except ImportError:
-    from .deepseek_integration import deepseek_code_query
-
-from file_utils import read_csv_builtin, read_csv_pandas, read_excel
-from utils import crop_from_annotations, process_csv_data, process_excel_data
 
 # Command registry for CLI handlers
 COMMAND_REGISTRY = {}
@@ -217,7 +216,7 @@ def handle_crop_csv(args, logger):
             f"No crops were saved for image: {args.image_path} with annotations: {args.annotations_csv}"
         )
         print(
-            f"[ERROR] No crops were saved. Please check the annotation CSV and image file.",
+            "[ERROR] No crops were saved. Please check the annotation CSV and image file.",
             file=sys.stderr,
         )
         return 1

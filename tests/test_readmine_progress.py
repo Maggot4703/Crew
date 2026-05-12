@@ -1,3 +1,4 @@
+# flake8: noqa: E402
 #!/usr/bin/env python3
 """Regression tests for ReadMine progress and resume behavior."""
 

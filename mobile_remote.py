@@ -6,10 +6,13 @@ import html
 import json
 import logging
 import secrets
+import shutil
 import socket
+import subprocess
 import threading
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 from typing import Any, Callable, Optional
 from urllib.parse import parse_qs, urlparse
 
@@ -143,8 +146,36 @@ class CrewMobileRemoteServer:
             target=self.httpd.serve_forever, name="CrewMobileRemote", daemon=True
         )
         self.thread.start()
-        logger.info("Crew mobile remote started at %s", self.access_url)
-        return self.access_url
+        url = self.access_url
+        # Write URL to a tmp file for backward compatibility
+        try:
+            Path("/tmp/crew_mobile_remote_url.txt").write_text(
+                url + "\n", encoding="utf-8"
+            )
+        except Exception:
+            logger.exception(
+                "Failed to write mobile URL to /tmp/crew_mobile_remote_url.txt"
+            )
+        # Try to copy URL to the system clipboard using wl-copy, xclip or xsel if available
+        try:
+            for cmd in (
+                ("wl-copy",),
+                ("xclip", "-selection", "clipboard"),
+                ("xsel", "--clipboard", "--input"),
+            ):
+                if shutil.which(cmd[0]):
+                    try:
+                        subprocess.run(cmd, input=url.encode("utf-8"), check=True)
+                        logger.info(
+                            "Copied mobile remote URL to clipboard using %s", cmd[0]
+                        )
+                        break
+                    except Exception:
+                        logger.exception("Failed to copy URL with %s", cmd[0])
+        except Exception:
+            logger.exception("Clipboard copy attempt failed")
+        logger.info("Crew mobile remote started at %s", url)
+        return url
 
     def stop(self) -> None:
         """Stop the HTTP server if it is running."""

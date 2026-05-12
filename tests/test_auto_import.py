@@ -1,3 +1,4 @@
+# flake8: noqa: E402
 """
 Test script for verifying auto-import functionality or behavior.
 
@@ -45,7 +46,6 @@ class TestAutoImport:
         """
         # print(f"Setting up for test: {method.__name__}")
         # create_dummy_module(DUMMY_MODULE_NAME, DUMMY_MODULE_CONTENT)
-        pass
 
     def teardown_method(self, method):
         """Teardown any state that was previously setup with a setup_method
@@ -53,7 +53,6 @@ class TestAutoImport:
         """
         # print(f"Tearing down after test: {method.__name__}")
         # remove_dummy_module(DUMMY_MODULE_NAME)
-        pass
 
     def test_if_module_can_be_imported_dynamically(self):
         """

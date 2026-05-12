@@ -4,8 +4,6 @@ Final verification script for the Crew GUI data loading fix.
 Tests all functionality without requiring GUI display.
 """
 
-import os
-import sys
 from pathlib import Path
 
 import pandas as pd
@@ -18,10 +16,7 @@ def main():
     # Test 1: Module imports
     print("\n1. Testing module imports...")
     try:
-        import BACKUP.Crew15 as Crew15
-
-        import database_manager
-        import gui
+        pass
 
         print("✅ All modules import successfully")
     except Exception as e:

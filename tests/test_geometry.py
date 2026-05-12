@@ -1,3 +1,4 @@
+# flake8: noqa: E402
 """Tests for geometric and color calculations in Crew.py"""
 
 import os

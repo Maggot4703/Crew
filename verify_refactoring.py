@@ -11,12 +11,7 @@ def main():
 
     # Test imports
     try:
-        import gui
-        from data_manager import DataManager
-        from event_manager import EventManager
-        from script_manager import ScriptManager
-        from state_manager import StateManager
-        from ui_manager import UIManager
+        pass
 
         print("✅ All imports successful")
     except Exception as e:

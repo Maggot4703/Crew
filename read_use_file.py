@@ -17,7 +17,6 @@ try:
     import pyttsx3
 except ImportError:
     print("pyttsx3 library is not installed. Installing it now...")
-    import os
     import subprocess
 
     # Get the path to the virtual environment's Python interpreter if available
@@ -394,7 +393,7 @@ class UseFileReader:
 def main():
     """Main function to run the application."""
     root = tk.Tk()
-    app = UseFileReader(root)
+    UseFileReader(root)
     root.mainloop()
 
 

@@ -1,3 +1,4 @@
+# flake8: noqa: E402
 #!/usr/bin/env python3
 """
 Comprehensive TTS Test Suite for Crew Project
@@ -9,7 +10,6 @@ import sys
 import threading
 import time
 import unittest
-import unittest.mock as mock
 
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -123,7 +123,7 @@ class TestVoicePropertyManagement(unittest.TestCase):
         if TTS_AVAILABLE:
             try:
                 self.engine = pyttsx3.init()
-            except:
+            except Exception:
                 self.engine = MockTTSEngine()
         else:
             self.engine = MockTTSEngine()
@@ -172,7 +172,7 @@ class TestVoicePropertyManagement(unittest.TestCase):
         voices = self.engine.getProperty("voices")
         if voices:
             # Test setting voice by ID
-            original_voice = self.engine.getProperty("voice")
+            _original_voice = self.engine.getProperty("voice")
             test_voice = voices[0]
 
             self.engine.setProperty("voice", test_voice.id)
@@ -188,7 +188,7 @@ class TestFemaleVoiceSetup(unittest.TestCase):
         if TTS_AVAILABLE:
             try:
                 self.engine = pyttsx3.init()
-            except:
+            except Exception:
                 self.engine = MockTTSEngine()
         else:
             self.engine = MockTTSEngine()
@@ -282,8 +282,8 @@ class TestFemaleVoiceSetup(unittest.TestCase):
                 else:
                     return False
 
-            except Exception as e:
-                return False
+            except Exception:
+                    return False
 
         # Test the advanced function
         result = setup_female_voice_advanced(self.engine)
@@ -632,8 +632,8 @@ class TestThreadSafety(unittest.TestCase):
                     time.sleep(0.1)  # Simulate speech time
 
                 return True  # Completed
-            except Exception as e:
-                return False
+            except Exception:
+                    return False
 
         # Test normal completion
         stop_event = threading.Event()
@@ -665,7 +665,7 @@ class TestIntegration(unittest.TestCase):
         if TTS_AVAILABLE:
             try:
                 self.engine = pyttsx3.init()
-            except:
+            except Exception:
                 self.engine = MockTTSEngine()
         else:
             self.engine = MockTTSEngine()
@@ -727,7 +727,7 @@ class TestIntegration(unittest.TestCase):
                 return True, f"Successfully processed {len(chunks)} chunks"
 
             except Exception as e:
-                return False, f"Workflow error: {e}"
+                    return False, f"Workflow error: {e}"
 
         # Test with various text types
         test_texts = [
@@ -779,7 +779,7 @@ class TestIntegration(unittest.TestCase):
                     return False, "Unknown action"
 
             except Exception as e:
-                return False, f"Context menu error: {e}"
+                    return False, f"Context menu error: {e}"
 
         # Test different context menu actions
         test_cases = [
@@ -819,8 +819,8 @@ class TestTTSSettingsDialog(unittest.TestCase):
                     "voices": engine.getProperty("voices"),
                 }
                 return settings
-            except Exception as e:
-                return None
+            except Exception:
+                    return None
 
         settings = get_tts_settings(self.engine)
         self.assertIsNotNone(settings)
@@ -1003,7 +1003,7 @@ if __name__ == "__main__":
             engine = pyttsx3.init()
             voices = engine.getProperty("voices")
             print(f"Available Voices: {len(voices) if voices else 0}")
-        except:
+        except Exception:
             print("TTS Engine initialization failed")
     else:
         print("Using Mock TTS Engine for testing")

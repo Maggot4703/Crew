@@ -1,9 +1,9 @@
+# flake8: noqa: E402
 #!/usr/bin/python3
 """
 Test module for cache functionality.
 """
 
-import os
 import sys
 import tempfile
 import unittest

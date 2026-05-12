@@ -31,7 +31,7 @@ engine_lock = threading.Lock()
 
 def signal_handler(signum, frame):
     """Handle Ctrl+C interrupt signal with proper audio cleanup"""
-    global interrupt_requested, current_engine, reading_active
+    global interrupt_requested, reading_active
 
     print("\n\n🛑 Stopping TTS...")
     interrupt_requested = True
@@ -177,7 +177,6 @@ def chunk_text(text, max_chunk_size=400):  # Smaller chunks for better responsiv
 
 def speak_chunk_safe(engine, text):
     """Safely speak a chunk with proper error handling"""
-    global interrupt_requested
 
     if interrupt_requested:
         return False
@@ -279,8 +278,8 @@ def read_text(file_path, rate=150):
                 if current_engine:
                     current_engine.stop()
                     current_engine = None
-            except:
-                pass
+            except Exception as e:
+                print(f"Error stopping engine: {e}")
 
 
 def test_tts():
@@ -334,7 +333,7 @@ def main():
     if args.list or not args.file:
         print(f"📁 Found {len(use_files)} files:")
         for i, file_path in enumerate(use_files):
-            print(f"  {i+1}: {os.path.basename(file_path)}")
+            print(f"  {i + 1}: {os.path.basename(file_path)}")
 
     if args.file:
         try:

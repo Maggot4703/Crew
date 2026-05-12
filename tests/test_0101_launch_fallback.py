@@ -1,3 +1,4 @@
+# flake8: noqa: E402
 #!/usr/bin/python3
 """Tests for 0101 launch fallback behavior."""
 

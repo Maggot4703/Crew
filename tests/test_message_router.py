@@ -1,3 +1,4 @@
+# flake8: noqa: E402
 #!/usr/bin/env python3
 """Focused tests for Crew chat routing and persistence."""
 
