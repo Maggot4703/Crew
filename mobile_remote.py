@@ -6,14 +6,13 @@ import html
 import json
 import logging
 import secrets
-import socket
-import threading
-import subprocess
 import shutil
-from pathlib import Path
-import os
+import socket
+import subprocess
+import threading
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 from typing import Any, Callable, Optional
 from urllib.parse import parse_qs, urlparse
 

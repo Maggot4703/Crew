@@ -12,7 +12,6 @@ Version: 1.0
 
 import functools
 import logging
-import sys
 import time
 import traceback
 from contextlib import contextmanager
@@ -41,13 +40,11 @@ class CrewManagerError(Exception):
 class DataProcessingError(CrewManagerError):
     """Raised when data processing operations fail."""
 
-    pass
 
 
 class FileOperationError(CrewManagerError):
     """Raised when file operations fail."""
 
-    pass
 
 
 def safe_execute(

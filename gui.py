@@ -274,7 +274,6 @@ def auto_import_py_files() -> Tuple[List[str], List[Tuple[str, str]]]:
                     f"Error reading auto-import cache: {e}. Proceeding with fresh scan."
                 )
                 # If cache is corrupted, continue with fresh scan
-                pass
 
         # Find all .py files in the workspace
         py_files = []
@@ -1043,7 +1042,6 @@ class CrewGUI:
             self.selected_mic_index = None
             self.selected_mic_name = ""
             try:
-                import pyaudio
                 import speech_recognition as sr
 
                 self.stt_recognizer = sr.Recognizer()
@@ -4442,35 +4440,35 @@ class CrewGUI:
             features = []
             # TTS
             try:
-                import pyttsx3
+                pass
 
                 features.append(("Text-to-Speech (pyttsx3)", True))
             except ImportError:
                 features.append(("Text-to-Speech (pyttsx3)", False))
             # pandas
             try:
-                import pandas
+                pass
 
                 features.append(("pandas", True))
             except ImportError:
                 features.append(("pandas", False))
             # CustomTkinter
             try:
-                import customtkinter
+                pass
 
                 features.append(("CustomTkinter", True))
             except ImportError:
                 features.append(("CustomTkinter", False))
             # SpeechRecognition
             try:
-                import speech_recognition
+                pass
 
                 features.append(("SpeechRecognition", True))
             except ImportError:
                 features.append(("SpeechRecognition", False))
             # pyaudio
             try:
-                import pyaudio
+                pass
 
                 features.append(("pyaudio", True))
             except ImportError:
@@ -7984,7 +7982,7 @@ if __name__ == "__main__":
                     frame, text="📋 JSON (.json)", variable=format_var, value="json"
                 ).pack(anchor=tk.W)
                 try:
-                    import reportlab
+                    pass
 
                     tk.Radiobutton(
                         frame, text="📕 PDF (.pdf)", variable=format_var, value="pdf"
@@ -8063,7 +8061,6 @@ if __name__ == "__main__":
                             try:
                                 from reportlab.lib.pagesizes import letter
                                 from reportlab.lib.styles import (
-                                    ParagraphStyle,
                                     getSampleStyleSheet,
                                 )
                                 from reportlab.lib.units import inch

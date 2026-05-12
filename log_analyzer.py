@@ -3,8 +3,7 @@ Log analyzer for GitHub push issues and automated fixes.
 """
 
 import re
-from pathlib import Path
-from typing import Dict, List
+from typing import List
 
 
 def parse_git_errors(log_content: str) -> List[str]:

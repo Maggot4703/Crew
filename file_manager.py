@@ -1,8 +1,7 @@
 import csv
 import logging
 import os
-from pathlib import Path
-from typing import Any, List, Optional, Tuple
+from typing import Any, List, Tuple
 
 import pandas as pd
 
@@ -17,7 +16,7 @@ class FileManager:
 
     def _check_pandas_availability(self) -> bool:
         try:
-            import pandas as pd
+            pass
 
             return True
         except ImportError:

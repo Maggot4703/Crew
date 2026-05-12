@@ -8,7 +8,7 @@ import sys
 import unittest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from data_manager import DataManager, FilterConfig, SortKey
+from data_manager import DataManager
 
 
 class TestDataManager(unittest.TestCase):

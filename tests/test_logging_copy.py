@@ -1,11 +1,7 @@
 import logging
-import os
-from unittest import mock
 
-import pytest
 
 from Crew import log_progress_md
-from utils import logger
 
 # Test log_progress_md by checking the logger is called
 

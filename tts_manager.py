@@ -1,10 +1,9 @@
 import logging
-import os
 import re
 import threading
 import tkinter as tk
-from tkinter import filedialog, messagebox, ttk
-from typing import Callable, List, Optional
+from tkinter import messagebox, ttk
+from typing import List
 
 try:
     import pyttsx3

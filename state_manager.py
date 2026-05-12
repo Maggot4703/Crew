@@ -6,7 +6,7 @@ Phase 2 of the CrewGUI refactoring plan - Extracts all state persistence logic f
 
 import logging
 import tkinter as tk
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 
 class StateManager:

@@ -4,7 +4,6 @@ import os
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-import pandas as pd
 
 
 @dataclass

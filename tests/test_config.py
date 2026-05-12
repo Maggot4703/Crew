@@ -12,7 +12,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 
 # Import patch for mocking
-from unittest.mock import patch
 
 # Import Config from config.py
 from config import Config

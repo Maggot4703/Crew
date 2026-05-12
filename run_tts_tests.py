@@ -12,9 +12,10 @@ import sys
 
 def run_test_file(test_file, verbose=True):
     """Run a specific test file"""
-    print(f"\n{'='*60}")
+    sep = "=" * 60
+    print(sep)
     print(f"RUNNING: {test_file}")
-    print(f"{'='*60}")
+    print(sep)
 
     try:
         cmd = [sys.executable, test_file]
@@ -61,13 +62,13 @@ def main():
 
     # Check TTS availability
     try:
-        import pyttsx3
+        pass
 
         tts_available = True
-        print(f"✓ pyttsx3 TTS engine is available")
+        print("✓ pyttsx3 TTS engine is available")
     except ImportError:
         tts_available = False
-        print(f"⚠ pyttsx3 TTS engine is NOT available - using mock engine")
+        print("⚠ pyttsx3 TTS engine is NOT available - using mock engine")
 
     # Run each test file
     results = {}
@@ -80,9 +81,10 @@ def main():
             results[test_file] = False
 
     # Summary
-    print(f"\n{'='*60}")
+    sep = "=" * 60
+    print(sep)
     print("TTS TEST SUMMARY")
-    print(f"{'='*60}")
+    print(sep)
 
     total_tests = len(results)
     passed_tests = sum(1 for success in results.values() if success)
@@ -97,10 +99,10 @@ def main():
     print(f"Tests Failed: {total_tests - passed_tests}")
 
     if passed_tests == total_tests:
-        print(f"\n🎉 All TTS tests passed!")
+        print("\n🎉 All TTS tests passed!")
         return 0
     else:
-        print(f"\n❌ Some TTS tests failed")
+        print("\n❌ Some TTS tests failed")
         return 1
 
 

@@ -22,7 +22,6 @@ Notes:
 """
 
 # Utility functions moved to utils.py
-import csv
 import importlib
 import logging
 import os

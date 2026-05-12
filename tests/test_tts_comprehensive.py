@@ -9,7 +9,6 @@ import sys
 import threading
 import time
 import unittest
-import unittest.mock as mock
 
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

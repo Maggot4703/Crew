@@ -15,7 +15,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import bmp2png
 
-from Crew import get_version
 
 
 class TestBMP2PNG(unittest.TestCase):

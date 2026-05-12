@@ -9,14 +9,10 @@ import unittest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from error_handler import (
-    handle_errors,
     is_csv_file,
     is_excel_file,
     is_file_exists,
     is_not_none,
-    safe_execute,
-    safe_file_operation,
-    validate_data,
 )
 
 

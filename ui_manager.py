@@ -17,7 +17,7 @@ import logging
 import tkinter as tk
 import tkinter.font as tkfont
 from tkinter import ttk
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Dict, Optional
 
 
 class UIManager:
@@ -371,7 +371,6 @@ class UIManager:
             default_font = self._default_style.get(
                 "default_font", tkfont.nametofont("TkDefaultFont")
             )
-            line_height = default_font.metrics("linespace") if default_font else 20
             desired_height_pixels = (5 * 25) + 2 * int(
                 getattr(default_font, "metrics", lambda x: {"ascent": 10})("ascent")
             )

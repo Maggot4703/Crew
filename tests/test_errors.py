@@ -15,9 +15,7 @@ from errors import (
     ConfigError,
     CrewManagerError,
     DatabaseError,
-    FileOperationError,
     GUIError,
-    ScraperError,
 )
 
 

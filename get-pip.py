@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# flake8: noqa: E402
 #
 # Hi There!
 #

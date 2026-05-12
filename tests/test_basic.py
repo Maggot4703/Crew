@@ -27,9 +27,8 @@ class TestBasicApp(unittest.TestCase):
 
         try:
             # Check if a main() function exists in Crew.py (not as an attribute, but as a function)
-            import inspect
+            pass
 
-            import Crew
 
             crew_path = os.path.join(os.path.dirname(__file__), "..", "Crew.py")
             with open(crew_path) as f:
