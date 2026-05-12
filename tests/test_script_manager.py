@@ -1,3 +1,4 @@
+# flake8: noqa: E402
 """
 Test suite for ScriptManager module (script_manager.py).
 Covers script file discovery, validation, and execution.

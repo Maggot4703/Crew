@@ -1,3 +1,4 @@
+# flake8: noqa: E402
 """
 Test suite for DataManager module (data_manager.py).
 Covers core data loading, filtering, sorting, and observer notification.

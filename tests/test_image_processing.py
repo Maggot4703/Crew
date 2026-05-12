@@ -1,3 +1,4 @@
+# flake8: noqa: E402
 """
 Tests for image processing utilities in Crew.py
 """

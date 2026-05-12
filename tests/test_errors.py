@@ -1,3 +1,4 @@
+# flake8: noqa: E402
 """
 Test suite for the errors module.
 
@@ -10,13 +11,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from errors import (
-    CacheError,
-    ConfigError,
-    CrewManagerError,
-    DatabaseError,
-    GUIError,
-)
+from errors import CacheError, ConfigError, CrewManagerError, DatabaseError, GUIError
 
 
 class TestErrorClasses(unittest.TestCase):

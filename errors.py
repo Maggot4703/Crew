@@ -70,35 +70,28 @@ class ConfigError(CrewManagerError):
     """Raised for configuration-related errors."""
 
 
-
 class CacheError(CrewManagerError):
     """Raised for cache-related errors."""
-
 
 
 class ScraperError(CrewManagerError):
     """Raised for web scraping errors."""
 
 
-
 class FileOperationError(CrewManagerError):
     """Raised for file input/output errors."""
-
 
 
 class GUIError(CrewManagerError):
     """Raised for GUI-related errors."""
 
 
-
 class ValidationError(CrewManagerError):
     """Raised for data validation errors."""
 
 
-
 class TravellerDataNotFoundError(ScraperError):
     """Raised when specific Traveller data is not found during scraping."""
-
 
 
 # Error handling utilities

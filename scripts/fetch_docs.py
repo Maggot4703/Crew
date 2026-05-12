@@ -9,7 +9,6 @@ import time
 from pathlib import Path
 
 
-
 class DocumentationFetcher:
     def __init__(self, base_dir="Reading Now"):
         self.base_dir = Path(base_dir)

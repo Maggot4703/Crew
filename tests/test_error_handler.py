@@ -1,3 +1,4 @@
+# flake8: noqa: E402
 """
 Test suite for ErrorHandler module (error_handler.py).
 Covers safe execution, error handling, and file validation utilities.
@@ -8,12 +9,7 @@ import sys
 import unittest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from error_handler import (
-    is_csv_file,
-    is_excel_file,
-    is_file_exists,
-    is_not_none,
-)
+from error_handler import is_csv_file, is_excel_file, is_file_exists, is_not_none
 
 
 class TestErrorHandler(unittest.TestCase):

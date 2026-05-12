@@ -1,3 +1,4 @@
+# flake8: noqa: E402
 # conftest.py
 # Automatically add project root to sys.path for all tests in this directory
 import sys

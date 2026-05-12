@@ -41,10 +41,8 @@ class DataProcessingError(CrewManagerError):
     """Raised when data processing operations fail."""
 
 
-
 class FileOperationError(CrewManagerError):
     """Raised when file operations fail."""
-
 
 
 def safe_execute(

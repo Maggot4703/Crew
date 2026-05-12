@@ -1,3 +1,4 @@
+# flake8: noqa: E402
 """
 Test suite for TTSManager module (tts_manager.py).
 Covers initialization, speech, and settings management.

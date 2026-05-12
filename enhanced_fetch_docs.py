@@ -438,7 +438,7 @@ Web scraping: {'Enabled' if self.use_web else 'Disabled'}
         try:
             with open(links_path, "w", encoding="utf-8") as f:
                 f.write(self.create_links_file(subject))
-            print(f"  ✓ Created: links.txt")
+            print("  ✓ Created: links.txt")
         except Exception as e:
             print(f"  ✗ Failed to create links.txt: {e}")
 

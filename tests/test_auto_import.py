@@ -1,3 +1,4 @@
+# flake8: noqa: E402
 """
 Test script for verifying auto-import functionality or behavior.
 

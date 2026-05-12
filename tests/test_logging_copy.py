@@ -1,5 +1,5 @@
+# flake8: noqa: E402
 import logging
-
 
 from Crew import log_progress_md
 

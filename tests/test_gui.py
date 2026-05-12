@@ -1,3 +1,4 @@
+# flake8: noqa: E402
 """
 Test suite for the GUI module.
 

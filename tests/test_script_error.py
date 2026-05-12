@@ -1,3 +1,4 @@
+# flake8: noqa: E402
 #!/usr/bin/env python3
 """
 Test script designed to produce an error during execution.

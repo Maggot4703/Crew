@@ -1,3 +1,4 @@
+# flake8: noqa: E402
 #!/usr/bin/env python3
 """
 Demonstration script for testing script execution functionality.
@@ -32,7 +33,7 @@ def main():
     print("Simulating some work...")
     for i in range(3):
         time.sleep(0.5)
-        print(f"  Step {i+1}/3 completed")
+        print(f"  Step {i + 1}/3 completed")
 
     print()
     print("✓ Demo script completed successfully!")

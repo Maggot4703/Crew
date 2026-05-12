@@ -78,8 +78,8 @@ class MCPServer:
         for client in self.clients:
             try:
                 client.close()
-            except:
-                pass
+            except Exception as e:
+                print(f"Error closing client: {e}")
         # Close server socket
         self.server_socket.close()
         print("Server stopped")

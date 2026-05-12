@@ -8060,9 +8060,7 @@ if __name__ == "__main__":
                             # Generate PDF (requires reportlab)
                             try:
                                 from reportlab.lib.pagesizes import letter
-                                from reportlab.lib.styles import (
-                                    getSampleStyleSheet,
-                                )
+                                from reportlab.lib.styles import getSampleStyleSheet
                                 from reportlab.lib.units import inch
                                 from reportlab.platypus import (
                                     Paragraph,

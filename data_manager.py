@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 
-
 @dataclass
 class FilterConfig:
     text: str = ""
@@ -83,10 +82,7 @@ class DataManager:
             # Check if pandas is available
             try:
                 import pandas as pd
-
-                PANDAS_AVAILABLE = True
             except ImportError:
-                PANDAS_AVAILABLE = False
                 raise ImportError("Pandas is required to load data.")
 
             if ext == ".csv":
@@ -105,7 +101,7 @@ class DataManager:
             elif ext == ".txt":
                 # For text files, create single column data
                 with open(file_path, "r", encoding="utf-8") as f:
-                    lines = [l.strip() for l in f if l.strip()]
+                    lines = [line.strip() for line in f if line.strip()]
                 df = pd.DataFrame(lines, columns=["text_data"])
             else:
                 raise ValueError(f"Unsupported file extension: {ext}")
@@ -262,7 +258,7 @@ class DataManager:
 
                     col_index = self._state.headers.index(key_info.column)
 
-                    def make_sort_key(row: List[Any]):
+                    def make_sort_key(row: List[Any], col_index=col_index):
                         if col_index < len(row):
                             value = row[col_index]
                             try:

@@ -1,3 +1,4 @@
+# flake8: noqa: E402
 """
 Basic tests for the Crew application.
 
@@ -28,7 +29,6 @@ class TestBasicApp(unittest.TestCase):
         try:
             # Check if a main() function exists in Crew.py (not as an attribute, but as a function)
             pass
-
 
             crew_path = os.path.join(os.path.dirname(__file__), "..", "Crew.py")
             with open(crew_path) as f:

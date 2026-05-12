@@ -1,3 +1,4 @@
+# flake8: noqa: E402
 from PIL import Image
 
 from image_utils import (
