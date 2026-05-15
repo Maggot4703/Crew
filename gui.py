@@ -1650,22 +1650,30 @@ class CrewGUI:
             DEFAULT_0101_REMOTE_TARGET,
             remote_project_root,
         )
+
         # After syncing project, attempt to pull any per-page notes saved on the remote
         # user's Desktop (~/Desktop/0101_notes) into a local folder for inspection.
         # Run the pull asynchronously so unit tests that mock subprocess.run won't
         # be affected by the additional blocking call sequence.
         def _pull_remote_notes():
             try:
-                remote_notes_path = "~/Desktop/0101_notes/"
-                local_notes_dir = os.path.join(local_project_root, "remote_desktop_notes")
-                os.makedirs(local_notes_dir, exist_ok=True)
+                # Pull the remote server's saved scratchpad files and mirror them to
+                # the local user's Desktop in a structured folder layout.
+                # Remote saved files live under the 0101 project saved/ directory.
+                remote_saved_path = (
+                    os.path.join(remote_project_root, "src", "public_html", "saved")
+                    + "/"
+                )
+                tmp_dir = os.path.join(local_project_root, "remote_saved_tmp")
+                os.makedirs(tmp_dir, exist_ok=True)
+
                 rsync_pull = [
                     "rsync",
                     "-az",
                     "-e",
                     f"ssh -o BatchMode=yes -o ConnectTimeout={DEFAULT_0101_SSH_CONNECT_TIMEOUT}",
-                    f"{DEFAULT_0101_REMOTE_TARGET}:{remote_notes_path}",
-                    f"{local_notes_dir}/",
+                    f"{DEFAULT_0101_REMOTE_TARGET}:{remote_saved_path}",
+                    f"{tmp_dir}/",
                 ]
                 subprocess.run(
                     rsync_pull,
@@ -1674,20 +1682,135 @@ class CrewGUI:
                     timeout=60,
                     check=True,
                 )
+
+                # Load subsector mapping so Traveller world keys can be placed under
+                # sector/subsector/<hex>.txt. The mapping lives in TXT/worlds-by-subsector.json
+                subsector_map = {}
+                try:
+                    mapping_path = os.path.join(
+                        local_project_root,
+                        "src",
+                        "public_html",
+                        "TXT",
+                        "worlds-by-subsector.json",
+                    )
+                    if os.path.isfile(mapping_path):
+                        with open(mapping_path, "r", encoding="utf-8") as fh:
+                            data = json.load(fh)
+                            # Build reverse map from hex -> subsector name
+                            for subsector_name, entries in data.items():
+                                for e in entries:
+                                    hx = e.get("hex")
+                                    if hx:
+                                        subsector_map[hx.lower()] = subsector_name
+                except Exception:
+                    subsector_map = {}
+
+                desktop_root = os.path.expanduser("~/Desktop/0101_notes")
+                os.makedirs(desktop_root, exist_ok=True)
+
+                remote_keys = set()
+                for fname in os.listdir(tmp_dir):
+                    if not fname.lower().endswith(".txt"):
+                        continue
+                    key = fname[:-4]
+                    remote_keys.add(key)
+                    src_path = os.path.join(tmp_dir, fname)
+                    # Default placement: misc
+                    dest_dir = os.path.join(desktop_root, "misc")
+                    dest_fn = key + ".txt"
+
+                    # If key contains sector marker like 'spinward-marches' and a 4-digit hex, map it
+                    m = re.search(r"spinward-marches[-_]([0-9a-fA-F]{4})", key)
+                    if m:
+                        hexcode = m.group(1).lower()
+                        sector_dir = os.path.join(desktop_root, "Spinward Marches")
+                        subsector = subsector_map.get(hexcode)
+                        if subsector:
+                            dest_dir = os.path.join(sector_dir, subsector)
+                        else:
+                            # put directly under sector when subsector unknown
+                            dest_dir = sector_dir
+                        # Use hex-only filename for Traveller worlds
+                        dest_fn = hexcode + ".txt"
+
+                    os.makedirs(dest_dir, exist_ok=True)
+                    dest_path = os.path.join(dest_dir, dest_fn)
+                    try:
+                        # Move/overwrite into destination
+                        shutil.move(src_path, dest_path)
+                    except Exception:
+                        try:
+                            shutil.copy2(src_path, dest_path)
+                            os.remove(src_path)
+                        except Exception as e:
+                            logging.warning(
+                                "Failed to move saved note %s -> %s: %s",
+                                src_path,
+                                dest_path,
+                                e,
+                            )
+
+                # Clean up any leftover tmp files
+                try:
+                    if os.path.isdir(tmp_dir):
+                        for leftover in os.listdir(tmp_dir):
+                            try:
+                                os.remove(os.path.join(tmp_dir, leftover))
+                            except Exception:
+                                pass
+                        os.rmdir(tmp_dir)
+                except Exception:
+                    pass
+
+                # Remove any local Desktop note files that are no longer present remotely
+                # Only consider files inside desktop_root managed tree
+                for root_dir, dirs, files in os.walk(desktop_root):
+                    for f in files:
+                        if not f.lower().endswith(".txt"):
+                            continue
+                        k = f[:-4]
+                        if k not in remote_keys:
+                            # remove stale local file
+                            try:
+                                os.remove(os.path.join(root_dir, f))
+                            except Exception:
+                                pass
+
                 logging.info(
-                    "Pulled remote notes from %s:%s to %s",
+                    "Pulled remote saved notes from %s:%s and mirrored to %s",
                     DEFAULT_0101_REMOTE_TARGET,
-                    remote_notes_path,
-                    local_notes_dir,
+                    remote_saved_path,
+                    desktop_root,
                 )
             except Exception as e:
-                logging.warning("Failed to pull remote 0101 notes: %s", e)
+                logging.warning("Failed to pull remote 0101 saved notes: %s", e)
 
         try:
             import threading
 
             t = threading.Thread(target=_pull_remote_notes, daemon=True)
             t.start()
+
+            # Also start a periodic poller to keep the Desktop mirror up-to-date.
+            POLL_INTERVAL = int(os.environ.get("CREW_POLL_INTERVAL", "300"))
+            _periodic_started_flag = getattr(
+                self, "_remote_notes_periodic_started", False
+            )
+            if not _periodic_started_flag:
+
+                def _periodic_pull_worker():
+                    while True:
+                        time.sleep(POLL_INTERVAL)
+                        try:
+                            _pull_remote_notes()
+                        except Exception:
+                            pass
+
+                p = threading.Thread(target=_periodic_pull_worker, daemon=True)
+                p.start()
+                setattr(self, "_remote_notes_periodic_started", True)
+
         except Exception:
             # Fall back to synchronous pull if threading fails for any reason
             _pull_remote_notes()
@@ -3242,7 +3365,7 @@ class CrewGUI:
             try:
                 with open(history_path, "r", encoding="utf-8") as history_file:
                     data = json.load(history_file)
-            except FileNotFoundError, json.JSONDecodeError, OSError:
+            except (FileNotFoundError, json.JSONDecodeError, OSError):
                 return []
 
             loaded_history = []
