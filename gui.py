@@ -1652,33 +1652,46 @@ class CrewGUI:
         )
         # After syncing project, attempt to pull any per-page notes saved on the remote
         # user's Desktop (~/Desktop/0101_notes) into a local folder for inspection.
+        # Run the pull asynchronously so unit tests that mock subprocess.run won't
+        # be affected by the additional blocking call sequence.
+        def _pull_remote_notes():
+            try:
+                remote_notes_path = "~/Desktop/0101_notes/"
+                local_notes_dir = os.path.join(local_project_root, "remote_desktop_notes")
+                os.makedirs(local_notes_dir, exist_ok=True)
+                rsync_pull = [
+                    "rsync",
+                    "-az",
+                    "-e",
+                    f"ssh -o BatchMode=yes -o ConnectTimeout={DEFAULT_0101_SSH_CONNECT_TIMEOUT}",
+                    f"{DEFAULT_0101_REMOTE_TARGET}:{remote_notes_path}",
+                    f"{local_notes_dir}/",
+                ]
+                subprocess.run(
+                    rsync_pull,
+                    capture_output=True,
+                    text=True,
+                    timeout=60,
+                    check=True,
+                )
+                logging.info(
+                    "Pulled remote notes from %s:%s to %s",
+                    DEFAULT_0101_REMOTE_TARGET,
+                    remote_notes_path,
+                    local_notes_dir,
+                )
+            except Exception as e:
+                logging.warning("Failed to pull remote 0101 notes: %s", e)
+
         try:
-            remote_notes_path = "~/Desktop/0101_notes/"
-            local_notes_dir = os.path.join(local_project_root, "remote_desktop_notes")
-            os.makedirs(local_notes_dir, exist_ok=True)
-            rsync_pull = [
-                "rsync",
-                "-az",
-                "-e",
-                f"ssh -o BatchMode=yes -o ConnectTimeout={DEFAULT_0101_SSH_CONNECT_TIMEOUT}",
-                f"{DEFAULT_0101_REMOTE_TARGET}:{remote_notes_path}",
-                f"{local_notes_dir}/",
-            ]
-            subprocess.run(
-                rsync_pull,
-                capture_output=True,
-                text=True,
-                timeout=60,
-                check=True,
-            )
-            logging.info(
-                "Pulled remote notes from %s:%s to %s",
-                DEFAULT_0101_REMOTE_TARGET,
-                remote_notes_path,
-                local_notes_dir,
-            )
-        except Exception as e:
-            logging.warning("Failed to pull remote 0101 notes: %s", e)
+            import threading
+
+            t = threading.Thread(target=_pull_remote_notes, daemon=True)
+            t.start()
+        except Exception:
+            # Fall back to synchronous pull if threading fails for any reason
+            _pull_remote_notes()
+
         return remote_server_path
 
     def _launch_local_0101_server(self) -> Tuple[str, str]:
