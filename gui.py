@@ -427,7 +427,7 @@ def auto_import_py_files() -> Tuple[List[str], List[Tuple[str, str]]]:
                         )
                         continue
 
-                except (IOError, UnicodeDecodeError):
+                except IOError, UnicodeDecodeError:
                     # If we cant read the file, skip it for safety
                     files_skipped += 1
                     continue
@@ -1400,7 +1400,7 @@ class CrewGUI:
             value = float(
                 getattr(self, "tts_lead_in_seconds", DEFAULT_TTS_LEAD_IN_SECONDS)
             )
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             value = DEFAULT_TTS_LEAD_IN_SECONDS
         return max(0.0, value)
 
@@ -1650,6 +1650,35 @@ class CrewGUI:
             DEFAULT_0101_REMOTE_TARGET,
             remote_project_root,
         )
+        # After syncing project, attempt to pull any per-page notes saved on the remote
+        # user's Desktop (~/Desktop/0101_notes) into a local folder for inspection.
+        try:
+            remote_notes_path = "~/Desktop/0101_notes/"
+            local_notes_dir = os.path.join(local_project_root, "remote_desktop_notes")
+            os.makedirs(local_notes_dir, exist_ok=True)
+            rsync_pull = [
+                "rsync",
+                "-az",
+                "-e",
+                f"ssh -o BatchMode=yes -o ConnectTimeout={DEFAULT_0101_SSH_CONNECT_TIMEOUT}",
+                f"{DEFAULT_0101_REMOTE_TARGET}:{remote_notes_path}",
+                f"{local_notes_dir}/",
+            ]
+            subprocess.run(
+                rsync_pull,
+                capture_output=True,
+                text=True,
+                timeout=60,
+                check=True,
+            )
+            logging.info(
+                "Pulled remote notes from %s:%s to %s",
+                DEFAULT_0101_REMOTE_TARGET,
+                remote_notes_path,
+                local_notes_dir,
+            )
+        except Exception as e:
+            logging.warning("Failed to pull remote 0101 notes: %s", e)
         return remote_server_path
 
     def _launch_local_0101_server(self) -> Tuple[str, str]:
@@ -3200,7 +3229,7 @@ class CrewGUI:
             try:
                 with open(history_path, "r", encoding="utf-8") as history_file:
                     data = json.load(history_file)
-            except (FileNotFoundError, json.JSONDecodeError, OSError):
+            except FileNotFoundError, json.JSONDecodeError, OSError:
                 return []
 
             loaded_history = []
@@ -6457,7 +6486,7 @@ class CrewGUI:
                     key=lambda x: float(x[col_index]) if x[col_index] else 0,
                     reverse=self._sort_reverse,
                 )
-            except (ValueError, TypeError):
+            except ValueError, TypeError:
                 # Fall back to string sort
                 data.sort(
                     key=lambda x: str(x[col_index]).lower(),
