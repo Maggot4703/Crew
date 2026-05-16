@@ -1935,36 +1935,39 @@ class CrewGUI:
 
         if shutil.which("xdotool"):
             for title in title_candidates:
-                try:
-                    search_result = subprocess.run(
-                        ["xdotool", "search", "--name", title],
-                        check=True,
-                        capture_output=True,
-                        text=True,
-                    )
-                except subprocess.CalledProcessError:
-                    continue
-                window_ids = [
-                    window_id
-                    for window_id in search_result.stdout.splitlines()
-                    if window_id.strip()
-                ]
-                if not window_ids:
-                    continue
-                target_window = window_ids[-1]
-                try:
-                    subprocess.run(
-                        ["xdotool", "windowactivate", target_window],
-                        check=True,
-                        capture_output=True,
-                        text=True,
-                    )
-                    logging.info(
-                        "Reused existing '%s' browser window via xdotool.", label
-                    )
-                    return True
-                except subprocess.CalledProcessError:
-                    continue
+                # try exact title then a relaxed regex to match substrings
+                search_patterns = [title, f".*{title}.*"]
+                for pattern in search_patterns:
+                    try:
+                        search_result = subprocess.run(
+                            ["xdotool", "search", "--onlyvisible", "--name", pattern],
+                            check=True,
+                            capture_output=True,
+                            text=True,
+                        )
+                    except subprocess.CalledProcessError:
+                        continue
+                    window_ids = [
+                        window_id
+                        for window_id in search_result.stdout.splitlines()
+                        if window_id.strip()
+                    ]
+                    if not window_ids:
+                        continue
+                    target_window = window_ids[-1]
+                    try:
+                        subprocess.run(
+                            ["xdotool", "windowactivate", target_window],
+                            check=True,
+                            capture_output=True,
+                            text=True,
+                        )
+                        logging.info(
+                            "Reused existing '%s' browser window via xdotool.", label
+                        )
+                        return True
+                    except subprocess.CalledProcessError:
+                        continue
 
         return False
 
@@ -2023,10 +2026,14 @@ class CrewGUI:
         window_title: str | list[str],
         width: int,
         height: int,
-        attempts: int = 10,
-        delay_seconds: float = 0.5,
+        attempts: int = 20,
+        delay_seconds: float = 1.0,
     ) -> bool:
-        """Resize a desktop window by title using available Linux window tools."""
+        """Resize a desktop window by title using available Linux window tools.
+
+        Increased attempts and delay to improve chance of finding newly-opened
+        browser windows on slower desktops or when X composition delays occur.
+        """
         title_candidates = (
             [window_title] if isinstance(window_title, str) else list(window_title)
         )
@@ -2045,6 +2052,7 @@ class CrewGUI:
                         list_result.stdout, title_candidates
                     )
                     if not matching_window_id:
+                        logging.debug("wmctrl: no matching window yet; retrying")
                         time.sleep(delay_seconds)
                         continue
                     subprocess.run(
@@ -2068,50 +2076,91 @@ class CrewGUI:
                     )
                     return True
                 except subprocess.CalledProcessError:
+                    logging.debug("wmctrl call failed; sleeping before retry")
                     time.sleep(delay_seconds)
 
         if shutil.which("xdotool"):
             for _ in range(attempts):
                 for title in title_candidates:
-                    try:
-                        search_result = subprocess.run(
-                            ["xdotool", "search", "--name", title],
-                            check=True,
-                            capture_output=True,
-                            text=True,
+                    # try exact title then a relaxed regex to match substrings
+                    search_patterns = [title, f".*{title}.*"]
+                    for pattern in search_patterns:
+                        try:
+                            search_result = subprocess.run(
+                                [
+                                    "xdotool",
+                                    "search",
+                                    "--onlyvisible",
+                                    "--name",
+                                    pattern,
+                                ],
+                                check=True,
+                                capture_output=True,
+                                text=True,
+                            )
+                        except subprocess.CalledProcessError:
+                            logging.debug(
+                                "xdotool: no windows matching pattern %r", pattern
+                            )
+                            continue
+                        window_ids = [
+                            window_id
+                            for window_id in search_result.stdout.splitlines()
+                            if window_id.strip()
+                        ]
+                        logging.debug(
+                            "xdotool search pattern %r produced: %r",
+                            pattern,
+                            search_result.stdout,
                         )
-                    except subprocess.CalledProcessError:
-                        continue
-                    window_ids = [
-                        window_id
-                        for window_id in search_result.stdout.splitlines()
-                        if window_id.strip()
-                    ]
-                    if not window_ids:
-                        continue
-                    target_window = window_ids[-1]
-                    subprocess.run(
-                        [
-                            "xdotool",
-                            "windowsize",
-                            target_window,
-                            str(width),
-                            str(height),
-                        ],
-                        check=True,
-                        capture_output=True,
-                        text=True,
-                    )
-                    logging.info(
-                        "Resized '%s' window to %sx%s using xdotool.",
-                        label,
-                        width,
-                        height,
-                    )
-                    return True
+                        if not window_ids:
+                            continue
+                        target_window = window_ids[-1]
+                        try:
+                            subprocess.run(
+                                [
+                                    "xdotool",
+                                    "windowactivate",
+                                    target_window,
+                                ],
+                                check=True,
+                                capture_output=True,
+                                text=True,
+                            )
+                            subprocess.run(
+                                [
+                                    "xdotool",
+                                    "windowsize",
+                                    target_window,
+                                    str(width),
+                                    str(height),
+                                ],
+                                check=True,
+                                capture_output=True,
+                                text=True,
+                            )
+                            logging.info(
+                                "Resized '%s' window to %sx%s using xdotool.",
+                                label,
+                                width,
+                                height,
+                            )
+                            return True
+                        except subprocess.CalledProcessError:
+                            logging.debug(
+                                "xdotool activate/size failed for window %s",
+                                target_window,
+                            )
+                            continue
+                logging.debug(
+                    "xdotool: attempt %d failed to find matching window; sleeping %s",
+                    _,
+                    delay_seconds,
+                )
                 time.sleep(delay_seconds)
             logging.warning(
-                "Could not find any 0101 browser window to resize with xdotool."
+                "Could not find any 0101 browser window to resize with xdotool after %d attempts.",
+                attempts,
             )
             return False
 
