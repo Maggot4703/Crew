@@ -15,13 +15,8 @@ Run with a command for CLI mode:
     python Crew.py read-excel --excel-path <path> [--sheet <name>]
     python Crew.py crop-csv --image-path <path> \
         --annotations-csv <path> --output-dir <dir>
-
-Notes:
-- Default grid size is 42x32.
-- Logs are written to crew_app.log.
 """
 
-# Utility functions moved to utils.py
 import importlib
 import logging
 import os
