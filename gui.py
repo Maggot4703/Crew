@@ -2158,6 +2158,50 @@ class CrewGUI:
                     delay_seconds,
                 )
                 time.sleep(delay_seconds)
+            # Fallback: if title matching failed, try resizing the most-recent visible window
+            try:
+                search_all = subprocess.run(
+                    ["xdotool", "search", "--onlyvisible", "--name", ".*"],
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                )
+                all_ids = [l for l in search_all.stdout.splitlines() if l.strip()]
+                if all_ids:
+                    recent = all_ids[-1]
+                    try:
+                        subprocess.run(
+                            ["xdotool", "windowactivate", recent],
+                            check=True,
+                            capture_output=True,
+                            text=True,
+                        )
+                        subprocess.run(
+                            [
+                                "xdotool",
+                                "windowsize",
+                                recent,
+                                str(width),
+                                str(height),
+                            ],
+                            check=True,
+                            capture_output=True,
+                            text=True,
+                        )
+                        logging.info(
+                            "Resized '%s' window to %sx%s using xdotool fallback (most-recent).",
+                            label,
+                            width,
+                            height,
+                        )
+                        return True
+                    except subprocess.CalledProcessError:
+                        logging.debug(
+                            "xdotool fallback activate/size failed for %s", recent
+                        )
+            except subprocess.CalledProcessError:
+                logging.debug("xdotool fallback search failed")
+
             logging.warning(
                 "Could not find any 0101 browser window to resize with xdotool after %d attempts.",
                 attempts,
