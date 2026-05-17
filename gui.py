@@ -4357,8 +4357,15 @@ class CrewGUI:
                     return ds_resp
             except Exception as e:
                 logger.warning("DeepSeek query failed: %s", e)
-        # Final fallback: use the simple referee strategy
-        return referee_strategy.process_message(user_msg)
+        # Final fallback: instantiate a RefereeStrategy locally and use it
+        try:
+            from strategies.referee_strategy import RefereeStrategy
+
+            referee = RefereeStrategy(llm_backend=backend)
+            return referee.process_message(user_msg)
+        except Exception:
+            # Last-resort fallback
+            return "Sorry, I'm unable to answer right now. Please try again later."
 
     def _start_recording(self):
         """Prompt for/select a microphone, then start recording. Dialog logic only."""
