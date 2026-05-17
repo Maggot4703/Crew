@@ -1,0 +1,9 @@
+{
+    "llm": {
+        "backend": "ollama",
+        "model": "deepseek-r1:1.5b",
+        "ollama_base_url": "http://localhost:11434",
+        "deepseek_base_url": "http://localhost:8000",
+        "timeout": 30
+    }
+}
