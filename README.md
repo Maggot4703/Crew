@@ -122,6 +122,31 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 MIT License
 
 
+## LLM integration and testing
+
+CREW now supports local LLM backends. Defaults are set to Ollama (http://localhost:11434) with a DeepSeek HTTP fallback (http://localhost:8000). Files and helpers:
+
+- Example LLM config: `config.llm.example.json` — copy to `config.json` and edit host/model locally.
+- Helper script: `scripts/copy_config_example.sh` — copies `config.llm.example.json` → `config.json` if the latter is missing.
+- Mock DeepSeek server (for local/CI tests): `scripts/mock_deepseek_server.py` — start with `python3 scripts/mock_deepseek_server.py`.
+- Unit tests: `tests/test_chatbot_fallback.py` — covers Ollama-success and Ollama-down→DeepSeek fallback.
+- CI workflow: `.github/workflows/chatbot-fallback-ci.yml` runs tests with the mock DeepSeek server.
+
+Quick local setup:
+
+```bash
+cd /home/me/Notebooks/CREW/Crew
+# copy example config to local config.json
+./scripts/copy_config_example.sh
+# (edit config.json to set model/host if needed)
+# optionally start mock DeepSeek locally for testing
+python3 scripts/mock_deepseek_server.py &
+# run tests
+pytest -q
+# run app
+uv sync && uv run python Crew.py
+```
+
 ## Startup Code
 
 ```bash
