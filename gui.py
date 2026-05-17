@@ -4361,7 +4361,19 @@ class CrewGUI:
         try:
             from strategies.referee_strategy import RefereeStrategy
 
-            referee = RefereeStrategy(llm_backend=backend)
+            # Determine backend preference if available
+            bk = "ollama"
+            try:
+                llm_backend_attr = getattr(self, "llm_backend_var", None)
+                bk = llm_backend_attr.get() if llm_backend_attr else bk
+            except Exception:
+                try:
+                    bk_conf = getattr(self, "config_manager", None)
+                    if bk_conf is not None:
+                        bk = bk_conf.get("llm", {}).get("backend", bk)
+                except Exception:
+                    pass
+            referee = RefereeStrategy(llm_backend=bk)
             return referee.process_message(user_msg)
         except Exception:
             # Last-resort fallback
