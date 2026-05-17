@@ -391,21 +391,21 @@ class Person {
         this.name = name;
         this.age = age;
     }
-    
+
     // Methods
     greet() {
         return `Hello, my name is ${this.name}`;
     }
-    
+
     // Getters and setters
     get info() {
         return `${this.name}, ${this.age} years old`;
     }
-    
+
     set info(value) {
         [this.name, this.age] = value.split(",");
     }
-    
+
     // Static method (called on class, not instance)
     static isAdult(age) {
         return age >= 18;
@@ -427,7 +427,7 @@ class Employee extends Person {
         super(name, age);
         this.jobTitle = jobTitle;
     }
-    
+
     // Override parent method
     greet() {
         return `${super.greet()}, I am a ${this.jobTitle}`;
@@ -473,7 +473,7 @@ getData(function(a) {
 // Creating a promise
 const promise = new Promise((resolve, reject) => {
     const success = true;
-    
+
     if (success) {
         resolve("Operation succeeded");
     } else {

@@ -14,12 +14,12 @@ import sys  # System-specific parameters
 import threading  # Background thread support
 import time  # Time-related functions for caching
 import tkinter as tk  # Core GUI framework
-from tkinter import filedialog  # File dialog functionality
-import tkinter.font as tkfont # Add this import
+import tkinter.font as tkfont  # Add this import
 
 # Remove deprecated tix import, use ttk tooltips instead
 from pathlib import Path  # Cross-platform file handling
 from queue import Queue  # Thread-safe task queue
+from tkinter import filedialog  # File dialog functionality
 
 # Try to import pandas for data handling
 try:
@@ -33,7 +33,7 @@ except ImportError:
     )
 
 # region Imports - Core GUI and Data Management
-from tkinter import filedialog, messagebox, ttk  # GUI components and dialogs
+from tkinter import messagebox, ttk  # GUI components and dialogs
 from typing import (  # Type hints for better code quality; Additional type hints
     Any,
     Callable,
@@ -70,7 +70,10 @@ except ImportError:
 
 # Initialize logger
 logger = logging.getLogger(__name__)
-logging.basicConfig(    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
+
 
 def auto_import_py_files() -> Tuple[List[str], List[Tuple[str, str]]]:
     try:
@@ -94,8 +97,14 @@ def auto_import_py_files() -> Tuple[List[str], List[Tuple[str, str]]]:
                                 cache_data["imported_modules"],
                                 cache_data["failed_imports"],
                             )
-            except (json.JSONDecodeError, KeyError, OSError) as e: # Added exception logging
-                logging.warning(f"Error reading auto-import cache: {e}. Proceeding with fresh scan.")
+            except (
+                json.JSONDecodeError,
+                KeyError,
+                OSError,
+            ) as e:  # Added exception logging
+                logging.warning(
+                    f"Error reading auto-import cache: {e}. Proceeding with fresh scan."
+                )
                 # If cache is corrupted, continue with fresh scan
                 pass
 
@@ -251,7 +260,7 @@ def auto_import_py_files() -> Tuple[List[str], List[Tuple[str, str]]]:
                         )
                         continue
 
-                except (IOError, UnicodeDecodeError):
+                except IOError, UnicodeDecodeError:
                     # If we cant read the file, skip it for safety
                     files_skipped += 1
                     continue
@@ -348,7 +357,10 @@ def auto_import_py_files() -> Tuple[List[str], List[Tuple[str, str]]]:
 
     except Exception as e:
         logging.error(f"Auto-import process failed: {e}")
-        return [], [(str(Path.cwd()), str(e))] # Ensure workspace_root is defined for the error case
+        return [], [
+            (str(Path.cwd()), str(e))
+        ]  # Ensure workspace_root is defined for the error case
+
 
 class CrewGUI:
     def __init__(self, root: tk.Tk) -> None:
@@ -361,40 +373,52 @@ class CrewGUI:
                 self.tts_engine = pyttsx3.init()
                 self.tts_engine.setProperty("rate", 150)  # Adjust rate
                 self.tts_engine.setProperty("volume", 0.8)  # Reduce volume slightly
-                self.tts_engine.setProperty("voice", "english")  # Default to English voice
+                self.tts_engine.setProperty(
+                    "voice", "english"
+                )  # Default to English voice
             else:
                 self.tts_engine = None
 
             # Define scripts directory and create it if it doesn't exist
             # Also create a sample script for testing if the directory is new
-            self.scripts_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "scripts")
+            self.scripts_dir = os.path.join(
+                os.path.dirname(os.path.abspath(__file__)), "scripts"
+            )
             if not os.path.exists(self.scripts_dir):
-                try: # Try to create directory
+                try:  # Try to create directory
                     os.makedirs(self.scripts_dir)
                     logging.info(f"Created scripts directory: {self.scripts_dir}")
-                    
+
                     # After successful directory creation, try to create sample script
                     try:
-                        sample_script_path = os.path.join(self.scripts_dir, "sample_script.py")
+                        sample_script_path = os.path.join(
+                            self.scripts_dir, "sample_script.py"
+                        )
                         with open(sample_script_path, "w") as f:
                             f.write("# Sample script for CrewGUI\\n")
                             f.write("import time\\n")
                             f.write("print('Hello from sample_script.py!')\\n")
-                            f.write("print('This script will run for a few seconds.')\\n")
+                            f.write(
+                                "print('This script will run for a few seconds.')\\n"
+                            )
                             f.write("for i in range(1, 4):\\n")
                             f.write("    print(f'Counting: {i}')\\n")
                             f.write("    time.sleep(1)\\n")
                             f.write("print('Sample script finished.')\\n")
                         logging.info(f"Created sample script: {sample_script_path}")
                     except Exception as e_script:
-                        logging.error(f"Failed to create sample script in {self.scripts_dir}: {e_script}")
+                        logging.error(
+                            f"Failed to create sample script in {self.scripts_dir}: {e_script}"
+                        )
                         # Optionally, a very mild warning or just log for sample script failure. Currently just logging.
 
-                except Exception as e_dir: # This catches failure of os.makedirs
-                    logging.error(f"Failed to create scripts directory {self.scripts_dir}: {e_dir}")
+                except Exception as e_dir:  # This catches failure of os.makedirs
+                    logging.error(
+                        f"Failed to create scripts directory {self.scripts_dir}: {e_dir}"
+                    )
                     messagebox.showwarning(
                         "Script Directory Error",
-                        f"Could not create the 'scripts' directory at:\\n{self.scripts_dir}\\n\\nReason: {e_dir}\\n\\nThe 'Run Script' feature requires this directory. Please create it manually or check permissions."
+                        f"Could not create the 'scripts' directory at:\\n{self.scripts_dir}\\n\\nReason: {e_dir}\\n\\nThe 'Run Script' feature requires this directory. Please create it manually or check permissions.",
                     )
             # If directory already exists, one might consider creating sample_script if it's missing,
             # but current logic only creates it if the directory itself is new.
@@ -403,7 +427,7 @@ class CrewGUI:
             self.create_menu_bar()
 
             self.config = Config()
-            self.setup_logging() # os is used here, but this line is commented out
+            self.setup_logging()  # os is used here, but this line is commented out
             self.setup_state()
             self.create_main_layout()
             self.create_all_widgets()
@@ -449,9 +473,13 @@ class CrewGUI:
         # File menu
         file_menu = tk.Menu(self.menu_bar, tearoff=0)
         self.menu_bar.add_cascade(label="File", menu=file_menu)
-        file_menu.add_command(label="Open... (Ctrl+O)", command=self._on_open_file) # New combined open
+        file_menu.add_command(
+            label="Open... (Ctrl+O)", command=self._on_open_file
+        )  # New combined open
         file_menu.add_separator()
-        file_menu.add_command(label="Save... (Ctrl+S)", command=self._on_save_file) # New combined save
+        file_menu.add_command(
+            label="Save... (Ctrl+S)", command=self._on_save_file
+        )  # New combined save
         file_menu.add_separator()
         file_menu.add_command(label="Exit", command=self.root.quit)
 
@@ -459,7 +487,12 @@ class CrewGUI:
         edit_menu = tk.Menu(self.menu_bar, tearoff=0)
         self.menu_bar.add_cascade(label="Edit", menu=edit_menu)
         edit_menu.add_command(
-            label="Find (Ctrl+F)", command=lambda: self.filter_entry_widget.focus_set() if hasattr(self, 'filter_entry_widget') else None
+            label="Find (Ctrl+F)",
+            command=lambda: (
+                self.filter_entry_widget.focus_set()
+                if hasattr(self, "filter_entry_widget")
+                else None
+            ),
         )
         edit_menu.add_command(label="Clear Filter (Esc)", command=self.clear_filter)
 
@@ -477,10 +510,12 @@ class CrewGUI:
         view_menu.add_cascade(label="Columns", menu=self.column_visibility_menu)
 
         # Add script selector submenu
-        self.script_menu = tk.Menu(view_menu, tearoff=0, postcommand=self._update_script_menu)
+        self.script_menu = tk.Menu(
+            view_menu, tearoff=0, postcommand=self._update_script_menu
+        )
         view_menu.add_cascade(
-            label="Run Script", 
-            menu=self.script_menu
+            label="Run Script",
+            menu=self.script_menu,
             # Removed command=lambda from here
         )
         # view_menu.add_command(label="Refresh Scripts", command=self._update_script_menu) # Now part of self.script_menu
@@ -489,15 +524,27 @@ class CrewGUI:
         if TTS_AVAILABLE:
             tts_menu = tk.Menu(self.menu_bar, tearoff=0)
             self.menu_bar.add_cascade(label="🔊 Speech", menu=tts_menu)
-            tts_menu.add_command(label="Read Selection (Ctrl+Shift+R)", command=self._read_selected_item)
-            tts_menu.add_command(label="Read All Details (Ctrl+Shift+A)", command=self._read_all_details)
-            tts_menu.add_command(label="Read Status (Ctrl+Shift+S)", command=self._read_status)
-            tts_menu.add_command(label="Read Item Type (Ctrl+Shift+T)", command=self._read_item_type)
+            tts_menu.add_command(
+                label="Read Selection (Ctrl+Shift+R)", command=self._read_selected_item
+            )
+            tts_menu.add_command(
+                label="Read All Details (Ctrl+Shift+A)", command=self._read_all_details
+            )
+            tts_menu.add_command(
+                label="Read Status (Ctrl+Shift+S)", command=self._read_status
+            )
+            tts_menu.add_command(
+                label="Read Item Type (Ctrl+Shift+T)", command=self._read_item_type
+            )
             tts_menu.add_separator()
             tts_menu.add_command(label="Stop Reading", command=self._stop_reading)
             tts_menu.add_separator()
-            tts_menu.add_command(label="Save Speech to File...", command=self._save_speech_to_file)
-            tts_menu.add_command(label="Speech Settings...", command=self._show_speech_settings)
+            tts_menu.add_command(
+                label="Save Speech to File...", command=self._save_speech_to_file
+            )
+            tts_menu.add_command(
+                label="Speech Settings...", command=self._show_speech_settings
+            )
 
     def bind_events(self) -> None:
         try:
@@ -522,10 +569,16 @@ class CrewGUI:
 
             # TTS keyboard shortcuts
             if TTS_AVAILABLE:
-                self.root.bind("<Control-Shift-R>", lambda event: self._read_selected_item())
-                self.root.bind("<Control-Shift-A>", lambda event: self._read_all_details())
+                self.root.bind(
+                    "<Control-Shift-R>", lambda event: self._read_selected_item()
+                )
+                self.root.bind(
+                    "<Control-Shift-A>", lambda event: self._read_all_details()
+                )
                 self.root.bind("<Control-Shift-S>", lambda event: self._read_status())
-                self.root.bind("<Control-Shift-T>", lambda event: self._read_item_type())
+                self.root.bind(
+                    "<Control-Shift-T>", lambda event: self._read_item_type()
+                )
 
         except Exception as e:
             logging.error(f"Error setting up event bindings: {e}")
@@ -577,16 +630,16 @@ class CrewGUI:
             column_options = ["All Columns"]
             if hasattr(self, "headers") and self.headers:
                 column_options.extend(self.headers)
-            
-            self.column_menu['values'] = column_options
-            
+
+            self.column_menu["values"] = column_options
+
             if hasattr(self, "column_var"):  # The StringVar for the Combobox
                 # Set to "All Columns" if available, otherwise the first option
                 if "All Columns" in column_options:
                     self.column_var.set("All Columns")
                 elif column_options:
                     self.column_var.set(column_options[0])
-                else: 
+                else:
                     self.column_var.set("")
         except Exception as e:
             logging.error(f"Error updating filter column dropdown: {e}")
@@ -600,11 +653,13 @@ class CrewGUI:
             # The self.column_var is automatically updated by the Combobox.
             # Call _on_apply_filter to re-filter the data with the new column selection
             # and current filter text. If filter text is empty, it will show all data.
-            if hasattr(self, '_on_apply_filter'):
+            if hasattr(self, "_on_apply_filter"):
                 self._on_apply_filter()
         except Exception as e:
             logging.error(f"Error handling filter column selection: {e}")
-            messagebox.showerror("Filter Error", f"Error processing column selection: {e}")
+            messagebox.showerror(
+                "Filter Error", f"Error processing column selection: {e}"
+            )
 
     def _background_worker(self) -> None:
         while True:
@@ -625,12 +680,12 @@ class CrewGUI:
 
     def setup_logging(self) -> None:
         logging.basicConfig(
-            level=logging.INFO, 
+            level=logging.INFO,
             format="%(asctime)s - %(levelname)s - %(message)s",
             handlers=[
-                logging.FileHandler("crew_gui.log"), # Log to a file
-                logging.StreamHandler() # Also log to console
-            ]
+                logging.FileHandler("crew_gui.log"),  # Log to a file
+                logging.StreamHandler(),  # Also log to console
+            ],
         )
 
     def setup_state(self) -> None:
@@ -642,7 +697,9 @@ class CrewGUI:
         self.current_data = []
         self.headers = []  # Initialize empty headers
         self.column_visibility = {}  # Initialize column visibility tracking
-        self.filter_case_sensitive_var = tk.BooleanVar(value=False) # Default to case-insensitive
+        self.filter_case_sensitive_var = tk.BooleanVar(
+            value=False
+        )  # Default to case-insensitive
 
     def create_main_layout(self) -> None:
         # Configure root window
@@ -695,7 +752,7 @@ class CrewGUI:
             self.create_control_section()
             self.create_group_section()
             self.create_filter_section()
-            self.create_new_view_section() # Add this line
+            self.create_new_view_section()  # Add this line
             self.create_data_section()
             self.create_details_section()
             self.create_status_bar()
@@ -736,20 +793,20 @@ class CrewGUI:
         try:
             if not message:
                 message = "Ready"
-            
+
             # Add error indication if needed
             if error:
                 message = f"❌ {message}"
-                
+
             self.status_var.set(message)
             self.root.update_idletasks()
-            
+
             # Log error messages
             if error:
                 logging.error(f"Status error: {message}")
             else:
                 logging.info(f"Status: {message}")
-                
+
         except Exception as e:
             logging.error(f"Failed to update status: {e}")
 
@@ -788,7 +845,9 @@ class CrewGUI:
 
     def create_control_section(self) -> None:
         try:
-            control_frame = ttk.LabelFrame(self.paned_left, text="Controls", padding="5")
+            control_frame = ttk.LabelFrame(
+                self.paned_left, text="Controls", padding="5"
+            )
             self.paned_left.add(control_frame, weight=0)
 
             # Add control buttons
@@ -816,18 +875,22 @@ class CrewGUI:
             # A typical Treeview row is often larger than a simple font linespace.
             # ttk.Style().configure("Treeview", rowheight=25) is used later.
             # So, 5 rows * 25px/row = 125px for Treeview content. Add some for LabelFrame padding.
-            desired_label_frame_height_pixels = (5 * 25) + 2 * int(default_font.metrics("ascent")) # approx padding for label frame text and borders
+            desired_label_frame_height_pixels = (5 * 25) + 2 * int(
+                default_font.metrics("ascent")
+            )  # approx padding for label frame text and borders
 
             group_frame = ttk.LabelFrame(
                 self.paned_left,
                 text="Groups",
                 padding="5",
-                height=int(desired_label_frame_height_pixels)
+                height=int(desired_label_frame_height_pixels),
             )
-            self.paned_left.add(group_frame, weight=0) # Changed weight to 0
+            self.paned_left.add(group_frame, weight=0)  # Changed weight to 0
 
             # Group list
-            self.group_list = ttk.Treeview(group_frame, selectmode="browse", height=5) # Changed height to 5
+            self.group_list = ttk.Treeview(
+                group_frame, selectmode="browse", height=5
+            )  # Changed height to 5
             self.group_list.pack(fill="both", expand=True)
 
             # Create right-click menu
@@ -892,15 +955,15 @@ class CrewGUI:
             default_font = tkfont.nametofont("TkDefaultFont")
             line_height = default_font.metrics("linespace")
             # Adjusted height to accommodate new checkbox and button layout
-            desired_height_pixels = 7 * line_height # Increased height slightly
+            desired_height_pixels = 7 * line_height  # Increased height slightly
 
             filter_frame = ttk.LabelFrame(
                 self.paned_left,
                 text="Filters",
                 padding="5",
-                height=int(desired_height_pixels) 
+                height=int(desired_height_pixels),
             )
-            self.paned_left.add(filter_frame, weight=0) 
+            self.paned_left.add(filter_frame, weight=0)
             self.filter_frame = filter_frame
 
             # Filter controls
@@ -912,15 +975,21 @@ class CrewGUI:
                 filter_frame, textvariable=self.column_var, state="readonly"
             )
             self.column_menu.pack(fill="x", pady=2)
-            self.column_menu.bind("<<ComboboxSelected>>", self._on_filter_column_selected) # Add this line
+            self.column_menu.bind(
+                "<<ComboboxSelected>>", self._on_filter_column_selected
+            )  # Add this line
 
             # Filter entry
-            self.filter_entry_widget = ttk.Entry(filter_frame, textvariable=self.filter_var) 
+            self.filter_entry_widget = ttk.Entry(
+                filter_frame, textvariable=self.filter_var
+            )
             self.filter_entry_widget.pack(fill="x", pady=2)
-            
+
             # Case sensitive checkbox
             case_sensitive_check = ttk.Checkbutton(
-                filter_frame, text="Case Sensitive", variable=self.filter_case_sensitive_var
+                filter_frame,
+                text="Case Sensitive",
+                variable=self.filter_case_sensitive_var,
             )
             case_sensitive_check.pack(anchor="w", pady=2)
 
@@ -931,7 +1000,7 @@ class CrewGUI:
             ttk.Button(
                 button_frame, text="Apply Filter", command=self._on_apply_filter
             ).pack(side="left", expand=True, fill="x", padx=(0, 1))
-            
+
             ttk.Button(
                 button_frame, text="Clear Filter", command=self.clear_filter
             ).pack(side="left", expand=True, fill="x", padx=(1, 0))
@@ -943,15 +1012,23 @@ class CrewGUI:
     def create_new_view_section(self) -> None:
         try:
             # Create a new frame for your view
-            new_view_frame = ttk.LabelFrame(self.paned_left, text="Mods View", padding="5")
+            new_view_frame = ttk.LabelFrame(
+                self.paned_left, text="Mods View", padding="5"
+            )
             # Add the new frame to the paned window in the left panel
             # Adjust weight as needed; weight=0 means it won't expand as much as others
-            self.paned_left.add(new_view_frame, weight=0) 
+            self.paned_left.add(new_view_frame, weight=0)
 
             # Add any widgets you want in this new view
-            ttk.Label(new_view_frame, text="Content for the mods view").pack(padx=5, pady=5)
+            ttk.Label(new_view_frame, text="Content for the mods view").pack(
+                padx=5, pady=5
+            )
             # Example: Add a button
-            ttk.Button(new_view_frame, text="Saver", command=lambda: print("Saver button in Mods View clicked")).pack(fill="x", pady=2)
+            ttk.Button(
+                new_view_frame,
+                text="Saver",
+                command=lambda: print("Saver button in Mods View clicked"),
+            ).pack(fill="x", pady=2)
 
         except Exception as e:
             logging.error(f"Failed to create mods view section: {e}")
@@ -975,7 +1052,10 @@ class CrewGUI:
 
             # Create scrolled frame to contain treeview
             self.data_table = ttk.Treeview(
-                table_frame, show="headings", selectmode="browse", height=8  # Set height to 8 lines
+                table_frame,
+                show="headings",
+                selectmode="browse",
+                height=8,  # Set height to 8 lines
             )
 
             # Create scrollbars
@@ -1011,7 +1091,7 @@ class CrewGUI:
                 if hasattr(self, "_saved_column_widths") and self._saved_column_widths:
                     # Ensure columns exist before trying to configure them
                     table_columns = self.data_table["columns"]
-                    if not table_columns: # Table might not be fully populated yet
+                    if not table_columns:  # Table might not be fully populated yet
                         return
 
                     for col_id, width in self._saved_column_widths.items():
@@ -1019,7 +1099,9 @@ class CrewGUI:
                         if col_id in table_columns:
                             self.data_table.column(col_id, width=width)
                         else:
-                            logging.warning(f"Column ID {col_id} not found in table while applying saved widths.")
+                            logging.warning(
+                                f"Column ID {col_id} not found in table while applying saved widths."
+                            )
                     # Optionally, clear saved widths if they should only be applied once
                     # self._saved_column_widths = {}
 
@@ -1084,9 +1166,11 @@ class CrewGUI:
             self._setup_details_tts()
 
         except Exception as e:
-            logging.error(f"Failed to create details section: {e}") # Added logging for this exception
+            logging.error(
+                f"Failed to create details section: {e}"
+            )  # Added logging for this exception
             # Consider re-raising or handling more gracefully if this is critical
-            raise # Uncomment if this error should halt execution
+            raise  # Uncomment if this error should halt execution
 
     def _setup_details_tts(self) -> None:
         if not TTS_AVAILABLE:
@@ -1131,7 +1215,9 @@ class CrewGUI:
 
     def _read_selection(self) -> None:
         if not TTS_AVAILABLE or not self.tts_engine:
-            messagebox.showerror("TTS Error", "Text-to-speech functionality is not available.")
+            messagebox.showerror(
+                "TTS Error", "Text-to-speech functionality is not available."
+            )
             return
 
         try:
@@ -1158,7 +1244,9 @@ class CrewGUI:
 
     def _read_all_details(self) -> None:
         if not TTS_AVAILABLE or not self.tts_engine:
-            messagebox.showerror("TTS Error", "Text-to-speech functionality is not available.")
+            messagebox.showerror(
+                "TTS Error", "Text-to-speech functionality is not available."
+            )
             return
 
         try:
@@ -1176,7 +1264,9 @@ class CrewGUI:
 
     def _read_status(self) -> None:
         if not TTS_AVAILABLE or not self.tts_engine:
-            messagebox.showerror("TTS Error", "Text-to-speech functionality is not available.")
+            messagebox.showerror(
+                "TTS Error", "Text-to-speech functionality is not available."
+            )
             return
 
         try:
@@ -1194,7 +1284,9 @@ class CrewGUI:
 
     def _read_selected_item(self) -> None:
         if not TTS_AVAILABLE or not self.tts_engine:
-            messagebox.showerror("TTS Error", "Text-to-speech functionality is not available.")
+            messagebox.showerror(
+                "TTS Error", "Text-to-speech functionality is not available."
+            )
             return
 
         try:
@@ -1206,7 +1298,9 @@ class CrewGUI:
                     # Read a summary or specific columns
                     if item_values:
                         # Example: Read the first column's value if it exists
-                        text_to_read = str(item_values[0]) if item_values else "No details"
+                        text_to_read = (
+                            str(item_values[0]) if item_values else "No details"
+                        )
                         self.tts_engine.say(text_to_read)
                         self.tts_engine.runAndWait()
         except Exception as e:
@@ -1241,28 +1335,62 @@ class CrewGUI:
 
     def preprocess_text_for_speech(self, text: str) -> str:
         """Clean and prepare text for better TTS pronunciation"""
-        import re
-        
+
         # Remove excessive whitespace
-        text = re.sub(r'\s+', ' ', text.strip())
-        
+        text = re.sub(r"\s+", " ", text.strip())
+
         # Handle common abbreviations and technical terms
         replacements = {
-            'CSV': 'C S V', 'JSON': 'Jason', 'XML': 'X M L', 'HTML': 'H T M L',
-            'URL': 'U R L', 'API': 'A P I', 'GUI': 'G U I', 'CLI': 'C L I',
-            'DB': 'database', 'SQL': 'S Q L', 'ID': 'I D', 'UUID': 'U U I D',
-            'HTTP': 'H T T P', 'HTTPS': 'H T T P S', 'FTP': 'F T P', 'SSH': 'S S H',
-            'TCP': 'T C P', 'UDP': 'U D P', 'IP': 'I P', 'DNS': 'D N S',
-            'CPU': 'C P U', 'GPU': 'G P U', 'RAM': 'ram', 'ROM': 'rom',
-            'USB': 'U S B', 'PDF': 'P D F', 'JPG': 'J P G', 'PNG': 'P N G',
-            'GIF': 'gif', 'MP3': 'M P 3', 'MP4': 'M P 4', 'WAV': 'wave',
-            'ZIP': 'zip', 'RAR': 'rar', 'TAR': 'tar', 'GZ': 'G Z',
-            'EXE': 'executable', 'DLL': 'D L L', 'SO': 'S O', 'LIB': 'library',
+            "CSV": "C S V",
+            "JSON": "Jason",
+            "XML": "X M L",
+            "HTML": "H T M L",
+            "URL": "U R L",
+            "API": "A P I",
+            "GUI": "G U I",
+            "CLI": "C L I",
+            "DB": "database",
+            "SQL": "S Q L",
+            "ID": "I D",
+            "UUID": "U U I D",
+            "HTTP": "H T T P",
+            "HTTPS": "H T T P S",
+            "FTP": "F T P",
+            "SSH": "S S H",
+            "TCP": "T C P",
+            "UDP": "U D P",
+            "IP": "I P",
+            "DNS": "D N S",
+            "CPU": "C P U",
+            "GPU": "G P U",
+            "RAM": "ram",
+            "ROM": "rom",
+            "USB": "U S B",
+            "PDF": "P D F",
+            "JPG": "J P G",
+            "PNG": "P N G",
+            "GIF": "gif",
+            "MP3": "M P 3",
+            "MP4": "M P 4",
+            "WAV": "wave",
+            "ZIP": "zip",
+            "RAR": "rar",
+            "TAR": "tar",
+            "GZ": "G Z",
+            "EXE": "executable",
+            "DLL": "D L L",
+            "SO": "S O",
+            "LIB": "library",
         }
-        
+
         for abbrev, replacement in replacements.items():
-            text = re.sub(r'\b' + re.escape(abbrev) + r'\b', replacement, text, flags=re.IGNORECASE)
-        
+            text = re.sub(
+                r"\b" + re.escape(abbrev) + r"\b",
+                replacement,
+                text,
+                flags=re.IGNORECASE,
+            )
+
         return text
 
     def chunk_text(self, text: str, max_length: int = 400) -> list[str]:
@@ -1292,7 +1420,9 @@ class CrewGUI:
     def _read_text(self, text: str) -> None:
         """Read text using TTS with chunk-based playback."""
         if not TTS_AVAILABLE or not self.tts_engine:
-            messagebox.showerror("TTS Error", "Text-to-speech functionality is not available.")
+            messagebox.showerror(
+                "TTS Error", "Text-to-speech functionality is not available."
+            )
             return
 
         try:
@@ -1308,26 +1438,36 @@ class CrewGUI:
     def setup_female_voice(self, engine) -> bool:
         """Attempt to set up a female voice if available"""
         try:
-            voices = engine.getProperty('voices')
+            voices = engine.getProperty("voices")
             if not voices:
                 return False
-            
+
             # Look for female voices
-            female_indicators = ['female', 'zira', 'hazel', 'susan', 'anna', 'catherine']
-            
+            female_indicators = [
+                "female",
+                "zira",
+                "hazel",
+                "susan",
+                "anna",
+                "catherine",
+            ]
+
             for voice in voices:
-                voice_name = voice.name.lower() if voice.name else ''
-                voice_id = voice.id.lower() if voice.id else ''
-                
-                if any(indicator in voice_name or indicator in voice_id for indicator in female_indicators):
-                    engine.setProperty('voice', voice.id)
+                voice_name = voice.name.lower() if voice.name else ""
+                voice_id = voice.id.lower() if voice.id else ""
+
+                if any(
+                    indicator in voice_name or indicator in voice_id
+                    for indicator in female_indicators
+                ):
+                    engine.setProperty("voice", voice.id)
                     return True
-            
+
             # If no female voice found, use the second voice if available
             if len(voices) > 1:
-                engine.setProperty('voice', voices[1].id)
+                engine.setProperty("voice", voices[1].id)
                 return True
-                
+
             return False
         except Exception as e:
             logging.error(f"Error setting up female voice: {e}")
@@ -1344,29 +1484,38 @@ class CrewGUI:
                 if selection:
                     item_id = selection[0]
                     item_values = self.data_table.item(item_id, "values")
-                    
+
                     # Try to determine item type from headers/values
-                    if item_values and hasattr(self, 'headers'):
+                    if item_values and hasattr(self, "headers"):
                         # Look for type-related columns
                         type_info = []
                         for i, header in enumerate(self.headers):
-                            if i < len(item_values) and header.lower() in ['type', 'category', 'kind', 'class']:
+                            if i < len(item_values) and header.lower() in [
+                                "type",
+                                "category",
+                                "kind",
+                                "class",
+                            ]:
                                 type_info.append(f"{header}: {item_values[i]}")
-                        
+
                         if type_info:
                             text_to_read = f"Item type: {', '.join(type_info)}"
                         else:
                             # Fallback to first column as identifier
-                            text_to_read = f"Item: {item_values[0] if item_values else 'Unknown'}"
-                        
+                            text_to_read = (
+                                f"Item: {item_values[0] if item_values else 'Unknown'}"
+                            )
+
                         cleaned_text = self.preprocess_text_for_speech(text_to_read)
                         chunks = self.chunk_text(cleaned_text)
-                        
+
                         for chunk in chunks:
                             self.tts_engine.say(chunk)
                         self.tts_engine.runAndWait()
                     else:
-                        self.tts_engine.say("No item selected or no type information available")
+                        self.tts_engine.say(
+                            "No item selected or no type information available"
+                        )
                         self.tts_engine.runAndWait()
                 else:
                     self.tts_engine.say("No item selected")
@@ -1374,178 +1523,190 @@ class CrewGUI:
             else:
                 self.tts_engine.say("Data table not available")
                 self.tts_engine.runAndWait()
-                
+
         except Exception as e:
             logging.error(f"Error reading item type: {e}")
 
     def _show_speech_settings(self) -> None:
         """Show TTS configuration dialog with improved sizing"""
         if not TTS_AVAILABLE or not self.tts_engine:
-            messagebox.showinfo("TTS Not Available", "Text-to-speech functionality is not available.")
+            messagebox.showinfo(
+                "TTS Not Available", "Text-to-speech functionality is not available."
+            )
             return
-        
+
         try:
             import tkinter.ttk as ttk
-            
+
             settings_window = tk.Toplevel(self.root)
             settings_window.title("Speech Settings")
-            
+
             # Improved sizing for RPi5 and better content fit
             settings_window.geometry("500x450")  # Increased from 400x300
-            settings_window.minsize(450, 400)    # Set minimum size
-            settings_window.resizable(True, True) # Allow resizing
-            
+            settings_window.minsize(450, 400)  # Set minimum size
+            settings_window.resizable(True, True)  # Allow resizing
+
             settings_window.transient(self.root)
             settings_window.grab_set()
-            
+
             # Center the window on the parent
-            settings_window.geometry("+%d+%d" % (
-                self.root.winfo_rootx() + 50,
-                self.root.winfo_rooty() + 50
-            ))
-            
+            settings_window.geometry(
+                "+%d+%d" % (self.root.winfo_rootx() + 50, self.root.winfo_rooty() + 50)
+            )
+
             # Create main frame with scrollbar support
             main_frame = ttk.Frame(settings_window)
             main_frame.pack(fill="both", expand=True, padx=10, pady=10)
-            
+
             # Voice selection section
-            voice_frame = ttk.LabelFrame(main_frame, text="Voice Selection", padding="10")
+            voice_frame = ttk.LabelFrame(
+                main_frame, text="Voice Selection", padding="10"
+            )
             voice_frame.pack(fill="x", pady=(0, 10))
-            
-            ttk.Label(voice_frame, text="Available Voices:").pack(anchor="w", pady=(0, 5))
-            voices = self.tts_engine.getProperty('voices')
-            voice_names = [voice.name for voice in voices] if voices else ['Default']
-            
+
+            ttk.Label(voice_frame, text="Available Voices:").pack(
+                anchor="w", pady=(0, 5)
+            )
+            voices = self.tts_engine.getProperty("voices")
+            voice_names = [voice.name for voice in voices] if voices else ["Default"]
+
             voice_var = tk.StringVar()
-            current_voice = self.tts_engine.getProperty('voice')
+            current_voice = self.tts_engine.getProperty("voice")
             for voice in voices:
                 if voice.id == current_voice:
                     voice_var.set(voice.name)
                     break
             else:
-                voice_var.set(voice_names[0] if voice_names else 'Default')
-            
+                voice_var.set(voice_names[0] if voice_names else "Default")
+
             voice_combo = ttk.Combobox(
-                voice_frame, 
-                textvariable=voice_var, 
-                values=voice_names, 
+                voice_frame,
+                textvariable=voice_var,
+                values=voice_names,
                 state="readonly",
-                width=50  # Increased width
+                width=50,  # Increased width
             )
             voice_combo.pack(fill="x", pady=(0, 10))
-            
+
             # Female voice preference
             female_voice_var = tk.BooleanVar()
             ttk.Checkbutton(
-                voice_frame, 
-                text="Prefer female voice (if available)", 
-                variable=female_voice_var
+                voice_frame,
+                text="Prefer female voice (if available)",
+                variable=female_voice_var,
             ).pack(anchor="w")
-            
+
             # Speech controls section
-            controls_frame = ttk.LabelFrame(main_frame, text="Speech Controls", padding="10")
+            controls_frame = ttk.LabelFrame(
+                main_frame, text="Speech Controls", padding="10"
+            )
             controls_frame.pack(fill="x", pady=(0, 10))
-            
+
             # Speed control with better layout
             speed_frame = ttk.Frame(controls_frame)
             speed_frame.pack(fill="x", pady=(0, 10))
-            
+
             ttk.Label(speed_frame, text="Speaking Speed:").pack(anchor="w")
-            speed_var = tk.IntVar(value=self.tts_engine.getProperty('rate'))
-            
+            speed_var = tk.IntVar(value=self.tts_engine.getProperty("rate"))
+
             speed_control_frame = ttk.Frame(speed_frame)
             speed_control_frame.pack(fill="x", pady=(5, 0))
-            
+
             ttk.Label(speed_control_frame, text="Slow").pack(side="left")
             speed_scale = ttk.Scale(
-                speed_control_frame, 
-                from_=50, 
-                to=300, 
-                orient="horizontal", 
-                variable=speed_var
+                speed_control_frame,
+                from_=50,
+                to=300,
+                orient="horizontal",
+                variable=speed_var,
             )
             speed_scale.pack(side="left", fill="x", expand=True, padx=(10, 10))
             ttk.Label(speed_control_frame, text="Fast").pack(side="right")
-            
+
             # Speed value display
-            speed_value_label = ttk.Label(speed_frame, text=f"Current: {speed_var.get()} WPM")
+            speed_value_label = ttk.Label(
+                speed_frame, text=f"Current: {speed_var.get()} WPM"
+            )
             speed_value_label.pack(anchor="w", pady=(5, 0))
-            
+
             def update_speed_label(*args):
                 speed_value_label.config(text=f"Current: {int(speed_var.get())} WPM")
-            speed_var.trace('w', update_speed_label)
-            
+
+            speed_var.trace("w", update_speed_label)
+
             # Volume control with better layout
             volume_frame = ttk.Frame(controls_frame)
             volume_frame.pack(fill="x")
-            
+
             ttk.Label(volume_frame, text="Volume:").pack(anchor="w")
-            volume_var = tk.DoubleVar(value=self.tts_engine.getProperty('volume'))
-            
+            volume_var = tk.DoubleVar(value=self.tts_engine.getProperty("volume"))
+
             volume_control_frame = ttk.Frame(volume_frame)
             volume_control_frame.pack(fill="x", pady=(5, 0))
-            
+
             ttk.Label(volume_control_frame, text="Quiet").pack(side="left")
             volume_scale = ttk.Scale(
                 volume_control_frame,
                 from_=0.0,
                 to=1.0,
                 orient="horizontal",
-                variable=volume_var
+                variable=volume_var,
             )
             volume_scale.pack(side="left", fill="x", expand=True, padx=(10, 10))
             ttk.Label(volume_control_frame, text="Loud").pack(side="right")
-            
+
             # Volume value display
-            volume_value_label = ttk.Label(volume_frame, text=f"Current: {int(volume_var.get() * 100)}%")
+            volume_value_label = ttk.Label(
+                volume_frame, text=f"Current: {int(volume_var.get() * 100)}%"
+            )
             volume_value_label.pack(anchor="w", pady=(5, 0))
-            
+
             def update_volume_label(*args):
-                volume_value_label.config(text=f"Current: {int(volume_var.get() * 100)}%")
-            volume_var.trace('w', update_volume_label)
-            
+                volume_value_label.config(
+                    text=f"Current: {int(volume_var.get() * 100)}%"
+                )
+
+            volume_var.trace("w", update_volume_label)
+
             # Test and action buttons
             button_frame = ttk.Frame(main_frame)
             button_frame.pack(fill="x", pady=(10, 0))
-            
+
             # Test button with better feedback
             def test_voice():
                 try:
                     settings_window.config(cursor="watch")
                     settings_window.update()
-                    
+
                     # Apply current settings temporarily for test
-                    original_rate = self.tts_engine.getProperty('rate')
-                    original_volume = self.tts_engine.getProperty('volume')
-                    
+                    original_rate = self.tts_engine.getProperty("rate")
+                    original_volume = self.tts_engine.getProperty("volume")
+
                     self.tts_engine.setProperty("rate", int(speed_var.get()))
                     self.tts_engine.setProperty("volume", volume_var.get())
-                    
+
                     test_text = "This is a test of the current speech settings. How does this sound?"
                     self.tts_engine.say(test_text)
                     self.tts_engine.runAndWait()
-                    
+
                     # Restore original settings
                     self.tts_engine.setProperty("rate", original_rate)
                     self.tts_engine.setProperty("volume", original_volume)
-                    
+
                 except Exception as e:
                     messagebox.showerror("Test Error", f"Failed to test voice: {e}")
                 finally:
                     settings_window.config(cursor="")
-        
+
             test_btn = ttk.Button(
-                button_frame, 
-                text="🔊 Test Voice", 
-                command=test_voice,
-                width=20
+                button_frame, text="🔊 Test Voice", command=test_voice, width=20
             )
             test_btn.pack(pady=(0, 10))
-            
+
             # Apply and Cancel buttons
             action_frame = ttk.Frame(button_frame)
             action_frame.pack(fill="x")
-            
+
             # Create voice mapping dictionary
             voice_mapping = {}
             if voices:
@@ -1562,15 +1723,17 @@ class CrewGUI:
                         if not self.setup_female_voice(self.tts_engine):
                             # No female voice found, show warning
                             messagebox.showwarning(
-                                "Female Voice", 
-                                "No female voice detected. Using selected voice instead."
+                                "Female Voice",
+                                "No female voice detected. Using selected voice instead.",
                             )
                             # Use selected voice as fallback
                             selected_voice = voice_var.get()
                             for voice in voices:
                                 if voice.name == selected_voice:
                                     self.tts_engine.setProperty("voice", voice.id)
-                                    logging.info(f"Female voice not found, using selected: {voice.name}")
+                                    logging.info(
+                                        f"Female voice not found, using selected: {voice.name}"
+                                    )
                                     break
                     else:
                         # User wants specific voice
@@ -1584,15 +1747,18 @@ class CrewGUI:
                     # Set speed and volume
                     self.tts_engine.setProperty("rate", int(speed_var.get()))
                     self.tts_engine.setProperty("volume", volume_var.get())
-                    
+
                     # Save settings
-                    if hasattr(self, 'config'):
+                    if hasattr(self, "config"):
                         self._save_tts_settings()
-                    
+
                     settings_window.destroy()
                     self.update_status("Speech settings applied successfully")
-                    messagebox.showinfo("Settings Applied", "Speech settings have been saved and applied.")
-                    
+                    messagebox.showinfo(
+                        "Settings Applied",
+                        "Speech settings have been saved and applied.",
+                    )
+
                 except Exception as e:
                     logging.error(f"Error applying speech settings: {e}")
                     messagebox.showerror("Error", f"Failed to apply settings: {e}")
@@ -1601,22 +1767,16 @@ class CrewGUI:
                 settings_window.destroy()
 
             ttk.Button(
-                action_frame, 
-                text="✓ Apply & Save", 
-                command=apply_settings,
-                width=15
+                action_frame, text="✓ Apply & Save", command=apply_settings, width=15
             ).pack(side="left", padx=(0, 10))
-            
+
             ttk.Button(
-                action_frame, 
-                text="✗ Cancel", 
-                command=cancel_settings,
-                width=15
+                action_frame, text="✗ Cancel", command=cancel_settings, width=15
             ).pack(side="left")
 
             # Add keyboard shortcuts
-            settings_window.bind('<Return>', lambda e: apply_settings())
-            settings_window.bind('<Escape>', lambda e: cancel_settings())
+            settings_window.bind("<Return>", lambda e: apply_settings())
+            settings_window.bind("<Escape>", lambda e: cancel_settings())
 
             # Focus on the voice combo box
             voice_combo.focus_set()
@@ -1628,40 +1788,44 @@ class CrewGUI:
     def _save_speech_to_file(self) -> None:
         """Save current text content as audio file"""
         if not TTS_AVAILABLE or not self.tts_engine:
-            messagebox.showinfo("TTS Not Available", "Text-to-speech functionality is not available.")
+            messagebox.showinfo(
+                "TTS Not Available", "Text-to-speech functionality is not available."
+            )
             return
-        
+
         try:
             # Get text to convert
             text_content = ""
-            if hasattr(self, 'details_text'):
+            if hasattr(self, "details_text"):
                 if self.details_text.tag_ranges(tk.SEL):
                     text_content = self.details_text.get(tk.SEL_FIRST, tk.SEL_LAST)
                 else:
                     text_content = self.details_text.get("1.0", tk.END)
-            
+
             if not text_content.strip():
-                messagebox.showwarning("No Text", "No text available to convert to speech.")
+                messagebox.showwarning(
+                    "No Text", "No text available to convert to speech."
+                )
                 return
-            
+
             # Ask for save location
             file_path = filedialog.asksaveasfilename(
                 defaultextension=".wav",
                 filetypes=[("WAV files", "*.wav"), ("All files", "*.*")],
-                title="Save Speech As"
+                title="Save Speech As",
             )
-            
+
             if file_path:
                 # Preprocess text
                 cleaned_text = self.preprocess_text_for_speech(text_content)
-                
+
                 # Save to file
                 self.tts_engine.save_to_file(cleaned_text, file_path)
                 self.tts_engine.runAndWait()
-                
+
                 self.update_status(f"Speech saved to: {os.path.basename(file_path)}")
                 messagebox.showinfo("Success", f"Speech saved to:\n{file_path}")
-        
+
         except Exception as e:
             logging.error(f"Error saving speech to file: {e}")
             messagebox.showerror("Save Error", f"Failed to save speech: {e}")
@@ -1689,7 +1853,9 @@ class CrewGUI:
                 else:
                     self.details_text.insert("1.0", "No visible columns to display.")
             else:
-                self.details_text.insert("1.0", "Error displaying details after selection.")
+                self.details_text.insert(
+                    "1.0", "Error displaying details after selection."
+                )
 
         except Exception as e:
             logging.error(f"Error updating details view: {e}")
@@ -1707,7 +1873,9 @@ class CrewGUI:
                     self.headers = next(reader)  # First row as headers
                     self.current_data = list(reader)
                     self._update_data_view(self.current_data)
-                    self.update_status(f"Loaded {len(self.current_data)} records from {default_data_path}.")
+                    self.update_status(
+                        f"Loaded {len(self.current_data)} records from {default_data_path}."
+                    )
             else:
                 self.update_status("Default data file not found.")
         except Exception as e:
@@ -1717,21 +1885,27 @@ class CrewGUI:
     def _on_apply_filter(self) -> None:
         try:
             filter_text = self.filter_var.get()
-            column_name = self.column_var.get() # This is the header text of the column
+            column_name = self.column_var.get()  # This is the header text of the column
 
             # self.current_data should hold the original, unfiltered data
-            if not hasattr(self, 'current_data') or not self.current_data:
+            if not hasattr(self, "current_data") or not self.current_data:
                 logging.warning("No data loaded to filter.")
                 return
 
             # Apply the filter
             # The _apply_filter method expects List[List[Any]]
             # Ensure self.current_data matches this structure
-            filtered_data = self._apply_filter(self.current_data, filter_text, column_name)
-            
+            filtered_data = self._apply_filter(
+                self.current_data, filter_text, column_name
+            )
+
             # Update the data view with filtered data
-            self._update_data_view(filtered_data) # This method should handle repopulating the Treeview
-            self.update_status(f"Filtered data. Displaying {len(filtered_data)} records.")
+            self._update_data_view(
+                filtered_data
+            )  # This method should handle repopulating the Treeview
+            self.update_status(
+                f"Filtered data. Displaying {len(filtered_data)} records."
+            )
 
         except Exception as e:
             logging.error(f"Error applying filter: {e}")
@@ -1742,7 +1916,7 @@ class CrewGUI:
             # Clear filter inputs
             self.filter_var.set("")
             self.column_var.set("All Columns")
-            self.filter_case_sensitive_var.set(False) # Reset case sensitivity
+            self.filter_case_sensitive_var.set(False)  # Reset case sensitivity
 
             # Clear group selection if its a filter group
             selection = self.group_list.selection()
@@ -1815,7 +1989,7 @@ class CrewGUI:
 
             # Update column menu with current headers
             self._update_column_menu()
-            self._update_filter_column_dropdown() # Add this line
+            self._update_filter_column_dropdown()  # Add this line
 
             # Apply current column visibility settings
             self._apply_column_visibility()
@@ -1950,7 +2124,11 @@ class CrewGUI:
             if column_name == "All Columns":
                 # Search in all columns
                 if any(
-                    (filter_text in str(cell)) if case_sensitive else (filter_text.lower() in str(cell).lower())
+                    (
+                        (filter_text in str(cell))
+                        if case_sensitive
+                        else (filter_text.lower() in str(cell).lower())
+                    )
                     for cell in row
                 ):
                     filtered_data.append(row)
@@ -1960,7 +2138,11 @@ class CrewGUI:
                     col_index = self.headers.index(column_name)
                     if col_index < len(row):
                         cell_value = str(row[col_index])
-                        if (filter_text in cell_value) if case_sensitive else (filter_text.lower() in cell_value.lower()):
+                        if (
+                            (filter_text in cell_value)
+                            if case_sensitive
+                            else (filter_text.lower() in cell_value.lower())
+                        ):
                             filtered_data.append(row)
 
         return filtered_data
@@ -2001,7 +2183,7 @@ class CrewGUI:
                     key=lambda x: float(x[col_index]) if x[col_index] else 0,
                     reverse=self._sort_reverse,
                 )
-            except (ValueError, TypeError):
+            except ValueError, TypeError:
                 # Fall back to string sort
                 data.sort(
                     key=lambda x: str(x[col_index]).lower(),
@@ -2051,26 +2233,30 @@ class CrewGUI:
     def _save_data_to_file(self, data: List[List[Any]], file_path: str) -> None:
         try:
             if PANDAS_AVAILABLE and file_path.endswith(".xlsx"):
-                df = pd.DataFrame(data, columns=self.headers if hasattr(self, 'headers') else None)
+                df = pd.DataFrame(
+                    data, columns=self.headers if hasattr(self, "headers") else None
+                )
                 df.to_excel(file_path, index=False)
             elif file_path.endswith(".csv"):
                 with open(file_path, "w", newline="", encoding="utf-8") as f:
                     writer = csv.writer(f)
-                    if hasattr(self, 'headers'):
+                    if hasattr(self, "headers"):
                         writer.writerow(self.headers)
                     writer.writerows(data)
             else:
                 # Basic text save for other types or if pandas/csv is not appropriate
                 with open(file_path, "w", encoding="utf-8") as f:
-                    if hasattr(self, 'headers'):
+                    if hasattr(self, "headers"):
                         f.write(",".join(map(str, self.headers)) + "\n")
                     for row in data:
                         f.write(",".join(map(str, row)) + "\n")
             self.update_status(f"Saved to {file_path}")
         except Exception as e:
-            logging.error(f"Error saving to file {file_path}: {e}") # Log error
-            self.root.after(0, lambda: messagebox.showerror("Save Error", str(e))) # Show error to user
-            self.update_status(f"Error saving to {file_path}") # Update status
+            logging.error(f"Error saving to file {file_path}: {e}")  # Log error
+            self.root.after(
+                0, lambda: messagebox.showerror("Save Error", str(e))
+            )  # Show error to user
+            self.update_status(f"Error saving to {file_path}")  # Update status
 
     def load_default_data(self) -> None:
         """Load and display default data from ./data/npcs.csv."""
@@ -2083,7 +2269,9 @@ class CrewGUI:
                     self.headers = next(reader)  # First row as headers
                     self.current_data = list(reader)
                     self._update_data_view(self.current_data)
-                    self.update_status(f"Loaded {len(self.current_data)} records from {default_data_path}.")
+                    self.update_status(
+                        f"Loaded {len(self.current_data)} records from {default_data_path}."
+                    )
             else:
                 self.update_status("Default data file not found.")
         except Exception as e:
@@ -2094,7 +2282,10 @@ class CrewGUI:
         """Handles opening different file types."""
         try:
             file_types = [
-                ("Supported Files", ("*.csv", "*.xlsx", "*.xls", "*.txt", "*.py", "*.md")),
+                (
+                    "Supported Files",
+                    ("*.csv", "*.xlsx", "*.xls", "*.txt", "*.py", "*.md"),
+                ),
                 ("Data Files", ("*.csv", "*.xlsx", "*.xls")),
                 ("Text Files", ("*.txt", "*.py", "*.md")),
                 ("All Files", "*.*"),
@@ -2110,27 +2301,39 @@ class CrewGUI:
                 file_extension = file_extension.lower()
 
                 if file_extension in [".csv", ".xlsx", ".xls"]:
-                    self.update_status(f"Opening data file: {os.path.basename(file_path)}...")
+                    self.update_status(
+                        f"Opening data file: {os.path.basename(file_path)}..."
+                    )
                     # Clear previous data/text specific states
                     self.current_data = None
                     self.headers = []
-                    if hasattr(self, 'details_text'):
+                    if hasattr(self, "details_text"):
                         self.details_text.delete("1.0", tk.END)  # Clear details view
                     self.run_in_background(
-                        self._load_data_background, file_path, callback=self._on_data_loaded
+                        self._load_data_background,
+                        file_path,
+                        callback=self._on_data_loaded,
                     )
                 elif file_extension in [".txt", ".py", ".md"]:  # Added .md
-                    self.update_status(f"Opening text file: {os.path.basename(file_path)}...")
+                    self.update_status(
+                        f"Opening text file: {os.path.basename(file_path)}..."
+                    )
                     # Clear previous data/text specific states
                     self.current_data = None
                     self.headers = []
-                    if hasattr(self, 'data_table'):
-                        self.data_table.delete(*self.data_table.get_children())  # Clear data table
+                    if hasattr(self, "data_table"):
+                        self.data_table.delete(
+                            *self.data_table.get_children()
+                        )  # Clear data table
                     self.run_in_background(
-                        self._load_text_background, file_path, callback=self._on_text_loaded_callback
+                        self._load_text_background,
+                        file_path,
+                        callback=self._on_text_loaded_callback,
                     )
                 else:
-                    self.update_status(f"Unsupported file type: {file_extension}", error=True)
+                    self.update_status(
+                        f"Unsupported file type: {file_extension}", error=True
+                    )
                     messagebox.showwarning(
                         "Unsupported File Type",
                         f"The file type '{file_extension}' is not directly supported for automatic display. You can try opening it as 'All Files'.",
@@ -2144,7 +2347,7 @@ class CrewGUI:
         try:
             if not hasattr(self, "data_table"):
                 return
-            
+
             selection = self.data_table.selection()  # Get current selection
             if selection:
                 item_id = selection[0]  # Get the first selected item ID
@@ -2152,7 +2355,7 @@ class CrewGUI:
                 self._update_details_view(item_data)  # Call with actual item data
             else:
                 # Optionally, clear details view or show a default message if nothing is selected
-                self._update_details_view(None) 
+                self._update_details_view(None)
         except Exception as e:
             logging.error(f"Error handling data table selection: {e}")
             # Optionally, update details view with an error message
@@ -2162,7 +2365,9 @@ class CrewGUI:
 
     def _update_script_menu(self) -> None:
         logging.info("Updating script menu as it is about to be displayed...")
-        if not hasattr(self, 'script_menu') or not isinstance(self.script_menu, tk.Menu):
+        if not hasattr(self, "script_menu") or not isinstance(
+            self.script_menu, tk.Menu
+        ):
             logging.error(
                 "self.script_menu is not initialized or is not a tk.Menu instance. "
                 "The 'Run Script' submenu cannot be populated. "
@@ -2173,36 +2378,52 @@ class CrewGUI:
         self.script_menu.delete(0, tk.END)  # Clear existing items
 
         try:
-            if not hasattr(self, 'scripts_dir') or not self.scripts_dir:
+            if not hasattr(self, "scripts_dir") or not self.scripts_dir:
                 logging.warning("Scripts directory (self.scripts_dir) is not defined.")
-                self.script_menu.add_command(label="(Scripts dir not configured)", state=tk.DISABLED)
+                self.script_menu.add_command(
+                    label="(Scripts dir not configured)", state=tk.DISABLED
+                )
             elif not os.path.exists(self.scripts_dir):
                 logging.warning(f"Scripts directory '{self.scripts_dir}' not found.")
-                self.script_menu.add_command(label="(Scripts dir missing)", state=tk.DISABLED)
+                self.script_menu.add_command(
+                    label="(Scripts dir missing)", state=tk.DISABLED
+                )
                 # Attempt to create it
                 try:
                     os.makedirs(self.scripts_dir)
-                    logging.info(f"Re-created missing scripts directory: {self.scripts_dir}")
+                    logging.info(
+                        f"Re-created missing scripts directory: {self.scripts_dir}"
+                    )
                     # Optionally, create a sample script if the directory was just created
-                    sample_script_path = os.path.join(self.scripts_dir, "sample_script.py")
+                    sample_script_path = os.path.join(
+                        self.scripts_dir, "sample_script.py"
+                    )
                     if not os.path.exists(sample_script_path):
                         with open(sample_script_path, "w") as f:
-                            f.write("# Sample script\nprint('Hello from sample script!')")
+                            f.write(
+                                "# Sample script\nprint('Hello from sample script!')"
+                            )
                         logging.info(f"Created sample script: {sample_script_path}")
                 except Exception as e_mkdir:
                     logging.error(f"Failed to re-create scripts directory: {e_mkdir}")
-            
+
             script_files = []
             # Check again for scripts_dir existence in case it was just created
-            if hasattr(self, 'scripts_dir') and self.scripts_dir and os.path.exists(self.scripts_dir):
+            if (
+                hasattr(self, "scripts_dir")
+                and self.scripts_dir
+                and os.path.exists(self.scripts_dir)
+            ):
                 script_files = glob.glob(os.path.join(self.scripts_dir, "*.py"))
-            
+
             if not script_files:
                 # This label will be added if scripts_dir existed but was empty,
                 # or if scripts_dir was missing/not configured and the specific messages above were already added.
                 # To avoid duplicate "missing" messages, we check if items were already added.
                 if self.script_menu.index(tk.END) is None:  # No items added yet
-                    self.script_menu.add_command(label="No scripts found", state=tk.DISABLED)
+                    self.script_menu.add_command(
+                        label="No scripts found", state=tk.DISABLED
+                    )
             else:
                 # Add each script file as a menu item
                 for script_path in script_files:
@@ -2214,73 +2435,130 @@ class CrewGUI:
 
                 # Optionally, add a separator and a refresh option
                 self.script_menu.add_separator()
-                self.script_menu.add_command(label="Refresh Scripts", command=self._update_script_menu)
-                self.script_menu.add_command(label="Open Scripts Folder...", command=self._open_scripts_folder)
+                self.script_menu.add_command(
+                    label="Refresh Scripts", command=self._update_script_menu
+                )
+                self.script_menu.add_command(
+                    label="Open Scripts Folder...", command=self._open_scripts_folder
+                )
 
         except Exception as e:
             logging.error(f"Error updating script menu: {e}", exc_info=True)
-            messagebox.showerror("Script Menu Error", f"Could not update script menu: {e}")
+            messagebox.showerror(
+                "Script Menu Error", f"Could not update script menu: {e}"
+            )
             # Ensure self.script_menu is still valid before trying to add error items
-            if hasattr(self, 'script_menu') and isinstance(self.script_menu, tk.Menu):
-                 # Clear any partial items from the try block before adding error state
-                 self.script_menu.delete(0, tk.END)
-                 self.script_menu.add_command(label="(Error loading scripts)", state=tk.DISABLED)
-                 self.script_menu.add_separator()
-                 self.script_menu.add_command(label="Refresh Scripts", command=self._update_script_menu)
-                 self.script_menu.add_command(label="Open Scripts Folder...", command=self._open_scripts_folder)
+            if hasattr(self, "script_menu") and isinstance(self.script_menu, tk.Menu):
+                # Clear any partial items from the try block before adding error state
+                self.script_menu.delete(0, tk.END)
+                self.script_menu.add_command(
+                    label="(Error loading scripts)", state=tk.DISABLED
+                )
+                self.script_menu.add_separator()
+                self.script_menu.add_command(
+                    label="Refresh Scripts", command=self._update_script_menu
+                )
+                self.script_menu.add_command(
+                    label="Open Scripts Folder...", command=self._open_scripts_folder
+                )
 
     def _run_selected_script(self, script_path: str) -> None:
         try:
             script_name = os.path.basename(script_path)
             self.update_status(f"Running script: {script_name}...")
+
             def target():
                 try:
                     logging.info(f"Executing script: python '{script_path}'")
-                    flags = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
+                    flags = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
                     proc = subprocess.Popen(
-                        ['python', script_path], stdout=subprocess.PIPE,
-                        stderr=subprocess.PIPE, text=True,
-                        creationflags=flags, cwd=self.scripts_dir
+                        ["python", script_path],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        text=True,
+                        creationflags=flags,
+                        cwd=self.scripts_dir,
                     )
                     out, err = proc.communicate()
                     if proc.returncode == 0:
-                        self.root.after(0, lambda: self.update_status(f"Script '{script_name}' finished."))
+                        self.root.after(
+                            0,
+                            lambda: self.update_status(
+                                f"Script '{script_name}' finished."
+                            ),
+                        )
                         if out.strip():
-                            self.root.after(0, lambda: messagebox.showinfo(f"{script_name} Output", out))
+                            self.root.after(
+                                0,
+                                lambda: messagebox.showinfo(
+                                    f"{script_name} Output", out
+                                ),
+                            )
                         else:
-                            self.root.after(0, lambda: messagebox.showinfo(f"{script_name} Finished", f"Script '{script_name}' completed with no output."))
+                            self.root.after(
+                                0,
+                                lambda: messagebox.showinfo(
+                                    f"{script_name} Finished",
+                                    f"Script '{script_name}' completed with no output.",
+                                ),
+                            )
                     else:
-                        msg = f"Script '{script_name}' failed." + (f"\n\nError:\n{err}" if err.strip() else '')
-                        self.root.after(0, lambda: messagebox.showerror(f"{script_name} Error", msg))
-                        self.root.after(0, lambda: self.update_status(f"Script '{script_name}' failed.", error=True))
+                        msg = f"Script '{script_name}' failed." + (
+                            f"\n\nError:\n{err}" if err.strip() else ""
+                        )
+                        self.root.after(
+                            0, lambda: messagebox.showerror(f"{script_name} Error", msg)
+                        )
+                        self.root.after(
+                            0,
+                            lambda: self.update_status(
+                                f"Script '{script_name}' failed.", error=True
+                            ),
+                        )
                 except Exception as e_thread:
-                    logging.error(f"Exception while running script {script_name}: {e_thread}")
-                    self.root.after(0, lambda: messagebox.showerror("Script Execution Error", str(e_thread)))
-                    self.root.after(0, lambda: self.update_status(f"Error running {script_name}.", error=True))
+                    logging.error(
+                        f"Exception while running script {script_name}: {e_thread}"
+                    )
+                    self.root.after(
+                        0,
+                        lambda: messagebox.showerror(
+                            "Script Execution Error", str(e_thread)
+                        ),
+                    )
+                    self.root.after(
+                        0,
+                        lambda: self.update_status(
+                            f"Error running {script_name}.", error=True
+                        ),
+                    )
+
             threading.Thread(target=target, daemon=True).start()
         except Exception as e:
             logging.error(f"Error preparing to run script {script_path}: {e}")
-            messagebox.showerror("Script Error", f"Could not run script {script_name}: {e}")
+            messagebox.showerror(
+                "Script Error", f"Could not run script {script_name}: {e}"
+            )
             self.update_status(f"Failed to start script {script_name}.", error=True)
 
     def _open_scripts_folder(self) -> None:
-        if not hasattr(self, 'scripts_dir') or not self.scripts_dir:
+        if not hasattr(self, "scripts_dir") or not self.scripts_dir:
             messagebox.showwarning("Error", "Scripts directory path is not configured.")
             logging.warning("scripts_dir not set when opening folder.")
             return
         if not os.path.isdir(self.scripts_dir):
             messagebox.showwarning(
-                "Error", f"Scripts directory does not exist:\n{self.scripts_dir}")
+                "Error", f"Scripts directory does not exist:\n{self.scripts_dir}"
+            )
             logging.warning(f"Non-existent scripts_dir: {self.scripts_dir}")
             return
         try:
-            if os.name == 'nt':
-                subprocess.run(['explorer', self.scripts_dir], check=True)
-            elif sys.platform == 'darwin':
-                subprocess.run(['open', self.scripts_dir], check=True)
+            if os.name == "nt":
+                subprocess.run(["explorer", self.scripts_dir], check=True)
+            elif sys.platform == "darwin":
+                subprocess.run(["open", self.scripts_dir], check=True)
             else:
                 # Prefer PCManFM on Linux, fallback to xdg-open for compatibility.
-                folder_opener = 'pcmanfm' if shutil.which('pcmanfm') else 'xdg-open'
+                folder_opener = "pcmanfm" if shutil.which("pcmanfm") else "xdg-open"
                 subprocess.run([folder_opener, self.scripts_dir], check=True)
             self.update_status(f"Opened scripts folder: {self.scripts_dir}")
         except Exception as e:
@@ -2305,67 +2583,75 @@ class CrewGUI:
                 logging.error(f"Invalid text load result: {type(content)}")
                 messagebox.showerror("Error", "Failed to load text content.")
                 self.update_status("Failed to load text.", error=True)
-                if hasattr(self, 'details_text'):
+                if hasattr(self, "details_text"):
                     self.details_text.delete("1.0", tk.END)
-                    self.details_text.insert("1.0", "Error: Failed to load text content.")
+                    self.details_text.insert(
+                        "1.0", "Error: Failed to load text content."
+                    )
                 return
-            if hasattr(self, 'details_text'):
+            if hasattr(self, "details_text"):
                 self.details_text.delete("1.0", tk.END)
                 self.details_text.insert("1.0", content)
-                status = f"Loaded: {os.path.basename(self.current_file_path)}" if hasattr(self, 'current_file_path') else "Text content loaded."
+                status = (
+                    f"Loaded: {os.path.basename(self.current_file_path)}"
+                    if hasattr(self, "current_file_path")
+                    else "Text content loaded."
+                )
                 self.update_status(status)
-            if hasattr(self, 'data_table'):
+            if hasattr(self, "data_table"):
                 self.data_table.delete(*self.data_table.get_children())
             self.current_data = None
             self.headers = []
-            self._update_column_menu() 
-            self._update_filter_column_dropdown() # Add this line
+            self._update_column_menu()
+            self._update_filter_column_dropdown()  # Add this line
         except Exception as e:
             logging.error(f"Error in text loaded callback: {e}")
             messagebox.showerror("Error", f"Failed to load text: {e}")
             self.update_status("Failed to load text.", error=True)
 
-    def _load_data_background(self, file_path: str) -> Tuple[List[List[Any]], List[str]]:
+    def _load_data_background(
+        self, file_path: str
+    ) -> Tuple[List[List[Any]], List[str]]:
         try:
             if not PANDAS_AVAILABLE:
                 # Fallback to CSV reading without pandas
-                if file_path.lower().endswith('.csv'):
-                    with open(file_path, 'r', encoding='utf-8') as f:
+                if file_path.lower().endswith(".csv"):
+                    with open(file_path, "r", encoding="utf-8") as f:
                         reader = csv.reader(f)
                         headers = next(reader)
                         data = list(reader)
                         return data, headers
                 else:
                     raise ImportError("Pandas is required to load Excel files.")
-        
+
             _, ext = os.path.splitext(file_path)
             ext = ext.lower()
-            
-            if ext == '.csv':
+
+            if ext == ".csv":
                 df = pd.read_csv(file_path)
-            elif ext in ['.xlsx', '.xls']:
+            elif ext in [".xlsx", ".xls"]:
                 try:
                     df = pd.read_excel(file_path)
                 except Exception:
                     # Try with specific engine
-                    engine = 'openpyxl' if ext == '.xlsx' else 'xlrd'
+                    engine = "openpyxl" if ext == ".xlsx" else "xlrd"
                     df = pd.read_excel(file_path, engine=engine)
             else:
                 raise ValueError(f"Unsupported file extension: {ext}")
-            
+
             # Convert to lists for compatibility
             data = df.values.tolist()
             headers = df.columns.tolist()
-            
+
             return data, headers
-        
+
         except Exception as e:
             logging.error(f"Error loading data in background: {e}")
             raise
 
     def _load_text_background(self, file_path: str) -> str:
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, "r", encoding="utf-8") as f:
                 return f.read()
         except Exception as e:
             logging.error(f"Error loading text in background: {e}")
@@ -2373,23 +2659,23 @@ class CrewGUI:
 
     def _clean_text(self, text: str) -> str:
         """Remove special characters and extra whitespace for TTS"""
-        import re
+
         # Remove excessive whitespace
-        text = re.sub(r'\s+', ' ', text.strip())
+        text = re.sub(r"\s+", " ", text.strip())
         # Remove special characters that might confuse TTS
-        text = re.sub(r'[^\w\s.,!?-]', '', text)
+        text = re.sub(r"[^\w\s.,!?-]", "", text)
         return text
 
     def _save_tts_settings(self) -> None:
         """Save current TTS settings to configuration"""
         try:
-            if hasattr(self, 'tts_engine') and self.tts_engine:
+            if hasattr(self, "tts_engine") and self.tts_engine:
                 tts_settings = {
-                    'voice': self.tts_engine.getProperty('voice'),
-                    'rate': self.tts_engine.getProperty('rate'),
-                    'volume': self.tts_engine.getProperty('volume')
+                    "voice": self.tts_engine.getProperty("voice"),
+                    "rate": self.tts_engine.getProperty("rate"),
+                    "volume": self.tts_engine.getProperty("volume"),
                 }
-                self.config.set('tts_settings', tts_settings)
+                self.config.set("tts_settings", tts_settings)
                 logging.info("TTS settings saved successfully")
         except Exception as e:
             logging.error(f"Error saving TTS settings: {e}")
@@ -2397,22 +2683,24 @@ class CrewGUI:
     def _load_tts_settings(self) -> None:
         """Load TTS settings from configuration"""
         try:
-            if hasattr(self, 'tts_engine') and self.tts_engine:
-                tts_settings = self.config.get('tts_settings', {})
+            if hasattr(self, "tts_engine") and self.tts_engine:
+                tts_settings = self.config.get("tts_settings", {})
                 if tts_settings:
-                    if 'voice' in tts_settings:
-                        self.tts_engine.setProperty('voice', tts_settings['voice'])
-                    if 'rate' in tts_settings:
-                        self.tts_engine.setProperty('rate', tts_settings['rate'])
-                    if 'volume' in tts_settings:
-                        self.tts_engine.setProperty('volume', tts_settings['volume'])
+                    if "voice" in tts_settings:
+                        self.tts_engine.setProperty("voice", tts_settings["voice"])
+                    if "rate" in tts_settings:
+                        self.tts_engine.setProperty("rate", tts_settings["rate"])
+                    if "volume" in tts_settings:
+                        self.tts_engine.setProperty("volume", tts_settings["volume"])
                     logging.info("TTS settings loaded successfully")
         except Exception as e:
             logging.error(f"Error loading TTS settings: {e}")
 
     def _test_tts(self) -> None:
         if not TTS_AVAILABLE or not self.tts_engine:
-            messagebox.showerror("TTS Error", "Text-to-speech functionality is not available.")
+            messagebox.showerror(
+                "TTS Error", "Text-to-speech functionality is not available."
+            )
             return
         try:
             self.tts_engine.say("This is a test of the text-to-speech system.")
@@ -2425,34 +2713,41 @@ class CrewGUI:
         """Update the groups view with current group data"""
         try:
             # Clear existing groups in the treeview
-            if hasattr(self, 'group_list'):
+            if hasattr(self, "group_list"):
                 self.group_list.delete(*self.group_list.get_children())
-            
+
             # Add groups to the treeview
-            if hasattr(self, 'groups') and self.groups:
+            if hasattr(self, "groups") and self.groups:
                 for group_name, group_data in self.groups.items():
                     item_count = len(group_data) if isinstance(group_data, list) else 0
                     display_text = f"{group_name} ({item_count} items)"
-                    self.group_list.insert("", "end", text=group_name, values=[display_text])
-            
-            logging.info(f"Updated groups view with {len(self.groups) if hasattr(self, 'groups') else 0} groups")
-            
+                    self.group_list.insert(
+                        "", "end", text=group_name, values=[display_text]
+                    )
+
+            logging.info(
+                f"Updated groups view with {len(self.groups) if hasattr(self, 'groups') else 0} groups"
+            )
+
         except Exception as e:
             logging.error(f"Error updating groups view: {e}")
+
 
 def speak_with_espeak_ng(text: str) -> None:
     """Use espeak-ng for lightweight TTS."""
     try:
-        subprocess.run(['espeak-ng', text], check=True)
+        subprocess.run(["espeak-ng", text], check=True)
     except subprocess.CalledProcessError as e:
         logging.error(f"Error using espeak-ng: {e}")
+
 
 def speak_with_flite(text: str) -> None:
     """Use flite for lightweight TTS."""
     try:
-        subprocess.run(['flite', '-t', text], check=True)
+        subprocess.run(["flite", "-t", text], check=True)
     except subprocess.CalledProcessError as e:
         logging.error(f"Error using flite: {e}")
+
 
 if __name__ == "__main__":
     try:

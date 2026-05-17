@@ -1,10 +1,14 @@
 """
 Test suite for enhanced_features.py (Enhanced Features module).
 """
+
+import os
+import sys
 import unittest
-import sys, os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import enhanced_features
+
 
 class TestEnhancedFeatures(unittest.TestCase):
     def test_check_dependencies(self):
@@ -26,6 +30,7 @@ class TestEnhancedFeatures(unittest.TestCase):
     def test_run_diagnostics(self):
         result = enhanced_features.run_diagnostics()
         self.assertIsInstance(result, dict)
+
 
 if __name__ == "__main__":
     unittest.main()

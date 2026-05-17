@@ -17,7 +17,7 @@ sys.path.insert(0, str(project_root))
 
 # Attempt to import the gui module from Crew
 try:
-    from BACKUP.Crew15 import gui
+    from Crew import gui
 except ImportError as e:
     gui = None
     gui_import_error = e
@@ -47,8 +47,7 @@ class TestGUIModule(unittest.TestCase):
             # This can happen in environments without a display
             # (e.g., some CI servers)
             self.skipTest(
-                "Skipping test: Tkinter could not be initialized "
-                f"(no display?): {e}"
+                "Skipping test: Tkinter could not be initialized " f"(no display?): {e}"
             )
 
     def tearDown(self):
@@ -86,11 +85,10 @@ class TestGUIModule(unittest.TestCase):
         # Assumes gui module is imported successfully (checked in setUpClass)
         self.assertTrue(
             hasattr(gui, "auto_import_py_files"),
-            "gui module does not have auto_import_py_files function"
+            "gui module does not have auto_import_py_files function",
         )
         self.assertTrue(
-            callable(gui.auto_import_py_files),
-            "auto_import_py_files is not callable"
+            callable(gui.auto_import_py_files), "auto_import_py_files is not callable"
         )
 
     # This test might be too broad or hard to maintain
@@ -108,21 +106,15 @@ class TestGUIModule(unittest.TestCase):
         Test that GUI module contains expected main classes and functions.
         """
         self.assertTrue(
-            hasattr(gui, "CrewGUI"),
-            "CrewGUI class is missing from gui module."
+            hasattr(gui, "CrewGUI"), "CrewGUI class is missing from gui module."
         )
         self.assertTrue(
-            callable(gui.CrewGUI),
-            "CrewGUI is not callable (not a class?)."
+            callable(gui.CrewGUI), "CrewGUI is not callable (not a class?)."
         )
         self.assertTrue(
-            hasattr(gui, "main"),
-            "main function is missing from gui module."
+            hasattr(gui, "main"), "main function is missing from gui module."
         )
-        self.assertTrue(
-            callable(gui.main),
-            "main is not callable."
-        )
+        self.assertTrue(callable(gui.main), "main is not callable.")
 
     def test_path_handling_pathlib(self):
         """Test Path object handling from pathlib, as it's used in project."""
@@ -137,7 +129,7 @@ class TestGUIModule(unittest.TestCase):
         # but string comparison is fine here for a fixed example.
         self.assertEqual(
             str(data_path),
-            "data/npcs.csv" if sys.platform != "win32" else "data\\npcs.csv"
+            "data/npcs.csv" if sys.platform != "win32" else "data\\npcs.csv",
         )
 
     def test_tts_menu_and_settings(self):

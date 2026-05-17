@@ -88,7 +88,7 @@ df = pd.read_html('https://example.com/table.html')[0]
 df = pd.read_parquet('filename.parquet')
 
 # With options
-df = pd.read_csv('filename.csv', 
+df = pd.read_csv('filename.csv',
                 header=0,              # Row to use as column names
                 index_col=0,           # Column to use as index
                 skiprows=[1, 2],       # Skip specific rows
@@ -305,9 +305,9 @@ df1.join(df2, how='outer')
 
 ```python
 # Pivot tables
-pivot = pd.pivot_table(df, 
+pivot = pd.pivot_table(df,
                        values='value',        # Values to aggregate
-                       index=['row_category'], # Goes to rows 
+                       index=['row_category'], # Goes to rows
                        columns=['col_category'], # Goes to columns
                        aggfunc='mean')         # Aggregation function
 
@@ -316,7 +316,7 @@ stacked = df.stack()       # Pivot columns to rows (makes hierarchical index)
 unstacked = stacked.unstack()   # Pivot hierarchical index to columns
 
 # Melting (wide to long format)
-pd.melt(df, 
+pd.melt(df,
         id_vars=['id'],           # Columns to keep as is
         value_vars=['A', 'B'],    # Columns to melt
         var_name='variable',      # Name for the variable column
@@ -381,7 +381,7 @@ df.xs('one', level='number')  # Cross-section by level
 df['category'] = df['category'].astype('category')
 
 # Create ordered categories
-df['size'] = pd.Categorical(df['size'], 
+df['size'] = pd.Categorical(df['size'],
                            categories=['small', 'medium', 'large'],
                            ordered=True)
 ```

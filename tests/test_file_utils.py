@@ -1,8 +1,10 @@
-
 # No sys.path modification needed; use direct imports for local modules
+import os
+import sys
+
 import pandas as pd
-import sys, os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import file_utils
 
 

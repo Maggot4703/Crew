@@ -6,13 +6,15 @@ Documentation Fetcher Script
 import os
 import sys
 import time
-import requests
 from pathlib import Path
+
+import requests
+
 
 class DocumentationFetcher:
     def __init__(self, base_dir="Reading Now"):
         self.base_dir = Path(base_dir)
-        
+
     def create_directory(self, path):
         try:
             path.mkdir(parents=True, exist_ok=True)
@@ -20,9 +22,9 @@ class DocumentationFetcher:
         except Exception as e:
             print(f"Failed to create directory {path}: {e}")
             return False
-    
+
     def create_content(self, subject, doc_type):
-        if doc_type == 'theory':
+        if doc_type == "theory":
             return f"""# {subject} - Theory and Concepts
 
 ## Overview
@@ -44,7 +46,7 @@ class DocumentationFetcher:
 Please refer to official documentation for detailed information.
 Created: {time.strftime('%Y-%m-%d %H:%M:%S')}
 """
-        elif doc_type == 'usage':
+        elif doc_type == "usage":
             return f"""# {subject} - Usage Guide
 
 ## Getting Started
@@ -165,68 +167,69 @@ Last updated: {time.strftime('%Y-%m-%d %H:%M:%S')}
 
     def process_subject(self, subject):
         subject_dir = self.base_dir / subject
-        
+
         if not self.create_directory(subject_dir):
             return False
-        
+
         print(f"Processing: {subject}")
-        
+
         # Create theory, usage, examples files
-        for doc_type in ['theory', 'usage', 'examples']:
+        for doc_type in ["theory", "usage", "examples"]:
             file_path = subject_dir / f"{doc_type}.txt"
             content = self.create_content(subject, doc_type)
-            
+
             try:
-                with open(file_path, 'w', encoding='utf-8') as f:
+                with open(file_path, "w", encoding="utf-8") as f:
                     f.write(content)
                 print(f"  Created: {file_path}")
             except Exception as e:
                 print(f"  Failed to write {file_path}: {e}")
-        
+
         # Create links file
         links_path = subject_dir / "links.txt"
         try:
-            with open(links_path, 'w', encoding='utf-8') as f:
+            with open(links_path, "w", encoding="utf-8") as f:
                 f.write(self.create_links_file(subject))
             print(f"  Created: {links_path}")
         except Exception as e:
             print(f"  Failed to write {links_path}: {e}")
-        
+
         return True
-    
+
     def run(self):
         print("Documentation Fetcher Starting...")
-        
+
         # Create base directory
         if not self.create_directory(self.base_dir):
             return False
-        
+
         # Read subjects from file
         try:
-            with open('read_books.txt', 'r') as f:
+            with open("read_books.txt", "r") as f:
                 subjects = [line.strip() for line in f if line.strip()]
         except Exception as e:
             print(f"Failed to read read_books.txt: {e}")
             return False
-        
+
         print(f"Found {len(subjects)} subjects to process")
-        
+
         # Process each subject
         success_count = 0
         for subject in subjects:
             if self.process_subject(subject):
                 success_count += 1
-        
+
         print(f"\nCompleted! Processed {success_count}/{len(subjects)} subjects")
         print(f"Documentation saved to: {self.base_dir.absolute()}")
-        
+
         return True
 
+
 def main():
-    if not os.path.exists('read_books.txt'):
+    if not os.path.exists("read_books.txt"):
         print("Error: read_books.txt not found")
         return 1
-    
+
     fetcher = DocumentationFetcher()
     try:
         fetcher.run()
@@ -234,6 +237,7 @@ def main():
     except KeyboardInterrupt:
         print("\nCancelled by user")
         return 1
+
 
 if __name__ == "__main__":
     sys.exit(main())

@@ -24,10 +24,10 @@ Version: 1.0.0
 Date: 2024
 """
 
+import functools
 import logging
 import traceback
-import functools
-from typing import Any, Callable, Dict, Optional, Type, Union, List
+from typing import Any, Callable, Dict, List, Optional, Type
 
 # Setup logger for this module (assuming a global logger or pass one in)
 # If you have a central logging config, this might not be needed here.
@@ -62,41 +62,49 @@ class CrewManagerError(Exception):
 
 class DatabaseError(CrewManagerError):
     """Raised for database-related errors."""
-    pass # Inherits __init__ and __str__ from CrewManagerError
+
+    pass  # Inherits __init__ and __str__ from CrewManagerError
 
 
 class ConfigError(CrewManagerError):
     """Raised for configuration-related errors."""
+
     pass
 
 
 class CacheError(CrewManagerError):
     """Raised for cache-related errors."""
+
     pass
 
 
 class ScraperError(CrewManagerError):
     """Raised for web scraping errors."""
+
     pass
 
 
 class FileOperationError(CrewManagerError):
     """Raised for file input/output errors."""
+
     pass
 
 
 class GUIError(CrewManagerError):
     """Raised for GUI-related errors."""
+
     pass
 
 
 class ValidationError(CrewManagerError):
     """Raised for data validation errors."""
+
     pass
 
 
 class TravellerDataNotFoundError(ScraperError):
     """Raised when specific Traveller data is not found during scraping."""
+
     pass
 
 
@@ -121,7 +129,7 @@ def handle_errors(
     custom_message: Optional[str] = None,
 ):
     """A decorator to handle exceptions in a function.
-    
+
     Args:
         default_return: Value to return if an exception occurs.
         exceptions: A tuple of exception types to catch.
@@ -139,13 +147,18 @@ def handle_errors(
                 return func(*args, **kwargs)
             except exceptions as e:
                 if log_errors:
-                    error_msg = custom_message or f"Error in {func.__name__}: {format_error_message(e)}"
+                    error_msg = (
+                        custom_message
+                        or f"Error in {func.__name__}: {format_error_message(e)}"
+                    )
                     # local_logger.error(error_msg, exc_info=True) # exc_info=True adds traceback to log
-                    logger.error(error_msg, exc_info=True) # Use module logger
+                    logger.error(error_msg, exc_info=True)  # Use module logger
                 if reraise:
                     raise
                 return default_return
+
         return wrapper
+
     return decorator
 
 
@@ -160,7 +173,7 @@ def safe_execute(
     **kwargs,
 ) -> Any:
     """Safely executes a function, catching specified exceptions.
-       The handle_errors decorator now manages the try-except block.
+    The handle_errors decorator now manages the try-except block.
     """
     # The actual call is now directly here, decorator handles try/except
     return func(*args, **kwargs)
@@ -193,10 +206,12 @@ def convert_exception(
     error_context = create_error_context(
         original_exception_type=type(source_exception).__name__,
         original_message=str(source_exception),
-        **context
+        **context,
     )
     # Log the conversion
-    logger.debug(f"Converting {type(source_exception).__name__} to {target_exception_class.__name__} with message: '{new_message}'")
+    logger.debug(
+        f"Converting {type(source_exception).__name__} to {target_exception_class.__name__} with message: '{new_message}'"
+    )
     return target_exception_class(new_message, context=error_context)
 
 
@@ -205,23 +220,30 @@ def convert_exception(
 
 class ErrorReporter:
     """A simple error reporter class (can be expanded for integrations like Sentry)."""
+
     def __init__(self):
         self.error_log: List[Dict[str, Any]] = []
         # self.logger = logger or logging.getLogger(__name__ + ".ErrorReporter") # Use passed or new logger
         self.logger = logging.getLogger(__name__ + ".ErrorReporter")
 
-    def report(self, error: Exception, context: Optional[Dict[str, Any]] = None, severity: str = "ERROR"):
+    def report(
+        self,
+        error: Exception,
+        context: Optional[Dict[str, Any]] = None,
+        severity: str = "ERROR",
+    ):
         """Reports an error, e.g., logs it and could send to an external service."""
         report_details = {
             "error_type": type(error).__name__,
             "message": str(error),
-            "context": context or (error.context if isinstance(error, CrewManagerError) else {}),
+            "context": context
+            or (error.context if isinstance(error, CrewManagerError) else {}),
             "severity": severity,
-            "traceback": traceback.format_exc() # Capture traceback string
+            "traceback": traceback.format_exc(),  # Capture traceback string
         }
         self.error_log.append(report_details)
         log_message = f"Reported Error ({severity}): {report_details['message']} | Context: {report_details['context']}"
-        
+
         if severity.upper() == "CRITICAL":
             self.logger.critical(log_message, exc_info=True)
         elif severity.upper() == "ERROR":
@@ -229,18 +251,20 @@ class ErrorReporter:
         elif severity.upper() == "WARNING":
             self.logger.warning(log_message, exc_info=True)
         else:
-            self.logger.info(log_message) # Default to info for other severities
+            self.logger.info(log_message)  # Default to info for other severities
 
     def get_summary(self) -> Dict[str, Any]:
         """Returns a summary of reported errors."""
         summary = {
             "total_errors": len(self.error_log),
             "errors_by_type": {},
-            "recent_errors": self.error_log[-5:] # Last 5 errors for quick view
+            "recent_errors": self.error_log[-5:],  # Last 5 errors for quick view
         }
         for err_report in self.error_log:
             err_type = err_report["error_type"]
-            summary["errors_by_type"][err_type] = summary["errors_by_type"].get(err_type, 0) + 1
+            summary["errors_by_type"][err_type] = (
+                summary["errors_by_type"].get(err_type, 0) + 1
+            )
         return summary
 
 
@@ -261,30 +285,42 @@ def get_error_summary() -> Dict[str, Any]:
 
 
 # Example Usage (can be removed or kept for testing)
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Configure basic logging for the example
-    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    )
 
-    @handle_errors(default_return="Handled!", reraise=False, custom_message="Something went wrong in test_func")
+    @handle_errors(
+        default_return="Handled!",
+        reraise=False,
+        custom_message="Something went wrong in test_func",
+    )
     def test_func(x, y):
         if y == 0:
             raise ValueError("Division by zero in test_func")
         return x / y
 
     print(f"Test func (10, 2): {test_func(10, 2)}")
-    print(f"Test func (10, 0): {test_func(10, 0)}") # Will be handled
+    print(f"Test func (10, 0): {test_func(10, 0)}")  # Will be handled
 
     try:
         # Example of converting an exception
         num = int("abc")
     except ValueError as ve:
-        app_error = convert_exception(ve, ValidationError, "Invalid number format provided.", input_value="abc")
+        app_error = convert_exception(
+            ve, ValidationError, "Invalid number format provided.", input_value="abc"
+        )
         # logger.error(f"Converted error: {app_error}")
         report_error(app_error, severity="WARNING")
-    
+
     try:
         # Example of a custom error
-        raise DatabaseError("Failed to connect to the database.", context=create_error_context(db_host="localhost"))
+        raise DatabaseError(
+            "Failed to connect to the database.",
+            context=create_error_context(db_host="localhost"),
+        )
     except DatabaseError as de:
         # logger.error(f"Caught DB error: {format_error_message(de, include_traceback=True)}")
         report_error(de, severity="CRITICAL")
@@ -292,6 +328,7 @@ if __name__ == '__main__':
     print("\nError Summary:")
     summary = get_error_summary()
     import json
+
     print(json.dumps(summary, indent=2))
 
     # Test safe_execute
@@ -299,8 +336,10 @@ if __name__ == '__main__':
         if not isinstance(value, int):
             raise TypeError("Value must be an integer for risky_operation")
         return value * 2
-    
+
     result_ok = safe_execute(risky_operation, 5)
     print(f"Safe execute OK: {result_ok}")
-    result_fail = safe_execute(risky_operation, "text") # Will log error and return None
+    result_fail = safe_execute(
+        risky_operation, "text"
+    )  # Will log error and return None
     print(f"Safe execute FAIL: {result_fail}")

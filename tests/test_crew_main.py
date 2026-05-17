@@ -3,14 +3,11 @@
 Test module for main Crew functionality.
 """
 
-
+import os
 import sys
+import tempfile
 import unittest
 from pathlib import Path
-import tempfile
-import os
-
-
 
 # Add the Crew directory to the path for direct imports
 sys.path.insert(0, str(Path(__file__).parent.parent))

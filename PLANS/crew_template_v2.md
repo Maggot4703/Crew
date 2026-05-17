@@ -1,0 +1,1 @@
+/home/me/Notebooks/CREW/DESIGN/PLANS/crew_template_v2.md

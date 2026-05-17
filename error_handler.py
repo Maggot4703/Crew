@@ -12,7 +12,6 @@ Version: 1.0
 
 import functools
 import logging
-import sys
 import time
 import traceback
 from contextlib import contextmanager

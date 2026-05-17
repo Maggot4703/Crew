@@ -3,6 +3,7 @@
 Simple utility to read use-*.txt files aloud
 Enhanced with better voice handling and interruption support
 """
+
 import argparse
 import glob
 import os
@@ -357,7 +358,7 @@ def main():
                     read_text(use_files[idx], args.rate)
                 else:
                     print("❌ Invalid selection!")
-        except (ValueError, KeyboardInterrupt):
+        except ValueError, KeyboardInterrupt:
             print("\n🚪 Cancelled")
 
 

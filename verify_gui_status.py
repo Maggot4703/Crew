@@ -7,8 +7,6 @@ This script verifies that the GUI application is working correctly.
 """
 
 import subprocess
-import sys
-import time
 from pathlib import Path
 
 
@@ -41,7 +39,7 @@ def main():
 
     # Check files
     files = ["gui.py", "Crew.py", "gui.log"]
-    print(f"\n📁 Checking files:")
+    print("\n📁 Checking files:")
     for f in files:
         exists = Path(f).exists()
         status = "✅" if exists else "❌"

@@ -1,1 +1,4 @@
-# Placeholder requirements file for test compatibility.
+pandas>=1.3.0
+Pillow>=8.0.0
+ijson>=3.0.0
+SpeechRecognition>=3.8.1

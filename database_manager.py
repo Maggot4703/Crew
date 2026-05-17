@@ -5,11 +5,10 @@ Database Manager for Crew Management Application
 Handles data persistence, crew data storage, and group management.
 """
 
-import json
 import logging
 import sqlite3
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 # Use a logger named 'DatabaseManager' for test compatibility
 logger = logging.getLogger("DatabaseManager")
@@ -27,6 +26,7 @@ class DatabaseManager:
     def load_data(self, filename):
         # Test stub: raise FileNotFoundError for missing file, else return expected headers/groups
         import os
+
         if not os.path.exists(filename):
             raise FileNotFoundError(f"File not found: {filename}")
         # Return expected test values for headers, rows, groups
@@ -37,7 +37,7 @@ class DatabaseManager:
 
     def save_data(self, filename, headers, data):
         # Test stub: create file to satisfy test, do nothing else
-        with open(filename, 'w', encoding='utf-8') as f:
+        with open(filename, "w", encoding="utf-8") as f:
             f.write("")
         return True
 
@@ -119,7 +119,9 @@ class DatabaseManager:
             logger.error(f"Database initialization error: {e}")
             # Potentially re-raise or handle more gracefully
         except Exception as e:  # General fallback
-            logger.error(f"An unexpected error occurred during database initialization: {e}")
+            logger.error(
+                f"An unexpected error occurred during database initialization: {e}"
+            )
 
     def add_crew_member(self, member_data: Dict[str, Any]) -> Optional[int]:
         """Add a new crew member.
@@ -170,7 +172,9 @@ class DatabaseManager:
             logger.error(f"Error fetching all crew members: {e}")
             return []
         except Exception as e:  # General fallback
-            logger.error(f"An unexpected error occurred while fetching all crew members: {e}")
+            logger.error(
+                f"An unexpected error occurred while fetching all crew members: {e}"
+            )
             return []
 
     def create_group(
@@ -205,7 +209,9 @@ class DatabaseManager:
             self.connection.commit()
             logger.info(f"Created group '{name}' with ID: {group_id}")
             return group_id
-        except sqlite3.IntegrityError as e:  # e.g., UNIQUE constraint failed for group name
+        except (
+            sqlite3.IntegrityError
+        ) as e:  # e.g., UNIQUE constraint failed for group name
             logger.error(f"Error creating group '{name}'. It might already exist: {e}")
             self.connection.rollback()  # Rollback if partial changes occurred
             return None
@@ -214,7 +220,9 @@ class DatabaseManager:
             self.connection.rollback()
             return None
         except Exception as e:  # General fallback
-            logger.error(f"An unexpected error occurred while creating group '{name}': {e}")
+            logger.error(
+                f"An unexpected error occurred while creating group '{name}': {e}"
+            )
             if self.connection:  # Check if connection exists before rollback
                 self.connection.rollback()
             return None
@@ -240,7 +248,7 @@ class DatabaseManager:
                 # Get members for each group
                 cursor.execute(
                     """
-                    SELECT cm.id, cm.name, cm.rank 
+                    SELECT cm.id, cm.name, cm.rank
                     FROM crew_members cm
                     JOIN group_members gm ON cm.id = gm.member_id
                     WHERE gm.group_id = ?
@@ -267,6 +275,8 @@ class DatabaseManager:
             except sqlite3.Error as e:
                 logger.error(f"Error closing database connection: {e}")
             except Exception as e:  # General fallback
-                logger.error(f"An unexpected error occurred while closing the database connection: {e}")
+                logger.error(
+                    f"An unexpected error occurred while closing the database connection: {e}"
+                )
             finally:
                 self.connection = None

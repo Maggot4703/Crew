@@ -2,7 +2,7 @@
 
 ✅ RESTORED CRITICAL METHODS:
    • clear_filter() - Clear data filters
-   • _on_open_file() - Open CSV/Excel/text files  
+   • _on_open_file() - Open CSV/Excel/text files
    • _on_save_file() - Save data to files
    • _refresh_views() - Refresh all views
    • _update_script_menu() - Script menu management
@@ -18,7 +18,7 @@
    • Error Handling: Robust error recovery
 
 📊 STATUS: FULLY FUNCTIONAL GUI
-All lost functionality has been restored while maintaining 
+All lost functionality has been restored while maintaining
 the modular architecture from the refactoring process.
 
 The GUI is now ready for full use!

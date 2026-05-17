@@ -1,9 +1,9 @@
-from typing import List, Dict, Any, Optional, Tuple, Callable
-from dataclasses import dataclass
+import csv
 import logging
 import os
-import csv
-import pandas as pd
+from dataclasses import dataclass
+from typing import Any, Callable, Dict, List, Optional, Tuple
+
 
 @dataclass
 class FilterConfig:
@@ -28,15 +28,16 @@ class DataState:
     sort_ascending: bool = True
     sort_keys: Optional[List[SortKey]] = None
 
+
 class DataManager:
     def __init__(self):
         self._state = DataState([], [], [], FilterConfig())
         self._observers: List[Callable] = []
-        
+
     def register_observer(self, callback: Callable) -> None:
         """Register UI callback for data changes"""
         self._observers.append(callback)
-        
+
     def _notify_observers(self) -> None:
         """Notify all observers of data changes"""
         for callback in self._observers:
@@ -44,82 +45,83 @@ class DataManager:
                 callback(self._state)
             except Exception as e:
                 logging.error(f"Observer notification failed: {e}")
-    
+
     def load_data(self, data: List[List[Any]], headers: List[str]) -> bool:
         """Load new data and validate"""
         try:
             # Validate data structure
             if not self._validate_data_structure(data, headers):
                 return False
-                
+
             self._state.raw_data = data
             self._state.headers = headers
             self._state.filtered_data = data.copy()
-            
+
             # Reset filter and sort when new data is loaded
             self._state.current_filter = FilterConfig()
             self._state.sort_column = None
             self._state.sort_ascending = True
             self._state.sort_keys = None
-            
+
             self._notify_observers()
             return True
-            
+
         except Exception as e:
             logging.error(f"Failed to load data: {e}")
             return False
-    
+
     def load_data_from_file(self, file_path: str) -> Tuple[List[List[Any]], List[str]]:
         """Load data from file using pandas (moved from GUI)"""
         try:
             if not os.path.exists(file_path):
                 raise FileNotFoundError(f"File not found: {file_path}")
-                
+
             _, ext = os.path.splitext(file_path)
             ext = ext.lower()
-            
+
             # Check if pandas is available
             try:
                 import pandas as pd
+
                 PANDAS_AVAILABLE = True
             except ImportError:
                 PANDAS_AVAILABLE = False
                 raise ImportError("Pandas is required to load data.")
-            
-            if ext == '.csv':
+
+            if ext == ".csv":
                 df = pd.read_csv(file_path)
-            elif ext in ['.xlsx', '.xls']:
+            elif ext in [".xlsx", ".xls"]:
                 try:
                     df = pd.read_excel(file_path)
                 except (ValueError, ImportError, OSError) as read_error:
-                    engine = 'openpyxl' if ext == '.xlsx' else 'xlrd'
+                    engine = "openpyxl" if ext == ".xlsx" else "xlrd"
                     logging.warning(
                         "Primary Excel read failed (%s). Retrying with engine '%s'.",
                         read_error,
                         engine,
                     )
                     df = pd.read_excel(file_path, engine=engine)
-            elif ext == '.txt':
+            elif ext == ".txt":
                 # For text files, create single column data
-                with open(file_path, 'r', encoding='utf-8') as f:
+                with open(file_path, "r", encoding="utf-8") as f:
                     lines = [l.strip() for l in f if l.strip()]
-                df = pd.DataFrame(lines, columns=['text_data'])
+                df = pd.DataFrame(lines, columns=["text_data"])
             else:
                 raise ValueError(f"Unsupported file extension: {ext}")
-                
+
             data = df.values.tolist()
             headers = df.columns.tolist()
-            
+
             # Load into internal state
             if self.load_data(data, headers):
                 return data, headers
             else:
                 raise ValueError("Failed to validate loaded data")
-                
+
         except Exception as e:
             logging.error(f"Error loading data from file {file_path}: {e}")
             raise
-    
+
     def load_csv_data(self, file_path: str) -> bool:
         """Load CSV data directly (simpler method for default data)"""
         try:
@@ -131,23 +133,26 @@ class DataManager:
         except Exception as e:
             logging.error(f"Error loading CSV data: {e}")
             return False
-    
-    def save_data_to_file(self, file_path: str, data: Optional[List[List[Any]]] = None) -> bool:
+
+    def save_data_to_file(
+        self, file_path: str, data: Optional[List[List[Any]]] = None
+    ) -> bool:
         """Save data to file (moved from GUI)"""
         try:
             # Use current filtered data if no data provided
             if data is None:
                 data = self._state.filtered_data
-                
+
             headers = self._state.headers
-            
+
             # Check if pandas is available for Excel support
             try:
                 import pandas as pd
+
                 PANDAS_AVAILABLE = True
             except ImportError:
                 PANDAS_AVAILABLE = False
-            
+
             if PANDAS_AVAILABLE and file_path.endswith(".xlsx"):
                 df = pd.DataFrame(data, columns=headers if headers else None)
                 df.to_excel(file_path, index=False)
@@ -164,10 +169,10 @@ class DataManager:
                         f.write(",".join(map(str, headers)) + "\n")
                     for row in data:
                         f.write(",".join(map(str, row)) + "\n")
-            
+
             logging.info(f"Data saved successfully to {file_path}")
             return True
-            
+
         except Exception as e:
             logging.error(f"Error saving data to file {file_path}: {e}")
             return False
@@ -176,41 +181,42 @@ class DataManager:
         """Apply filter and return filtered data"""
         try:
             self._state.current_filter = filter_config
-            
+
             if not filter_config.text:
                 self._state.filtered_data = self._state.raw_data.copy()
             else:
                 self._state.filtered_data = self._filter_data(
-                    self._state.raw_data, 
-                    filter_config
+                    self._state.raw_data, filter_config
                 )
-            
+
             # Apply current sort if any
             if self._state.sort_column:
                 self._apply_sort()
-            
+
             self._notify_observers()
             return self._state.filtered_data
-            
+
         except Exception as e:
             logging.error(f"Filter application failed: {e}")
             return self._state.raw_data
-    
-    def sort_by_column(self, column_name: str, ascending: bool = True) -> List[List[Any]]:
+
+    def sort_by_column(
+        self, column_name: str, ascending: bool = True
+    ) -> List[List[Any]]:
         """Sort data by column"""
         try:
             if column_name not in self._state.headers:
                 logging.warning(f"Column {column_name} not found in headers")
                 return self._state.filtered_data
-                
+
             self._state.sort_column = column_name
             self._state.sort_ascending = ascending
             self._state.sort_keys = None
-            
+
             self._apply_sort()
             self._notify_observers()
             return self._state.filtered_data
-            
+
         except Exception as e:
             logging.error(f"Sort operation failed: {e}")
             return self._state.filtered_data
@@ -218,7 +224,9 @@ class DataManager:
     def sort_by_columns(self, sort_keys: List[SortKey]) -> List[List[Any]]:
         """Sort data by multiple columns in priority order."""
         try:
-            invalid_columns = [k.column for k in sort_keys if k.column not in self._state.headers]
+            invalid_columns = [
+                k.column for k in sort_keys if k.column not in self._state.headers
+            ]
             if invalid_columns:
                 logging.warning(f"Unknown columns in sort keys: {invalid_columns}")
                 sort_keys = [k for k in sort_keys if k.column in self._state.headers]
@@ -238,7 +246,7 @@ class DataManager:
         except Exception as e:
             logging.error(f"Multi-column sort failed: {e}")
             return self._state.filtered_data
-    
+
     def _apply_sort(self) -> None:
         """Apply current sort configuration (single or multi-column)."""
         if not self._state.filtered_data:
@@ -253,20 +261,17 @@ class DataManager:
 
                     col_index = self._state.headers.index(key_info.column)
 
-                    def make_sort_key(index: int):
-                        def sort_key(row: List[Any]):
-                            if index < len(row):
-                                value = row[index]
-                                try:
-                                    return (0, float(value))
-                                except (ValueError, TypeError):
-                                    return (1, str(value).lower())
-                            return (1, "")
-
-                        return sort_key
+                    def make_sort_key(row: List[Any]):
+                        if col_index < len(row):
+                            value = row[col_index]
+                            try:
+                                return (0, float(value))
+                            except ValueError, TypeError:
+                                return (1, str(value).lower())
+                        return (1, "")
 
                     self._state.filtered_data.sort(
-                        key=make_sort_key(col_index),
+                        key=make_sort_key,
                         reverse=not key_info.ascending,
                     )
                 return
@@ -282,33 +287,38 @@ class DataManager:
                     # Try to convert to number for proper numeric sorting
                     try:
                         return float(value)
-                    except (ValueError, TypeError):
+                    except ValueError, TypeError:
                         return str(value).lower()
                 return ""
 
             self._state.filtered_data.sort(
-                key=sort_key,
-                reverse=not self._state.sort_ascending
+                key=sort_key, reverse=not self._state.sort_ascending
             )
 
         except Exception as e:
             logging.error(f"Error applying sort: {e}")
 
-    def _filter_data(self, data: List[List[Any]], config: FilterConfig) -> List[List[Any]]:
+    def _filter_data(
+        self, data: List[List[Any]], config: FilterConfig
+    ) -> List[List[Any]]:
         """Core filtering logic - separated from UI"""
         filtered_data = []
-        
+
         for row in data:
             if config.column == "All Columns":
                 if self._search_all_columns(row, config.text, config.case_sensitive):
                     filtered_data.append(row)
             else:
-                if self._search_specific_column(row, config.column, config.text, config.case_sensitive):
+                if self._search_specific_column(
+                    row, config.column, config.text, config.case_sensitive
+                ):
                     filtered_data.append(row)
-                    
+
         return filtered_data
-    
-    def _search_all_columns(self, row: List[Any], search_text: str, case_sensitive: bool) -> bool:
+
+    def _search_all_columns(
+        self, row: List[Any], search_text: str, case_sensitive: bool
+    ) -> bool:
         """Search across all columns in a row"""
         for cell in row:
             cell_str = str(cell)
@@ -319,55 +329,61 @@ class DataManager:
                 if search_text.lower() in cell_str.lower():
                     return True
         return False
-    
-    def _search_specific_column(self, row: List[Any], column_name: str, search_text: str, case_sensitive: bool) -> bool:
+
+    def _search_specific_column(
+        self, row: List[Any], column_name: str, search_text: str, case_sensitive: bool
+    ) -> bool:
         """Search in a specific column"""
         if column_name not in self._state.headers:
             return False
-            
+
         col_index = self._state.headers.index(column_name)
         if col_index >= len(row):
             return False
-            
+
         cell_str = str(row[col_index])
         if case_sensitive:
             return search_text in cell_str
         else:
             return search_text.lower() in cell_str.lower()
-    
-    def _validate_data_structure(self, data: List[List[Any]], headers: List[str]) -> bool:
+
+    def _validate_data_structure(
+        self, data: List[List[Any]], headers: List[str]
+    ) -> bool:
         """Validate data structure consistency"""
         if not headers:
             logging.warning("No headers provided")
             return False
-            
+
         if not data:
             return True  # Empty data is valid
-            
+
         header_count = len(headers)
         for i, row in enumerate(data):
             if len(row) != header_count:
-                logging.warning(f"Row {i} has {len(row)} columns but headers have {header_count}")
+                logging.warning(
+                    f"Row {i} has {len(row)} columns but headers have {header_count}"
+                )
                 # Could auto-fix by padding or truncating, but for now just warn
-                
+
         return True
-    
+
     def get_current_data(self) -> List[List[Any]]:
         """Get currently filtered data"""
         return self._state.filtered_data
-    
+
     def get_raw_data(self) -> List[List[Any]]:
         """Get original unfiltered data"""
         return self._state.raw_data
-    
+
     def get_headers(self) -> List[str]:
         """Get current headers"""
         return self._state.headers
-    
+
     def get_current_filter(self) -> FilterConfig:
         """Get current filter configuration"""
         return self._state.current_filter
-    
+
     def get_sort_info(self) -> Tuple[Optional[str], bool]:
         """Get current sort column and direction"""
         return self._state.sort_column, self._state.sort_ascending
@@ -375,37 +391,36 @@ class DataManager:
     def get_sort_keys(self) -> List[SortKey]:
         """Get current multi-column sort keys in priority order."""
         return list(self._state.sort_keys) if self._state.sort_keys else []
-    
+
     def clear_filter(self) -> List[List[Any]]:
         """Clear all filters and return to raw data"""
         self._state.current_filter = FilterConfig()
         self._state.filtered_data = self._state.raw_data.copy()
-        
+
         # Reapply sort if any
         if self._state.sort_column:
             self._apply_sort()
-            
+
         self._notify_observers()
         return self._state.filtered_data
-    
+
     def clear_sort(self) -> List[List[Any]]:
         """Clear sorting and return to filtered data in original order"""
         self._state.sort_column = None
         self._state.sort_ascending = True
         self._state.sort_keys = None
-        
+
         # Reapply filter to get unsorted filtered data
         if self._state.current_filter.text:
             self._state.filtered_data = self._filter_data(
-                self._state.raw_data, 
-                self._state.current_filter
+                self._state.raw_data, self._state.current_filter
             )
         else:
             self._state.filtered_data = self._state.raw_data.copy()
-            
+
         self._notify_observers()
         return self._state.filtered_data
-    
+
     def get_data_summary(self) -> Dict[str, Any]:
         """Get summary information about current data"""
         return {
@@ -423,7 +438,7 @@ class DataManager:
                 for key in (self._state.sort_keys or [])
             ],
         }
-    
+
     def reset_data(self) -> None:
         """Reset all data and state"""
         self._state = DataState([], [], [], FilterConfig())

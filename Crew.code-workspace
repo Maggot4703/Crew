@@ -3,6 +3,12 @@
 		{
 			"name": "Crew",
 			"path": "."
+		},
+		{
+			"path": ".."
+		},
+		{
+			"path": "../../CARDCUTTER/CardCutter"
 		}
 	],
 	"settings": {

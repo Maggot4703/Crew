@@ -12,7 +12,7 @@
 While SQL is a standard, different database systems have their own implementations with slight variations:
 
 - **MySQL/MariaDB**: Open-source database management systems
-- **PostgreSQL**: Advanced open-source object-relational database 
+- **PostgreSQL**: Advanced open-source object-relational database
 - **SQLite**: Lightweight, file-based database
 - **Microsoft SQL Server**: Enterprise-level database system
 - **Oracle Database**: Enterprise-level database system
@@ -128,7 +128,7 @@ VALUES (1, 'John', 'Doe', '2023-01-15', 75000.00, 1);
 
 -- Insert multiple rows
 INSERT INTO employees (employee_id, first_name, last_name, hire_date, salary, department_id)
-VALUES 
+VALUES
     (2, 'Jane', 'Smith', '2023-02-01', 82000.00, 2),
     (3, 'Bob', 'Johnson', '2023-02-15', 65000.00, 1);
 
@@ -151,10 +151,10 @@ SELECT employee_id, first_name, last_name FROM employees;
 SELECT * FROM employees WHERE department_id = 1;
 
 -- Select with multiple conditions
-SELECT * FROM employees 
+SELECT * FROM employees
 WHERE salary > 70000 AND hire_date > '2023-01-01';
 
-SELECT * FROM employees 
+SELECT * FROM employees
 WHERE department_id = 1 OR department_id = 2;
 
 -- Select with pattern matching
@@ -180,8 +180,8 @@ SELECT * FROM employees FETCH FIRST 10 ROWS ONLY;  -- Standard SQL
 SELECT DISTINCT department_id FROM employees;
 
 -- Select with calculated columns
-SELECT 
-    employee_id, 
+SELECT
+    employee_id,
     first_name,
     last_name,
     salary,
@@ -201,7 +201,7 @@ WHERE department_id = 1;
 
 -- Update multiple columns
 UPDATE employees
-SET 
+SET
     salary = salary * 1.05,
     last_updated = CURRENT_TIMESTAMP
 WHERE employee_id = 3;
@@ -275,8 +275,8 @@ SELECT * FROM customers WHERE state = 'CA' OR state = 'NY';
 SELECT * FROM products WHERE NOT category = 'Clothing';
 
 -- Combining operators
-SELECT * FROM products 
-WHERE (category = 'Electronics' OR category = 'Computers') 
+SELECT * FROM products
+WHERE (category = 'Electronics' OR category = 'Computers')
 AND price < 100;
 ```
 
@@ -335,7 +335,7 @@ FROM employees e
 CROSS JOIN departments d;
 
 -- SELF JOIN (joining a table to itself)
-SELECT e1.employee_id, e1.first_name, e1.last_name, 
+SELECT e1.employee_id, e1.first_name, e1.last_name,
        e2.employee_id AS manager_id, e2.first_name AS manager_first_name
 FROM employees e1
 LEFT JOIN employees e2 ON e1.manager_id = e2.employee_id;
@@ -344,7 +344,7 @@ LEFT JOIN employees e2 ON e1.manager_id = e2.employee_id;
 ### Multi-table Joins
 ```sql
 -- Three-way join
-SELECT e.employee_id, e.first_name, e.last_name, 
+SELECT e.employee_id, e.first_name, e.last_name,
        d.department_name, p.project_name
 FROM employees e
 INNER JOIN departments d ON e.department_id = d.department_id
@@ -397,7 +397,7 @@ SELECT AVG(salary) FROM employees;
 SELECT MIN(salary), MAX(salary) FROM employees;
 
 -- Multiple aggregates
-SELECT 
+SELECT
     COUNT(*) AS employee_count,
     SUM(salary) AS total_salary,
     AVG(salary) AS average_salary,
@@ -419,7 +419,7 @@ FROM employees
 GROUP BY department_id, job_title;
 
 -- Group with aggregates
-SELECT 
+SELECT
     department_id,
     COUNT(*) AS employee_count,
     AVG(salary) AS avg_salary
@@ -427,7 +427,7 @@ FROM employees
 GROUP BY department_id;
 
 -- Group with join
-SELECT 
+SELECT
     d.department_name,
     COUNT(e.employee_id) AS employee_count,
     AVG(e.salary) AS avg_salary
@@ -445,7 +445,7 @@ GROUP BY department_id
 HAVING COUNT(*) > 5;
 
 -- Complex HAVING condition
-SELECT 
+SELECT
     department_id,
     AVG(salary) AS avg_salary
 FROM employees
@@ -519,7 +519,7 @@ WHERE NOT EXISTS (
 ### Subqueries in SELECT and FROM Clauses
 ```sql
 -- Subquery in SELECT list
-SELECT 
+SELECT
     e.employee_id,
     e.first_name,
     e.last_name,
@@ -529,13 +529,13 @@ SELECT
 FROM employees e;
 
 -- Derived tables (subquery in FROM clause)
-SELECT 
+SELECT
     dept_avg.department_id,
     dept_avg.department_name,
     dept_avg.avg_salary,
     (SELECT AVG(salary) FROM employees) AS company_avg
 FROM (
-    SELECT 
+    SELECT
         d.department_id,
         d.department_name,
         AVG(e.salary) AS avg_salary
@@ -610,7 +610,7 @@ WHERE NOT EXISTS (
 ### Subqueries in SELECT and FROM Clauses
 ```sql
 -- Subquery in SELECT list
-SELECT 
+SELECT
     e.employee_id,
     e.first_name,
     e.last_name,
@@ -620,13 +620,13 @@ SELECT
 FROM employees e;
 
 -- Derived tables (subquery in FROM clause)
-SELECT 
+SELECT
     dept_avg.department_id,
     dept_avg.department_name,
     dept_avg.avg_salary,
     (SELECT AVG(salary) FROM employees) AS company_avg
 FROM (
-    SELECT 
+    SELECT
         d.department_id,
         d.department_name,
         AVG(e.salary) AS avg_salary
@@ -642,22 +642,22 @@ FROM (
 ```sql
 -- Basic CTE
 WITH employee_counts AS (
-    SELECT 
+    SELECT
         department_id,
         COUNT(*) AS emp_count
     FROM employees
     GROUP BY department_id
 )
-SELECT 
+SELECT
     d.department_name,
     COALESCE(ec.emp_count, 0) AS employee_count
 FROM departments d
 LEFT JOIN employee_counts ec ON d.department_id = ec.department_id;
 
 -- Multiple CTEs
-WITH 
+WITH
 dept_salaries AS (
-    SELECT 
+    SELECT
         department_id,
         SUM(salary) AS total_salary,
         AVG(salary) AS avg_salary
@@ -670,7 +670,7 @@ high_salary_depts AS (
     FROM dept_salaries
     WHERE avg_salary > 75000
 )
-SELECT 
+SELECT
     d.department_name,
     ds.total_salary,
     ds.avg_salary
@@ -681,19 +681,19 @@ WHERE d.department_id IN (SELECT department_id FROM high_salary_depts);
 -- Recursive CTE
 WITH RECURSIVE employee_hierarchy AS (
     -- Base case (top-level managers)
-    SELECT 
-        employee_id, 
-        first_name, 
-        last_name, 
+    SELECT
+        employee_id,
+        first_name,
+        last_name,
         manager_id,
         0 AS level
     FROM employees
     WHERE manager_id IS NULL
-    
+
     UNION ALL
-    
+
     -- Recursive case (direct reports)
-    SELECT 
+    SELECT
         e.employee_id,
         e.first_name,
         e.last_name,
@@ -702,7 +702,7 @@ WITH RECURSIVE employee_hierarchy AS (
     FROM employees e
     JOIN employee_hierarchy eh ON e.manager_id = eh.employee_id
 )
-SELECT 
+SELECT
     employee_id,
     first_name,
     last_name,
@@ -774,7 +774,7 @@ SELECT
     department_id,
     salary,
     FIRST_VALUE(first_name) OVER (
-        PARTITION BY department_id 
+        PARTITION BY department_id
         ORDER BY salary DESC
         RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
     ) AS highest_paid_in_dept
@@ -787,7 +787,7 @@ SELECT
     hire_date,
     salary,
     AVG(salary) OVER (
-        ORDER BY hire_date 
+        ORDER BY hire_date
         ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING
     ) AS moving_avg_salary
 FROM employees;
@@ -877,7 +877,7 @@ INCLUDE (first_name, last_name, salary);  -- SQL Server syntax
 ```sql
 -- Create simple view
 CREATE VIEW employee_details AS
-SELECT 
+SELECT
     e.employee_id,
     e.first_name,
     e.last_name,
@@ -888,7 +888,7 @@ JOIN departments d ON e.department_id = d.department_id;
 
 -- Create or replace view
 CREATE OR REPLACE VIEW department_summary AS
-SELECT 
+SELECT
     d.department_id,
     d.department_name,
     COUNT(e.employee_id) AS employee_count,
@@ -899,7 +899,7 @@ GROUP BY d.department_id, d.department_name;
 
 -- Create materialized view (stored result set)
 CREATE MATERIALIZED VIEW performance_stats AS
-SELECT 
+SELECT
     department_id,
     COUNT(*) AS employee_count,
     AVG(salary) AS avg_salary,

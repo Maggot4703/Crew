@@ -7,13 +7,16 @@ Handles routing messages between crew members and logging all communications.
 
 import logging
 import threading
-from typing import List, Dict, Any, Optional
 from datetime import datetime
+from typing import Any, Dict, List, Optional
+
 
 class CrewMessageRouter:
     def __init__(self):
         self.lock = threading.Lock()
-        self.messages: List[Dict[str, Any]] = []  # Each message: {sender, recipients, text, timestamp, file}
+        self.messages: List[Dict[str, Any]] = (
+            []
+        )  # Each message: {sender, recipients, text, timestamp, file}
         self.logger = logging.getLogger("CrewMessageRouter")
 
     def undo_last_user_message(self, user: str) -> bool:
@@ -26,7 +29,13 @@ class CrewMessageRouter:
                     return True
         return False
 
-    def send_message(self, sender: str, recipients: List[str], text: str, file_meta: Optional[dict] = None) -> None:
+    def send_message(
+        self,
+        sender: str,
+        recipients: List[str],
+        text: str,
+        file_meta: Optional[dict] = None,
+    ) -> None:
         msg = {
             "sender": sender,
             "recipients": recipients,
@@ -37,13 +46,19 @@ class CrewMessageRouter:
             msg["file"] = file_meta
         with self.lock:
             self.messages.append(msg)
-        self.logger.info(f"Message from {sender} to {recipients}: {text} {'[file attached]' if file_meta else ''}")
+        self.logger.info(
+            f"Message from {sender} to {recipients}: {text} {'[file attached]' if file_meta else ''}"
+        )
 
     def get_messages(self, recipient: Optional[str] = None) -> List[Dict[str, Any]]:
         with self.lock:
             if recipient is None:
                 return list(self.messages)
-            return [m for m in self.messages if recipient in m["recipients"] or m["sender"] == recipient]
+            return [
+                m
+                for m in self.messages
+                if recipient in m["recipients"] or m["sender"] == recipient
+            ]
 
     def clear_messages(self) -> None:
         with self.lock:

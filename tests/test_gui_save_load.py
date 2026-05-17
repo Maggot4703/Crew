@@ -1,14 +1,16 @@
 import os
-import tempfile
-import unittest
-import tkinter as tk
-from unittest.mock import patch
-from pathlib import Path
 
 # Ensure gui.py is importable
 import sys
+import tempfile
+import tkinter as tk
+import unittest
+from pathlib import Path
+from unittest.mock import patch
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 import gui
+
 
 class TestCrewGUISaveLoad(unittest.TestCase):
     def setUp(self):
@@ -53,6 +55,7 @@ class TestCrewGUISaveLoad(unittest.TestCase):
         # Process the event loop to allow root.after callbacks to run
         self.root.update()  # This will process pending events
         mock_showerror.assert_called()
+
 
 if __name__ == "__main__":
     unittest.main()

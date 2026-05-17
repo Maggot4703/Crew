@@ -10,7 +10,7 @@ Tutorials  Courses
 [Kotlin](javascript:void\(0\); "Kotlin") [Swift](javascript:void\(0\);
 "Swift") [C#](javascript:void\(0\); "C#") [DSA](javascript:void\(0\); "DSA")
 
-Become a certified Python  
+Become a certified Python
 programmer.
 
 [ENROLL](https://programiz.pro/learn/master-python)
@@ -189,7 +189,7 @@ Logo](/sites/all/themes/programiz/assets/programiz-pro-mini-logo.svg)
 
 [ More languages  ](javascript:void\(0\); "More languages")
 
-### Become a certified Python  
+### Become a certified Python
 programmer.
 
 [Try Programiz PRO!](https://programiz.pro/learn/master-python)
@@ -239,7 +239,7 @@ Methods")
 
 [Kotlin](javascript:void\(0\); "Kotlin")
 
-Become a certified Python  
+Become a certified Python
 programmer.
 
 [Try Programiz PRO!](https://programiz.pro/learn/master-python)
@@ -290,4 +290,3 @@ Python Tutorial
 
 license txt news txt python exe pythonw exe readme txt scripts **tcl** tools
 os …
-

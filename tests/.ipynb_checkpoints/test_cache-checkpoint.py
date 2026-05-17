@@ -15,7 +15,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 import shutil
 import time
 from datetime import datetime, timedelta
-from unittest.mock import patch, mock_open
+from unittest.mock import mock_open, patch
 
 from cache import Cache
 from Crew import get_version

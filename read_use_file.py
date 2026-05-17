@@ -17,24 +17,29 @@ try:
     import pyttsx3
 except ImportError:
     print("pyttsx3 library is not installed. Installing it now...")
-    import subprocess
     import os
-    
+    import subprocess
+
     # Get the path to the virtual environment's Python interpreter if available
-    venv_python = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.venv', 'bin', 'python')
+    venv_python = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), ".venv", "bin", "python"
+    )
     if os.path.exists(venv_python):
         python_executable = venv_python
     else:
         python_executable = sys.executable
-    
+
     try:
         subprocess.check_call([python_executable, "-m", "pip", "install", "pyttsx3"])
         import pyttsx3
+
         print("pyttsx3 installed successfully!")
     except (subprocess.CalledProcessError, ImportError) as e:
         print(f"Failed to install pyttsx3: {e}")
         print("Please install it manually: pip install pyttsx3")
-        print("If using a virtual environment: source .venv/bin/activate && pip install pyttsx3")
+        print(
+            "If using a virtual environment: source .venv/bin/activate && pip install pyttsx3"
+        )
         sys.exit(1)
 
 
@@ -357,8 +362,14 @@ class UseFileReader:
     def save_view_sizes(self):
         """Save the sizes of views to a file."""
         sizes = {
-            "file_listbox": (self.file_listbox.winfo_width(), self.file_listbox.winfo_height()),
-            "preview_text": (self.preview_text.winfo_width(), self.preview_text.winfo_height()),
+            "file_listbox": (
+                self.file_listbox.winfo_width(),
+                self.file_listbox.winfo_height(),
+            ),
+            "preview_text": (
+                self.preview_text.winfo_width(),
+                self.preview_text.winfo_height(),
+            ),
         }
         with open("view_sizes.json", "w") as f:
             json.dump(sizes, f)

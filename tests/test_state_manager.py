@@ -4,17 +4,22 @@ Covers window state loading, saving, and column width management.
 """
 
 import unittest
+
 from state_manager import StateManager
+
 
 class DummyGUI:
     def __init__(self):
         class DummyRoot:
-            def geometry(self, *a, **kw): pass
-            def minsize(self, *a, **kw): pass
+            def geometry(self, *a, **kw):
+                pass
+
+            def minsize(self, *a, **kw):
+                pass
+
         self.root = DummyRoot()
-        self.config = type('DummyConfig', (), {
-            'get': lambda self, key: None
-        })()
+        self.config = type("DummyConfig", (), {"get": lambda self, key: None})()
+
 
 class TestStateManager(unittest.TestCase):
     def setUp(self):
@@ -35,6 +40,7 @@ class TestStateManager(unittest.TestCase):
             self.fail(f"save_window_state() raised {e}")
 
     # Add more tests for column width and state summary as needed
+
 
 if __name__ == "__main__":
     unittest.main()

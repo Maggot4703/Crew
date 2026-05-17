@@ -3,30 +3,40 @@
 # Each shape is recorded in a text file of Name, x, y, width, height
 
 import csv
+import logging
+import math
 import os
+import tkinter as tk  # Add this import
+
 import pandas as pd
 from PIL import Image, ImageDraw
-import logging
-import tkinter as tk # Add this import
-import math
 
 # Constants required by tests
-DEFAULT_GRID_COLOR = 'lightgrey'
-DEFAULT_LINE_COLOR = 'red'
+DEFAULT_GRID_COLOR = "lightgrey"
+DEFAULT_LINE_COLOR = "red"
 DEFAULT_GRID_SIZE = (42, 32)  # Grid cell size (width, height)
 IMAGE_DIMENSIONS = (800, 600)  # Default image dimensions (width, height)
 
 # Setup logging
 logging.basicConfig(
-    level=logging.INFO, # Changed to INFO as DEBUG is verbose for general use
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    filename='crew_app.log',
-    filemode='a' # Append to log file
+    level=logging.INFO,  # Changed to INFO as DEBUG is verbose for general use
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    filename="crew_app.log",
+    filemode="a",  # Append to log file
 )
 logger = logging.getLogger(__name__)
 
-#gridly
-def mark_line(image=None, x1: int = 0, y1: int = 0, x2: int = 0, y2: int = 0, color: str = 'red', thickness: int = 1):
+
+# gridly
+def mark_line(
+    image=None,
+    x1: int = 0,
+    y1: int = 0,
+    x2: int = 0,
+    y2: int = 0,
+    color: str = "red",
+    thickness: int = 1,
+):
     """
     Draw a line on the image using Pillow.
     :param image: Existing image to draw on (optional)
@@ -42,18 +52,25 @@ def mark_line(image=None, x1: int = 0, y1: int = 0, x2: int = 0, y2: int = 0, co
         if image is None:
             # Create a new image if one isn't provided (example size)
             # This part might need adjustment based on typical use case
-            logger.warning("No image provided to mark_line, creating a default 200x200 white image.")
-            image = Image.new("RGB", (200, 200), "white") 
+            logger.warning(
+                "No image provided to mark_line, creating a default 200x200 white image."
+            )
+            image = Image.new("RGB", (200, 200), "white")
         draw = ImageDraw.Draw(image)
         draw.line([(x1, y1), (x2, y2)], fill=color, width=thickness)
-        logger.debug(f"Line drawn from ({x1},{y1}) to ({x2},{y2}) with color {color} and thickness {thickness}.")
+        logger.debug(
+            f"Line drawn from ({x1},{y1}) to ({x2},{y2}) with color {color} and thickness {thickness}."
+        )
         return image
     except Exception as e:
         logger.error(f"Error in mark_line: {e}", exc_info=True)
         return None
 
-#gridify
-def overlay_grid(image_path: str, grid_color: str = 'lightgrey', grid_size: tuple = (42,32)):
+
+# gridify
+def overlay_grid(
+    image_path: str, grid_color: str = "lightgrey", grid_size: tuple = (42, 32)
+):
     """
     Overlay a grid on top of an image.
     :param image_path: Path to the input image
@@ -74,7 +91,7 @@ def overlay_grid(image_path: str, grid_color: str = 'lightgrey', grid_size: tupl
         # Draw horizontal lines
         for y in range(0, height, grid_height):
             draw.line([(0, y), (width, y)], fill=grid_color)
-        
+
         logger.info(f"Grid overlay applied to {image_path} with grid size {grid_size}.")
         return img
     except FileNotFoundError:
@@ -83,6 +100,7 @@ def overlay_grid(image_path: str, grid_color: str = 'lightgrey', grid_size: tupl
     except Exception as e:
         logger.error(f"Error in overlay_grid for {image_path}: {e}", exc_info=True)
         return None
+
 
 #
 def read_csv_builtin(filename: str) -> list:
@@ -94,10 +112,10 @@ def read_csv_builtin(filename: str) -> list:
     if not filename or not isinstance(filename, str):
         logger.error("Invalid filename provided for read_csv_builtin.")
         return []
-    
+
     data = []
     try:
-        with open(filename, mode='r', newline='', encoding='utf-8') as file:
+        with open(filename, mode="r", newline="", encoding="utf-8") as file:
             csv_reader = csv.reader(file)
             for row in csv_reader:
                 data.append(row)
@@ -107,8 +125,11 @@ def read_csv_builtin(filename: str) -> list:
         logger.error(f"CSV file not found: {filename}")
         return []
     except Exception as e:
-        logger.error(f"Error reading CSV file {filename} with built-in csv: {e}", exc_info=True)
+        logger.error(
+            f"Error reading CSV file {filename} with built-in csv: {e}", exc_info=True
+        )
         return []
+
 
 #
 def read_csv_pandas(filename: str):
@@ -120,7 +141,7 @@ def read_csv_pandas(filename: str):
     if not filename or not isinstance(filename, str):
         logger.error("Invalid filename provided for read_csv_pandas.")
         return None
-    
+
     try:
         df = pd.read_csv(filename)
         logger.info(f"Successfully read {filename} using pandas.")
@@ -130,10 +151,13 @@ def read_csv_pandas(filename: str):
         return None
     except pd.errors.EmptyDataError:
         logger.warning(f"Pandas CSV file is empty: {filename}")
-        return pd.DataFrame() # Return empty DataFrame for empty files
+        return pd.DataFrame()  # Return empty DataFrame for empty files
     except Exception as e:
-        logger.error(f"Error reading CSV file {filename} with pandas: {e}", exc_info=True)
+        logger.error(
+            f"Error reading CSV file {filename} with pandas: {e}", exc_info=True
+        )
         return None
+
 
 #
 def read_excel(filename: str, sheet_name: str = None):
@@ -146,10 +170,12 @@ def read_excel(filename: str, sheet_name: str = None):
     if not filename or not isinstance(filename, str):
         logger.error("Invalid filename provided for read_excel.")
         return None
-    
+
     try:
         df = pd.read_excel(filename, sheet_name=sheet_name)
-        logger.info(f"Successfully read {filename} (sheet: {sheet_name or 'first'}) using pandas.")
+        logger.info(
+            f"Successfully read {filename} (sheet: {sheet_name or 'first'}) using pandas."
+        )
         return df
     except FileNotFoundError:
         logger.error(f"Excel file not found: {filename}")
@@ -158,25 +184,31 @@ def read_excel(filename: str, sheet_name: str = None):
         logger.error(f"Error reading Excel file {filename}: {e}", exc_info=True)
         return None
 
+
 #
 def spacer():
-    logger.info("Spacer function called - typically for separating output or logical sections.")
-    print("\n" + "-"*20 + "\n")
+    logger.info(
+        "Spacer function called - typically for separating output or logical sections."
+    )
+    print("\n" + "-" * 20 + "\n")
 
-#gridify scans
-def process_images(image_directory: str, output_directory: str, grid_size: tuple = (42,32)):
+
+# gridify scans
+def process_images(
+    image_directory: str, output_directory: str, grid_size: tuple = (42, 32)
+):
     """
     Processes all images in a directory to overlay a grid and saves them.
-    Assumes images are .png, .jpg, .jpeg. 
+    Assumes images are .png, .jpg, .jpeg.
     """
     # Implementation would involve os.listdir, checking file extensions,
     # calling overlay_grid, and saving the modified image (e.g., img.save()).
     logger.info(f"Starting image processing for directory: {image_directory}")
     # Placeholder - full implementation needed
     pass
-    
 
-#csv
+
+# csv
 def process_csv_data(csv_file_path: str):
     """
     Example processing for CSV data.
@@ -191,7 +223,8 @@ def process_csv_data(csv_file_path: str):
     else:
         print(f"Could not read CSV data from {csv_file_path}.")
 
-#xls
+
+# xls
 def process_excel_data(excel_file_path: str, sheet_name: str = None):
     """
     Example processing for Excel data.
@@ -206,15 +239,18 @@ def process_excel_data(excel_file_path: str, sheet_name: str = None):
     else:
         print(f"Could not read Excel data from {excel_file_path}.")
 
-#???
+
+# ???
 def job4():
     logger.info("job4 called - specific task to be defined.")
     # Placeholder for a specific task
     pass
 
+
 def get_version():
     """Return the version of the Crew application."""
     return "1.0.0"
+
 
 def get_project_info():
     """
@@ -222,17 +258,18 @@ def get_project_info():
     :return: Dictionary containing project metadata
     """
     return {
-        'name': 'Crew',
-        'version': get_version(),
-        'description': 'Image processing and crew management application',
-        'author': 'Crew Team',
-        'license': 'MIT',
-        'python_version': '3.11+',
-        'dependencies': ['PIL', 'pandas', 'tkinter'],
-        'features': ['image_processing', 'csv_handling', 'grid_overlay', 'gui']
+        "name": "Crew",
+        "version": get_version(),
+        "description": "Image processing and crew management application",
+        "author": "Crew Team",
+        "license": "MIT",
+        "python_version": "3.11+",
+        "dependencies": ["PIL", "pandas", "tkinter"],
+        "features": ["image_processing", "csv_handling", "grid_overlay", "gui"],
     }
 
-def read_file(filename: str, encoding: str = 'utf-8') -> str:
+
+def read_file(filename: str, encoding: str = "utf-8") -> str:
     """
     Read the contents of a text file.
     :param filename: Path to the file to read
@@ -242,9 +279,9 @@ def read_file(filename: str, encoding: str = 'utf-8') -> str:
     if not filename or not isinstance(filename, str):
         logger.error("Invalid filename provided for read_file.")
         return ""
-    
+
     try:
-        with open(filename, 'r', encoding=encoding) as file:
+        with open(filename, "r", encoding=encoding) as file:
             content = file.read()
         logger.info(f"Successfully read file: {filename}")
         return content
@@ -258,11 +295,12 @@ def read_file(filename: str, encoding: str = 'utf-8') -> str:
         logger.error(f"Error reading file {filename}: {e}", exc_info=True)
         return ""
 
+
 def calculate_hexagon_points(center_x: float, center_y: float, radius: float) -> list:
     """
     Calculate the points of a regular hexagon given center and radius.
     :param center_x: X coordinate of the center
-    :param center_y: Y coordinate of the center  
+    :param center_y: Y coordinate of the center
     :param radius: Radius of the hexagon
     :return: List of (x, y) tuples representing hexagon vertices
     """
@@ -273,11 +311,14 @@ def calculate_hexagon_points(center_x: float, center_y: float, radius: float) ->
             x = center_x + radius * math.cos(angle)
             y = center_y + radius * math.sin(angle)
             points.append((x, y))
-        logger.debug(f"Calculated hexagon points for center ({center_x}, {center_y}) with radius {radius}")
+        logger.debug(
+            f"Calculated hexagon points for center ({center_x}, {center_y}) with radius {radius}"
+        )
         return points
     except Exception as e:
         logger.error(f"Error calculating hexagon points: {e}", exc_info=True)
         return []
+
 
 def hex_to_rgb(hex_color: str) -> tuple:
     """
@@ -287,17 +328,17 @@ def hex_to_rgb(hex_color: str) -> tuple:
     """
     try:
         # Remove '#' if present
-        hex_color = hex_color.lstrip('#')
-        
+        hex_color = hex_color.lstrip("#")
+
         # Validate hex color format
         if len(hex_color) != 6:
             raise ValueError(f"Invalid hex color length: {hex_color}")
-        
+
         # Convert to RGB
         r = int(hex_color[0:2], 16)
         g = int(hex_color[2:4], 16)
         b = int(hex_color[4:6], 16)
-        
+
         logger.debug(f"Converted hex {hex_color} to RGB ({r}, {g}, {b})")
         return (r, g, b)
     except ValueError as e:
@@ -307,11 +348,12 @@ def hex_to_rgb(hex_color: str) -> tuple:
         logger.error(f"Error converting hex to RGB '{hex_color}': {e}", exc_info=True)
         return (0, 0, 0)
 
+
 def rgb_to_hex(r: int, g: int, b: int) -> str:
     """
     Convert RGB values to hexadecimal color string.
     :param r: Red component (0-255)
-    :param g: Green component (0-255)  
+    :param g: Green component (0-255)
     :param b: Blue component (0-255)
     :return: Hex color string (e.g., '#FF0000') or '#000000' on error
     """
@@ -319,7 +361,7 @@ def rgb_to_hex(r: int, g: int, b: int) -> str:
         # Validate RGB values
         if not (0 <= r <= 255 and 0 <= g <= 255 and 0 <= b <= 255):
             raise ValueError(f"RGB values must be 0-255: ({r}, {g}, {b})")
-        
+
         hex_color = f"#{r:02X}{g:02X}{b:02X}"
         logger.debug(f"Converted RGB ({r}, {g}, {b}) to hex {hex_color}")
         return hex_color
@@ -330,7 +372,10 @@ def rgb_to_hex(r: int, g: int, b: int) -> str:
         logger.error(f"Error converting RGB to hex ({r}, {g}, {b}): {e}", exc_info=True)
         return "#000000"
 
-def markHorizontalLine(x1: int, y1: int, x2: int, y2: int, color: str = 'red', thickness: int = 1):
+
+def markHorizontalLine(
+    x1: int, y1: int, x2: int, y2: int, color: str = "red", thickness: int = 1
+):
     """
     Create a new image with a line marked on it (test-compatible function).
     :param x1: Starting x-coordinate
@@ -349,7 +394,12 @@ def markHorizontalLine(x1: int, y1: int, x2: int, y2: int, color: str = 'red', t
         logger.error(f"Error in markHorizontalLine: {e}", exc_info=True)
         return None
 
-def overlayGrid(image_path: str, grid_color: str = DEFAULT_GRID_COLOR, grid_size: tuple = DEFAULT_GRID_SIZE):
+
+def overlayGrid(
+    image_path: str,
+    grid_color: str = DEFAULT_GRID_COLOR,
+    grid_size: tuple = DEFAULT_GRID_SIZE,
+):
     """
     Overlay a grid on an image (test-compatible function).
     :param image_path: Path to the input image
@@ -359,12 +409,13 @@ def overlayGrid(image_path: str, grid_color: str = DEFAULT_GRID_COLOR, grid_size
     """
     return overlay_grid(image_path, grid_color, grid_size)
 
+
 def main():
     logger.info("Main application script started.")
-    
+
     # Import GUI locally to avoid circular import
     from gui import CrewGUI
-    
+
     # Start the GUI
     root = tk.Tk()
     app = CrewGUI(root)
@@ -373,14 +424,14 @@ def main():
     # Example usage (replace with actual logic or CLI argument parsing)
     # Image processing example
     # Note: Ensure image_path and output_path are valid
-    #test_image_path = "path/to/your/image.png" 
-    #output_image_path = "path/to/your/output_image.png"
-    #if os.path.exists(test_image_path):
+    # test_image_path = "path/to/your/image.png"
+    # output_image_path = "path/to/your/output_image.png"
+    # if os.path.exists(test_image_path):
     #    grid_image = overlay_grid(test_image_path, grid_size=(50,50))
     #    if grid_image:
     #        grid_image.save(output_image_path)
     #        logger.info(f"Saved gridded image to {output_image_path}")
-    #else:
+    # else:
     #    logger.warning(f"Test image {test_image_path} not found, skipping overlay example.")
 
     # CSV processing example
@@ -396,13 +447,13 @@ def main():
     #     process_excel_data(sample_excel)
     # else:
     #     logger.warning(f"Sample Excel {sample_excel} not found, skipping Excel processing example.")
-    
+
     spacer()
     logger.info("Main application script finished.")
+
 
 if __name__ == "__main__":
     # It's good practice to add os.path checks for file paths used in main or provide them via args
     # For now, main() is mostly illustrative.
     # Consider using argparse for command-line arguments to specify files and operations.
     main()
-

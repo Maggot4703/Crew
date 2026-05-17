@@ -218,10 +218,10 @@ with tab3:
 ```python
 with st.container():
     st.write("This is inside a container")
-    
+
 with st.expander("Click to expand"):
     st.write("This content is hidden until expanded")
-    
+
 with st.sidebar:
     st.title("Sidebar title")
     st.write("Sidebar content goes here")
@@ -253,7 +253,7 @@ with st.form("my_form"):
     name = st.text_input("Name")
     age = st.number_input("Age", min_value=0, max_value=120)
     submitted = st.form_submit_button("Submit")
-    
+
 if submitted:
     st.write(f"Name: {name}, Age: {age}")
 ```
@@ -281,7 +281,7 @@ if st.button("Run Expensive Calculation"):
     with st.spinner("Calculating..."):
         result = run_expensive_calculation()
     st.write(result)
-    
+
 def update_value():
     st.session_state.value = new_value
 

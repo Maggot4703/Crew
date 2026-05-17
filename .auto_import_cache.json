@@ -1,6 +1,7 @@
 {
   "workspace_root": "/home/me/Notebooks/CREW/Crew",
   "imported_modules": [
+    ".ipynb_checkpoints.Crew_checkpoint",
     ".ipynb_checkpoints.__init___checkpoint",
     ".ipynb_checkpoints.cache_checkpoint",
     ".ipynb_checkpoints.config_checkpoint",
@@ -27,6 +28,7 @@
     "data.tlinks.tlinks",
     "data_manager",
     "database_manager (cached)",
+    "deepseek_integration (cached)",
     "error_handler",
     "errors (cached)",
     "event_manager",
@@ -55,11 +57,14 @@
     "state_manager",
     "storySearch",
     "traveller5_scraper",
+    "traveller_agent",
+    "traveller_wiki_api (cached)",
+    "travellermap_api (cached)",
     "tts_manager",
     "ui_manager",
     "untitled",
-    "utils"
+    "utils (cached)"
   ],
   "failed_imports": [],
-  "timestamp": 1776204582.8985791
+  "timestamp": 1777282121.4815629
 }

@@ -10,7 +10,6 @@ without needing a full application instance.
 
 import tkinter as tk
 import unittest
-from tkinter import ttk
 
 
 def test_layout():

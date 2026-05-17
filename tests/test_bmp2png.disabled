@@ -3,17 +3,18 @@
 Test module for BMP to PNG conversion functionality.
 """
 
-import sys
-import unittest
-import tempfile
 import os
+import sys
+import tempfile
+import unittest
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 # Add the parent directory to the path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import bmp2png
+
 from Crew import get_version
 
 

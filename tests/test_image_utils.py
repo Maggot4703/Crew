@@ -1,6 +1,12 @@
-
 from PIL import Image
-from image_utils import mark_line, overlay_grid, process_images, crop_from_annotations, markHorizontalLine
+
+from image_utils import (
+    crop_from_annotations,
+    mark_line,
+    markHorizontalLine,
+    overlay_grid,
+    process_images,
+)
 
 
 def test_mark_line_creates_image():
@@ -13,9 +19,7 @@ def test_overlay_grid_returns_image(tmp_path):
     img_path = tmp_path / "test.png"
     img = Image.new("RGB", (100, 100), "white")
     img.save(img_path)
-    result = overlay_grid(
-        str(img_path), grid_color="black", grid_size=(10, 10)
-    )
+    result = overlay_grid(str(img_path), grid_color="black", grid_size=(10, 10))
     assert isinstance(result, Image.Image)
 
 
@@ -45,8 +49,6 @@ def test_crop_from_annotations(tmp_path):
     with open(csv_path, "w") as f:
         f.write("name,x,y,width,height\nregion1,10,10,20,20\n")
     output_dir = tmp_path / "out"
-    result = crop_from_annotations(
-        str(img_path), str(csv_path), str(output_dir)
-    )
+    result = crop_from_annotations(str(img_path), str(csv_path), str(output_dir))
     assert isinstance(result, list)
     assert any("region1" in p for p in result)

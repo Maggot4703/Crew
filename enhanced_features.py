@@ -5,35 +5,45 @@ Enhanced features and utilities for the NPCs Data Processing Tool.
 import logging
 import subprocess
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict
 
 logger = logging.getLogger(__name__)
 
 
 def check_dependencies() -> Dict[str, bool]:
     """Check if required dependencies are installed."""
-    dependencies = {"pandas": False, "PIL": False, "ijson": False, "SpeechRecognition": False, "git": False}
+    dependencies = {
+        "pandas": False,
+        "PIL": False,
+        "ijson": False,
+        "SpeechRecognition": False,
+        "git": False,
+    }
 
     try:
         import pandas
+
         dependencies["pandas"] = True
     except ImportError:
         pass
 
     try:
         from PIL import Image
+
         dependencies["PIL"] = True
     except ImportError:
         pass
 
     try:
         import ijson
+
         dependencies["ijson"] = True
     except ImportError:
         pass
 
     try:
         import speech_recognition
+
         dependencies["SpeechRecognition"] = True
     except ImportError:
         pass
@@ -76,7 +86,12 @@ def install_missing_dependencies() -> bool:
 def generate_requirements_file() -> None:
     """Generate requirements.txt file."""
 
-    requirements = ["pandas>=1.3.0", "Pillow>=8.0.0", "ijson>=3.0.0", "SpeechRecognition>=3.8.1"]
+    requirements = [
+        "pandas>=1.3.0",
+        "Pillow>=8.0.0",
+        "ijson>=3.0.0",
+        "SpeechRecognition>=3.8.1",
+    ]
 
     with open("requirements.txt", "w") as f:
         for req in requirements:

@@ -6,14 +6,12 @@ import os
 import sys
 import tempfile
 import unittest
-from pathlib import Path
 
-from PIL import Image, ImageDraw
+from PIL import Image
 
 # Add parent directory to path to import Crew module
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from Crew import (
+from image_utils import (
     DEFAULT_GRID_COLOR,
     DEFAULT_GRID_SIZE,
     DEFAULT_LINE_COLOR,

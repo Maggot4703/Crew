@@ -266,24 +266,24 @@ thumb_img.save('thumbnail.jpg')
 def add_watermark(image, watermark_text):
     # Create a copy to avoid modifying original
     result = image.copy().convert('RGBA')
-    
+
     # Create transparent overlay
     overlay = Image.new('RGBA', result.size, (0, 0, 0, 0))
     draw = ImageDraw.Draw(overlay)
-    
+
     try:
         font = ImageFont.truetype("arial.ttf", 50)
     except IOError:
         font = ImageFont.load_default()
-    
+
     # Calculate text size and position
     text_width = draw.textlength(watermark_text, font=font)
     x = (result.width - text_width) / 2
     y = result.height / 2
-    
+
     # Draw semi-transparent text
     draw.text((x, y), watermark_text, font=font, fill=(255, 255, 255, 128))
-    
+
     # Composite the watermark with the image
     watermarked = Image.alpha_composite(result, overlay)
     return watermarked.convert('RGB')  # Convert back to RGB for saving as JPG
@@ -359,7 +359,7 @@ import os
 def batch_process(input_dir, output_dir, operation, *args, **kwargs):
     """
     Apply an operation to all images in a directory
-    
+
     Args:
         input_dir: Directory with source images
         output_dir: Directory to save processed images
@@ -368,12 +368,12 @@ def batch_process(input_dir, output_dir, operation, *args, **kwargs):
     """
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
-        
+
     for filename in os.listdir(input_dir):
         if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif')):
             input_path = os.path.join(input_dir, filename)
             output_path = os.path.join(output_dir, filename)
-            
+
             try:
                 with Image.open(input_path) as img:
                     processed = operation(img, *args, **kwargs)
@@ -398,7 +398,7 @@ def resize_operation(image, size):
 def create_animated_gif(images, output_filename, duration=100):
     """
     Create an animated GIF from a list of images
-    
+
     Args:
         images: List of PIL Image objects or filenames
         output_filename: Output GIF filename
@@ -411,7 +411,7 @@ def create_animated_gif(images, output_filename, duration=100):
             frames.append(Image.open(img))
         else:
             frames.append(img)
-    
+
     # Save as animated GIF
     frames[0].save(
         output_filename,
@@ -433,14 +433,14 @@ def create_pulsing_circle():
             fill=(int(255*(radius/100)), 64, 255-int(255*(radius/100)))
         )
         frames.append(frame)
-    
+
     create_animated_gif(frames, "pulsing_circle.gif", 50)
 
 # Example: Split frames from an animated GIF
 def extract_gif_frames(gif_path, output_dir):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
-        
+
     with Image.open(gif_path) as gif:
         for i in range(gif.n_frames):
             gif.seek(i)
@@ -475,10 +475,10 @@ def preserve_exif_resize(input_path, output_path, size):
             exif_dict = img._getexif()
             if exif_dict:
                 exif_data = img.info.get('exif')
-                
+
         # Process image
         resized = img.resize(size, Image.Resampling.LANCZOS)
-        
+
         # Save with original EXIF
         if exif_data:
             resized.save(output_path, exif=exif_data)
@@ -494,7 +494,7 @@ from PIL import Image
 def perspective_transform(img, coeffs):
     """
     Apply perspective transformation
-    
+
     Args:
         img: Source image
         coeffs: 8-tuple (x0,y0,x1,y1,x2,y2,x3,y3) containing
@@ -505,7 +505,7 @@ def perspective_transform(img, coeffs):
     src_corners = [(0, 0), (width-1, 0), (width-1, height-1), (0, height-1)]
     # Convert destination corners to format expected by transform method
     dest_corners = [coeffs[0:2], coeffs[2:4], coeffs[4:6], coeffs[6:8]]
-    
+
     # Calculate transformation coefficients
     from PIL import Image
     transformed = img.transform(
@@ -514,7 +514,7 @@ def perspective_transform(img, coeffs):
         data=sum(src_corners + dest_corners, ()),  # Flatten the coordinate lists
         resample=Image.Resampling.BICUBIC
     )
-    
+
     return transformed
 
 # Example: Apply perspective to make image look like a sign on a wall
@@ -553,13 +553,13 @@ def opencv_to_pil(opencv_image):
 def canny_edge_detection(pil_image, threshold1=100, threshold2=200):
     # Convert PIL to OpenCV
     cv_image = pil_to_opencv(pil_image)
-    
+
     # Convert to grayscale
     gray = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
-    
+
     # Apply Canny edge detection
     edges = cv2.Canny(gray, threshold1, threshold2)
-    
+
     # Convert back to PIL (need to convert to RGB as Canny returns grayscale)
     result = Image.fromarray(edges).convert('RGB')
     return result
@@ -595,7 +595,7 @@ def safe_image_open(file_path):
 def process_large_image(file_path, operation, tile_size=1024, output_path=None):
     """
     Process a large image in tiles to avoid memory issues
-    
+
     Args:
         file_path: Path to image file
         operation: Function to apply to each tile
@@ -604,12 +604,12 @@ def process_large_image(file_path, operation, tile_size=1024, output_path=None):
     """
     if output_path is None:
         output_path = file_path
-        
+
     # Open the image (but don't load it entirely into memory)
     with Image.open(file_path) as img:
         # Create output image with same size and mode
         result = Image.new(img.mode, img.size)
-        
+
         # Process image in tiles
         for y in range(0, img.height, tile_size):
             for x in range(0, img.width, tile_size):
@@ -621,7 +621,7 @@ def process_large_image(file_path, operation, tile_size=1024, output_path=None):
                 processed_tile = operation(tile)
                 # Paste it back
                 result.paste(processed_tile, box)
-                
+
         # Save result
         result.save(output_path)
         return result
@@ -663,7 +663,7 @@ import matplotlib.pyplot as plt
 def display_images(images, titles=None, figsize=(15, 10), cmaps=None):
     """
     Display multiple images in a grid
-    
+
     Args:
         images: List of PIL Images or numpy arrays
         titles: List of titles for each image
@@ -673,36 +673,36 @@ def display_images(images, titles=None, figsize=(15, 10), cmaps=None):
     n = len(images)
     cols = min(3, n)
     rows = (n + cols - 1) // cols
-    
+
     fig, axes = plt.subplots(rows, cols, figsize=figsize)
     if rows == 1 and cols == 1:
         axes = [axes]
     elif rows == 1 or cols == 1:
         axes = axes.flatten()
-        
+
     for i, img in enumerate(images):
         if i < len(axes):
             # Convert PIL image to numpy if needed
             if isinstance(img, Image.Image):
                 img = np.array(img)
-                
+
             # Get cmap if provided
             cmap = None
             if cmaps and i < len(cmaps):
                 cmap = cmaps[i]
-            
+
             # Display image
             axes[i].imshow(img, cmap=cmap)
             axes[i].axis('off')
-            
+
             # Add title if provided
             if titles and i < len(titles):
                 axes[i].set_title(titles[i])
-    
+
     # Hide unused subplots
     for i in range(len(images), len(axes)):
         fig.delaxes(axes[i])
-    
+
     plt.tight_layout()
     plt.savefig('comparison.png')
     plt.show()
@@ -730,12 +730,12 @@ display_images(
 def create_contact_sheet(images, grid_size, thumbnail_size=(200, 200)):
     """
     Create a contact sheet from multiple images
-    
+
     Args:
         images: List of PIL images or file paths
         grid_size: Tuple of (columns, rows)
         thumbnail_size: Size for each thumbnail
-    
+
     Returns:
         PIL Image with the contact sheet
     """
@@ -746,7 +746,7 @@ def create_contact_sheet(images, grid_size, thumbnail_size=(200, 200)):
             loaded_images.append(Image.open(img))
         else:
             loaded_images.append(img)
-    
+
     # Create thumbnails
     thumbnails = []
     for img in loaded_images:
@@ -754,30 +754,30 @@ def create_contact_sheet(images, grid_size, thumbnail_size=(200, 200)):
         thumb = img.copy()
         thumb.thumbnail(thumbnail_size)
         thumbnails.append(thumb)
-    
+
     # Create blank canvas
     cols, rows = grid_size
     sheet_width = thumbnail_size[0] * cols
     sheet_height = thumbnail_size[1] * rows
     contact_sheet = Image.new('RGB', (sheet_width, sheet_height), (255, 255, 255))
-    
+
     # Paste thumbnails onto contact sheet
     for idx, thumb in enumerate(thumbnails):
         if idx >= cols * rows:
             break  # Stop if we've filled the grid
-        
+
         # Calculate position
         row = idx // cols
         col = idx % cols
         x = col * thumbnail_size[0]
         y = row * thumbnail_size[1]
-        
+
         # Center the thumbnail if smaller than thumbnail_size
         x_offset = (thumbnail_size[0] - thumb.width) // 2
         y_offset = (thumbnail_size[1] - thumb.height) // 2
-        
+
         contact_sheet.paste(thumb, (x + x_offset, y + y_offset))
-    
+
     return contact_sheet
 ```
 
@@ -788,24 +788,24 @@ def add_border(image, border_width=10, color=(255, 255, 255)):
     width, height = image.size
     new_width = width + 2 * border_width
     new_height = height + 2 * border_width
-    
+
     bordered = Image.new(image.mode, (new_width, new_height), color)
     bordered.paste(image, (border_width, border_width))
-    
+
     return bordered
 
 def add_gradient_border(image, border_width=20, colors=[(255,0,0), (0,0,255)]):
     """Add a gradient border around an image"""
     from PIL import ImageDraw
-    
+
     # Create new image with border
     width, height = image.size
     new_width = width + 2 * border_width
     new_height = height + 2 * border_width
-    
+
     # Create blank image with first color
     result = Image.new('RGB', (new_width, new_height), colors[0])
-    
+
     # Draw gradient (simplified - just horizontal gradient)
     draw = ImageDraw.Draw(result)
     for i in range(border_width):
@@ -815,15 +815,15 @@ def add_gradient_border(image, border_width=20, colors=[(255,0,0), (0,0,255)]):
         g = int(colors[0][1] * (1 - t) + colors[1][1] * t)
         b = int(colors[0][2] * (1 - t) + colors[1][2] * t)
         color = (r, g, b)
-        
+
         # Draw top and bottom lines
         draw.line([(0, i), (new_width-1, i)], fill=color)
         draw.line([(0, new_height-i-1), (new_width-1, new_height-i-1)], fill=color)
-        
+
         # Draw left and right lines
         draw.line([(i, 0), (i, new_height-1)], fill=color)
         draw.line([(new_width-i-1, 0), (new_width-i-1, new_height-1)], fill=color)
-    
+
     # Paste original image
     result.paste(image, (border_width, border_width))
     return result
@@ -833,17 +833,17 @@ def add_photo_frame(image, frame_width=50, frame_color=(139, 69, 19)):
     width, height = image.size
     new_width = width + 2 * frame_width
     new_height = height + 2 * frame_width
-    
+
     # Create the frame image
     framed = Image.new('RGB', (new_width, new_height), frame_color)
-    
+
     # Create a drop shadow (black rectangle slightly offset)
     shadow = Image.new('RGBA', (width, height), (0, 0, 0, 180))
     framed.paste(shadow, (frame_width + 5, frame_width + 5), shadow)
-    
+
     # Paste the original image
     framed.paste(image, (frame_width, frame_width))
-    
+
     return framed
 ```
 
@@ -852,30 +852,30 @@ def add_photo_frame(image, frame_width=50, frame_color=(139, 69, 19)):
 def add_text_watermark(image, text, position=None, color=(255, 255, 255, 128), font_size=40):
     """Add a text watermark to an image"""
     from PIL import ImageDraw, ImageFont
-    
+
     # Create a transparent overlay
     overlay = Image.new('RGBA', image.size, (0, 0, 0, 0))
     draw = ImageDraw.Draw(overlay)
-    
+
     try:
         font = ImageFont.truetype("arial.ttf", font_size)
     except IOError:
         font = ImageFont.load_default()
-    
+
     # Calculate text size
     text_width = draw.textlength(text, font=font)
-    
+
     # Set position (center by default)
     if position is None:
         position = ((image.width - text_width) // 2, image.height // 2)
-    
+
     # Draw the text
     draw.text(position, text, font=font, fill=color)
-    
+
     # Convert image to RGBA if it isn't already
     if image.mode != 'RGBA':
         image = image.convert('RGBA')
-    
+
     # Composite the watermarked image
     watermarked = Image.alpha_composite(image, overlay)
     return watermarked
@@ -885,31 +885,31 @@ def add_image_watermark(image, watermark_image, position=None, opacity=0.3):
     # Ensure the watermark has an alpha channel
     if watermark_image.mode != 'RGBA':
         watermark_image = watermark_image.convert('RGBA')
-    
+
     # Create a copy of the watermark with desired opacity
     watermark = watermark_image.copy()
     alpha = watermark.split()[3]
     alpha = alpha.point(lambda x: int(x * opacity))
     watermark.putalpha(alpha)
-    
+
     # Ensure base image has alpha channel
     if image.mode != 'RGBA':
         image = image.convert('RGBA')
-    
+
     # Set position (center by default)
     if position is None:
-        position = ((image.width - watermark.width) // 2, 
+        position = ((image.width - watermark.width) // 2,
                    (image.height - watermark.height) // 2)
-    
+
     # Create a new blank image with same size as original
     result = Image.new('RGBA', image.size, (0, 0, 0, 0))
-    
+
     # Paste the original image
     result.paste(image, (0, 0))
-    
+
     # Paste the watermark
     result.paste(watermark, position, watermark)
-    
+
     return result
 ```
 
@@ -1194,24 +1194,24 @@ thumb_img.save('thumbnail.jpg')
 def add_watermark(image, watermark_text):
     # Create a copy to avoid modifying original
     result = image.copy().convert('RGBA')
-    
+
     # Create transparent overlay
     overlay = Image.new('RGBA', result.size, (0, 0, 0, 0))
     draw = ImageDraw.Draw(overlay)
-    
+
     try:
         font = ImageFont.truetype("arial.ttf", 50)
     except IOError:
         font = ImageFont.load_default()
-    
+
     # Calculate text size and position
     text_width = draw.textlength(watermark_text, font=font)
     x = (result.width - text_width) / 2
     y = result.height / 2
-    
+
     # Draw semi-transparent text
     draw.text((x, y), watermark_text, font=font, fill=(255, 255, 255, 128))
-    
+
     # Composite the watermark with the image
     watermarked = Image.alpha_composite(result, overlay)
     return watermarked.convert('RGB')  # Convert back to RGB for saving as JPG
@@ -1287,7 +1287,7 @@ import os
 def batch_process(input_dir, output_dir, operation, *args, **kwargs):
     """
     Apply an operation to all images in a directory
-    
+
     Args:
         input_dir: Directory with source images
         output_dir: Directory to save processed images
@@ -1296,12 +1296,12 @@ def batch_process(input_dir, output_dir, operation, *args, **kwargs):
     """
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
-        
+
     for filename in os.listdir(input_dir):
         if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif')):
             input_path = os.path.join(input_dir, filename)
             output_path = os.path.join(output_dir, filename)
-            
+
             try:
                 with Image.open(input_path) as img:
                     processed = operation(img, *args, **kwargs)
@@ -1326,7 +1326,7 @@ def resize_operation(image, size):
 def create_animated_gif(images, output_filename, duration=100):
     """
     Create an animated GIF from a list of images
-    
+
     Args:
         images: List of PIL Image objects or filenames
         output_filename: Output GIF filename
@@ -1339,7 +1339,7 @@ def create_animated_gif(images, output_filename, duration=100):
             frames.append(Image.open(img))
         else:
             frames.append(img)
-    
+
     # Save as animated GIF
     frames[0].save(
         output_filename,
@@ -1361,14 +1361,14 @@ def create_pulsing_circle():
             fill=(int(255*(radius/100)), 64, 255-int(255*(radius/100)))
         )
         frames.append(frame)
-    
+
     create_animated_gif(frames, "pulsing_circle.gif", 50)
 
 # Example: Split frames from an animated GIF
 def extract_gif_frames(gif_path, output_dir):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
-        
+
     with Image.open(gif_path) as gif:
         for i in range(gif.n_frames):
             gif.seek(i)
@@ -1403,10 +1403,10 @@ def preserve_exif_resize(input_path, output_path, size):
             exif_dict = img._getexif()
             if exif_dict:
                 exif_data = img.info.get('exif')
-                
+
         # Process image
         resized = img.resize(size, Image.Resampling.LANCZOS)
-        
+
         # Save with original EXIF
         if exif_data:
             resized.save(output_path, exif=exif_data)
@@ -1422,7 +1422,7 @@ from PIL import Image
 def perspective_transform(img, coeffs):
     """
     Apply perspective transformation
-    
+
     Args:
         img: Source image
         coeffs: 8-tuple (x0,y0,x1,y1,x2,y2,x3,y3) containing
@@ -1433,7 +1433,7 @@ def perspective_transform(img, coeffs):
     src_corners = [(0, 0), (width-1, 0), (width-1, height-1), (0, height-1)]
     # Convert destination corners to format expected by transform method
     dest_corners = [coeffs[0:2], coeffs[2:4], coeffs[4:6], coeffs[6:8]]
-    
+
     # Calculate transformation coefficients
     from PIL import Image
     transformed = img.transform(
@@ -1442,7 +1442,7 @@ def perspective_transform(img, coeffs):
         data=sum(src_corners + dest_corners, ()),  # Flatten the coordinate lists
         resample=Image.Resampling.BICUBIC
     )
-    
+
     return transformed
 
 # Example: Apply perspective to make image look like a sign on a wall
@@ -1481,13 +1481,13 @@ def opencv_to_pil(opencv_image):
 def canny_edge_detection(pil_image, threshold1=100, threshold2=200):
     # Convert PIL to OpenCV
     cv_image = pil_to_opencv(pil_image)
-    
+
     # Convert to grayscale
     gray = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
-    
+
     # Apply Canny edge detection
     edges = cv2.Canny(gray, threshold1, threshold2)
-    
+
     # Convert back to PIL (need to convert to RGB as Canny returns grayscale)
     result = Image.fromarray(edges).convert('RGB')
     return result
@@ -1523,7 +1523,7 @@ def safe_image_open(file_path):
 def process_large_image(file_path, operation, tile_size=1024, output_path=None):
     """
     Process a large image in tiles to avoid memory issues
-    
+
     Args:
         file_path: Path to image file
         operation: Function to apply to each tile
@@ -1532,12 +1532,12 @@ def process_large_image(file_path, operation, tile_size=1024, output_path=None):
     """
     if output_path is None:
         output_path = file_path
-        
+
     # Open the image (but don't load it entirely into memory)
     with Image.open(file_path) as img:
         # Create output image with same size and mode
         result = Image.new(img.mode, img.size)
-        
+
         # Process image in tiles
         for y in range(0, img.height, tile_size):
             for x in range(0, img.width, tile_size):
@@ -1549,7 +1549,7 @@ def process_large_image(file_path, operation, tile_size=1024, output_path=None):
                 processed_tile = operation(tile)
                 # Paste it back
                 result.paste(processed_tile, box)
-                
+
         # Save result
         result.save(output_path)
         return result
@@ -1591,7 +1591,7 @@ import matplotlib.pyplot as plt
 def display_images(images, titles=None, figsize=(15, 10), cmaps=None):
     """
     Display multiple images in a grid
-    
+
     Args:
         images: List of PIL Images or numpy arrays
         titles: List of titles for each image
@@ -1601,36 +1601,36 @@ def display_images(images, titles=None, figsize=(15, 10), cmaps=None):
     n = len(images)
     cols = min(3, n)
     rows = (n + cols - 1) // cols
-    
+
     fig, axes = plt.subplots(rows, cols, figsize=figsize)
     if rows == 1 and cols == 1:
         axes = [axes]
     elif rows == 1 or cols == 1:
         axes = axes.flatten()
-        
+
     for i, img in enumerate(images):
         if i < len(axes):
             # Convert PIL image to numpy if needed
             if isinstance(img, Image.Image):
                 img = np.array(img)
-                
+
             # Get cmap if provided
             cmap = None
             if cmaps and i < len(cmaps):
                 cmap = cmaps[i]
-            
+
             # Display image
             axes[i].imshow(img, cmap=cmap)
             axes[i].axis('off')
-            
+
             # Add title if provided
             if titles and i < len(titles):
                 axes[i].set_title(titles[i])
-    
+
     # Hide unused subplots
     for i in range(len(images), len(axes)):
         fig.delaxes(axes[i])
-    
+
     plt.tight_layout()
     plt.savefig('comparison.png')
     plt.show()
@@ -1658,12 +1658,12 @@ display_images(
 def create_contact_sheet(images, grid_size, thumbnail_size=(200, 200)):
     """
     Create a contact sheet from multiple images
-    
+
     Args:
         images: List of PIL images or file paths
         grid_size: Tuple of (columns, rows)
         thumbnail_size: Size for each thumbnail
-    
+
     Returns:
         PIL Image with the contact sheet
     """
@@ -1674,7 +1674,7 @@ def create_contact_sheet(images, grid_size, thumbnail_size=(200, 200)):
             loaded_images.append(Image.open(img))
         else:
             loaded_images.append(img)
-    
+
     # Create thumbnails
     thumbnails = []
     for img in loaded_images:
@@ -1682,30 +1682,30 @@ def create_contact_sheet(images, grid_size, thumbnail_size=(200, 200)):
         thumb = img.copy()
         thumb.thumbnail(thumbnail_size)
         thumbnails.append(thumb)
-    
+
     # Create blank canvas
     cols, rows = grid_size
     sheet_width = thumbnail_size[0] * cols
     sheet_height = thumbnail_size[1] * rows
     contact_sheet = Image.new('RGB', (sheet_width, sheet_height), (255, 255, 255))
-    
+
     # Paste thumbnails onto contact sheet
     for idx, thumb in enumerate(thumbnails):
         if idx >= cols * rows:
             break  # Stop if we've filled the grid
-        
+
         # Calculate position
         row = idx // cols
         col = idx % cols
         x = col * thumbnail_size[0]
         y = row * thumbnail_size[1]
-        
+
         # Center the thumbnail if smaller than thumbnail_size
         x_offset = (thumbnail_size[0] - thumb.width) // 2
         y_offset = (thumbnail_size[1] - thumb.height) // 2
-        
+
         contact_sheet.paste(thumb, (x + x_offset, y + y_offset))
-    
+
     return contact_sheet
 ```
 
@@ -1716,24 +1716,24 @@ def add_border(image, border_width=10, color=(255, 255, 255)):
     width, height = image.size
     new_width = width + 2 * border_width
     new_height = height + 2 * border_width
-    
+
     bordered = Image.new(image.mode, (new_width, new_height), color)
     bordered.paste(image, (border_width, border_width))
-    
+
     return bordered
 
 def add_gradient_border(image, border_width=20, colors=[(255,0,0), (0,0,255)]):
     """Add a gradient border around an image"""
     from PIL import ImageDraw
-    
+
     # Create new image with border
     width, height = image.size
     new_width = width + 2 * border_width
     new_height = height + 2 * border_width
-    
+
     # Create blank image with first color
     result = Image.new('RGB', (new_width, new_height), colors[0])
-    
+
     # Draw gradient (simplified - just horizontal gradient)
     draw = ImageDraw.Draw(result)
     for i in range(border_width):
@@ -1743,15 +1743,15 @@ def add_gradient_border(image, border_width=20, colors=[(255,0,0), (0,0,255)]):
         g = int(colors[0][1] * (1 - t) + colors[1][1] * t)
         b = int(colors[0][2] * (1 - t) + colors[1][2] * t)
         color = (r, g, b)
-        
+
         # Draw top and bottom lines
         draw.line([(0, i), (new_width-1, i)], fill=color)
         draw.line([(0, new_height-i-1), (new_width-1, new_height-i-1)], fill=color)
-        
+
         # Draw left and right lines
         draw.line([(i, 0), (i, new_height-1)], fill=color)
         draw.line([(new_width-i-1, 0), (new_width-i-1, new_height-1)], fill=color)
-    
+
     # Paste original image
     result.paste(image, (border_width, border_width))
     return result
@@ -1761,17 +1761,17 @@ def add_photo_frame(image, frame_width=50, frame_color=(139, 69, 19)):
     width, height = image.size
     new_width = width + 2 * frame_width
     new_height = height + 2 * frame_width
-    
+
     # Create the frame image
     framed = Image.new('RGB', (new_width, new_height), frame_color)
-    
+
     # Create a drop shadow (black rectangle slightly offset)
     shadow = Image.new('RGBA', (width, height), (0, 0, 0, 180))
     framed.paste(shadow, (frame_width + 5, frame_width + 5), shadow)
-    
+
     # Paste the original image
     framed.paste(image, (frame_width, frame_width))
-    
+
     return framed
 ```
 
@@ -1780,30 +1780,30 @@ def add_photo_frame(image, frame_width=50, frame_color=(139, 69, 19)):
 def add_text_watermark(image, text, position=None, color=(255, 255, 255, 128), font_size=40):
     """Add a text watermark to an image"""
     from PIL import ImageDraw, ImageFont
-    
+
     # Create a transparent overlay
     overlay = Image.new('RGBA', image.size, (0, 0, 0, 0))
     draw = ImageDraw.Draw(overlay)
-    
+
     try:
         font = ImageFont.truetype("arial.ttf", font_size)
     except IOError:
         font = ImageFont.load_default()
-    
+
     # Calculate text size
     text_width = draw.textlength(text, font=font)
-    
+
     # Set position (center by default)
     if position is None:
         position = ((image.width - text_width) // 2, image.height // 2)
-    
+
     # Draw the text
     draw.text(position, text, font=font, fill=color)
-    
+
     # Convert image to RGBA if it isn't already
     if image.mode != 'RGBA':
         image = image.convert('RGBA')
-    
+
     # Composite the watermarked image
     watermarked = Image.alpha_composite(image, overlay)
     return watermarked
@@ -1813,31 +1813,31 @@ def add_image_watermark(image, watermark_image, position=None, opacity=0.3):
     # Ensure the watermark has an alpha channel
     if watermark_image.mode != 'RGBA':
         watermark_image = watermark_image.convert('RGBA')
-    
+
     # Create a copy of the watermark with desired opacity
     watermark = watermark_image.copy()
     alpha = watermark.split()[3]
     alpha = alpha.point(lambda x: int(x * opacity))
     watermark.putalpha(alpha)
-    
+
     # Ensure base image has alpha channel
     if image.mode != 'RGBA':
         image = image.convert('RGBA')
-    
+
     # Set position (center by default)
     if position is None:
-        position = ((image.width - watermark.width) // 2, 
+        position = ((image.width - watermark.width) // 2,
                    (image.height - watermark.height) // 2)
-    
+
     # Create a new blank image with same size as original
     result = Image.new('RGBA', image.size, (0, 0, 0, 0))
-    
+
     # Paste the original image
     result.paste(image, (0, 0))
-    
+
     # Paste the watermark
     result.paste(watermark, position, watermark)
-    
+
     return result
 ```
 

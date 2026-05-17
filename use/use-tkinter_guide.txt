@@ -139,7 +139,7 @@ label.pack()
 Most widgets share common configuration options:
 
 ```python
-label = tk.Label(root, 
+label = tk.Label(root,
                 text="Styled Label",              # Text content
                 font=("Arial", 14, "bold"),      # Font family, size, style
                 fg="blue",                       # Text color
@@ -398,28 +398,28 @@ def show_custom_dialog():
     dialog.geometry("300x200")
     dialog.transient(root)  # Make dialog modal
     dialog.grab_set()  # Make dialog modal
-    
+
     label = tk.Label(dialog, text="Enter your name:")
     label.pack(pady=10)
-    
+
     entry = tk.Entry(dialog, width=20)
     entry.pack(pady=5)
     entry.focus_set()  # Set focus to entry
-    
+
     def ok_action():
         name = entry.get()
         print(f"Hello, {name}!")
         dialog.destroy()
-    
+
     ok_button = tk.Button(dialog, text="OK", command=ok_action)
     ok_button.pack(pady=10)
-    
+
     # Center the dialog relative to parent
     dialog.update_idletasks()
     x = root.winfo_rootx() + (root.winfo_width() - dialog.winfo_width()) // 2
     y = root.winfo_rooty() + (root.winfo_height() - dialog.winfo_height()) // 2
     dialog.geometry(f"+{x}+{y}")
-    
+
     # Wait for dialog to close
     root.wait_window(dialog)
 
@@ -494,7 +494,7 @@ canvas.image = photo
 # Moving items
 def move_item():
     canvas.move(rect, 5, 0)  # Move 5 pixels right
-    
+
 # Get item position
 coords = canvas.coords(rect)
 
@@ -547,20 +547,20 @@ class ToolTip:
         self.tooltip = None
         self.widget.bind("<Enter>", self.show_tooltip)
         self.widget.bind("<Leave>", self.hide_tooltip)
-    
+
     def show_tooltip(self, event=None):
         x, y, _, _ = self.widget.bbox("insert")
         x += self.widget.winfo_rootx() + 25
         y += self.widget.winfo_rooty() + 25
-        
+
         # Create a toplevel window
         self.tooltip = tk.Toplevel(self.widget)
         self.tooltip.wm_overrideredirect(True)  # Remove window decorations
         self.tooltip.wm_geometry(f"+{x}+{y}")
-        
+
         label = tk.Label(self.tooltip, text=self.text, background="#ffffe0", relief="solid", borderwidth=1)
         label.pack()
-    
+
     def hide_tooltip(self, event=None):
         if self.tooltip:
             self.tooltip.destroy()
@@ -626,63 +626,63 @@ class NoteApp:
         self.root = root
         self.root.title("Simple Note App")
         self.root.geometry("600x400")
-        
+
         # Set up the menu
         self.create_menu()
-        
+
         # Set up the main frame
         self.main_frame = ttk.Frame(root, padding="10")
         self.main_frame.pack(fill=tk.BOTH, expand=True)
-        
+
         # Note title
         ttk.Label(self.main_frame, text="Title:").grid(row=0, column=0, sticky=tk.W, pady=5)
         self.title_var = tk.StringVar()
         self.title_entry = ttk.Entry(self.main_frame, textvariable=self.title_var, width=40)
         self.title_entry.grid(row=0, column=1, sticky=tk.W, pady=5)
-        
+
         # Note content
         ttk.Label(self.main_frame, text="Content:").grid(row=1, column=0, sticky=tk.NW, pady=5)
         self.content_text = tk.Text(self.main_frame, width=50, height=15)
         self.content_text.grid(row=1, column=1, sticky=tk.NSEW, pady=5)
-        
+
         # Scrollbar for text
         scrollbar = ttk.Scrollbar(self.main_frame, command=self.content_text.yview)
         scrollbar.grid(row=1, column=2, sticky=tk.NS)
         self.content_text.config(yscrollcommand=scrollbar.set)
-        
+
         # Buttons frame
         button_frame = ttk.Frame(self.main_frame)
         button_frame.grid(row=2, column=1, sticky=tk.E, pady=10)
-        
+
         # Save button
         self.save_btn = ttk.Button(button_frame, text="Save", command=self.save_note)
         self.save_btn.pack(side=tk.RIGHT, padx=5)
-        
+
         # Clear button
         self.clear_btn = ttk.Button(button_frame, text="Clear", command=self.clear_fields)
         self.clear_btn.pack(side=tk.RIGHT, padx=5)
-        
+
         # Configure grid weights
         self.main_frame.columnconfigure(1, weight=1)
         self.main_frame.rowconfigure(1, weight=1)
-        
+
         # Status bar
         self.status_var = tk.StringVar()
         self.status_var.set("Ready")
         self.status_bar = ttk.Label(root, textvariable=self.status_var, relief=tk.SUNKEN, anchor=tk.W)
         self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
-        
+
         # Notes data
         self.notes = []
         self.current_file = None
-        
+
         # Focus on title entry
         self.title_entry.focus_set()
-    
+
     def create_menu(self):
         menubar = tk.Menu(self.root)
         self.root.config(menu=menubar)
-        
+
         # File menu
         file_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="File", menu=file_menu)
@@ -691,43 +691,43 @@ class NoteApp:
         file_menu.add_command(label="Save", command=self.save_file, accelerator="Ctrl+S")
         file_menu.add_separator()
         file_menu.add_command(label="Exit", command=self.root.quit)
-        
+
         # Edit menu
         edit_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Edit", menu=edit_menu)
         edit_menu.add_command(label="Clear", command=self.clear_fields)
-        
+
         # Help menu
         help_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Help", menu=help_menu)
         help_menu.add_command(label="About", command=self.show_about)
-        
+
         # Keyboard shortcuts
         self.root.bind("<Control-n>", lambda event: self.new_file())
         self.root.bind("<Control-o>", lambda event: self.open_file())
         self.root.bind("<Control-s>", lambda event: self.save_file())
-    
+
     def save_note(self):
         title = self.title_var.get().strip()
         content = self.content_text.get(1.0, tk.END).strip()
-        
+
         if not title:
             messagebox.showerror("Error", "Please enter a title.")
             return
-        
+
         self.notes.append({
             "title": title,
             "content": content
         })
-        
+
         self.status_var.set(f"Note '{title}' saved.")
         self.clear_fields()
-    
+
     def clear_fields(self):
         self.title_var.set("")
         self.content_text.delete(1.0, tk.END)
         self.title_entry.focus_set()
-    
+
     def new_file(self):
         if self.notes:
             if messagebox.askyesno("Confirm", "Create a new file? Unsaved changes will be lost."):
@@ -738,7 +738,7 @@ class NoteApp:
         else:
             self.clear_fields()
             self.status_var.set("Ready.")
-    
+
     def open_file(self):
         file_path = filedialog.askopenfilename(
             filetypes=[("JSON files", "*.json"), ("All files", "*.*")]
@@ -749,7 +749,7 @@ class NoteApp:
                     self.notes = json.load(file)
                 self.current_file = file_path
                 self.status_var.set(f"Opened file: {file_path}")
-                
+
                 # Load the first note if exists
                 if self.notes:
                     self.title_var.set(self.notes[0]["title"])
@@ -757,12 +757,12 @@ class NoteApp:
                     self.content_text.insert(tk.END, self.notes[0]["content"])
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to open file: {e}")
-    
+
     def save_file(self):
         if not self.notes:
             messagebox.showinfo("Info", "No notes to save.")
             return
-            
+
         file_path = self.current_file
         if not file_path:
             file_path = filedialog.asksaveasfilename(
@@ -771,7 +771,7 @@ class NoteApp:
             )
             if not file_path:
                 return
-            
+
         try:
             with open(file_path, "w") as file:
                 json.dump(self.notes, file, indent=2)
@@ -779,7 +779,7 @@ class NoteApp:
             self.status_var.set(f"Saved to: {file_path}")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to save file: {e}")
-    
+
     def show_about(self):
         messagebox.showinfo(
             "About",

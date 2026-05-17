@@ -4,5 +4,5 @@
 # Read file #1 (Ctrl+C stops TTS immediately)
 ./read_use_venv.sh 1
 
-# Test TTS (Ctrl+C stops immediately)  
+# Test TTS (Ctrl+C stops immediately)
 ./read_use_venv.sh --test

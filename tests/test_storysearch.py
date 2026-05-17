@@ -8,7 +8,7 @@ character, and theme-based searches.
 import sys
 import unittest
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -93,7 +93,7 @@ class TestStorySearch(unittest.TestCase):
             self.assertIsInstance(keyword_result, list)
             self.assertIsInstance(character_result, list)
             self.assertIsInstance(theme_result, list)
-        except (TypeError, AttributeError):
+        except TypeError, AttributeError:
             # If they raise errors with None input, that's acceptable
             pass
 

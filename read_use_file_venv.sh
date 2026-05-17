@@ -54,10 +54,10 @@ cleanup() {
     if [[ -n "${PYTHON_PID:-}" ]]; then
         # Send SIGTERM first (allows graceful shutdown)
         kill -TERM "$PYTHON_PID" 2>/dev/null || true
-        
+
         # Wait a bit for graceful shutdown
         sleep 2
-        
+
         # If still running, send SIGKILL as last resort
         if kill -0 "$PYTHON_PID" 2>/dev/null; then
             warn "Process still running, forcing termination..."

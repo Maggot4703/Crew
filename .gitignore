@@ -60,3 +60,5 @@ push_log.txt
 automated_fixes.txt
 HELP.txt
 project_summary.md
+input/*.png
+*.wav
