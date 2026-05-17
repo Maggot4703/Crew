@@ -172,7 +172,7 @@ class EnhancedDocumentationFetcher:
 - Industry publications and blogs
 - Community resources and tutorials
 
-Created: {time.strftime('%Y-%m-%d %H:%M:%S')}
+Created: {time.strftime("%Y-%m-%d %H:%M:%S")}
 """
 
         elif doc_type == "usage":
@@ -220,7 +220,7 @@ Created: {time.strftime('%Y-%m-%d %H:%M:%S')}
 - Testing and debugging utilities
 - Monitoring and analysis tools
 
-Created: {time.strftime('%Y-%m-%d %H:%M:%S')}
+Created: {time.strftime("%Y-%m-%d %H:%M:%S")}
 """
 
         else:  # examples
@@ -234,7 +234,7 @@ Created: {time.strftime('%Y-%m-%d %H:%M:%S')}
 # This demonstrates the simplest possible use case
 
 # Initialize or setup
-{self._generate_sample_code(subject, 'basic')}
+{self._generate_sample_code(subject, "basic")}
 ```
 
 ### Example 2: Configuration
@@ -242,7 +242,7 @@ Created: {time.strftime('%Y-%m-%d %H:%M:%S')}
 # Basic configuration example
 # Shows how to set up {subject} for typical use
 
-{self._generate_sample_code(subject, 'config')}
+{self._generate_sample_code(subject, "config")}
 ```
 
 ## Intermediate Examples
@@ -252,7 +252,7 @@ Created: {time.strftime('%Y-%m-%d %H:%M:%S')}
 # Practical example showing common usage patterns
 # Includes error handling and best practices
 
-{self._generate_sample_code(subject, 'practical')}
+{self._generate_sample_code(subject, "practical")}
 ```
 
 ### Example 4: Data Processing
@@ -260,7 +260,7 @@ Created: {time.strftime('%Y-%m-%d %H:%M:%S')}
 # Example showing data manipulation or processing
 # Demonstrates intermediate concepts
 
-{self._generate_sample_code(subject, 'data')}
+{self._generate_sample_code(subject, "data")}
 ```
 
 ## Advanced Examples
@@ -270,7 +270,7 @@ Created: {time.strftime('%Y-%m-%d %H:%M:%S')}
 # Advanced example focusing on performance
 # Shows optimization techniques and best practices
 
-{self._generate_sample_code(subject, 'performance')}
+{self._generate_sample_code(subject, "performance")}
 ```
 
 ### Example 6: Integration Example
@@ -278,7 +278,7 @@ Created: {time.strftime('%Y-%m-%d %H:%M:%S')}
 # Shows how to integrate {subject} with other technologies
 # Demonstrates advanced integration patterns
 
-{self._generate_sample_code(subject, 'integration')}
+{self._generate_sample_code(subject, "integration")}
 ```
 
 ## Complex Use Cases
@@ -288,7 +288,7 @@ Created: {time.strftime('%Y-%m-%d %H:%M:%S')}
 # Production-ready configuration and usage
 # Includes monitoring, logging, and error handling
 
-{self._generate_sample_code(subject, 'production')}
+{self._generate_sample_code(subject, "production")}
 ```
 
 ### Example 8: Custom Extension
@@ -296,7 +296,7 @@ Created: {time.strftime('%Y-%m-%d %H:%M:%S')}
 # Example of extending or customizing {subject}
 # Shows advanced customization techniques
 
-{self._generate_sample_code(subject, 'custom')}
+{self._generate_sample_code(subject, "custom")}
 ```
 
 ## Additional Resources
@@ -306,7 +306,7 @@ Created: {time.strftime('%Y-%m-%d %H:%M:%S')}
 - Sample projects and templates
 - Code playgrounds and sandboxes
 
-Created: {time.strftime('%Y-%m-%d %H:%M:%S')}
+Created: {time.strftime("%Y-%m-%d %H:%M:%S")}
 """
 
     def _generate_sample_code(self, subject, example_type):
@@ -351,10 +351,10 @@ Created: {time.strftime('%Y-%m-%d %H:%M:%S')}
 
         content += f"""
 ## Learning Resources
-- Stack Overflow: https://stackoverflow.com/questions/tagged/{subject.lower().replace(' ', '-')}
-- GitHub: https://github.com/search?q={subject.replace(' ', '+')}
-- Reddit: https://www.reddit.com/search/?q={subject.replace(' ', '+')}
-- Dev.to: https://dev.to/search?q={subject.replace(' ', '%20')}
+- Stack Overflow: https://stackoverflow.com/questions/tagged/{subject.lower().replace(" ", "-")}
+- GitHub: https://github.com/search?q={subject.replace(" ", "+")}
+- Reddit: https://www.reddit.com/search/?q={subject.replace(" ", "+")}
+- Dev.to: https://dev.to/search?q={subject.replace(" ", "%20")}
 
 ## Community and Support
 - Official forums and discussion boards
@@ -398,8 +398,8 @@ Created: {time.strftime('%Y-%m-%d %H:%M:%S')}
 - Podcasts and video channels
 - Twitter accounts and social media
 
-Last updated: {time.strftime('%Y-%m-%d %H:%M:%S')}
-Web scraping: {'Enabled' if self.use_web else 'Disabled'}
+Last updated: {time.strftime("%Y-%m-%d %H:%M:%S")}
+Web scraping: {"Enabled" if self.use_web else "Disabled"}
 """
         return content
 

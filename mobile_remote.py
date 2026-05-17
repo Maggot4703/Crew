@@ -266,10 +266,10 @@ class CrewMobileRemoteServer:
   </div>
   <div class="card">
     <h2>Quick Actions</h2>
-    {self._action_form('open_chatbot', 'Open Chatbot')}
-    {self._action_form('open_crew_chat', 'Open Crew Chat')}
-    {self._action_form('read_status', 'Read Status Aloud')}
-    {self._action_form('stop_reading', 'Stop Reading', css_class='secondary')}
+    {self._action_form("open_chatbot", "Open Chatbot")}
+    {self._action_form("open_crew_chat", "Open Crew Chat")}
+    {self._action_form("read_status", "Read Status Aloud")}
+    {self._action_form("stop_reading", "Stop Reading", css_class="secondary")}
   </div>
   <div class="card">
     <h2>Send Crew Message</h2>

@@ -358,14 +358,14 @@ class DatabaseManager:
                 message = dict(row)
                 try:
                     message["recipients"] = json.loads(message.pop("recipients_json"))
-                except (TypeError, json.JSONDecodeError):
+                except TypeError, json.JSONDecodeError:
                     message["recipients"] = []
                 file_meta_json = message.pop("file_meta_json")
                 try:
                     message["file"] = (
                         json.loads(file_meta_json) if file_meta_json else None
                     )
-                except (TypeError, json.JSONDecodeError):
+                except TypeError, json.JSONDecodeError:
                     message["file"] = None
                 messages.append(message)
             return messages

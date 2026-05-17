@@ -357,7 +357,7 @@ def main():
                     read_text(use_files[idx], args.rate)
                 else:
                     print("❌ Invalid selection!")
-        except (ValueError, KeyboardInterrupt):
+        except ValueError, KeyboardInterrupt:
             print("\n🚪 Cancelled")
 
 

@@ -23,7 +23,7 @@ def main() -> int:
         logger.info("Launching Crew GUI via canonical startup path")
         launch_main()
         return 0
-    except (KeyboardInterrupt, SystemExit):
+    except KeyboardInterrupt, SystemExit:
         raise
     except (ImportError, RuntimeError, OSError) as exc:
         logger.exception(

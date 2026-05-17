@@ -22,6 +22,7 @@ def check_dependencies() -> Dict[str, bool]:
 
     try:
         import importlib
+
         importlib.import_module("pandas")
         dependencies["pandas"] = True
     except ImportError:
@@ -29,6 +30,7 @@ def check_dependencies() -> Dict[str, bool]:
 
     try:
         import importlib
+
         importlib.import_module("PIL")
         dependencies["PIL"] = True
     except ImportError:
@@ -36,6 +38,7 @@ def check_dependencies() -> Dict[str, bool]:
 
     try:
         import importlib
+
         importlib.import_module("ijson")
         dependencies["ijson"] = True
     except ImportError:
@@ -43,6 +46,7 @@ def check_dependencies() -> Dict[str, bool]:
 
     try:
         import importlib
+
         importlib.import_module("speech_recognition")
         dependencies["SpeechRecognition"] = True
     except ImportError:

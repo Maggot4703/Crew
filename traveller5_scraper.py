@@ -52,7 +52,7 @@ class Traveller5Scraper:
         try:
             with urlopen(request, timeout=10) as response:
                 return response.read().decode("utf-8", "ignore")
-        except (HTTPError, URLError, TimeoutError, ValueError):
+        except HTTPError, URLError, TimeoutError, ValueError:
             return None
 
     @staticmethod

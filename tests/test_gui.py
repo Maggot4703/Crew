@@ -48,7 +48,7 @@ class TestGUIModule(unittest.TestCase):
             # This can happen in environments without a display
             # (e.g., some CI servers)
             self.skipTest(
-                "Skipping test: Tkinter could not be initialized " f"(no display?): {e}"
+                f"Skipping test: Tkinter could not be initialized (no display?): {e}"
             )
 
     def tearDown(self):

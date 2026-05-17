@@ -283,7 +283,7 @@ class TestFemaleVoiceSetup(unittest.TestCase):
                     return False
 
             except Exception:
-                    return False
+                return False
 
         # Test the advanced function
         result = setup_female_voice_advanced(self.engine)
@@ -587,8 +587,8 @@ class TestThreadSafety(unittest.TestCase):
             try:
                 for i in range(10):
                     # Get properties
-                    rate = self.engine.getProperty("rate")
-                    volume = self.engine.getProperty("volume")
+                    _rate = self.engine.getProperty("rate")
+                    _volume = self.engine.getProperty("volume")
 
                     # Set properties
                     self.engine.setProperty("rate", 200 + worker_id * 10)
@@ -633,7 +633,7 @@ class TestThreadSafety(unittest.TestCase):
 
                 return True  # Completed
             except Exception:
-                    return False
+                return False
 
         # Test normal completion
         stop_event = threading.Event()
@@ -727,7 +727,7 @@ class TestIntegration(unittest.TestCase):
                 return True, f"Successfully processed {len(chunks)} chunks"
 
             except Exception as e:
-                    return False, f"Workflow error: {e}"
+                return False, f"Workflow error: {e}"
 
         # Test with various text types
         test_texts = [
@@ -779,7 +779,7 @@ class TestIntegration(unittest.TestCase):
                     return False, "Unknown action"
 
             except Exception as e:
-                    return False, f"Context menu error: {e}"
+                return False, f"Context menu error: {e}"
 
         # Test different context menu actions
         test_cases = [
@@ -820,7 +820,7 @@ class TestTTSSettingsDialog(unittest.TestCase):
                 }
                 return settings
             except Exception:
-                    return None
+                return None
 
         settings = get_tts_settings(self.engine)
         self.assertIsNotNone(settings)

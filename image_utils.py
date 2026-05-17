@@ -39,15 +39,43 @@ def mark_line(
 
 
 def overlay_grid(
-    image_path: str,
+    image_source,
     grid_color: str = DEFAULT_GRID_COLOR,
     grid_size: tuple = DEFAULT_GRID_SIZE,
     show_labels: bool = False,
 ):
+    """Overlay a grid on an image.
+
+    image_source may be either a filesystem path (str/Path) or a PIL.Image.Image
+    instance. Returns a PIL.Image.Image on success or None on error.
+    """
     try:
-        if not image_path or not isinstance(image_path, str):
-            logger.error("Invalid image path provided to overlay_grid.")
+        # Defer Pillow import to function scope
+        from PIL import Image as PILImage, ImageDraw as PILImageDraw
+        from pathlib import Path
+
+        # Normalize image object
+        img = None
+        if isinstance(image_source, (str, Path)):
+            image_path = str(image_source)
+            if not image_path:
+                logger.error("Invalid image path provided to overlay_grid.")
+                return None
+            try:
+                img = PILImage.open(image_path)
+            except FileNotFoundError:
+                logger.error(f"Image file not found at {image_path} in overlay_grid.")
+                return None
+        elif (
+            hasattr(image_source, "__class__")
+            and "Image" in image_source.__class__.__name__
+        ):
+            # Assume it's a PIL Image-like object
+            img = image_source
+        else:
+            logger.error("Unsupported image_source type for overlay_grid")
             return None
+
         if not isinstance(grid_size, tuple) or len(grid_size) != 2:
             logger.error("Invalid grid_size. Expected tuple(width, height).")
             return None
@@ -58,9 +86,9 @@ def overlay_grid(
         if grid_width <= 0 or grid_height <= 0:
             logger.error("grid_size values must be > 0.")
             return None
+
         color_value = _resolve_color(grid_color)
-        img = Image.open(image_path)
-        draw = ImageDraw.Draw(img)
+        draw = PILImageDraw.Draw(img)
         width, height = img.size
         for x in range(0, width, grid_width):
             draw.line([(x, 0), (x, height)], fill=color_value)
@@ -71,13 +99,10 @@ def overlay_grid(
                 draw.text((x + 2, 2), f"C{idx}", fill=color_value)
             for idx, y in enumerate(range(0, height, grid_height)):
                 draw.text((2, y + 2), f"R{idx}", fill=color_value)
-        logger.info(f"Grid overlay applied to {image_path} with grid size {grid_size}.")
+        logger.info(f"Grid overlay applied to image_source with grid size {grid_size}.")
         return img
-    except FileNotFoundError:
-        logger.error(f"Image file not found at {image_path} in overlay_grid.")
-        return None
     except Exception as e:
-        logger.error(f"Error in overlay_grid for {image_path}: {e}", exc_info=True)
+        logger.error(f"Error in overlay_grid: {e}", exc_info=True)
         return None
 
 

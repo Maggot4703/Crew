@@ -127,7 +127,7 @@ class TestBasicApp(unittest.TestCase):
                 # Skip tkinter test in headless environments
                 if package == "tkinter" and "DISPLAY" not in os.environ:
                     self.skipTest(
-                        f"Skipping {package} import test in headless " "environment"
+                        f"Skipping {package} import test in headless environment"
                     )
                 else:
                     self.fail(f"Required package '{package}' cannot be imported")

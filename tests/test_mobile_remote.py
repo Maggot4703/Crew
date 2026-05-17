@@ -77,8 +77,9 @@ class TestCrewMobileRemote(unittest.TestCase):
         gui = CrewGUI(root)
 
         try:
-            with patch.object(gui, "open_chatbot_dialog") as open_chatbot, patch(
-                "tkinter.messagebox.showinfo"
+            with (
+                patch.object(gui, "open_chatbot_dialog") as open_chatbot,
+                patch("tkinter.messagebox.showinfo"),
             ):
                 result = gui.handle_mobile_remote_action("open_chatbot")
                 self.assertTrue(result["ok"])

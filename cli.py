@@ -6,10 +6,18 @@ import sys
 from image_utils import overlay_grid
 from utils import crop_from_annotations, process_csv_data, process_excel_data
 
+# DeepSeek import: try package-relative first, then absolute; provide fallback if unavailable
+deepseek_code_query = None
 try:
-    from deepseek_integration import deepseek_code_query
-except ImportError:
-    from .deepseek_integration import deepseek_code_query
+    # Prefer relative import when running as a package
+    from .deepseek_integration import deepseek_code_query  # type: ignore
+except Exception:
+    try:
+        from deepseek_integration import deepseek_code_query
+    except Exception:
+
+        def deepseek_code_query(prompt: str) -> str:
+            return "[DeepSeek unavailable] Ensure 'requests' is installed and DeepSeek server is configured."
 
 
 def create_cli_parser():
@@ -236,17 +244,21 @@ def handle_grid_image(args, logger):
         return 1
 
     try:
-        from PIL import Image
-
-        # Load image
-        img = Image.open(args.image_path)
+        # Validate args
         grid_width, grid_height = args.grid_size
         grid_color = args.grid_color
 
-        # Apply grid overlay
+        # Apply grid overlay (pass file path to image_utils.overlay_grid)
         result = overlay_grid(
-            img, grid_size=(grid_width, grid_height), color=grid_color
+            args.image_path,
+            grid_color=grid_color,
+            grid_size=(grid_width, grid_height),
         )
+
+        if result is None:
+            logger.error("overlay_grid returned None - processing failed")
+            print("[ERROR] Failed to apply grid", file=sys.stderr)
+            return 1
 
         # Save result
         result.save(args.output_path)

@@ -50,8 +50,9 @@ def test_cli_grid_image(monkeypatch, tmp_path, capsys):
     dummy_image.write_bytes(b"\x89PNG\r\n\x1a\n")
 
     # Patch PIL.Image.open and overlay_grid
-    with patch("PIL.Image.open", return_value=mock_image), patch(
-        "cli.overlay_grid", return_value=mock_image
+    with (
+        patch("PIL.Image.open", return_value=mock_image),
+        patch("cli.overlay_grid", return_value=mock_image),
     ):
         parser = cli_mod.create_cli_parser()
         args = parser.parse_args(

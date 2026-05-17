@@ -78,7 +78,7 @@ def test_database_manager_with_csv():
         print("✓ DatabaseManager instance created")
 
         headers, rows, groups = db_manager.load_data(csv_file)
-        print(f"✓ CSV data loaded successfully:")
+        print("✓ CSV data loaded successfully:")
         print(f"  - Headers: {headers}")
         print(f"  - Rows: {len(rows)}")
         print(f"  - Groups: {len(groups) if groups else 0}")
@@ -111,7 +111,7 @@ def test_would_fail_on_text_file():
         # This should fail with pandas parsing error
         try:
             _data = pd.read_csv(text_file)
-            print(f"✗ Unexpected success - pandas parsed text file!")
+            print("✗ Unexpected success - pandas parsed text file!")
             return False
         except Exception as e:
             print(f"✓ Expected pandas error occurred: {e}")

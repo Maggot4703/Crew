@@ -42,7 +42,7 @@ class DocumentationFetcher:
 
 ## Further Reading
 Please refer to official documentation for detailed information.
-Created: {time.strftime('%Y-%m-%d %H:%M:%S')}
+Created: {time.strftime("%Y-%m-%d %H:%M:%S")}
 """
         elif doc_type == "usage":
             return f"""# {subject} - Usage Guide
@@ -71,7 +71,7 @@ Created: {time.strftime('%Y-%m-%d %H:%M:%S')}
 - Community recommendations
 - Workflow optimization
 
-Created: {time.strftime('%Y-%m-%d %H:%M:%S')}
+Created: {time.strftime("%Y-%m-%d %H:%M:%S")}
 """
         else:  # examples
             return f"""# {subject} - Examples and Code Samples
@@ -124,7 +124,7 @@ Created: {time.strftime('%Y-%m-%d %H:%M:%S')}
 - Community-contributed examples
 - Sample projects and templates
 
-Created: {time.strftime('%Y-%m-%d %H:%M:%S')}
+Created: {time.strftime("%Y-%m-%d %H:%M:%S")}
 """
 
     def create_links_file(self, subject):
@@ -160,7 +160,7 @@ Created: {time.strftime('%Y-%m-%d %H:%M:%S')}
 - Industry reports
 - Best practice guides
 
-Last updated: {time.strftime('%Y-%m-%d %H:%M:%S')}
+Last updated: {time.strftime("%Y-%m-%d %H:%M:%S")}
 """
 
     def process_subject(self, subject):

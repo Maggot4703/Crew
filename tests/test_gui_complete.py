@@ -231,11 +231,14 @@ class TestGUIRecordMenu(unittest.TestCase):
 
     def test_start_stop_recording(self):
         # Patch audio_manager, pyaudio, and speech_recognition to simulate device lookup and recording
-        with patch("audio_manager.start_recording") as mock_start_recording, patch(
-            "audio_manager.stop_recording"
-        ) as mock_stop_recording, patch("pyaudio.PyAudio") as mock_pyaudio, patch(
-            "speech_recognition.Microphone.list_microphone_names"
-        ) as mock_list_mics:
+        with (
+            patch("audio_manager.start_recording") as mock_start_recording,
+            patch("audio_manager.stop_recording") as mock_stop_recording,
+            patch("pyaudio.PyAudio") as mock_pyaudio,
+            patch(
+                "speech_recognition.Microphone.list_microphone_names"
+            ) as mock_list_mics,
+        ):
             # Setup mocks for device lookup
             mock_proc = MagicMock()
             mock_path = "/tmp/fake_recording.wav"
@@ -255,8 +258,9 @@ class TestGUIRecordMenu(unittest.TestCase):
             self.gui._record_menu.entryconfig.return_value = None
             self.gui.update_status = MagicMock()
             # Patch messagebox to avoid GUI popups
-            with patch("tkinter.messagebox.showerror"), patch(
-                "tkinter.messagebox.showwarning"
+            with (
+                patch("tkinter.messagebox.showerror"),
+                patch("tkinter.messagebox.showwarning"),
             ):
                 # Directly call the new testable method
                 self.gui._start_recording_with_device("Fake Mic")

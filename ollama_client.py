@@ -68,7 +68,7 @@ class OllamaClient:
 
             if self.model not in available_models:
                 logger.warning(
-                    f"Model '{self.model}' not found. " f"Available: {available_models}"
+                    f"Model '{self.model}' not found. Available: {available_models}"
                 )
         except requests.exceptions.RequestException as e:
             logger.error(f"Cannot connect to ollama at {self.base_url}: {e}")

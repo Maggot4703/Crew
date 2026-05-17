@@ -99,7 +99,6 @@ def _auto_install_deps() -> None:
                 except Exception as e:
                     logger.error(f"Failed to auto-install {pip_name}: {e}")
             else:
-
                 logger.warning(f"Dependency {mod} not found and no pip name provided.")
 
 
@@ -257,9 +256,7 @@ def overlay_grid(
                 draw.text((x + 2, 2), f"C{idx}", fill=color_value)
             for idx, y in enumerate(range(0, height, grid_height)):
                 draw.text((2, y + 2), f"R{idx}", fill=color_value)
-        logger.info(
-            f"Grid overlay applied to {image_path} with grid size " f"{grid_size}."
-        )
+        logger.info(f"Grid overlay applied to {image_path} with grid size {grid_size}.")
         return img
     except FileNotFoundError:
         logger.error(f"Image file not found at {image_path} in overlay_grid.")
@@ -271,7 +268,7 @@ def overlay_grid(
     except Exception as e:
         logger.error(f"Error in overlay_grid for {image_path}: {e}", exc_info=True)
         show_user_error(
-            "Could not overlay grid on image. Please check your input and " "try again."
+            "Could not overlay grid on image. Please check your input and try again."
         )
         return None
 
@@ -369,8 +366,7 @@ def main() -> None:
             f"{cli_run_end - cli_run_start:.3f}s with exit code {result}."
         )
         log_progress_md(
-            f"CLI command '{parsed_args.command}' completed with "
-            f"exit code {result}."
+            f"CLI command '{parsed_args.command}' completed with exit code {result}."
         )
         logger.info(f"Total startup time: {cli_run_end - start_time:.3f}s")
         raise SystemExit(result)
@@ -390,7 +386,7 @@ def main() -> None:
     logger.info(f"GUI startup time: {gui_end - gui_start:.3f}s")
     spacer()
     logger.info(
-        f"Main application script finished. Total time: " f"{gui_end - start_time:.3f}s"
+        f"Main application script finished. Total time: {gui_end - start_time:.3f}s"
     )
 
 

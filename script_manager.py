@@ -55,7 +55,7 @@ class ScriptDiscovery:
                         # Skip if it looks like a main execution script
                         if "if __name__" in first_line:
                             continue
-                except (IOError, UnicodeDecodeError):
+                except IOError, UnicodeDecodeError:
                     continue
 
                 safe_scripts.append(script_path)
