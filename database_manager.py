@@ -79,8 +79,7 @@ class DatabaseManager:
             cursor = self.connection.cursor()
 
             # Crew members table
-            cursor.execute(
-                """
+            cursor.execute("""
                 CREATE TABLE IF NOT EXISTS crew_members (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT NOT NULL,
@@ -91,21 +90,17 @@ class DatabaseManager:
                     experience INTEGER,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
-            """
-            )
+            """)
             # Example: Create groups table (assuming it's needed based on get_all_groups, create_group)
-            cursor.execute(
-                """
+            cursor.execute("""
                 CREATE TABLE IF NOT EXISTS groups (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT NOT NULL UNIQUE,
                     description TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
-                """
-            )
-            cursor.execute(
-                """
+                """)
+            cursor.execute("""
                 CREATE TABLE IF NOT EXISTS group_members (
                     group_id INTEGER,
                     member_id INTEGER,
@@ -113,10 +108,8 @@ class DatabaseManager:
                     FOREIGN KEY (group_id) REFERENCES groups (id) ON DELETE CASCADE,
                     FOREIGN KEY (member_id) REFERENCES crew_members (id) ON DELETE CASCADE
                 )
-                """
-            )
-            cursor.execute(
-                """
+                """)
+            cursor.execute("""
                 CREATE TABLE IF NOT EXISTS chat_messages (
                     id TEXT PRIMARY KEY,
                     room TEXT NOT NULL,
@@ -129,8 +122,7 @@ class DatabaseManager:
                     status TEXT DEFAULT 'sent',
                     edited_at TEXT
                 )
-                """
-            )
+                """)
             self.connection.commit()  # Commit table creation
         except sqlite3.Error as e:
             logger.error(f"Database initialization error: {e}")
@@ -344,28 +336,26 @@ class DatabaseManager:
                     (room,),
                 )
             else:
-                cursor.execute(
-                    """
+                cursor.execute("""
                     SELECT id, room, sender, recipients_json, text, timestamp,
                            file_meta_json, reply_to_id, status, edited_at
                     FROM chat_messages
                     ORDER BY timestamp ASC, id ASC
-                    """
-                )
+                    """)
 
             messages = []
             for row in cursor.fetchall():
                 message = dict(row)
                 try:
                     message["recipients"] = json.loads(message.pop("recipients_json"))
-                except TypeError, json.JSONDecodeError:
+                except (TypeError, json.JSONDecodeError):
                     message["recipients"] = []
                 file_meta_json = message.pop("file_meta_json")
                 try:
                     message["file"] = (
                         json.loads(file_meta_json) if file_meta_json else None
                     )
-                except TypeError, json.JSONDecodeError:
+                except (TypeError, json.JSONDecodeError):
                     message["file"] = None
                 messages.append(message)
             return messages

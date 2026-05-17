@@ -427,7 +427,7 @@ def auto_import_py_files() -> Tuple[List[str], List[Tuple[str, str]]]:
                         )
                         continue
 
-                except IOError, UnicodeDecodeError:
+                except (IOError, UnicodeDecodeError):
                     # If we cant read the file, skip it for safety
                     files_skipped += 1
                     continue
@@ -1400,7 +1400,7 @@ class CrewGUI:
             value = float(
                 getattr(self, "tts_lead_in_seconds", DEFAULT_TTS_LEAD_IN_SECONDS)
             )
-        except TypeError, ValueError:
+        except (TypeError, ValueError):
             value = DEFAULT_TTS_LEAD_IN_SECONDS
         return max(0.0, value)
 
@@ -3466,7 +3466,7 @@ class CrewGUI:
             try:
                 with open(history_path, "r", encoding="utf-8") as history_file:
                     data = json.load(history_file)
-            except FileNotFoundError, json.JSONDecodeError, OSError:
+            except (FileNotFoundError, json.JSONDecodeError, OSError):
                 return []
 
             loaded_history = []
@@ -4661,7 +4661,10 @@ class CrewGUI:
         # Show URL dialog if the Tk root still exists (avoids TclError when app is closing)
         try:
             # winfo_exists() returns 1 if the widget exists; guard in case root was destroyed
-            if getattr(self.root, "winfo_exists", lambda: False)() and self.root.winfo_exists():
+            if (
+                getattr(self.root, "winfo_exists", lambda: False)()
+                and self.root.winfo_exists()
+            ):
                 messagebox.showinfo(
                     "Crew Mobile Remote", f"Open this URL on your phone:\n\n{url}"
                 )
@@ -6733,7 +6736,7 @@ class CrewGUI:
                     key=lambda x: float(x[col_index]) if x[col_index] else 0,
                     reverse=self._sort_reverse,
                 )
-            except ValueError, TypeError:
+            except (ValueError, TypeError):
                 # Fall back to string sort
                 data.sort(
                     key=lambda x: str(x[col_index]).lower(),

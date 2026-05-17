@@ -3,8 +3,9 @@ import logging
 import os
 from typing import List, Optional, Union
 
-from file_utils import read_csv_pandas, read_excel
 from PIL import Image
+
+from file_utils import read_csv_pandas, read_excel
 
 logger = logging.getLogger(__name__)
 

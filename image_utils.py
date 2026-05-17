@@ -51,8 +51,10 @@ def overlay_grid(
     """
     try:
         # Defer Pillow import to function scope
-        from PIL import Image as PILImage, ImageDraw as PILImageDraw
         from pathlib import Path
+
+        from PIL import Image as PILImage
+        from PIL import ImageDraw as PILImageDraw
 
         # Normalize image object
         img = None
