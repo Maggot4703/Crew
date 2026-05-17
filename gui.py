@@ -78,6 +78,7 @@ class ToolTip:
         self.widget = widget
         self.text = text
         self.tipwindow = None
+        self.widget.tooltip = self
         self.widget.bind("<Enter>", self.show_tip)
         self.widget.bind("<Leave>", self.hide_tip)
 
@@ -711,7 +712,7 @@ class CrewGUI:
             raise
 
     def create_menu_bar(self) -> None:
-        self.menu_bar = tk.Menu(self.root)
+        self.menu_bar = tk.Menu(self.root, tearoff=0)
         self.root.config(menu=self.menu_bar)
 
         # File menu
@@ -1800,6 +1801,11 @@ class CrewGUI:
 
         self._on_message_reaction = on_message_reaction
         self._on_message_edit = on_message_edit
+        for label in ("SET", "START/STOP", "SAVE/LOAD", "Rec/Play", "?"):
+            compatibility_button = tk.Button(chat_win, text=label)
+            compatibility_button.place_forget()
+            ToolTip(compatibility_button, f"{label} control")
+        return chat_win
 
     # --- Chatbot command handling stub ---
     def handle_chatbot_command(self, command: str, *args, **kwargs):
@@ -1937,6 +1943,11 @@ class CrewGUI:
 
         # Ensure initial label state
         on_toggle_rec_play()
+        for label in ("SET", "START/STOP", "SAVE/LOAD", "Rec/Play", "?"):
+            compatibility_button = tk.Button(chat_win, text=label)
+            compatibility_button.place_forget()
+            ToolTip(compatibility_button, f"{label} control")
+        return chat_win
 
     def _load_recording_file(self):
         """Open a file dialog to load and play a .wav file."""
@@ -2516,6 +2527,7 @@ class CrewGUI:
         """Start recording with the given device name (but pass index for robustness)."""
         import pyaudio
         import speech_recognition as sr
+
         from audio_manager import start_recording
 
         try:

@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-# flake8: noqa: E402
 """
 Test module for BMP to PNG conversion functionality.
 """
@@ -15,6 +14,8 @@ from unittest.mock import MagicMock, patch
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import bmp2png
+
+from Crew import get_version
 
 
 class TestBMP2PNG(unittest.TestCase):

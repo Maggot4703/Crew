@@ -24,6 +24,7 @@ Notes:
 # Utility functions moved to utils.py
 import importlib
 import logging
+import math
 import os
 import subprocess
 import sys
@@ -33,7 +34,8 @@ from typing import TYPE_CHECKING, Optional
 if TYPE_CHECKING:
     from PIL import Image
 
-from utils import log_progress_md, show_user_error, spacer
+from file_utils import read_csv_builtin, read_file
+from utils import crop_from_annotations, log_progress_md, show_user_error, spacer
 
 # Local imports (absolute only)
 try:
@@ -43,6 +45,8 @@ try:
         DEFAULT_LINE_COLOR,
         IMAGE_DIMENSIONS,
         _resolve_color,
+        hex_to_rgb,
+        process_images,
     )
 except ImportError as e:
     raise ImportError(
@@ -52,6 +56,7 @@ except ImportError as e:
 # --- Utility Functions ---
 
 logger = logging.getLogger(__name__)
+Crew = sys.modules[__name__]
 
 # --- Dependency Auto-Installer ---
 REQUIRED_PACKAGES = [
@@ -116,6 +121,14 @@ __all__ = [
     "DEFAULT_LINE_COLOR",
     "DEFAULT_GRID_SIZE",
     "IMAGE_DIMENSIONS",
+    "calculate_hexagon_points",
+    "crop_from_annotations",
+    "hex_to_rgb",
+    "process_images",
+    "read_csv_builtin",
+    "read_file",
+    "rgb_to_hex",
+    "spacer",
 ]
 
 
@@ -269,6 +282,44 @@ def get_project_info() -> dict:
         "dependencies": ["PIL", "pandas", "tkinter"],
         "features": ["image_processing", "csv_handling", "grid_overlay", "gui"],
     }
+
+
+def calculate_hexagon_points(center, radius: float) -> list[tuple[float, float]]:
+    """Return the six vertices of a regular hexagon for the given center and radius."""
+    try:
+        center_x, center_y = center
+        points = []
+        for index in range(6):
+            angle = math.pi * index / 3
+            x = center_x + radius * math.cos(angle)
+            y = center_y + radius * math.sin(angle)
+            points.append((x, y))
+        return points
+    except Exception as e:
+        logger.error(f"Error calculating hexagon points: {e}", exc_info=True)
+        return []
+
+
+def rgb_to_hex(
+    r: int | tuple[int, int, int],
+    g: Optional[int] = None,
+    b: Optional[int] = None,
+) -> str:
+    """Convert an RGB triple to a #RRGGBB string."""
+    try:
+        if isinstance(r, tuple) and len(r) == 3:
+            r, g, b = r
+
+        if g is None or b is None:
+            raise ValueError("RGB values are required")
+
+        if not (0 <= int(r) <= 255 and 0 <= int(g) <= 255 and 0 <= int(b) <= 255):
+            raise ValueError(f"RGB values must be 0-255: ({r}, {g}, {b})")
+
+        return f"#{int(r):02X}{int(g):02X}{int(b):02X}"
+    except Exception as e:
+        logger.error(f"Error converting RGB to hex ({r}, {g}, {b}): {e}", exc_info=True)
+        return "#000000"
 
 
 def main() -> None:
