@@ -4289,12 +4289,76 @@ class CrewGUI:
             return "Crew was created by the Crew Team."
         if "exit" in msg or "bye" in msg:
             return "Goodbye! If you need more help, just open this chat again."
-        # Fallback: Use DeepSeek Code server for general queries
+        # Fallback: Prefer Ollama, then DeepSeek, then referee strategy
+        OllamaClient = None
         try:
-            from .deepseek_integration import deepseek_code_query
-        except ImportError:
-            from deepseek_integration import deepseek_code_query
-        return deepseek_code_query(user_msg)
+            from .ollama_client import OllamaClient as _OllamaClient
+        except Exception:
+            try:
+                from ollama_client import OllamaClient as _OllamaClient
+            except Exception:
+                _OllamaClient = None
+        if _OllamaClient is not None:
+            try:
+                # Try to honour any configured model if available
+                model = None
+                try:
+                    model = getattr(self, "llm_model", None)
+                except Exception:
+                    model = None
+                # Fallback to config manager if present
+                if model is None and getattr(self, "config_manager", None) is not None:
+                    try:
+                        llm_conf = self.config_manager.get("llm", {})
+                        model = (
+                            llm_conf.get("model")
+                            if isinstance(llm_conf, dict)
+                            else None
+                        )
+                    except Exception:
+                        model = None
+                client = None
+                if model:
+                    try:
+                        client = _OllamaClient(model=model)
+                    except Exception:
+                        client = None
+                if client is None:
+                    try:
+                        client = _OllamaClient()
+                    except Exception:
+                        client = None
+                if client is not None:
+                    try:
+                        resp = client.generate(user_msg)
+                        if resp:
+                            return resp
+                    except Exception as e:
+                        logger.warning("Ollama generation failed: %s", e)
+            except Exception as e:
+                logger.debug("Ollama client setup failed: %s", e)
+        # Next fallback: DeepSeek if available
+        deepseek_code_query = None
+        try:
+            from .deepseek_integration import deepseek_code_query as _ds
+
+            deepseek_code_query = _ds
+        except Exception:
+            try:
+                from deepseek_integration import deepseek_code_query as _ds
+
+                deepseek_code_query = _ds
+            except Exception:
+                deepseek_code_query = None
+        if deepseek_code_query is not None:
+            try:
+                ds_resp = deepseek_code_query(user_msg)
+                if ds_resp and not str(ds_resp).startswith("[ERROR]"):
+                    return ds_resp
+            except Exception as e:
+                logger.warning("DeepSeek query failed: %s", e)
+        # Final fallback: use the simple referee strategy
+        return referee_strategy.process_message(user_msg)
 
     def _start_recording(self):
         """Prompt for/select a microphone, then start recording. Dialog logic only."""
