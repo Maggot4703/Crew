@@ -1,13 +1,12 @@
-# flake8: noqa: E402
 #!/usr/bin/env python3
 """
 TTS Test Script for Details View
 
 This script tests the text-to-speech functionality when loaded
-into the GUI Details View via Tools > Scripts.
+into the GUI Details View via Menu > View > Run Script.
 
 Usage:
-1. Load this script via Tools > Scripts
+1. Load this script via Menu > View > Run Script
 2. Right-click in Details View for TTS options
 3. Test "Read Selected Text" and "Read All Text"
 

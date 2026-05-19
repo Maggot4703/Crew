@@ -21,36 +21,32 @@ def check_dependencies() -> Dict[str, bool]:
     }
 
     try:
-        import importlib
+        import pandas
 
-        importlib.import_module("pandas")
         dependencies["pandas"] = True
     except ImportError:
-        dependencies["pandas"] = False
+        pass
 
     try:
-        import importlib
+        from PIL import Image
 
-        importlib.import_module("PIL")
         dependencies["PIL"] = True
     except ImportError:
-        dependencies["PIL"] = False
+        pass
 
     try:
-        import importlib
+        import ijson
 
-        importlib.import_module("ijson")
         dependencies["ijson"] = True
     except ImportError:
-        dependencies["ijson"] = False
+        pass
 
     try:
-        import importlib
+        import speech_recognition
 
-        importlib.import_module("speech_recognition")
         dependencies["SpeechRecognition"] = True
     except ImportError:
-        dependencies["SpeechRecognition"] = False
+        pass
 
     try:
         result = subprocess.run(["git", "--version"], capture_output=True)
@@ -127,8 +123,7 @@ def run_diagnostics() -> Dict[str, any]:
             cwd=project_dir,
         )
         diagnostics["git_clean"] = len(result.stdout.strip()) == 0
-    except Exception as e:
-        logger.warning(f"Could not determine git status: {e}")
+    except:
         diagnostics["git_clean"] = False
 
     return diagnostics

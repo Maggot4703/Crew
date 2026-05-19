@@ -1,4 +1,3 @@
-# flake8: noqa: E402
 # No sys.path modification needed; use direct imports for local modules
 import os
 import sys

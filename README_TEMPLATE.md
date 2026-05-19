@@ -84,11 +84,11 @@ log_progress_md("Started Crew main application script.")
 ```python
 show_user_error(message: str, gui: bool = False) -> None
 ```
-Display a user-friendly error message to the user. If `gui=True`, integrate with the GUI dialog path; otherwise, print to stderr for CLI use.
+Display a user-friendly error message to the user. If `gui=True`, integrates with GUI dialog (placeholder for now). Otherwise, prints to stderr for CLI.
 
 **Args:**
 - `message` (str): The error message to display.
-- `gui` (bool): If True, show in the GUI path; else log to stderr.
+- `gui` (bool): If True, show in GUI (placeholder); else log to stderr.
 
 **Example:**
 ```python

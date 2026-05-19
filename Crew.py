@@ -15,8 +15,13 @@ Run with a command for CLI mode:
     python Crew.py read-excel --excel-path <path> [--sheet <name>]
     python Crew.py crop-csv --image-path <path> \
         --annotations-csv <path> --output-dir <dir>
+
+Notes:
+- Default grid size is 42x32.
+- Logs are written to crew_app.log.
 """
 
+# Utility functions moved to utils.py
 import importlib
 import logging
 import os
@@ -28,7 +33,6 @@ from typing import TYPE_CHECKING, Optional
 if TYPE_CHECKING:
     from PIL import Image
 
-from file_utils import read_csv_builtin, read_file
 from utils import log_progress_md, show_user_error, spacer
 
 # Local imports (absolute only)
@@ -39,25 +43,11 @@ try:
         DEFAULT_LINE_COLOR,
         IMAGE_DIMENSIONS,
         _resolve_color,
-        calculate_hexagon_points,
-        crop_from_annotations,
-        hex_to_rgb,
-        process_images,
-        rgb_to_hex,
     )
 except ImportError as e:
     raise ImportError(
         "Failed to import image_utils. Ensure it is in the PYTHONPATH."
     ) from e
-
-# Optional: Ollama AI client (may fail if requests not available)
-try:
-    from ollama_client import OllamaClient
-
-    OLLAMA_AVAILABLE = True
-except ImportError:
-    OLLAMA_AVAILABLE = False
-    OllamaClient = None
 
 # --- Utility Functions ---
 
@@ -99,6 +89,7 @@ def _auto_install_deps() -> None:
                 except Exception as e:
                     logger.error(f"Failed to auto-install {pip_name}: {e}")
             else:
+
                 logger.warning(f"Dependency {mod} not found and no pip name provided.")
 
 
@@ -109,23 +100,10 @@ def _auto_install_deps() -> None:
 # Base Constants
 WIDTH = 1920
 HEIGHT = 1080
-REPO_ROOT = Path(__file__).resolve().parents[2]
-CARDCUTTER_DIR = REPO_ROOT / "CARDCUTTER" / "CardCutter"
-CARDCUTTER_INPUT_DIR = CARDCUTTER_DIR / "gimp"
-CARDCUTTER_OUTPUT_DIR = CARDCUTTER_DIR
-CARDCUTTER_RECTANGLES_DIR = CARDCUTTER_DIR / "Cars1_rectangles"
 # Allow override via environment variables
-INPUT_DIR = Path(os.environ.get("CREW_INPUT_DIR", str(CARDCUTTER_INPUT_DIR)))
-OUTPUT_DIR = Path(os.environ.get("CREW_OUTPUT_DIR", str(CARDCUTTER_OUTPUT_DIR)))
-IMAGE_FILES = [
-    "Cars1.png",
-    "Cars2.png",
-    "Cars3.png",
-    "Cars4.png",
-    "Cars5.png",
-    "Cars6.png",
-    "Cars7.png",
-]
+INPUT_DIR = Path(os.environ.get("CREW_INPUT_DIR", "/tmp/input"))
+OUTPUT_DIR = Path(os.environ.get("CREW_OUTPUT_DIR", "/tmp/output"))
+IMAGE_FILES = ["file1.png", "file2.png"]
 
 # Ensure test constants are visible for import
 __all__ = [
@@ -134,27 +112,10 @@ __all__ = [
     "INPUT_DIR",
     "OUTPUT_DIR",
     "IMAGE_FILES",
-    "CARDCUTTER_DIR",
-    "CARDCUTTER_INPUT_DIR",
-    "CARDCUTTER_OUTPUT_DIR",
-    "CARDCUTTER_RECTANGLES_DIR",
     "DEFAULT_GRID_COLOR",
     "DEFAULT_LINE_COLOR",
     "DEFAULT_GRID_SIZE",
     "IMAGE_DIMENSIONS",
-    "crop_from_annotations",
-    "hex_to_rgb",
-    "process_images",
-    "rgb_to_hex",
-    "calculate_hexagon_points",
-    "mark_line",
-    "overlay_grid",
-    "read_file",
-    "read_csv_builtin",
-    "log_progress_md",
-    "show_user_error",
-    "spacer",
-    "OllamaClient",
 ]
 
 
@@ -256,7 +217,9 @@ def overlay_grid(
                 draw.text((x + 2, 2), f"C{idx}", fill=color_value)
             for idx, y in enumerate(range(0, height, grid_height)):
                 draw.text((2, y + 2), f"R{idx}", fill=color_value)
-        logger.info(f"Grid overlay applied to {image_path} with grid size {grid_size}.")
+        logger.info(
+            f"Grid overlay applied to {image_path} with grid size " f"{grid_size}."
+        )
         return img
     except FileNotFoundError:
         logger.error(f"Image file not found at {image_path} in overlay_grid.")
@@ -268,9 +231,17 @@ def overlay_grid(
     except Exception as e:
         logger.error(f"Error in overlay_grid for {image_path}: {e}", exc_info=True)
         show_user_error(
-            "Could not overlay grid on image. Please check your input and try again."
+            "Could not overlay grid on image. Please check your input and " "try again."
         )
         return None
+
+    # csv
+    # xls
+    # ...existing code...
+    """
+    Crop image regions using CSV rows in format: name,x,y,width,height.
+    Invalid rows are skipped and logged as warnings.
+    """
 
 
 def get_version() -> str:
@@ -296,13 +267,7 @@ def get_project_info() -> dict:
         "license": "MIT",
         "python_version": (f"{sys.version_info.major}.{sys.version_info.minor}+"),
         "dependencies": ["PIL", "pandas", "tkinter"],
-        "features": [
-            "image_processing",
-            "csv_handling",
-            "grid_overlay",
-            "cardcutter_integration",
-            "gui",
-        ],
+        "features": ["image_processing", "csv_handling", "grid_overlay", "gui"],
     }
 
 
@@ -366,7 +331,8 @@ def main() -> None:
             f"{cli_run_end - cli_run_start:.3f}s with exit code {result}."
         )
         log_progress_md(
-            f"CLI command '{parsed_args.command}' completed with exit code {result}."
+            f"CLI command '{parsed_args.command}' completed with "
+            f"exit code {result}."
         )
         logger.info(f"Total startup time: {cli_run_end - start_time:.3f}s")
         raise SystemExit(result)
@@ -386,7 +352,7 @@ def main() -> None:
     logger.info(f"GUI startup time: {gui_end - gui_start:.3f}s")
     spacer()
     logger.info(
-        f"Main application script finished. Total time: {gui_end - start_time:.3f}s"
+        f"Main application script finished. Total time: " f"{gui_end - start_time:.3f}s"
     )
 
 

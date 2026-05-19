@@ -55,7 +55,7 @@ class ScriptDiscovery:
                         # Skip if it looks like a main execution script
                         if "if __name__" in first_line:
                             continue
-                except (IOError, UnicodeDecodeError):
+                except IOError, UnicodeDecodeError:
                     continue
 
                 safe_scripts.append(script_path)
@@ -227,10 +227,8 @@ class ScriptManager:
                     root.after(
                         0, lambda: self._handle_script_result(result, script_name)
                     )
-                except Exception as e:
-                    root.after(
-                        0, lambda err=e: self._handle_script_error(err, script_name)
-                    )
+                except Exception:
+                    root.after(0, lambda: self._handle_script_error(e, script_name))
 
             threading.Thread(target=target, daemon=True).start()
 

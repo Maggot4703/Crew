@@ -158,9 +158,6 @@ class UIManager:
             self._create_edit_menu()
             self._create_view_menu()
             self._create_tts_menu()
-            self._create_record_menu()
-            self._create_talk_menu()
-            self._create_chat_menu()
 
             logging.info("Menu bar created successfully")
 
@@ -271,62 +268,6 @@ class UIManager:
         except Exception as e:
             logging.warning(f"TTS menu creation failed: {e}")
 
-    def _create_record_menu(self) -> None:
-        """Create the Record menu."""
-        try:
-            record_menu = tk.Menu(self.gui.menu_bar, tearoff=0)
-            self.gui.menu_bar.add_cascade(label="Record", menu=record_menu)
-
-            record_menu.add_command(
-                label="Start Recording",
-                command=getattr(self.gui, "_start_recording", lambda: None),
-            )
-            record_menu.add_command(
-                label="Stop Recording",
-                command=getattr(self.gui, "_stop_recording", lambda: None),
-            )
-            record_menu.add_separator()
-            record_menu.add_command(
-                label="Play Recording",
-                command=getattr(self.gui, "_play_recording", lambda: None),
-            )
-        except Exception as e:
-            logging.warning(f"Record menu creation failed: {e}")
-
-    def _create_talk_menu(self) -> None:
-        """Create the Talk menu."""
-        try:
-            talk_menu = tk.Menu(self.gui.menu_bar, tearoff=0)
-            self.gui.menu_bar.add_cascade(label="Talk", menu=talk_menu)
-
-            talk_menu.add_command(
-                label="Speak Selection",
-                command=getattr(self.gui, "_speak_selection", lambda: None),
-            )
-            talk_menu.add_command(
-                label="Speak All",
-                command=getattr(self.gui, "_speak_all", lambda: None),
-            )
-        except Exception as e:
-            logging.warning(f"Talk menu creation failed: {e}")
-
-    def _create_chat_menu(self) -> None:
-        """Create the Chat menu."""
-        try:
-            chat_menu = tk.Menu(self.gui.menu_bar, tearoff=0)
-            self.gui.menu_bar.add_cascade(label="Chat", menu=chat_menu)
-
-            chat_menu.add_command(
-                label="Open Chatbot",
-                command=getattr(self.gui, "open_chatbot_dialog", lambda: None),
-            )
-            chat_menu.add_command(
-                label="Chat History",
-                command=getattr(self.gui, "_show_chat_history", lambda: None),
-            )
-        except Exception as e:
-            logging.warning(f"Chat menu creation failed: {e}")
-
     def create_control_section(self) -> ttk.LabelFrame:
         """Create the control section with buttons."""
         try:
@@ -371,6 +312,7 @@ class UIManager:
             default_font = self._default_style.get(
                 "default_font", tkfont.nametofont("TkDefaultFont")
             )
+            line_height = default_font.metrics("linespace") if default_font else 20
             desired_height_pixels = (5 * 25) + 2 * int(
                 getattr(default_font, "metrics", lambda x: {"ascent": 10})("ascent")
             )
@@ -613,31 +555,27 @@ class UIManager:
             logging.error(f"Failed to create data section: {e}")
             raise
 
-    def create_details_and_editor_section(self) -> ttk.PanedWindow:
-        """Create a horizontal split with Details View and Editor View side by side."""
+    def create_details_section(self) -> ttk.LabelFrame:
+        """Create the details section with text widget."""
         try:
-            # Create a horizontal PanedWindow to hold both views
-            details_editor_split = ttk.PanedWindow(
-                self.gui.paned_right, orient="horizontal"
-            )
-            self.gui.paned_right.add(details_editor_split, weight=5)
-
-            # --- Details View ---
             details_frame = ttk.LabelFrame(
-                details_editor_split,
+                self.gui.paned_right,
                 text="Details View",
                 padding=self._default_style.get("label_frame_padding", "5"),
             )
+            self.gui.paned_right.add(details_frame, weight=5)
 
-            # Container for text and scrollbar
+            # Create container frame for text and scrollbar
             text_frame = ttk.Frame(details_frame)
             text_frame.grid(row=0, column=0, sticky="nsew")
+
+            # Configure frame weights for expansion
             details_frame.grid_rowconfigure(0, weight=1)
             details_frame.grid_columnconfigure(0, weight=1)
             text_frame.grid_rowconfigure(0, weight=1)
             text_frame.grid_columnconfigure(0, weight=1)
 
-            # Text widget for details
+            # Create text widget for details display
             self.gui.details_text = tk.Text(
                 text_frame,
                 wrap=tk.WORD,
@@ -647,70 +585,42 @@ class UIManager:
                 background="white",
                 foreground="black",
             )
+
+            # Create vertical scrollbar for text widget
             details_scroll = ttk.Scrollbar(
                 text_frame, orient="vertical", command=self.gui.details_text.yview
             )
+
+            # Configure text widget to use scrollbar
             self.gui.details_text.configure(yscrollcommand=details_scroll.set)
+
+            # Grid layout with scrollbar
             self.gui.details_text.grid(row=0, column=0, sticky="nsew")
             details_scroll.grid(row=0, column=1, sticky="ns")
+
+            # Set initial content
             self.gui.details_text.insert(
                 "1.0", "Select an item from the table above to view details here."
             )
+
+            # Bind selection event for table to update details
             if hasattr(self.gui, "data_table"):
                 self.gui.data_table.bind(
                     "<<TreeviewSelect>>",
                     getattr(self.gui, "_on_data_table_select", lambda e: None),
                 )
-            # Register Details widgets
+
+            # Register widgets
             self.register_widget("details_frame", details_frame)
             self.register_widget("details_text_frame", text_frame)
             self.register_widget("details_text", self.gui.details_text)
             self.register_widget("details_scroll", details_scroll)
 
-            # --- Editor View ---
-            editor_frame = ttk.LabelFrame(
-                details_editor_split,
-                text="Editor View",
-                padding=self._default_style.get("label_frame_padding", "5"),
-            )
-            editor_text_frame = ttk.Frame(editor_frame)
-            editor_text_frame.grid(row=0, column=0, sticky="nsew")
-            editor_frame.grid_rowconfigure(0, weight=1)
-            editor_frame.grid_columnconfigure(0, weight=1)
-            editor_text_frame.grid_rowconfigure(0, weight=1)
-            editor_text_frame.grid_columnconfigure(0, weight=1)
-
-            self.gui.editor_text = tk.Text(
-                editor_text_frame,
-                wrap=tk.WORD,
-                font=self._default_style.get("text_font", ("Consolas", 10)),
-                state=tk.NORMAL,
-                height=8,
-                background="white",
-                foreground="black",
-            )
-            editor_scroll = ttk.Scrollbar(
-                editor_text_frame, orient="vertical", command=self.gui.editor_text.yview
-            )
-            self.gui.editor_text.configure(yscrollcommand=editor_scroll.set)
-            self.gui.editor_text.grid(row=0, column=0, sticky="nsew")
-            editor_scroll.grid(row=0, column=1, sticky="ns")
-            self.gui.editor_text.insert("1.0", "Edit content here.")
-            # Register Editor widgets
-            self.register_widget("editor_frame", editor_frame)
-            self.register_widget("editor_text_frame", editor_text_frame)
-            self.register_widget("editor_text", self.gui.editor_text)
-            self.register_widget("editor_scroll", editor_scroll)
-
-            # Add both frames to the split
-            details_editor_split.add(details_frame, weight=1)
-            details_editor_split.add(editor_frame, weight=1)
-
-            logging.info("Details and Editor section created successfully")
-            return details_editor_split
+            logging.info("Details section created successfully")
+            return details_frame
 
         except Exception as e:
-            logging.error(f"Failed to create details/editor section: {e}")
+            logging.error(f"Failed to create details section: {e}")
             raise
 
     def create_status_bar(self) -> ttk.Frame:
@@ -770,7 +680,7 @@ class UIManager:
             self.create_filter_section()
             self.create_new_view_section()  # Handle directly in UIManager
             self.create_data_section()
-            self.create_details_and_editor_section()
+            self.create_details_section()
             self.create_status_bar()
 
             logging.info("All widgets created successfully")

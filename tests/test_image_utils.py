@@ -1,6 +1,3 @@
-# flake8: noqa: E402
-from PIL import Image
-
 from image_utils import (
     crop_from_annotations,
     mark_line,
@@ -8,6 +5,7 @@ from image_utils import (
     overlay_grid,
     process_images,
 )
+from PIL import Image
 
 
 def test_mark_line_creates_image():

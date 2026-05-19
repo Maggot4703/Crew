@@ -1,0 +1,74 @@
+[
+  {
+    "sender": "You",
+    "message": "[Voice error]"
+  },
+  {
+    "sender": "Bot",
+    "message": "If you're having trouble, check the Troubleshooting menu or crew_app.log for details."
+  },
+  {
+    "sender": "You",
+    "message": "Troubleshooting"
+  },
+  {
+    "sender": "Bot",
+    "message": "If you're having trouble, check the Troubleshooting menu or crew_app.log for details."
+  },
+  {
+    "sender": "You",
+    "message": "hello"
+  },
+  {
+    "sender": "Bot",
+    "message": "Good afternoon! How can I assist you with Crew today?"
+  },
+  {
+    "sender": "You",
+    "message": "/help"
+  },
+  {
+    "sender": "Bot",
+    "message": "Available commands: /help, /clear, /about, /version. Ask about Crew features, troubleshooting, or usage."
+  },
+  {
+    "sender": "You",
+    "message": "skills"
+  },
+  {
+    "sender": "Bot",
+    "message": "I'm here to help! Try asking about features, troubleshooting, or type /help."
+  },
+  {
+    "sender": "You",
+    "message": "ml."
+  },
+  {
+    "sender": "Bot",
+    "message": "I'm here to help! Try asking about features, troubleshooting, or type /help."
+  },
+  {
+    "sender": "You",
+    "message": "hey"
+  },
+  {
+    "sender": "Bot",
+    "message": "Good afternoon! How can I assist you with Crew today?"
+  },
+  {
+    "sender": "You",
+    "message": "/help"
+  },
+  {
+    "sender": "Bot",
+    "message": "Available commands: /help, /clear, /about, /version. Ask about Crew features, troubleshooting, or usage."
+  },
+  {
+    "sender": "You",
+    "message": "Crew features"
+  },
+  {
+    "sender": "Bot",
+    "message": "Crew supports image processing, CSV/Excel import, grid overlays, script running, and more."
+  }
+]

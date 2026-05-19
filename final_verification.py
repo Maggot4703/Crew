@@ -16,7 +16,6 @@ def main():
     # Test 1: Module imports
     print("\n1. Testing module imports...")
     try:
-        pass
 
         print("✅ All modules import successfully")
     except Exception as e:

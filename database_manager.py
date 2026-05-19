@@ -5,7 +5,6 @@ Database Manager for Crew Management Application
 Handles data persistence, crew data storage, and group management.
 """
 
-import json
 import logging
 import sqlite3
 from pathlib import Path
@@ -79,8 +78,7 @@ class DatabaseManager:
             cursor = self.connection.cursor()
 
             # Crew members table
-            cursor.execute(
-                """
+            cursor.execute("""
                 CREATE TABLE IF NOT EXISTS crew_members (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT NOT NULL,
@@ -91,21 +89,17 @@ class DatabaseManager:
                     experience INTEGER,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
-            """
-            )
+            """)
             # Example: Create groups table (assuming it's needed based on get_all_groups, create_group)
-            cursor.execute(
-                """
+            cursor.execute("""
                 CREATE TABLE IF NOT EXISTS groups (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT NOT NULL UNIQUE,
                     description TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
-                """
-            )
-            cursor.execute(
-                """
+                """)
+            cursor.execute("""
                 CREATE TABLE IF NOT EXISTS group_members (
                     group_id INTEGER,
                     member_id INTEGER,
@@ -113,24 +107,7 @@ class DatabaseManager:
                     FOREIGN KEY (group_id) REFERENCES groups (id) ON DELETE CASCADE,
                     FOREIGN KEY (member_id) REFERENCES crew_members (id) ON DELETE CASCADE
                 )
-                """
-            )
-            cursor.execute(
-                """
-                CREATE TABLE IF NOT EXISTS chat_messages (
-                    id TEXT PRIMARY KEY,
-                    room TEXT NOT NULL,
-                    sender TEXT NOT NULL,
-                    recipients_json TEXT NOT NULL,
-                    text TEXT,
-                    timestamp TEXT NOT NULL,
-                    file_meta_json TEXT,
-                    reply_to_id TEXT,
-                    status TEXT DEFAULT 'sent',
-                    edited_at TEXT
-                )
-                """
-            )
+                """)
             self.connection.commit()  # Commit table creation
         except sqlite3.Error as e:
             logger.error(f"Database initialization error: {e}")
@@ -282,116 +259,6 @@ class DatabaseManager:
         except Exception as e:  # General fallback
             logger.error(f"An unexpected error occurred while fetching all groups: {e}")
             return []
-
-    def save_chat_message(self, message: Dict[str, Any]) -> bool:
-        """Persist a chat message record."""
-        if not self.connection:
-            logger.error("Database connection is not available.")
-            return False
-
-        try:
-            cursor = self.connection.cursor()
-            cursor.execute(
-                """
-                INSERT OR REPLACE INTO chat_messages (
-                    id, room, sender, recipients_json, text, timestamp,
-                    file_meta_json, reply_to_id, status, edited_at
-                )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                (
-                    message["id"],
-                    message.get("room", "crew_multi_user"),
-                    message["sender"],
-                    json.dumps(message.get("recipients", []), ensure_ascii=False),
-                    message.get("text", ""),
-                    message["timestamp"],
-                    (
-                        json.dumps(message.get("file"), ensure_ascii=False)
-                        if message.get("file") is not None
-                        else None
-                    ),
-                    message.get("reply_to_id"),
-                    message.get("status", "sent"),
-                    message.get("edited_at"),
-                ),
-            )
-            self.connection.commit()
-            return True
-        except sqlite3.Error as e:
-            logger.error(f"Error saving chat message {message.get('id')}: {e}")
-            if self.connection:
-                self.connection.rollback()
-            return False
-
-    def load_chat_messages(self, room: Optional[str] = None) -> List[Dict[str, Any]]:
-        """Load persisted chat messages."""
-        if not self.connection:
-            logger.error("Database connection is not available.")
-            return []
-
-        try:
-            cursor = self.connection.cursor()
-            if room:
-                cursor.execute(
-                    """
-                    SELECT id, room, sender, recipients_json, text, timestamp,
-                           file_meta_json, reply_to_id, status, edited_at
-                    FROM chat_messages
-                    WHERE room = ?
-                    ORDER BY timestamp ASC, id ASC
-                    """,
-                    (room,),
-                )
-            else:
-                cursor.execute(
-                    """
-                    SELECT id, room, sender, recipients_json, text, timestamp,
-                           file_meta_json, reply_to_id, status, edited_at
-                    FROM chat_messages
-                    ORDER BY timestamp ASC, id ASC
-                    """
-                )
-
-            messages = []
-            for row in cursor.fetchall():
-                message = dict(row)
-                try:
-                    message["recipients"] = json.loads(message.pop("recipients_json"))
-                except (TypeError, json.JSONDecodeError):
-                    message["recipients"] = []
-                file_meta_json = message.pop("file_meta_json")
-                try:
-                    message["file"] = (
-                        json.loads(file_meta_json) if file_meta_json else None
-                    )
-                except (TypeError, json.JSONDecodeError):
-                    message["file"] = None
-                messages.append(message)
-            return messages
-        except sqlite3.Error as e:
-            logger.error(f"Error loading chat messages: {e}")
-            return []
-
-    def clear_chat_messages(self, room: Optional[str] = None) -> bool:
-        """Delete persisted chat messages."""
-        if not self.connection:
-            logger.error("Database connection is not available.")
-            return False
-
-        try:
-            cursor = self.connection.cursor()
-            if room:
-                cursor.execute("DELETE FROM chat_messages WHERE room = ?", (room,))
-            else:
-                cursor.execute("DELETE FROM chat_messages")
-            self.connection.commit()
-            return True
-        except sqlite3.Error as e:
-            logger.error(f"Error clearing chat messages: {e}")
-            if self.connection:
-                self.connection.rollback()
-            return False
 
     def close(self) -> None:
         """Close database connection."""

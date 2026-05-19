@@ -16,7 +16,7 @@ class FileManager:
 
     def _check_pandas_availability(self) -> bool:
         try:
-            pass
+            import pandas as pd
 
             return True
         except ImportError:

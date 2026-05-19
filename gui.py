@@ -1,7 +1,26 @@
-# flake8: noqa
-# --- Crew GUI Startup Entrypoint (moved below imports) ---
-# The startup helper was relocated below the module imports to satisfy
-# import-order linting and pre-commit checks. See main_gui() further down.
+# --- Crew GUI Startup Entrypoint ---
+def main_gui():
+    """Entry point for launching the Crew GUI application from Crew.py."""
+    import tkinter as tk
+
+    try:
+        from .gui import CrewGUI
+    except ImportError:
+        try:
+            from gui import CrewGUI
+        except ImportError:
+            import logging
+
+            logging.getLogger(__name__).error(
+                "Could not import CrewGUI. Startup aborted."
+            )
+            return
+    root = tk.Tk()
+    _ = CrewGUI(root)
+    from utils import log_progress_md
+
+    log_progress_md("Started Crew GUI application.")
+    root.mainloop()
 
 
 # --- Standard Library Imports ---
@@ -24,75 +43,29 @@ import importlib.util  # For dynamic imports
 import json  # JSON file handling
 import logging  # Application logging
 import os  # Operating system interface
-import re
-import shlex
 import shutil  # File operations
-import socket
 import subprocess  # Process execution
 import sys  # System parameters
 import threading  # Thread support
 import time  # Time functions
 import tkinter as tk  # GUI framework
 import tkinter.font as tkfont  # Font handling
-import uuid
 from pathlib import Path  # File handling
 from queue import Queue  # Thread-safe queue
 from tkinter import filedialog, messagebox, ttk  # GUI dialogs and widgets
 from typing import Any, Callable, Dict, List, Optional, Tuple
-from urllib.parse import urlencode, urlparse
 
 from config import Config  # Configuration management
 from database_manager import DatabaseManager  # Data persistence
 from message_router import CrewMessageRouter  # Message routing
-from mobile_remote import CrewMobileRemoteServer
-
-# Temporary placeholders used during incremental triage to avoid undefined-name
-# lint errors. These will be removed or replaced with proper implementations
-# as part of the ongoing refactor.
-
-
-def speak_last_bot_reply(*args, **kwargs):
-    """No-op placeholder for speak_last_bot_reply used by menu bindings."""
-    return None
-
-
-try:
-    from ollama_client import OllamaClient  # Ollama API client (Phase 5.3)
-except ImportError:
-    OllamaClient = None
-
-# Optional audio imports (Phase 5.6)
-try:
-    import speech_recognition as sr
-
-    SPEECH_RECOGNITION_AVAILABLE = True
-except ImportError:
-    SPEECH_RECOGNITION_AVAILABLE = False
-
-try:
-    import pyttsx3
-
-    TTS_AVAILABLE = True
-except ImportError:
-    TTS_AVAILABLE = False
 
 
 # --- MAIN FUNCTION FOR TEST COMPLIANCE ---
-
-
-def main_gui():
-    """Entry point for launching the Crew GUI application from Crew.py."""
-    root = tk.Tk()
-    _ = CrewGUI(root)
-    from utils import log_progress_md
-
-    log_progress_md("Started Crew GUI application.")
-    root.mainloop()
-
-
 def main():
-    """Alias entry point for backward compatibility."""
-    main_gui()
+    """Entry point for launching the Crew GUI application."""
+    root = tk.Tk()
+    app = CrewGUI(root)
+    root.mainloop()
 
 
 # --- Tooltip Helper ---
@@ -105,15 +78,15 @@ class ToolTip:
         self.widget = widget
         self.text = text
         self.tipwindow = None
-        self.widget.tooltip = self
         self.widget.bind("<Enter>", self.show_tip)
         self.widget.bind("<Leave>", self.hide_tip)
 
     def show_tip(self, event=None):
         if self.tipwindow or not self.text:
             return
-        bbox = self.widget.bbox("insert") if hasattr(self.widget, "bbox") else None
-        x, y, cx, cy = bbox if bbox else (0, 0, 0, 0)
+        x, y, cx, cy = (
+            self.widget.bbox("insert") if hasattr(self.widget, "bbox") else (0, 0, 0, 0)
+        )
         x = x + self.widget.winfo_rootx() + 25
         y = y + self.widget.winfo_rooty() + 20
         self.tipwindow = tw = tk.Toplevel(self.widget)
@@ -123,8 +96,7 @@ class ToolTip:
             tw,
             text=self.text,
             justify=tk.LEFT,
-            background=DARK_BORDER,
-            foreground=DARK_TEXT,
+            background="#ffffe0",
             relief=tk.SOLID,
             borderwidth=1,
             font=("tahoma", "9", "normal"),
@@ -201,46 +173,6 @@ logging.basicConfig(
 DEFAULT_MAIN_WINDOW_WIDTH = 800
 DEFAULT_MAIN_WINDOW_HEIGHT = 800
 DEFAULT_MAIN_WINDOW_SIZE = f"{DEFAULT_MAIN_WINDOW_WIDTH}x{DEFAULT_MAIN_WINDOW_HEIGHT}"
-DEFAULT_LEFT_PANEL_WIDTH = 220
-READMINE_OUTPUT_DIR = Path(__file__).resolve().parent / "Reading Now"
-PROJECT_README_PATH = Path(__file__).resolve().parent / "README.md"
-PROJECT_DOCS_INDEX_PATH = Path(__file__).resolve().parent / "docs" / "README.md"
-READMINE_GUIDE_PATH = (
-    Path(__file__).resolve().parent.parent / "docs" / "fetchdocs_readmine.md"
-)
-READMINE_OUTPUT_README_PATH = READMINE_OUTPUT_DIR / "README.md"
-DEFAULT_TTS_LEAD_IN_SECONDS = 0.5
-DEFAULT_0101_CONTENT_WIDTH = 600
-DEFAULT_0101_CONTENT_HEIGHT = 1020
-DEFAULT_0101_WINDOW_WIDTH = 720
-DEFAULT_0101_WINDOW_HEIGHT = 1180
-DEFAULT_0101_SSH_CONNECT_TIMEOUT = 5
-DEFAULT_0101_REMOTE_COMMAND_TIMEOUT = 30
-DEFAULT_0101_SERVER_PATHS = [
-    "/home/me/Desktop/0101/0101/src/public_html/server.py",
-    "/home/me/Desktop/0101-001/0101/src/public_html/server.py",
-    "/home/me/Notebooks/0101/0101/src/public_html/server.py",
-]
-DEFAULT_0101_REMOTE_TARGET = "me@p48"
-DEFAULT_0101_REMOTE_LOG_PATH = "/tmp/crew-0101-server.log"
-DEFAULT_0101_LOCAL_LOG_PATH = "/tmp/crew-0101-local-server.log"
-DEFAULT_0101_ENTRY_PAGE = "index.html"
-DEFAULT_0101_URL = f"http://localhost:8080/{DEFAULT_0101_ENTRY_PAGE}"
-DEFAULT_0101_SYNC_EXCLUDES = [
-    ".git/",
-    "__pycache__/",
-    ".pytest_cache/",
-    ".ruff_cache/",
-    ".mypy_cache/",
-]
-DARK_WINDOW_BG = "#0d1117"
-DARK_PANEL_BG = "#161b22"
-DARK_INPUT_BG = "#21262d"
-DARK_TEXT = "#f0f6fc"
-DARK_MUTED_TEXT = "#8b949e"
-DARK_BORDER = "#30363d"
-DARK_ACCENT = "#58a6ff"
-DARK_SUCCESS = "#3fb950"
 
 
 def auto_import_py_files() -> Tuple[List[str], List[Tuple[str, str]]]:
@@ -274,6 +206,7 @@ def auto_import_py_files() -> Tuple[List[str], List[Tuple[str, str]]]:
                     f"Error reading auto-import cache: {e}. Proceeding with fresh scan."
                 )
                 # If cache is corrupted, continue with fresh scan
+                pass
 
         # Find all .py files in the workspace
         py_files = []
@@ -427,7 +360,7 @@ def auto_import_py_files() -> Tuple[List[str], List[Tuple[str, str]]]:
                         )
                         continue
 
-                except (IOError, UnicodeDecodeError):
+                except IOError, UnicodeDecodeError:
                     # If we cant read the file, skip it for safety
                     files_skipped += 1
                     continue
@@ -469,6 +402,8 @@ def auto_import_py_files() -> Tuple[List[str], List[Tuple[str, str]]]:
 
                 except (
                     ImportError,
+                    ModuleNotFoundError,
+                    # ...existing code...
                     AttributeError,
                 ) as e:
                     # These are expected for some files
@@ -567,7 +502,6 @@ class CrewGUI:
                 dialog.destroy()
 
         tk.Button(dialog, text="OK", command=set_username).pack(pady=8)
-        self._apply_dark_theme(dialog)
         entry.focus_set()
 
     def set_status_dialog(self):
@@ -590,7 +524,6 @@ class CrewGUI:
             dialog.destroy()
 
         tk.Button(dialog, text="OK", command=set_status).pack(pady=8)
-        self._apply_dark_theme(dialog)
         entry.focus_set()
 
     # --- TEST STUBS FOR TEST SUITE COMPLIANCE ---
@@ -599,7 +532,8 @@ class CrewGUI:
         """Stub for test compliance."""
         text = getattr(widget, "get", lambda: "")()
         if hasattr(self, "tts_engine") and self.tts_engine:
-            self._speak_text_with_lead_in(text)
+            self.tts_engine.say(text)
+            self.tts_engine.runAndWait()
         return text
 
     def tts_error_feedback(self):
@@ -641,375 +575,6 @@ class CrewGUI:
         y_offset = max((screen_height - window_height) // 2, 0)
         return f"{window_width}x{window_height}+{x_offset}+{y_offset}"
 
-    @staticmethod
-    def build_0101_window_size(
-        content_width: int = DEFAULT_0101_CONTENT_WIDTH,
-        content_height: int = DEFAULT_0101_CONTENT_HEIGHT,
-    ) -> Tuple[int, int]:
-        """Return a browser window size that fits the 0101 graphical layout."""
-        width_padding = DEFAULT_0101_WINDOW_WIDTH - DEFAULT_0101_CONTENT_WIDTH
-        height_padding = DEFAULT_0101_WINDOW_HEIGHT - DEFAULT_0101_CONTENT_HEIGHT
-        return content_width + width_padding, content_height + height_padding
-
-    def _setup_dark_theme(self) -> None:
-        """Configure a shared dark theme for Tk and ttk widgets."""
-        self.dark_theme = {
-            "window_bg": DARK_WINDOW_BG,
-            "panel_bg": DARK_PANEL_BG,
-            "input_bg": DARK_INPUT_BG,
-            "text": DARK_TEXT,
-            "muted": DARK_MUTED_TEXT,
-            "border": DARK_BORDER,
-            "accent": DARK_ACCENT,
-            "success": DARK_SUCCESS,
-        }
-        style = ttk.Style(self.root)
-        try:
-            style.theme_use("clam")
-        except tk.TclError:
-            pass
-
-        style.configure(".", background=DARK_PANEL_BG, foreground=DARK_TEXT)
-        style.configure("TFrame", background=DARK_PANEL_BG)
-        style.configure("TLabel", background=DARK_PANEL_BG, foreground=DARK_TEXT)
-        style.configure("TLabelframe", background=DARK_PANEL_BG, foreground=DARK_TEXT)
-        style.configure(
-            "TLabelframe.Label", background=DARK_PANEL_BG, foreground=DARK_TEXT
-        )
-        style.configure(
-            "TButton",
-            background=DARK_PANEL_BG,
-            foreground=DARK_TEXT,
-            bordercolor=DARK_BORDER,
-            lightcolor=DARK_BORDER,
-            darkcolor=DARK_BORDER,
-        )
-        style.map(
-            "TButton",
-            background=[("active", DARK_INPUT_BG), ("pressed", DARK_INPUT_BG)],
-            foreground=[("disabled", DARK_MUTED_TEXT), ("active", DARK_TEXT)],
-        )
-        style.configure("TCheckbutton", background=DARK_PANEL_BG, foreground=DARK_TEXT)
-        style.configure("TRadiobutton", background=DARK_PANEL_BG, foreground=DARK_TEXT)
-        style.configure(
-            "TEntry",
-            fieldbackground=DARK_INPUT_BG,
-            foreground=DARK_TEXT,
-            bordercolor=DARK_BORDER,
-            lightcolor=DARK_BORDER,
-            darkcolor=DARK_BORDER,
-        )
-
-        style.configure(
-            "TCombobox",
-            fieldbackground=DARK_INPUT_BG,
-            background=DARK_PANEL_BG,
-            foreground=DARK_TEXT,
-            arrowcolor=DARK_TEXT,
-            bordercolor=DARK_BORDER,
-            lightcolor=DARK_BORDER,
-            darkcolor=DARK_BORDER,
-        )
-        style.map(
-            "TCombobox",
-            fieldbackground=[("readonly", DARK_INPUT_BG)],
-            selectbackground=[("readonly", DARK_ACCENT)],
-            selectforeground=[("readonly", DARK_TEXT)],
-            foreground=[("readonly", DARK_TEXT)],
-        )
-        style.configure(
-            "Treeview",
-            background=DARK_INPUT_BG,
-            fieldbackground=DARK_INPUT_BG,
-            foreground=DARK_TEXT,
-            bordercolor=DARK_BORDER,
-            rowheight=25,
-        )
-        style.map(
-            "Treeview",
-            background=[("selected", DARK_ACCENT)],
-            foreground=[("selected", "#ffffff")],
-        )
-        style.configure(
-            "Treeview.Heading",
-            background=DARK_PANEL_BG,
-            foreground=DARK_TEXT,
-            relief="flat",
-        )
-
-        # Bottom notebook: ensure dark workspace tab background expected by tests
-        style.configure(
-            "Bottom.TNotebook",
-            background="#21262d",
-            borderwidth=0,
-            tabmargins=(2, 2, 2, 0),
-        )
-        style.configure(
-            "Bottom.TNotebook.Tab",
-            background="#141a24",
-            foreground=DARK_TEXT,
-            borderwidth=0,
-            padding=(12, 6),
-        )
-        style.map(
-            "Bottom.TNotebook.Tab",
-            background=[
-                ("selected", DARK_INPUT_BG),
-                ("active", "#1a2230"),
-            ],
-            foreground=[("selected", DARK_TEXT), ("active", DARK_TEXT)],
-        )
-
-        style.configure(
-            "TScrollbar",
-            background=DARK_PANEL_BG,
-            troughcolor=DARK_WINDOW_BG,
-            arrowcolor=DARK_TEXT,
-            bordercolor=DARK_BORDER,
-        )
-        style.configure(
-            "Horizontal.TScale",
-            background=DARK_PANEL_BG,
-            troughcolor=DARK_INPUT_BG,
-        )
-        style.configure(
-            "Vertical.TScale",
-            background=DARK_PANEL_BG,
-            troughcolor=DARK_INPUT_BG,
-        )
-        self.root.option_add("*TCombobox*Listbox*Background", DARK_INPUT_BG)
-        self.root.option_add("*TCombobox*Listbox*Foreground", DARK_TEXT)
-        self.root.option_add("*TCombobox*Listbox*selectBackground", DARK_ACCENT)
-        self.root.option_add("*TCombobox*Listbox*selectForeground", DARK_TEXT)
-        self.root.option_add("*Menu.background", DARK_PANEL_BG)
-        self.root.option_add("*Menu.foreground", DARK_TEXT)
-        self.root.option_add("*Menu.activeBackground", DARK_INPUT_BG)
-        self.root.option_add("*Menu.activeForeground", DARK_TEXT)
-        self.root.configure(bg=DARK_WINDOW_BG)
-
-    def _create_compact_chat_toolbar(
-        self,
-        parent,
-        send_cb,
-        help_cb,
-        mic_cb,
-        load_recording_cb,
-        load_wav_cb,
-        primary_cb,
-        secondary_cb,
-        attach_cb,
-        stt_available: bool = False,
-        recognize_cb=None,
-        user_entry=None,
-        chat_win=None,
-        rec_play_var=None,
-    ):
-        """Create a compact icon-only chat toolbar and return widgets.
-
-        Arguments are callbacks or values from the caller scope so the helper
-        stays generic for both Crew Chat and Chatbot dialogs.
-        """
-        toolbar_frame = tk.Frame(parent)
-        toolbar_frame.pack(fill="x", pady=(0, 4))
-
-        send_btn = tk.Button(toolbar_frame, text="➡️", width=3, command=send_cb)
-        send_btn.pack(side="left", padx=(0, 4))
-        ToolTip(send_btn, "Send your message (or press Enter).")
-
-        help_btn = tk.Button(toolbar_frame, text="?", width=3, command=help_cb)
-        help_btn.pack(side="left", padx=(0, 4))
-        ToolTip(help_btn, "Show chat help.")
-
-        # Source menu: microphone / load recording / WAV
-        source_mb = tk.Menubutton(toolbar_frame, text="🎤", width=3, relief=tk.RAISED)
-        src_menu = tk.Menu(source_mb, tearoff=0)
-        src_menu.add_command(label="Choose Microphone", command=mic_cb)
-        src_menu.add_command(label="Load Recording...", command=load_recording_cb)
-        src_menu.add_command(
-            label="Load WAV for STT...",
-            command=(
-                (lambda: load_wav_cb(user_entry, chat_win)) if load_wav_cb else None
-            ),
-        )
-        source_mb.config(menu=src_menu)
-        source_mb.pack(side="left", padx=(0, 4))
-        ToolTip(source_mb, "Choose microphone / load recording / load WAV for STT.")
-
-        primary_btn = tk.Button(toolbar_frame, text="⏺", width=3, command=primary_cb)
-        primary_btn.pack(side="left", padx=(0, 4))
-        primary_tooltip = ToolTip(primary_btn, "Start/stop recording or play.")
-
-        secondary_btn = tk.Button(
-            toolbar_frame, text="💾", width=3, command=secondary_cb
-        )
-        secondary_btn.pack(side="left", padx=(0, 8))
-        secondary_tooltip = ToolTip(secondary_btn, "Save / Load recordings (Advanced).")
-
-        attach_btn = None
-        if attach_cb is not None:
-            attach_btn = tk.Button(toolbar_frame, text="📎", width=3, command=attach_cb)
-            attach_btn.pack(side="left", padx=(0, 4))
-            ToolTip(attach_btn, "Attach a file to your message.")
-
-        mic_btn = None
-        wav_btn = None
-        if stt_available and recognize_cb is not None:
-            mic_btn = tk.Button(
-                toolbar_frame,
-                text="🎤",
-                width=2,
-                command=lambda: recognize_cb(user_entry, chat_win),
-            )
-            mic_btn.pack(side="right", padx=(4, 0))
-            ToolTip(
-                mic_btn, "Voice input: click to start, click STOP to end recording."
-            )
-
-            wav_btn = tk.Button(
-                toolbar_frame,
-                text="📁",
-                width=2,
-                command=lambda: (
-                    load_wav_cb(user_entry, chat_win) if load_wav_cb else None
-                ),
-            )
-            wav_btn.pack(side="right", padx=(4, 0))
-            ToolTip(wav_btn, "Load WAV file and run STT (for testing).")
-
-        # Compatibility Checkbutton for tests (not packed so UI remains compact)
-        compat = None
-        if rec_play_var is not None:
-            compat = tk.Checkbutton(
-                toolbar_frame,
-                text="Record / Play",
-                variable=rec_play_var,
-                command=primary_cb,
-            )
-            ToolTip(compat, "Toggle Record / Play mode.")
-
-        return {
-            "frame": toolbar_frame,
-            "send_btn": send_btn,
-            "help_btn": help_btn,
-            "source_mb": source_mb,
-            "primary_btn": primary_btn,
-            "secondary_btn": secondary_btn,
-            "attach_btn": attach_btn,
-            "mic_btn": mic_btn,
-            "wav_btn": wav_btn,
-            "compat_check": compat,
-        }
-
-    def _configure_dark_menu(self, menu: tk.Menu) -> None:
-        """Apply dark theme colors to a menu and its cascades."""
-        try:
-            menu.configure(
-                bg=DARK_PANEL_BG,
-                fg=DARK_TEXT,
-                activebackground=DARK_INPUT_BG,
-                activeforeground=DARK_TEXT,
-                disabledforeground=DARK_MUTED_TEXT,
-                tearoff=0,
-            )
-        except tk.TclError:
-            return
-
-        end_index = menu.index("end")
-        if end_index is None:
-            return
-        for index in range(end_index + 1):
-            try:
-                submenu_name = menu.entrycget(index, "menu")
-            except tk.TclError:
-                continue
-            if submenu_name:
-                try:
-                    submenu = menu.nametowidget(submenu_name)
-                except KeyError:
-                    continue
-                self._configure_dark_menu(submenu)
-
-    def _apply_dark_theme(self, widget) -> None:
-        """Recursively apply the dark palette to Tk widgets."""
-        if (
-            widget is None
-            or not hasattr(widget, "winfo_exists")
-            or not widget.winfo_exists()
-        ):
-            return
-
-        widget_class = widget.winfo_class()
-        try:
-            if widget_class in {"Tk", "Toplevel"}:
-                widget.configure(bg=DARK_WINDOW_BG)
-            elif widget_class in {"Frame", "LabelFrame", "Panedwindow"}:
-                widget.configure(bg=DARK_PANEL_BG, highlightbackground=DARK_BORDER)
-            elif widget_class in {"Label", "Message"}:
-                widget.configure(bg=DARK_PANEL_BG, fg=DARK_TEXT)
-            elif widget_class in {"Button", "Menubutton"}:
-                widget.configure(
-                    bg=DARK_PANEL_BG,
-                    fg=DARK_TEXT,
-                    activebackground=DARK_INPUT_BG,
-                    activeforeground=DARK_TEXT,
-                    highlightbackground=DARK_BORDER,
-                )
-            elif widget_class in {"Checkbutton", "Radiobutton"}:
-                widget.configure(
-                    bg=DARK_PANEL_BG,
-                    fg=DARK_TEXT,
-                    activebackground=DARK_PANEL_BG,
-                    activeforeground=DARK_TEXT,
-                    highlightbackground=DARK_BORDER,
-                    selectcolor=DARK_INPUT_BG,
-                )
-            elif widget_class in {"Entry", "Text", "Listbox", "Spinbox"}:
-                widget.configure(
-                    bg=DARK_INPUT_BG,
-                    fg=DARK_TEXT,
-                    insertbackground=DARK_TEXT,
-                    selectbackground=DARK_ACCENT,
-                    selectforeground=DARK_TEXT,
-                    highlightbackground=DARK_BORDER,
-                )
-            elif widget_class == "Scale":
-                widget.configure(
-                    bg=DARK_PANEL_BG,
-                    fg=DARK_TEXT,
-                    activebackground=DARK_ACCENT,
-                    troughcolor=DARK_INPUT_BG,
-                    highlightbackground=DARK_BORDER,
-                )
-            elif widget_class == "Canvas":
-                widget.configure(bg=DARK_WINDOW_BG, highlightbackground=DARK_BORDER)
-            elif widget_class == "Scrollbar":
-                widget.configure(
-                    bg=DARK_PANEL_BG,
-                    activebackground=DARK_INPUT_BG,
-                    troughcolor=DARK_WINDOW_BG,
-                    highlightbackground=DARK_BORDER,
-                )
-            elif widget_class == "Menu":
-                self._configure_dark_menu(widget)
-        except tk.TclError:
-            pass
-
-        if widget_class == "Menubutton":
-            try:
-                menu_name = widget.cget("menu")
-            except tk.TclError:
-                menu_name = ""
-            if menu_name:
-                try:
-                    submenu = widget.nametowidget(menu_name)
-                except KeyError:
-                    submenu = None
-                if submenu is not None:
-                    self._configure_dark_menu(submenu)
-
-        for child in widget.winfo_children():
-            self._apply_dark_theme(child)
-
     def __init__(self, root: tk.Tk) -> None:
         # Ensure user state always exists for dialogs and tests
         self.logged_in_user = {"name": "User"}
@@ -1017,19 +582,17 @@ class CrewGUI:
         try:
             self.root = root  # Assign self.root immediately
             self.root.title("Crew Manager")  # Set title early
-            self.root.protocol("WM_DELETE_WINDOW", self._on_app_exit)
-            self._setup_dark_theme()
 
             # Initialize TTS engine if available
             # Centralized TTS initialization
             self.tts_engine = None
             self.tts_available = False
-            self.tts_lead_in_seconds = DEFAULT_TTS_LEAD_IN_SECONDS
             try:
                 # pyttsx3 already imported at the top if available
                 self.tts_engine = pyttsx3.init()
                 self.tts_engine.setProperty("rate", 150)
                 self.tts_engine.setProperty("volume", 0.8)
+                self.tts_engine.setProperty("voice", "english")
                 self.tts_available = True
             except Exception as e:
                 self.tts_engine = None
@@ -1039,25 +602,23 @@ class CrewGUI:
             # Centralized STT initialization
             self.stt_available = False
             self.stt_recognizer = None
-            self.selected_mic_index = None
-            self.selected_mic_name = ""
             try:
                 import speech_recognition as sr
 
                 self.stt_recognizer = sr.Recognizer()
                 self.stt_available = True
-                logger.info("STT (Speech-to-Text) initialized successfully")
-                print(f"✅ STT INITIALIZED: self.stt_available = {self.stt_available}")
             except Exception as e:
                 self.stt_recognizer = None
                 self.stt_available = False
-                error_msg = f"SpeechRecognition or PyAudio not available. STT disabled. ({type(e).__name__}: {e})"
-                print(f"❌ STT INIT FAILED: {error_msg}")
-                logger.warning(error_msg)
+                print(
+                    f"Warning: SpeechRecognition or PyAudio not available. STT disabled. ({e})"
+                )
+
+            # Initialize Crew message router
+            self.message_router = CrewMessageRouter()
 
             # Initialize database manager for crew/user data
             self.db_manager = DatabaseManager()
-            self.message_router = CrewMessageRouter(self.db_manager)
 
             # Define scripts directory and create it if it doesn't exist
             # Also create a sample script for testing if the directory is new
@@ -1107,16 +668,13 @@ class CrewGUI:
             self.create_menu_bar()
 
             self.config = Config()
-            self._load_tts_settings()
-            self._load_stt_settings()
             self.setup_logging()  # os is used here, but this line is commented out
             self.setup_state()
             self.create_main_layout()
             self.create_all_widgets()
             self.bind_events()
-            self._apply_dark_theme(self.root)
-            self._configure_dark_menu(self.menu_bar)
 
+            self.message_router = CrewMessageRouter()
             self._recording_process = None
             self._last_recording_path = None
 
@@ -1153,7 +711,7 @@ class CrewGUI:
             raise
 
     def create_menu_bar(self) -> None:
-        self.menu_bar = tk.Menu(self.root, tearoff=0)
+        self.menu_bar = tk.Menu(self.root)
         self.root.config(menu=self.menu_bar)
 
         # File menu
@@ -1163,7 +721,68 @@ class CrewGUI:
         file_menu.add_separator()
         file_menu.add_command(label="Save... (Ctrl+S)", command=self._on_save_file)
         file_menu.add_separator()
-        file_menu.add_command(label="Exit", command=self._on_app_exit)
+        file_menu.add_command(label="Exit", command=self.root.quit)
+
+        # Talk menu (Record + Speech)
+        talk_menu = tk.Menu(self.menu_bar, tearoff=0)
+        self.menu_bar.add_cascade(label="🗣️ Talk", menu=talk_menu)
+        talk_menu.add_command(label="Start Recording", command=self._start_recording)
+        talk_menu.add_command(
+            label="Stop Recording", command=self._stop_recording, state="disabled"
+        )
+        talk_menu.add_separator()
+        talk_menu.add_command(
+            label="Load Recording...", command=self._load_recording_file
+        )
+        talk_menu.add_command(
+            label="Play Last Recording", command=self._play_recording, state="disabled"
+        )
+        talk_menu.add_command(
+            label="Save Recording As...",
+            command=self._save_recording_as,
+            state="disabled",
+        )
+        talk_menu.add_separator()
+        if TTS_AVAILABLE:
+            talk_menu.add_command(
+                label="Read Selection (Ctrl+Shift+R)", command=self._read_selected_item
+            )
+            talk_menu.add_command(
+                label="Read All Details (Ctrl+Shift+A)", command=self._read_all_details
+            )
+            talk_menu.add_command(
+                label="Read Status (Ctrl+Shift+S)", command=self._read_status
+            )
+            talk_menu.add_command(
+                label="Read Item Type (Ctrl+Shift+T)", command=self._read_item_type
+            )
+            talk_menu.add_separator()
+            talk_menu.add_command(label="Stop Reading", command=self._stop_reading)
+            talk_menu.add_separator()
+            talk_menu.add_command(
+                label="Save Speech to File...", command=self._save_speech_to_file
+            )
+            talk_menu.add_command(
+                label="Speech Settings...", command=self.show_speech_settings_dialog
+            )
+        self._record_menu = talk_menu
+
+        # Chat menu
+        chat_menu = tk.Menu(self.menu_bar, tearoff=0)
+        self.menu_bar.add_cascade(label="💬 Chat", menu=chat_menu)
+        chat_menu.add_command(label="Open Chatbot...", command=self.open_chatbot_dialog)
+        chat_menu.add_command(
+            label="Open Crew Chat...", command=self.open_crew_chat_window
+        )
+
+        # Docs menu
+        doc_menu = tk.Menu(self.menu_bar, tearoff=0)
+        self.menu_bar.add_cascade(label="📚 Docs", menu=doc_menu)
+        doc_menu.add_command(label="Fetch Docs (ReadMine)", command=self._run_readmine)
+        doc_menu.add_command(label="Browse Docs...", command=self._browse_docs)
+        doc_menu.add_command(
+            label="Open Docs Folder", command=self._open_documentation_folder
+        )
 
         # Edit menu
         edit_menu = tk.Menu(self.menu_bar, tearoff=0)
@@ -1177,115 +796,37 @@ class CrewGUI:
             ),
         )
         edit_menu.add_command(label="Clear Filter (Esc)", command=self.clear_filter)
-        edit_menu.add_separator()
-        edit_menu.add_command(label="Focus Scratchpad", command=self.focus_scratchpad)
-        edit_menu.add_command(
-            label="Paste into Scratchpad (Ctrl+Shift+V)",
-            command=self._paste_into_scratchpad,
-        )
-        edit_menu.add_command(label="Clear Scratchpad", command=self._clear_scratchpad)
 
         # View menu
         view_menu = tk.Menu(self.menu_bar, tearoff=0)
         self.menu_bar.add_cascade(label="View", menu=view_menu)
         view_menu.add_command(label="Refresh (F5)", command=self._refresh_views)
         view_menu.add_separator()
+
+        # Add column visibility submenu
         self.column_visibility_menu = tk.Menu(view_menu, tearoff=0)
         view_menu.add_cascade(label="Columns", menu=self.column_visibility_menu)
 
-        # Tools menu
-        tools_menu = tk.Menu(self.menu_bar, tearoff=0)
-        self.menu_bar.add_cascade(label="Tools", menu=tools_menu)
-
-        speech_menu = tk.Menu(tools_menu, tearoff=0)
-        tools_menu.add_cascade(label="Speech", menu=speech_menu)
-        speech_menu.add_command(label="Start Recording", command=self._start_recording)
-        speech_menu.add_command(
-            label="⏹", command=self._stop_recording, state="disabled"
-        )
-        speech_menu.add_separator()
-        speech_menu.add_command(
-            label="Load Recording...", command=self._load_recording_file
-        )
-        speech_menu.add_command(
-            label="Play Last Recording", command=self._play_recording, state="disabled"
-        )
-        speech_menu.add_command(
-            label="Save Recording As...",
-            command=self._save_recording_as,
-            state="disabled",
-        )
-        speech_menu.add_separator()
-        if TTS_AVAILABLE:
-            speech_menu.add_command(
-                label="Read Selection (Ctrl+Shift+R)", command=self._read_selected_item
-            )
-            speech_menu.add_command(
-                label="Read All Details (Ctrl+Shift+A)", command=self._read_all_details
-            )
-            speech_menu.add_command(
-                label="Read Status (Ctrl+Shift+S)", command=self._read_status
-            )
-            speech_menu.add_command(
-                label="Read Item Type (Ctrl+Shift+T)", command=self._read_item_type
-            )
-            speech_menu.add_separator()
-            speech_menu.add_command(label="Stop Reading", command=self._stop_reading)
-            speech_menu.add_separator()
-            speech_menu.add_command(
-                label="Save Speech to File...", command=self._save_speech_to_file
-            )
-            speech_menu.add_command(
-                label="Speech Settings...", command=self.show_speech_settings_dialog
-            )
-        self._record_menu = speech_menu
-
-        chat_menu = tk.Menu(tools_menu, tearoff=0)
-        tools_menu.add_cascade(label="Chat", menu=chat_menu)
-        chat_menu.add_command(label="Open Chatbot...", command=self.open_chatbot_dialog)
-        chat_menu.add_command(
-            label="Open Crew Chat...", command=self.open_crew_chat_window
-        )
-
-        mobile_remote_menu = tk.Menu(tools_menu, tearoff=0)
-        tools_menu.add_cascade(label="Mobile Remote", menu=mobile_remote_menu)
-        mobile_remote_menu.add_command(
-            label="Start Mobile Remote...", command=self.start_mobile_remote
-        )
-        mobile_remote_menu.add_command(
-            label="Stop Mobile Remote", command=self.stop_mobile_remote
-        )
-        mobile_remote_menu.add_separator()
-        mobile_remote_menu.add_command(
-            label="Show Mobile Remote URL", command=self.show_mobile_remote_url
-        )
-
-        docs_menu = tk.Menu(tools_menu, tearoff=0)
-        tools_menu.add_cascade(label="Docs", menu=docs_menu)
-        docs_menu.add_command(label="Fetch Docs (ReadMine)", command=self._run_readmine)
-        docs_menu.add_command(label="Browse Docs...", command=self._browse_docs)
-        docs_menu.add_command(
-            label="Open Docs Folder", command=self._open_documentation_folder
-        )
-
+        # Add script selector submenu
         self.script_menu = tk.Menu(
-            tools_menu, tearoff=0, postcommand=self._update_script_menu
+            view_menu, tearoff=0, postcommand=self._update_script_menu
         )
-        tools_menu.add_cascade(label="Scripts", menu=self.script_menu)
+        view_menu.add_cascade(label="Run Script", menu=self.script_menu)
 
-        server_menu = tk.Menu(tools_menu, tearoff=0)
+        # Server menu (now under View)
+        server_menu = tk.Menu(view_menu, tearoff=0)
         server_menu.add_command(
-            label="Launch 0101 on p48 (fallback local)",
-            command=self._launch_0101_server,
+            label="Launch 0101 Server", command=self._launch_0101_server
         )
-        tools_menu.add_cascade(label="Server", menu=server_menu)
+        view_menu.add_cascade(label="Server", menu=server_menu)
 
+        # Diagnostics menu (under View)
         try:
-            diagnostics_menu = tk.Menu(tools_menu, tearoff=0)
+            diagnostics_menu = tk.Menu(view_menu, tearoff=0)
             diagnostics_menu.add_command(
                 label="Show Feature Status", command=self.show_diagnostics_dialog
             )
-            tools_menu.add_cascade(label="Diagnostics", menu=diagnostics_menu)
+            view_menu.add_cascade(label="Diagnostics", menu=diagnostics_menu)
         except Exception as e:
             logging.error(f"Failed to create Diagnostics menu: {e}")
 
@@ -1297,23 +838,7 @@ class CrewGUI:
         help_menu.add_command(
             label="Keyboard Shortcuts", command=self.show_keyboard_shortcuts
         )
-        help_menu.add_separator()
-        help_menu.add_command(label="Project README", command=self.open_project_readme)
-        help_menu.add_command(label="Docs Index", command=self.open_project_docs_index)
-        help_menu.add_command(label="ReadMine Guide", command=self.open_readmine_guide)
-        help_menu.add_command(
-            label="ReadMine Output Notes", command=self.open_readmine_output_notes
-        )
-        help_menu.add_command(
-            label="Open ReadMine Output Folder",
-            command=self._open_documentation_folder,
-        )
-        help_menu.add_separator()
-        help_menu.add_command(label="Open WebUI", command=self.open_openwebui)
-        help_menu.add_command(label="Brave Browser", command=self.open_brave_browser)
-        help_menu.add_separator()
-        help_menu.add_command(label="Project on GitHub", command=self.show_online_docs)
-        help_menu.add_command(label="GitHub Issues", command=self.open_github_issues)
+        help_menu.add_command(label="Online Docs", command=self.show_online_docs)
         help_menu.add_command(
             label="Contact Support", command=self.show_contact_support
         )
@@ -1327,7 +852,6 @@ class CrewGUI:
         help_menu.add_command(
             label="Auto-import Workspace Modules", command=self.run_auto_import
         )
-        self._configure_dark_menu(self.menu_bar)
 
     def run_auto_import(self):
         self.update_status("Auto-importing workspace modules...")
@@ -1350,89 +874,11 @@ class CrewGUI:
             "Q: How do I import images or data?\nA: Use the File menu to open or import files.\n\n"
             "Q: How do I overlay a grid?\nA: Use the grid tools in the main menu or CLI.\n\n"
             "Q: Where are logs saved?\nA: See crew_app.log in the workspace.\n\n"
-            "Q: Where is the documentation?\n"
-            "A: Use Help > Project README, Docs Index, or ReadMine Guide.\n\n"
-            "Q: How do I get help?\n"
-            "A: Use this Help menu, GitHub Issues, or Contact Support.\n"
+            "Q: How do I get help?\nA: Use this Help menu or Contact Support.\n"
         )
         from tkinter import messagebox
 
         messagebox.showinfo("FAQ", msg)
-
-    def _open_path_in_system_viewer(self, path: Path, label: str) -> None:
-        if not path.exists():
-            messagebox.showwarning("Missing File", f"{label} was not found:\n{path}")
-            logging.warning("%s not found: %s", label, path)
-            return
-        try:
-            if os.name == "nt":
-                os.startfile(str(path))
-            elif sys.platform == "darwin":
-                subprocess.run(["open", str(path)], check=True)
-            else:
-                opener = (
-                    "pcmanfm"
-                    if path.is_dir() and shutil.which("pcmanfm")
-                    else "xdg-open"
-                )
-                subprocess.run([opener, str(path)], check=True)
-            self.update_status(f"Opened {label}: {path}")
-        except (OSError, subprocess.CalledProcessError) as exc:
-            logging.error("Failed to open %s: %s", label, exc)
-            messagebox.showerror("Open Failed", f"Could not open {label}:\n{exc}")
-
-    def open_project_readme(self) -> None:
-        self._open_path_in_system_viewer(PROJECT_README_PATH, "Project README")
-
-    def open_project_docs_index(self) -> None:
-        self._open_path_in_system_viewer(PROJECT_DOCS_INDEX_PATH, "Docs Index")
-
-    def open_readmine_guide(self) -> None:
-        self._open_path_in_system_viewer(READMINE_GUIDE_PATH, "ReadMine Guide")
-
-    def open_readmine_output_notes(self) -> None:
-        self._open_path_in_system_viewer(
-            READMINE_OUTPUT_README_PATH, "ReadMine Output Notes"
-        )
-
-    def _get_tts_lead_in_seconds(self) -> float:
-        try:
-            value = float(
-                getattr(self, "tts_lead_in_seconds", DEFAULT_TTS_LEAD_IN_SECONDS)
-            )
-        except (TypeError, ValueError):
-            value = DEFAULT_TTS_LEAD_IN_SECONDS
-        return max(0.0, value)
-
-    def _warm_up_tts_output(self) -> None:
-        lead_in_seconds = self._get_tts_lead_in_seconds()
-        if lead_in_seconds <= 0 or not self.tts_engine:
-            return
-
-        # Some Linux TTS backends keep the engine muted after a zero-volume utterance.
-        # Use a short lead-in pause instead of a muted warm-up phrase.
-        time.sleep(lead_in_seconds)
-
-    def _speak_tts_chunks(self, chunks: List[str]) -> None:
-        if not TTS_AVAILABLE or not self.tts_engine:
-            raise RuntimeError("Text-to-speech functionality is not available.")
-
-        queued_chunks = [chunk for chunk in chunks if chunk and chunk.strip()]
-        if not queued_chunks:
-            return
-
-        self._warm_up_tts_output()
-        for chunk in queued_chunks:
-            self.tts_engine.say(chunk)
-        self.tts_engine.runAndWait()
-
-    def _speak_text_with_lead_in(
-        self, text: str, *, preprocess: bool = False, chunked: bool = False
-    ) -> None:
-        if preprocess:
-            text = self.preprocess_text_for_speech(text)
-        chunks = self.chunk_text(text) if chunked else [text]
-        self._speak_tts_chunks(chunks)
 
     def show_keyboard_shortcuts(self):
         msg = (
@@ -1442,7 +888,6 @@ class CrewGUI:
             "Ctrl+F: Find/filter\n"
             "Esc: Clear filter\n"
             "F5: Refresh\n"
-            "Ctrl+Shift+V: Paste into scratchpad\n"
             "Ctrl+Shift+R: Read selection (TTS)\n"
             "Ctrl+Shift+A: Read all details (TTS)\n"
             "Ctrl+Shift+S: Read status (TTS)\n"
@@ -1453,807 +898,61 @@ class CrewGUI:
         messagebox.showinfo("Keyboard Shortcuts", msg)
 
     def show_online_docs(self):
-        self._open_url_in_browser("https://github.com/Maggot4703/Crew")
+        import webbrowser
 
-    def open_github_issues(self):
-        self._open_url_in_browser("https://github.com/Maggot4703/Crew/issues")
-
-    def open_openwebui(self):
-        self._open_url_in_browser("http://127.0.0.1:3000")
-
-    def open_brave_browser(self):
-        browser_command = self._preferred_browser_command()
-        if browser_command:
-            subprocess.Popen(
-                browser_command,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
-            return
-
-        from tkinter import messagebox
-
-        messagebox.showwarning(
-            "Brave Browser",
-            "Brave browser is not installed or not available on PATH.",
-        )
+        webbrowser.open_new_tab("https://github.com/Maggot4703/Crew")
 
     def show_contact_support(self):
         msg = (
             "Contact Support:\n\n"
-            "- Start with Help > Project README or ReadMine Guide for local docs.\n"
+            "- Email: support@example.com\n"
             "- GitHub Issues: https://github.com/Maggot4703/Crew/issues\n"
-            "- When reporting a problem, include your OS, what you clicked, and any error text.\n"
+            "- For urgent help, mention your OS and error details.\n"
         )
         from tkinter import messagebox
 
         messagebox.showinfo("Contact Support", msg)
 
     def _launch_0101_server(self):
-        """Launch 0101 on me@p48, falling back to the local server when needed."""
-        try:
-            status, remote_url = self._launch_remote_0101_server()
-            self._open_0101_url(remote_url)
-            self.update_status(
-                f"Launched 0101 via {DEFAULT_0101_REMOTE_TARGET} ({status} -> {remote_url})."
-            )
-        except Exception as remote_error:
-            logging.warning(
-                "Remote 0101 launch via %s failed (%s); falling back locally.",
-                DEFAULT_0101_REMOTE_TARGET,
-                remote_error,
-            )
-            try:
-                status, local_url = self._launch_local_0101_server()
-                self._open_0101_url(local_url)
-                self.update_status(
-                    "Remote 0101 launch via "
-                    f"{DEFAULT_0101_REMOTE_TARGET} failed; using local server "
-                    f"({status} -> {local_url})."
-                )
-            except Exception as local_error:
-                logging.error("Local 0101 fallback failed.", exc_info=local_error)
-                combined_error = (
-                    f"Remote launch via {DEFAULT_0101_REMOTE_TARGET} failed:\n"
-                    f"{remote_error}\n\n"
-                    f"Local fallback failed:\n{local_error}"
-                )
-                self._show_0101_launch_error(combined_error)
-                self.update_status(
-                    f"Failed to launch 0101 via {DEFAULT_0101_REMOTE_TARGET}",
-                    error=True,
-                )
-
-    def _launch_remote_0101_server(self) -> Tuple[str, str]:
-        """Return the remote launch status and URL for the 0101 server."""
-        remote_server_path = self._sync_0101_project_to_remote()
-        remote_command = (
-            "host_ip=$(hostname -I 2>/dev/null | awk '{print $1}'); "
-            f"server_path={shlex.quote(remote_server_path)}; "
-            'if [ ! -f "$server_path" ]; then '
-            'echo "missing:$server_path"; '
-            "elif ss -ltn 2>/dev/null | grep -q ':8080 '; then "
-            'echo "running|$server_path|$host_ip"; '
-            "else "
-            f'nohup python3 "$server_path" >{DEFAULT_0101_REMOTE_LOG_PATH} 2>&1 < /dev/null & '
-            "sleep 1; "
-            'echo "started|$server_path|$host_ip"; '
-            "fi"
-        )
-        result = subprocess.run(
-            [
-                "ssh",
-                "-o",
-                "BatchMode=yes",
-                "-o",
-                f"ConnectTimeout={DEFAULT_0101_SSH_CONNECT_TIMEOUT}",
-                DEFAULT_0101_REMOTE_TARGET,
-                remote_command,
-            ],
-            capture_output=True,
-            text=True,
-            timeout=DEFAULT_0101_REMOTE_COMMAND_TIMEOUT,
-            check=True,
-        )
-        outcome = result.stdout.strip() or "started"
-        if outcome.startswith("missing:"):
-            raise FileNotFoundError(outcome.split(":", 1)[1])
-        status, _, remote_host = (outcome.split("|", 2) + ["", ""])[:3]
-        browser_host = remote_host or "p48"
-        return status, self._build_0101_url(browser_host, "remote", status)
-
-    def _build_remote_ssh_command(self, remote_command: str) -> list[str]:
-        """Build a consistent SSH command for remote 0101 actions."""
-        return [
-            "ssh",
-            "-o",
-            "BatchMode=yes",
-            "-o",
-            f"ConnectTimeout={DEFAULT_0101_SSH_CONNECT_TIMEOUT}",
-            DEFAULT_0101_REMOTE_TARGET,
-            remote_command,
-        ]
-
-    def _find_local_0101_project_root(self) -> Path:
-        """Return the local 0101 project root that contains server.py."""
-        return Path(self._find_0101_server_path()).resolve().parents[2]
-
-    def _resolve_remote_0101_server_path(self) -> str:
-        """Return the remote server.py path to update and launch."""
-        remote_candidates = " ".join(
-            shlex.quote(path) for path in DEFAULT_0101_SERVER_PATHS
-        )
-        resolve_command = (
-            "server_path=''; "
-            f"for candidate in {remote_candidates}; do "
-            'if [ -f "$candidate" ]; then server_path="$candidate"; break; fi; '
-            "done; "
-            'if [ -z "$server_path" ]; then '
-            f"printf '%s' {shlex.quote(DEFAULT_0101_SERVER_PATHS[0])}; "
-            "else "
-            'printf "%s" "$server_path"; '
-            "fi"
-        )
-        result = subprocess.run(
-            self._build_remote_ssh_command(resolve_command),
-            capture_output=True,
-            text=True,
-            timeout=DEFAULT_0101_REMOTE_COMMAND_TIMEOUT,
-            check=True,
-        )
-        return result.stdout.strip() or DEFAULT_0101_SERVER_PATHS[0]
-
-    def _sync_0101_project_to_remote(self) -> str:
-        """Sync the local 0101 project to p48 before remote launch."""
-        if shutil.which("rsync") is None:
-            raise FileNotFoundError("rsync is required for remote 0101 updates.")
-
-        local_project_root = self._find_local_0101_project_root()
-        remote_server_path = self._resolve_remote_0101_server_path()
-        remote_project_root = str(Path(remote_server_path).parent.parent.parent)
-
-        subprocess.run(
-            self._build_remote_ssh_command(
-                f"mkdir -p {shlex.quote(remote_project_root)}"
-            ),
-            capture_output=True,
-            text=True,
-            timeout=DEFAULT_0101_REMOTE_COMMAND_TIMEOUT,
-            check=True,
-        )
-
-        rsync_command = [
-            "rsync",
-            "-az",
-            "--delete",
-            "-e",
-            f"ssh -o BatchMode=yes -o ConnectTimeout={DEFAULT_0101_SSH_CONNECT_TIMEOUT}",
-        ]
-        for pattern in DEFAULT_0101_SYNC_EXCLUDES:
-            rsync_command.extend(["--exclude", pattern])
-        rsync_command.extend(
-            [
-                f"{local_project_root}/",
-                f"{DEFAULT_0101_REMOTE_TARGET}:{remote_project_root}/",
-            ]
-        )
-        subprocess.run(
-            rsync_command,
-            capture_output=True,
-            text=True,
-            timeout=60,
-            check=True,
-        )
-        logging.info(
-            "Synced local 0101 project %s to %s:%s before remote launch.",
-            local_project_root,
-            DEFAULT_0101_REMOTE_TARGET,
-            remote_project_root,
-        )
-
-        # After syncing project, attempt to pull any per-page notes saved on the remote
-        # user's Desktop (~/Desktop/0101_notes) into a local folder for inspection.
-        # Run the pull asynchronously so unit tests that mock subprocess.run won't
-        # be affected by the additional blocking call sequence.
-        def _pull_remote_notes():
-            try:
-                # Pull the remote server's saved scratchpad files and mirror them to
-                # the local user's Desktop in a structured folder layout.
-                # Remote saved files live under the 0101 project saved/ directory.
-                remote_saved_path = (
-                    os.path.join(remote_project_root, "src", "public_html", "saved")
-                    + "/"
-                )
-                tmp_dir = os.path.join(local_project_root, "remote_saved_tmp")
-                os.makedirs(tmp_dir, exist_ok=True)
-
-                rsync_pull = [
-                    "rsync",
-                    "-az",
-                    "-e",
-                    f"ssh -o BatchMode=yes -o ConnectTimeout={DEFAULT_0101_SSH_CONNECT_TIMEOUT}",
-                    f"{DEFAULT_0101_REMOTE_TARGET}:{remote_saved_path}",
-                    f"{tmp_dir}/",
-                ]
-                subprocess.run(
-                    rsync_pull,
-                    capture_output=True,
-                    text=True,
-                    timeout=60,
-                    check=True,
-                )
-
-                # Load subsector mapping so Traveller world keys can be placed under
-                # sector/subsector/<hex>.txt. The mapping lives in TXT/worlds-by-subsector.json
-                subsector_map = {}
-                try:
-                    mapping_path = os.path.join(
-                        local_project_root,
-                        "src",
-                        "public_html",
-                        "TXT",
-                        "worlds-by-subsector.json",
-                    )
-                    if os.path.isfile(mapping_path):
-                        with open(mapping_path, "r", encoding="utf-8") as fh:
-                            data = json.load(fh)
-                            # Build reverse map from hex -> subsector name
-                            for subsector_name, entries in data.items():
-                                for e in entries:
-                                    hx = e.get("hex")
-                                    if hx:
-                                        subsector_map[hx.lower()] = subsector_name
-                except Exception:
-                    subsector_map = {}
-
-                desktop_root = os.path.expanduser("~/Desktop/0101_notes")
-                os.makedirs(desktop_root, exist_ok=True)
-
-                remote_keys = set()
-                for fname in os.listdir(tmp_dir):
-                    if not fname.lower().endswith(".txt"):
-                        continue
-                    key = fname[:-4]
-                    remote_keys.add(key)
-                    src_path = os.path.join(tmp_dir, fname)
-                    # Default placement: misc
-                    dest_dir = os.path.join(desktop_root, "misc")
-                    dest_fn = key + ".txt"
-
-                    # If key contains sector marker like 'spinward-marches' and a 4-digit hex, map it
-                    m = re.search(r"spinward-marches[-_]([0-9a-fA-F]{4})", key)
-                    if m:
-                        hexcode = m.group(1).lower()
-                        sector_dir = os.path.join(desktop_root, "Spinward Marches")
-                        subsector = subsector_map.get(hexcode)
-                        if subsector:
-                            dest_dir = os.path.join(sector_dir, subsector)
-                        else:
-                            # put directly under sector when subsector unknown
-                            dest_dir = sector_dir
-                        # Use hex-only filename for Traveller worlds
-                        dest_fn = hexcode + ".txt"
-
-                    os.makedirs(dest_dir, exist_ok=True)
-                    dest_path = os.path.join(dest_dir, dest_fn)
-                    try:
-                        # Move/overwrite into destination
-                        shutil.move(src_path, dest_path)
-                    except Exception:
-                        try:
-                            shutil.copy2(src_path, dest_path)
-                            os.remove(src_path)
-                        except Exception as e:
-                            logging.warning(
-                                "Failed to move saved note %s -> %s: %s",
-                                src_path,
-                                dest_path,
-                                e,
-                            )
-
-                # Clean up any leftover tmp files
-                try:
-                    if os.path.isdir(tmp_dir):
-                        for leftover in os.listdir(tmp_dir):
-                            try:
-                                os.remove(os.path.join(tmp_dir, leftover))
-                            except Exception:
-                                pass
-                        os.rmdir(tmp_dir)
-                except Exception:
-                    pass
-
-                # Remove any local Desktop note files that are no longer present remotely
-                # Only consider files inside desktop_root managed tree
-                for root_dir, dirs, files in os.walk(desktop_root):
-                    for f in files:
-                        if not f.lower().endswith(".txt"):
-                            continue
-                        k = f[:-4]
-                        if k not in remote_keys:
-                            # remove stale local file
-                            try:
-                                os.remove(os.path.join(root_dir, f))
-                            except Exception:
-                                pass
-
-                logging.info(
-                    "Pulled remote saved notes from %s:%s and mirrored to %s",
-                    DEFAULT_0101_REMOTE_TARGET,
-                    remote_saved_path,
-                    desktop_root,
-                )
-            except Exception as e:
-                logging.warning("Failed to pull remote 0101 saved notes: %s", e)
-
-        try:
-            import threading
-
-            # When tests mock subprocess.run, background threads calling rsync/ssh
-            # can consume the mock side_effect iterator and cause StopIteration.
-            # Detect a mocked subprocess.run and skip starting the async pull in that case.
-            if hasattr(subprocess.run, "side_effect"):
-                logging.info(
-                    "Detected mocked subprocess.run; skipping async remote pull to avoid test interference."
-                )
-            else:
-                t = threading.Thread(target=_pull_remote_notes, daemon=True)
-                t.start()
-
-                # Also start a periodic poller to keep the Desktop mirror up-to-date.
-                POLL_INTERVAL = int(os.environ.get("CREW_POLL_INTERVAL", "300"))
-                _periodic_started_flag = getattr(
-                    self, "_remote_notes_periodic_started", False
-                )
-                if not _periodic_started_flag:
-
-                    def _periodic_pull_worker():
-                        while True:
-                            time.sleep(POLL_INTERVAL)
-                            try:
-                                _pull_remote_notes()
-                            except Exception:
-                                pass
-
-                    p = threading.Thread(target=_periodic_pull_worker, daemon=True)
-                    p.start()
-                    setattr(self, "_remote_notes_periodic_started", True)
-
-        except Exception:
-            # Fall back to synchronous pull if threading fails for any reason
-            _pull_remote_notes()
-
-        return remote_server_path
-
-    def _launch_local_0101_server(self) -> Tuple[str, str]:
-        """Return the local launch status and URL for the 0101 server."""
-        server_path = self._find_0101_server_path()
-        if self._is_0101_port_open():
-            return "running", self._build_0101_url("localhost", "local", "running")
-
-        command = [sys.executable, server_path]
-        with open(DEFAULT_0101_LOCAL_LOG_PATH, "a", encoding="utf-8") as log_file:
-            process = subprocess.Popen(
-                command,
-                stdout=log_file,
-                stderr=subprocess.STDOUT,
-                stdin=subprocess.DEVNULL,
-                start_new_session=True,
-            )
-
-        for _ in range(10):
-            if self._is_0101_port_open():
-                return "started", self._build_0101_url("localhost", "local", "started")
-            if process.poll() is not None:
-                raise subprocess.CalledProcessError(process.returncode, command)
-            time.sleep(0.5)
-
-        raise RuntimeError("Local 0101 server did not become ready on port 8080.")
-
-    def _find_0101_server_path(self) -> str:
-        """Return the first configured local 0101 server path that exists."""
-        for candidate in DEFAULT_0101_SERVER_PATHS:
-            if os.path.isfile(candidate):
-                return candidate
-        raise FileNotFoundError(DEFAULT_0101_SERVER_PATHS[0])
-
-    @staticmethod
-    def _is_0101_port_open(host: str = "127.0.0.1", port: int = 8080) -> bool:
-        """Return True when the local 0101 HTTP port accepts a connection."""
-        try:
-            with socket.create_connection((host, port), timeout=0.5):
-                return True
-        except OSError:
-            return False
-
-    def _open_0101_url(self, url: str) -> None:
-        """Open 0101 in the browser, reusing an existing 0101 window when possible."""
-        if self._activate_existing_0101_window(url):
-            self._resize_0101_window_async(url)
-            return
-
-        # Prefer a direct webbrowser.open call here so tests that patch webbrowser.open
-        # observe the call regardless of which browser binaries are installed.
-        import webbrowser
-
-        webbrowser.open(url, new=0)
-        self._resize_0101_window_async(url)
-
-    @staticmethod
-    def _preferred_browser_command() -> list[str] | None:
-        """Return the best available browser command, preferring Chromium."""
-        for candidate in (
-            "chromium",
-            "chromium-browser",
-            "google-chrome",
-            "brave-browser",
-            "brave-browser-stable",
-            "brave",
-        ):
-            browser = shutil.which(candidate)
-            if browser:
-                return [browser]
-        return None
-
-    def _open_url_in_browser(self, url: str) -> None:
-        """Open a URL in Brave when installed, otherwise fall back to webbrowser."""
-        browser_command = self._preferred_browser_command()
-        if browser_command:
-            subprocess.Popen(
-                browser_command + [url],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
-            return
-
-        import webbrowser
-
-        # Use webbrowser.open(url, new=0) so tests that patch webbrowser.open see the call
-        webbrowser.open(url, new=0)
-
-    def _activate_existing_0101_window(self, url: str) -> bool:
-        """Focus an existing 0101 browser window instead of opening a duplicate."""
-        title_candidates = self._build_0101_window_title_candidates(url)
-        label = title_candidates[0] if title_candidates else "0101"
-
-        if shutil.which("wmctrl"):
-            try:
-                list_result = subprocess.run(
-                    ["wmctrl", "-l"],
-                    check=True,
-                    capture_output=True,
-                    text=True,
-                )
-                matching_window_id = self._find_wmctrl_window_id(
-                    list_result.stdout, title_candidates
-                )
-                if matching_window_id:
-                    subprocess.run(
-                        ["wmctrl", "-i", "-a", matching_window_id],
-                        check=True,
-                        capture_output=True,
-                        text=True,
-                    )
-                    logging.info(
-                        "Reused existing '%s' browser window via wmctrl.", label
-                    )
-                    return True
-            except subprocess.CalledProcessError:
-                pass
-
-        if shutil.which("xdotool"):
-            for title in title_candidates:
-                # try exact title then a relaxed regex to match substrings
-                search_patterns = [title, f".*{title}.*"]
-                for pattern in search_patterns:
-                    try:
-                        search_result = subprocess.run(
-                            ["xdotool", "search", "--onlyvisible", "--name", pattern],
-                            check=True,
-                            capture_output=True,
-                            text=True,
-                        )
-                    except subprocess.CalledProcessError:
-                        continue
-                    window_ids = [
-                        window_id
-                        for window_id in search_result.stdout.splitlines()
-                        if window_id.strip()
-                    ]
-                    if not window_ids:
-                        continue
-                    target_window = window_ids[-1]
-                    try:
-                        subprocess.run(
-                            ["xdotool", "windowactivate", target_window],
-                            check=True,
-                            capture_output=True,
-                            text=True,
-                        )
-                        logging.info(
-                            "Reused existing '%s' browser window via xdotool.", label
-                        )
-                        return True
-                    except subprocess.CalledProcessError:
-                        continue
-
-        return False
-
-    def _show_0101_launch_error(self, error_message: str) -> None:
-        """Display the final 0101 launch error to the user."""
+        """Launch the 0101 server.py in a new process."""
+        import os
+        import subprocess
+        import sys
         from tkinter import messagebox
 
-        messagebox.showerror("Server Launch Error", error_message)
-
-    def _resize_0101_window_async(self, url: str) -> None:
-        """Resize the newly opened 0101 browser window in the background."""
-        width, height = self.build_0101_window_size()
-        title_candidates = self._build_0101_window_title_candidates(url)
-        threading.Thread(
-            target=self._resize_window_by_title,
-            args=(title_candidates, width, height),
-            daemon=True,
-        ).start()
-
-    @staticmethod
-    def _build_0101_window_title_candidates(url: str) -> list[str]:
-        """Return likely browser window title fragments for the 0101 page."""
-        candidates = ["0101 Navigator", "0101", "index.html", "0101.html"]
-
-        parsed_url = urlparse(url)
-        if parsed_url.netloc:
-            candidates.append(parsed_url.netloc)
-        if parsed_url.hostname:
-            candidates.append(parsed_url.hostname)
-        if parsed_url.path:
-            path_name = Path(parsed_url.path).name
-            if path_name:
-                candidates.append(path_name)
-        candidates.append(url)
-
-        deduped_candidates = []
-        seen = set()
-        for candidate in candidates:
-            if not candidate:
-                continue
-            normalized = candidate.lower()
-            if normalized in seen:
-                continue
-            seen.add(normalized)
-            deduped_candidates.append(candidate)
-        return deduped_candidates
-
-    @staticmethod
-    def _build_0101_url(host: str, launch: str, state: str) -> str:
-        """Build the 0101 entry URL with launch context for the page shell."""
-        query = urlencode({"launch": launch, "state": state, "host": host})
-        return f"http://{host}:8080/{DEFAULT_0101_ENTRY_PAGE}?{query}"
-
-    def _resize_window_by_title(
-        self,
-        window_title: str | list[str],
-        width: int,
-        height: int,
-        attempts: int = 20,
-        delay_seconds: float = 1.0,
-    ) -> bool:
-        """Resize a desktop window by title using available Linux window tools.
-
-        Increased attempts and delay to improve chance of finding newly-opened
-        browser windows on slower desktops or when X composition delays occur.
-        """
-        title_candidates = (
-            [window_title] if isinstance(window_title, str) else list(window_title)
+        server_path = os.path.expanduser(
+            "/home/me/Notebooks/0101/0101/src/public_html/server.py"
         )
-        label = title_candidates[0] if title_candidates else "window"
-
-        if shutil.which("wmctrl"):
-            for _ in range(attempts):
-                try:
-                    list_result = subprocess.run(
-                        ["wmctrl", "-l"],
-                        check=True,
-                        capture_output=True,
-                        text=True,
-                    )
-                    matching_window_id = self._find_wmctrl_window_id(
-                        list_result.stdout, title_candidates
-                    )
-                    if not matching_window_id:
-                        logging.debug("wmctrl: no matching window yet; retrying")
-                        time.sleep(delay_seconds)
-                        continue
-                    subprocess.run(
-                        [
-                            "wmctrl",
-                            "-i",
-                            "-r",
-                            matching_window_id,
-                            "-e",
-                            f"0,-1,-1,{width},{height}",
-                        ],
-                        check=True,
-                        capture_output=True,
-                        text=True,
-                    )
-                    logging.info(
-                        "Resized '%s' window to %sx%s using wmctrl.",
-                        label,
-                        width,
-                        height,
-                    )
-                    return True
-                except subprocess.CalledProcessError:
-                    logging.debug("wmctrl call failed; sleeping before retry")
-                    time.sleep(delay_seconds)
-
-        if shutil.which("xdotool"):
-            for _ in range(attempts):
-                for title in title_candidates:
-                    # try exact title then a relaxed regex to match substrings
-                    search_patterns = [title, f".*{title}.*"]
-                    for pattern in search_patterns:
-                        try:
-                            search_result = subprocess.run(
-                                [
-                                    "xdotool",
-                                    "search",
-                                    "--onlyvisible",
-                                    "--name",
-                                    pattern,
-                                ],
-                                check=True,
-                                capture_output=True,
-                                text=True,
-                            )
-                        except subprocess.CalledProcessError:
-                            logging.debug(
-                                "xdotool: no windows matching pattern %r", pattern
-                            )
-                            continue
-                        window_ids = [
-                            window_id
-                            for window_id in search_result.stdout.splitlines()
-                            if window_id.strip()
-                        ]
-                        logging.debug(
-                            "xdotool search pattern %r produced: %r",
-                            pattern,
-                            search_result.stdout,
-                        )
-                        if not window_ids:
-                            continue
-                        target_window = window_ids[-1]
-                        try:
-                            subprocess.run(
-                                [
-                                    "xdotool",
-                                    "windowactivate",
-                                    target_window,
-                                ],
-                                check=True,
-                                capture_output=True,
-                                text=True,
-                            )
-                            subprocess.run(
-                                [
-                                    "xdotool",
-                                    "windowsize",
-                                    target_window,
-                                    str(width),
-                                    str(height),
-                                ],
-                                check=True,
-                                capture_output=True,
-                                text=True,
-                            )
-                            logging.info(
-                                "Resized '%s' window to %sx%s using xdotool.",
-                                label,
-                                width,
-                                height,
-                            )
-                            return True
-                        except subprocess.CalledProcessError:
-                            logging.debug(
-                                "xdotool activate/size failed for window %s",
-                                target_window,
-                            )
-                            continue
-                logging.debug(
-                    "xdotool: attempt %d failed to find matching window; sleeping %s",
-                    _,
-                    delay_seconds,
-                )
-                time.sleep(delay_seconds)
-            # Fallback: if title matching failed, try resizing the most-recent visible window
-            try:
-                search_all = subprocess.run(
-                    ["xdotool", "search", "--onlyvisible", "--name", ".*"],
-                    check=True,
-                    capture_output=True,
-                    text=True,
-                )
-                all_ids = [l for l in search_all.stdout.splitlines() if l.strip()]
-                if all_ids:
-                    recent = all_ids[-1]
-                    try:
-                        subprocess.run(
-                            ["xdotool", "windowactivate", recent],
-                            check=True,
-                            capture_output=True,
-                            text=True,
-                        )
-                        subprocess.run(
-                            [
-                                "xdotool",
-                                "windowsize",
-                                recent,
-                                str(width),
-                                str(height),
-                            ],
-                            check=True,
-                            capture_output=True,
-                            text=True,
-                        )
-                        logging.info(
-                            "Resized '%s' window to %sx%s using xdotool fallback (most-recent).",
-                            label,
-                            width,
-                            height,
-                        )
-                        return True
-                    except subprocess.CalledProcessError:
-                        logging.debug(
-                            "xdotool fallback activate/size failed for %s", recent
-                        )
-            except subprocess.CalledProcessError:
-                logging.debug("xdotool fallback search failed")
-
-            logging.warning(
-                "Could not find any 0101 browser window to resize with xdotool after %d attempts.",
-                attempts,
+        if not os.path.isfile(server_path):
+            messagebox.showerror(
+                "Server Not Found", f"Could not find server.py at:\n{server_path}"
             )
-            return False
-
-        logging.warning(
-            "Automatic resize skipped for '%s': install wmctrl or xdotool.",
-            label,
-        )
-        return False
-
-    @staticmethod
-    def _find_wmctrl_window_id(
-        window_list_output: str, title_candidates: list[str]
-    ) -> str:
-        """Return the wmctrl window id whose listed title matches any candidate."""
-        lowered_candidates = [
-            candidate.lower() for candidate in title_candidates if candidate
-        ]
-        for line in window_list_output.splitlines():
-            parts = line.split(None, 3)
-            if len(parts) < 4:
-                continue
-            window_id, _, _, window_title = parts
-            lowered_title = window_title.lower()
-            if any(candidate in lowered_title for candidate in lowered_candidates):
-                return window_id
-        return ""
+            return
+        try:
+            # Launch in a new process, detached if possible
+            if sys.platform == "win32":
+                DETACHED_PROCESS = 0x00000008
+                subprocess.Popen(
+                    [sys.executable, server_path], creationflags=DETACHED_PROCESS
+                )
+            else:
+                subprocess.Popen(
+                    [sys.executable, server_path],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    preexec_fn=os.setpgrp,
+                )
+            self.update_status("Launched 0101 server.py")
+        except Exception as e:
+            messagebox.showerror(
+                "Server Launch Error", f"Failed to launch server.py:\n{e}"
+            )
+            self.update_status("Failed to launch 0101 server.py", error=True)
 
     def open_crew_chat_window(self):
-        # Import UserStrategy for chat logic
-        from strategies.user_strategy import UserStrategy
-
-        # Instantiate strategy with current LLM backend
-        llm_backend = getattr(self, "llm_backend_var", None)
-        backend = llm_backend.get() if llm_backend else "ollama"
-        user_strategy = UserStrategy(llm_backend=backend)
-        chat_room = "crew_multi_user"
-        current_user = {"name": "Captain"}
-
         def undo_last_message():
-            user = current_user["name"]
-            if self.message_router.undo_last_user_message(user, room=chat_room):
+            user = self.logged_in_user["name"]
+            if self.message_router.undo_last_user_message(user):
                 refresh_messages()
                 status_var.set("Last message undone.")
             else:
@@ -2263,15 +962,15 @@ class CrewGUI:
         show_timestamps = [False]
         mute_notifications = [False]
         font_size = [10]
-        dark_mode = [True]
+        dark_mode = [False]
         filter_my_messages = [False]
 
         def redraw_messages():
             chat_display.config(state="normal")
             chat_display.delete(1.0, tk.END)
-            msgs = self.message_router.get_messages(room=chat_room)
+            msgs = self.message_router.get_messages()
             if filter_my_messages[0]:
-                msgs = [m for m in msgs if m["sender"] == current_user["name"]]
+                msgs = [m for m in msgs if m["sender"] == self.logged_in_user["name"]]
             for m in msgs:
                 append_chat(
                     m["sender"],
@@ -2279,7 +978,6 @@ class CrewGUI:
                     m.get("text", ""),
                     m.get("file"),
                     m.get("timestamp"),
-                    notify=False,
                 )
             chat_display.config(state="disabled")
             status_var.set("Messages redrawn.")
@@ -2410,22 +1108,19 @@ class CrewGUI:
             chat_win,
             state="disabled",
             wrap="word",
-            bg=DARK_INPUT_BG,
-            fg=DARK_TEXT,
+            bg="#f8f8f8",
+            fg="#222",
             font=("Consolas", 10),
             borderwidth=0,
             highlightthickness=0,
         )
         chat_display.pack(fill="both", expand=True, padx=8, pady=(8, 0))
         chat_display.tag_configure(
-            "sender", font=("Consolas", 10, "bold"), foreground=DARK_ACCENT
+            "sender", font=("Consolas", 10, "bold"), foreground="#1a237e"
         )
-        chat_display.tag_configure("msg", font=("Consolas", 10), foreground=DARK_TEXT)
-        chat_display.tag_configure("file", foreground="#79c0ff", underline=True)
-        chat_display.tag_configure(
-            "divider", foreground=DARK_MUTED_TEXT, font=("Consolas", 8)
-        )
-        self._bind_vertical_mousewheel(chat_display)
+        chat_display.tag_configure("msg", font=("Consolas", 10), foreground="#222")
+        chat_display.tag_configure("file", foreground="blue", underline=True)
+        chat_display.tag_configure("divider", foreground="#bbb", font=("Consolas", 8))
         ToolTip(
             chat_display, "Displays all chat messages, files, and system notifications."
         )
@@ -2442,138 +1137,95 @@ class CrewGUI:
             query = filter_var.get().strip().lower()
             chat_display.config(state="normal")
             chat_display.delete(1.0, tk.END)
-            for m in self.message_router.get_messages(room=chat_room):
-                file_meta = m.get("file") if isinstance(m, dict) else None
-                filename_matches = (
-                    file_meta.get("filename").lower()
-                    if file_meta and file_meta.get("filename")
-                    else ""
-                )
+            for m in self.message_router.get_messages():
                 if (
-                    query in m.get("sender", "").lower()
-                    or any(query in r.lower() for r in m.get("recipients", []))
+                    query in m["sender"].lower()
+                    or any(query in r.lower() for r in m["recipients"])
                     or query in m.get("text", "").lower()
-                    or (filename_matches and query in filename_matches)
+                    or ("file" in m and query in m["file"]["filename"].lower())
                 ):
                     append_chat(
-                        m.get("sender", ""),
-                        m.get("recipients", []),
-                        m.get("text", ""),
-                        file_meta,
-                        notify=False,
+                        m["sender"], m["recipients"], m.get("text", ""), m.get("file")
                     )
             chat_display.config(state="disabled")
 
         filter_entry.bind("<Return>", lambda e: filter_messages())
 
-        # --- Compact toolbar (merged controls) ---
+        # --- Standardized 5-button interface ---
         entry_frame = tk.Frame(chat_win)
         entry_frame.pack(fill="x", padx=8, pady=8)
 
-        # Recording mode (kept, but exposed via Advanced menu)
+        # Rec/Play mode checkbox (per window)
         rec_play_var = tk.BooleanVar(value=True)  # True=Record, False=Play
 
         def on_toggle_rec_play():
-            refresh_audio_controls()
-
-        def primary_action():
             if rec_play_var.get():
-                if self._recording_process is not None:
-                    self._stop_recording()
-                    status_var.set("Recording stopped.")
-                else:
-                    self._start_recording()
-                    status_var.set("Recording started.")
+                start_stop_btn.config(text="START")
+                save_load_btn.config(text="SAVE")
+            else:
+                start_stop_btn.config(text="STOP")
+                save_load_btn.config(text="LOAD")
+
+        rec_play_chk = tk.Checkbutton(
+            entry_frame,
+            text="Rec/Play",
+            variable=rec_play_var,
+            command=on_toggle_rec_play,
+        )
+        rec_play_chk.pack(side="left", padx=(0, 8))
+        ToolTip(rec_play_chk, "Toggle between Record and Play mode for this window.")
+
+        start_stop_btn = tk.Button(entry_frame, text="START", width=10)  # Initial label
+        save_load_btn = tk.Button(entry_frame, text="SAVE", width=10)  # Initial label
+
+        # SET: Microphone setup button
+        set_btn = tk.Button(
+            entry_frame,
+            text="SET",
+            width=4,
+            command=lambda: self.root.after(0, self.show_microphone_selection_dialog),
+        )
+        set_btn.pack(side="left", padx=(0, 4))
+        ToolTip(set_btn, "Set up/select microphone device.")
+
+        # START/STOP: Recording or Playing
+        def start_stop_action():
+            if rec_play_var.get():
+                self._start_recording()
+                status_var.set("Recording started.")
             else:
                 self._play_recording()
                 status_var.set("Playback started.")
-            refresh_audio_controls()
 
-        def secondary_action():
+        start_stop_btn = tk.Button(
+            entry_frame, text="START/STOP", width=10, command=start_stop_action
+        )
+        start_stop_btn.pack(side="left", padx=(0, 4))
+        ToolTip(start_stop_btn, "Start/Stop recording or playback depending on mode.")
+
+        # SAVE/LOAD: Save or Load file
+        def save_load_action():
             if rec_play_var.get():
                 self._save_recording_as()
                 status_var.set("Recording saved.")
             else:
-                self._load_recording_file()
-                status_var.set("Recording loaded.")
+                # For now, just show a message (implement load logic as needed)
+                messagebox.showinfo("Load", "Load functionality not yet implemented.")
 
-        def refresh_audio_controls() -> None:
-            if rec_play_var.get():
-                source_btn.config(
-                    text="🎤",
-                    command=lambda: self.root.after(
-                        0, self.show_microphone_selection_dialog
-                    ),
-                )
-                source_tooltip.text = "Choose the microphone for recording."
-                primary_btn.config(
-                    text=("⏹" if self._recording_process is not None else "⏺")
-                )
-                primary_tooltip.text = (
-                    "Stop the current recording."
-                    if self._recording_process is not None
-                    else "Start recording. Press again to stop and save it."
-                )
-                secondary_btn.config(text="💾")
-                secondary_tooltip.text = "Save the current recording to a file."
-            else:
-                source_btn.config(text="📁", command=self._load_recording_file)
-                source_tooltip.text = "Choose the recording file or source to play."
-                primary_btn.config(text="▶️")
-                primary_tooltip.text = "Play the current recording."
-                secondary_btn.config(text="📂")
-                secondary_tooltip.text = "Load a recording file from disk."
-
-        # Toolbar frame: compact controls in one row (reordered for clarity)
-        # Create a placeholder toolbar_frame now so earlier widgets (recipient, attach)
-        # can reference it; the shared helper will create the final compact toolbar
-        # after user_entry is available and may overwrite this variable.
-        toolbar_frame = tk.Frame(entry_frame)
-        toolbar_frame.pack(fill="x", pady=(0, 4))
-
-        # Create placeholder audio control widgets so refresh_audio_controls can
-        # reference them before the full compact toolbar is created later.
-        source_btn = tk.Button(
-            toolbar_frame, text="📁", command=self._load_recording_file
+        save_load_btn = tk.Button(
+            entry_frame, text="SAVE/LOAD", width=10, command=save_load_action
         )
-        source_btn.pack(side="left", padx=(0, 4))
-        source_tooltip = ToolTip(
-            source_btn, "Choose the recording file or source to play."
+        save_load_btn.pack(side="left", padx=(0, 4))
+        ToolTip(
+            save_load_btn, "Save recording (Rec) or load file (Play) depending on mode."
         )
 
-        primary_btn = tk.Button(toolbar_frame, text="▶️", command=primary_action)
-        primary_btn.pack(side="left", padx=(0, 4))
-        primary_tooltip = ToolTip(primary_btn, "Play the current recording.")
+        # User entry (center, expands)
+        user_entry = tk.Entry(entry_frame, font=("Consolas", 10))
+        user_entry.pack(side="left", fill="x", expand=True, padx=(0, 8))
+        ToolTip(user_entry, "Type your message here. Press Enter to send.")
 
-        secondary_btn = tk.Button(toolbar_frame, text="📂", command=secondary_action)
-        secondary_btn.pack(side="left", padx=(0, 8))
-        secondary_tooltip = ToolTip(secondary_btn, "Load a recording file from disk.")
-
-        # Basic Send and Help button placeholders (will be available immediately for bindings)
-        send_btn = tk.Button(
-            toolbar_frame,
-            text="Send",
-            width=3,
-            bg="#0e639c",
-            fg="white",
-            command=(lambda e=None: send_message(e)),
-        )
-        send_btn.pack(side="right", padx=(0, 4))
-        ToolTip(send_btn, "Send your message (or press Enter).")
-
-        help_btn = tk.Button(
-            toolbar_frame, text="?", width=3, command=(lambda e=None: show_chat_help())
-        )
-        help_btn.pack(side="right", padx=(0, 4))
-        ToolTip(help_btn, "Show chat help.")
-
-        # Recipient selector and attach button
-        recipient_var = tk.StringVar(value="All")
-        recipient_menu = tk.OptionMenu(toolbar_frame, recipient_var, "All", *user_names)
-        recipient_menu.config(width=10)
-        recipient_menu.pack(side="left", padx=(0, 8))
-        ToolTip(recipient_menu, "Choose who should receive your next message.")
-
+        # Attach File button
         attached_file = {"path": None, "filename": None}
 
         def attach_file():
@@ -2596,33 +1248,18 @@ class CrewGUI:
                     return
                 attached_file["path"] = file_path
                 attached_file["filename"] = os.path.basename(file_path)
-                # keep button label short for compact UI
-                attach_btn.config(text="📎")
+                attach_btn.config(text=f"Attached: {attached_file['filename']}")
             else:
                 attached_file["path"] = None
                 attached_file["filename"] = None
-                attach_btn.config(text="📎")
+                attach_btn.config(text="Attach File")
 
-        attach_btn = tk.Button(toolbar_frame, text="📎", width=3, command=attach_file)
+        attach_btn = tk.Button(entry_frame, text="Attach File", command=attach_file)
         attach_btn.pack(side="left", padx=(0, 8))
         ToolTip(attach_btn, "Attach a file to send with your message.")
 
-        # Right-aligned: speaker (TTS) and Advanced menu
-        if getattr(self, "tts_available", False):
-            speaker_btn = tk.Button(
-                toolbar_frame,
-                text="🔊",
-                width=2,
-                command=lambda: speak_last_bot_reply(),
-            )
-            speaker_btn.pack(side="right", padx=(4, 0))
-            ToolTip(speaker_btn, "Read aloud the last bot reply.")
-
-        # STT controls: create mic and wav buttons near the source control but pack to the left
+        # Voice input (mic) button
         if getattr(self, "stt_available", False):
-            # Track recording state and button ref so user can STOP ongoing recording
-            recording_state = {"active": False, "recognizer": None}
-            mic_btn_ref = {"btn": None}
 
             def recognize_speech_to_entry(entry_widget, parent_win):
                 if not self.stt_available:
@@ -2631,272 +1268,105 @@ class CrewGUI:
 
                 import speech_recognition as sr
 
-                # Toggle recording state: if active, request stop
-                if recording_state["active"]:
-                    recording_state["active"] = False
-                    status_var.set("Stopping recording...")
-                    if mic_btn_ref["btn"]:
-                        try:
-                            mic_btn_ref["btn"].config(text="🎤")
-                        except Exception:
-                            pass
-                    return
-
-                # Start recording
-                recording_state["active"] = True
-
                 def recognize():
                     recognizer = self.stt_recognizer
-                    recording_state["recognizer"] = recognizer
                     mic_index = getattr(self, "selected_mic_index", None)
                     src = None
                     try:
-                        src = (
-                            sr.Microphone(device_index=mic_index)
-                            if mic_index is not None
-                            else sr.Microphone()
-                        )
+                        try:
+                            if mic_index is not None:
+                                src = sr.Microphone(device_index=mic_index)
+                            else:
+                                src = sr.Microphone()
+                        except Exception as mic_err:
+                            entry_widget.config(state="normal")
+                            entry_widget.delete(0, tk.END)
+                            entry_widget.insert(0, "[Mic unavailable]")
+                            print(f"STT error: Could not open microphone: {mic_err}")
+                            status_var.set("Microphone unavailable or busy.")
+                            parent_win.update()
+                            return
                         with src as source:
-
-                            def set_listening():
-                                # UI feedback handled by parent_win and entry_widget
-                                entry_widget.config(state="disabled")
-                                entry_widget.delete(0, tk.END)
-                                entry_widget.insert(
-                                    0, "Listening... (click STOP to end)"
-                                )
-                                if mic_btn_ref["btn"]:
-                                    try:
-                                        mic_btn_ref["btn"].config(text="⏹ STOP")
-                                    except Exception:
-                                        pass
-
-                            parent_win.after(0, set_listening)
-                            self._prepare_stt_source(recognizer, source)
-
+                            entry_widget.config(state="disabled")
+                            entry_widget.delete(0, tk.END)
+                            entry_widget.insert(0, "Listening...")
+                            parent_win.update()
                             try:
                                 audio = recognizer.listen(
-                                    source,
-                                    timeout=self._get_stt_setting(
-                                        "listen_timeout", 15.0
-                                    ),
-                                    phrase_time_limit=self._get_stt_setting(
-                                        "phrase_time_limit", 60.0
-                                    ),
+                                    source, timeout=5, phrase_time_limit=8
                                 )
-                            except sr.exceptions.RequestError as e:
-
-                                def set_error():
-                                    entry_widget.config(state="normal")
-                                    entry_widget.delete(0, tk.END)
-                                    status_var.set(f"[Listen error: {e}]")
-                                    if mic_btn_ref["btn"]:
-                                        try:
-                                            mic_btn_ref["btn"].config(text="🎤")
-                                        except Exception:
-                                            pass
-                                    recording_state["active"] = False
-
-                                parent_win.after(0, set_error)
+                            except Exception as listen_err:
+                                entry_widget.config(state="normal")
+                                entry_widget.delete(0, tk.END)
+                                entry_widget.insert(0, "[Listen error]")
+                                print(f"STT error: {listen_err}")
+                                status_var.set("Voice recognition error.")
+                                parent_win.update()
                                 return
-
-                            if not recording_state["active"]:
-
-                                def set_stopped():
-                                    entry_widget.config(state="normal")
-                                    status_var.set("Recording stopped.")
-                                    if mic_btn_ref["btn"]:
-                                        try:
-                                            mic_btn_ref["btn"].config(text="🎤")
-                                        except Exception:
-                                            pass
-
-                                parent_win.after(0, set_stopped)
-                                return
-
-                            parent_win.after(0, lambda: entry_widget.delete(0, tk.END))
-                            result_text = self._recognize_stt_audio(recognizer, audio)
-
-                            def set_result():
-                                try:
-                                    entry_widget.config(state="normal")
-                                    entry_widget.delete(0, tk.END)
-                                    entry_widget.insert(0, result_text)
-                                    status_var.set(f"Recognized: {result_text}")
-                                    if mic_btn_ref["btn"]:
-                                        try:
-                                            mic_btn_ref["btn"].config(text="🎤")
-                                        except Exception:
-                                            pass
-                                    recording_state["active"] = False
-                                except Exception as widget_err:
-                                    logger.error(f"[Mic] Display error: {widget_err}")
-
-                            parent_win.after(0, set_result)
-
-                    except Exception as exc:
-                        logger.warning(
-                            "Multi-user chat speech recognition failed: %s", exc
-                        )
-
-                        def set_error():
                             entry_widget.delete(0, tk.END)
-                            entry_widget.insert(0, "[Voice error]")
-                            status_var.set("Voice recognition error.")
-
-                        parent_win.after(0, set_error)
+                            entry_widget.insert(0, "Recognizing...")
+                            parent_win.update()
+                            try:
+                                text = recognizer.recognize_google(audio)
+                                entry_widget.delete(0, tk.END)
+                                entry_widget.insert(0, text)
+                                status_var.set("Voice recognized.")
+                            except Exception as recog_err:
+                                entry_widget.delete(0, tk.END)
+                                entry_widget.insert(0, "[Recognition error]")
+                                print(f"STT error: {recog_err}")
+                                status_var.set("Voice recognition error.")
+                    except Exception as e:
+                        entry_widget.config(state="normal")
+                        entry_widget.delete(0, tk.END)
+                        entry_widget.insert(0, "[Voice error]")
+                        print(f"STT error: {e}")
+                        status_var.set("Voice recognition error.")
                     finally:
-                        try:
-                            if src is not None and hasattr(src, "close"):
-                                src.close()
-                        except Exception as cleanup_exc:
-                            logger.debug(
-                                "Cleanup error in Multi-User Chat speech: %s",
-                                cleanup_exc,
-                            )
-
-                        parent_win.after(0, lambda: entry_widget.config(state="normal"))
+                        entry_widget.config(state="normal")
+                        parent_win.update()
 
                 threading.Thread(target=recognize, daemon=True).start()
 
-            # Place mic and wav buttons left, next to source for discoverability
             mic_btn = tk.Button(
-                toolbar_frame,
+                entry_frame,
                 text="🎤",
                 width=2,
                 command=lambda: recognize_speech_to_entry(user_entry, chat_win),
             )
-            mic_btn.pack(side="left", padx=(4, 0))
-            mic_btn_ref["btn"] = mic_btn
+            mic_btn.pack(side="left", padx=(0, 4))
             ToolTip(mic_btn, "Voice input: dictate your message.")
 
-            def load_wav_for_stt(entry_widget, parent_win):
-                """Prompt for a WAV/audio file, run STT on it, and populate the entry with the result.
-                Falls back to using speech_recognition.AudioFile and self._recognize_stt_audio if no helper exists.
-                """
-                import threading
+        # Voice output (speaker) button
+        if getattr(self, "tts_available", False):
 
-                try:
-                    from tkinter import filedialog
-                except Exception:
-                    filedialog = None
-
-                if filedialog is None:
+            def speak_last_bot_reply():
+                msgs = self.message_router.get_messages()
+                last = None
+                for m in reversed(msgs):
+                    if m["sender"] in ("Bot", "Computer") and m.get("text"):
+                        last = m["text"]
+                        break
+                if last and self.tts_available:
                     try:
-                        entry_widget.insert(0, "[No file dialog available]")
-                    except Exception:
-                        pass
-                    return
-
-                file_path = filedialog.askopenfilename(
-                    title="Select WAV file for STT",
-                    filetypes=[
-                        ("WAV files", "*.wav"),
-                        ("All audio", "*.wav;*.mp3;*.flac"),
-                    ],
-                )
-                if not file_path:
-                    return
-
-                def worker():
-                    try:
-                        # Prefer an existing helper if defined on self
-                        if hasattr(self, "_recognize_wav_file"):
-                            result = self._recognize_wav_file(file_path)
-                        else:
-                            import speech_recognition as sr
-
-                            recognizer = (
-                                getattr(self, "stt_recognizer", None) or sr.Recognizer()
-                            )
-                            with sr.AudioFile(file_path) as source:
-                                audio = recognizer.record(source)
-                            result = self._recognize_stt_audio(recognizer, audio)
-                        parent_win.after(
-                            0,
-                            lambda: (
-                                entry_widget.delete(0, tk.END),
-                                entry_widget.insert(0, result),
-                            ),
-                        )
-                        parent_win.after(
-                            0, lambda: status_var.set(f"Recognized: {result}")
-                        )
+                        self.tts_engine.say(last)
+                        self.tts_engine.runAndWait()
+                        status_var.set("Spoken last bot reply.")
                     except Exception as e:
-                        parent_win.after(
-                            0,
-                            lambda: (
-                                entry_widget.delete(0, tk.END),
-                                entry_widget.insert(0, "[WAV error]"),
-                            ),
-                        )
-                        parent_win.after(0, lambda: status_var.set(f"WAV error: {e}"))
+                        print(f"TTS error: {e}")
+                        status_var.set("TTS error.")
 
-                threading.Thread(target=worker, daemon=True).start()
-
-            wav_btn = tk.Button(
-                toolbar_frame,
-                text="📁",
-                width=2,
-                command=lambda: load_wav_for_stt(user_entry, chat_win),
+            speaker_btn = tk.Button(
+                entry_frame, text="🔊", width=2, command=speak_last_bot_reply
             )
-            wav_btn.pack(side="left", padx=(4, 0))
-            ToolTip(wav_btn, "Load WAV file and run STT (for testing).")
+            speaker_btn.pack(side="left", padx=(0, 4))
+            ToolTip(speaker_btn, "Read aloud the last bot reply.")
 
-        # Advanced menu
-        advanced_mb = tk.Menubutton(toolbar_frame, text="⋯", width=3, relief=tk.RAISED)
-        adv_menu = tk.Menu(advanced_mb, tearoff=0)
-        advanced_mb.config(menu=adv_menu)
-        adv_menu.add_checkbutton(
-            label="Record / Play", variable=rec_play_var, command=on_toggle_rec_play
-        )
-        adv_menu.add_command(
-            label="Load Recording...", command=self._load_recording_file
-        )
-        adv_menu.add_command(
-            label="Save Recording As...", command=self._save_recording_as
-        )
-        adv_menu.add_command(
-            label="Load WAV for STT...",
-            command=lambda: load_wav_for_stt(user_entry, chat_win),
-        )
-        advanced_mb.pack(side="right", padx=(4, 0))
+        # --- User state (no authentication) ---
+        self.logged_in_user = {"name": user_names[0]}
+        self.user_status = {"msg": ""}
 
-        # Add a compatibility Checkbutton labeled 'Record / Play' so tests that
-        # expect a visible Checkbutton can find it. It shares the same variable
-        # and command as the menu checkbutton but is not packed so the visual
-        # layout remains icon-only.
-        compat_rec_play_check = tk.Checkbutton(
-            toolbar_frame,
-            text="Record / Play",
-            variable=rec_play_var,
-            command=on_toggle_rec_play,
-        )
-        # Provide a tooltip for test accessibility; do not pack so UI stays icon-only.
-        ToolTip(compat_rec_play_check, "Toggle Record / Play mode.")
-
-        # Initialize controls
-        refresh_audio_controls()
-
-        # Row 3: User entry (message input)
-        row3_frame = tk.Frame(entry_frame)
-        row3_frame.pack(fill="both", expand=True)
-
-        # Row 3: User entry (message input)
-        row3_frame = tk.Frame(entry_frame)
-        row3_frame.pack(fill="both", expand=True)
-
-        user_entry = tk.Entry(row3_frame, font=("Consolas", 10))
-        user_entry.pack(side="left", fill="both", expand=True, ipady=6)
-        ToolTip(user_entry, "Type your message here. Press Enter to send.")
-
-        # --- User state (per window) ---
-        current_user["name"] = user_names[0]
-        user_status = {"msg": ""}
-
-        def append_chat(
-            sender, recipients, msg, file_meta=None, timestamp=None, notify=True
-        ):
+        def append_chat(sender, recipients, msg, file_meta=None, timestamp=None):
             chat_display.config(state="normal")
             avatar_map = {
                 "Captain": "🧑‍✈️",
@@ -2927,7 +1397,9 @@ class CrewGUI:
             if file_meta:
 
                 def open_file_callback(path=file_meta["filepath"]):
-                    self._open_url_in_browser(Path(path).resolve().as_uri())
+                    import webbrowser
+
+                    webbrowser.open(f"file://{os.path.abspath(path)}")
 
                 file_tag = f"file_{chat_display.index(tk.END)}"
                 chat_display.insert(
@@ -2943,16 +1415,19 @@ class CrewGUI:
             chat_display.see(tk.END)
             chat_display.config(state="disabled")
             # Notification hook: show popup if message is from another user
-            if notify and sender != current_user["name"] and not mute_notifications[0]:
+            if sender != self.logged_in_user["name"] and not mute_notifications[0]:
                 self._show_chat_notification(f"New message from {sender}")
             status_var.set(f"Last message from {sender} at {time.strftime('%H:%M:%S')}")
 
         # Notification popup (extensible for future notification systems)
         def _show_chat_notification(self, msg):
             try:
-                status_var.set(msg)
-                if self.root.winfo_exists():
-                    self.root.bell()
+                from tkinter import messagebox
+
+                # Non-blocking notification (could be replaced with a toast or status bar update)
+                threading.Thread(
+                    target=lambda: messagebox.showinfo("Crew Chat", msg)
+                ).start()
             except Exception:
                 pass
 
@@ -2960,16 +1435,14 @@ class CrewGUI:
         self._show_chat_notification = _show_chat_notification.__get__(self)
 
         def send_message(event=None):
-            sender = current_user["name"]
+            sender = self.logged_in_user["name"]
             recipient_val = recipient_var.get().strip()
             if recipient_val == "All":
-                recipients = [name for name in user_names if name != sender]
+                recipients = user_names
             elif recipient_val in user_names:
                 recipients = [recipient_val]
             else:
                 recipients = [recipient_val]
-            if not recipients:
-                recipients = [sender]
             msg = user_entry.get().strip()
             file_meta = None
             if attached_file["path"]:
@@ -2977,18 +1450,12 @@ class CrewGUI:
                     os.path.expanduser("~"), ".crew_chat_files"
                 )
                 os.makedirs(chat_files_dir, exist_ok=True)
-                source_path = Path(attached_file["path"])
-                stored_filename = (
-                    f"{source_path.stem}-{uuid.uuid4().hex}{source_path.suffix}"
-                )
-                dest_path = os.path.join(chat_files_dir, stored_filename)
+                dest_path = os.path.join(chat_files_dir, attached_file["filename"])
                 try:
                     shutil.copy2(attached_file["path"], dest_path)
                     file_meta = {
                         "filepath": dest_path,
                         "filename": attached_file["filename"],
-                        "stored_filename": stored_filename,
-                        "size_bytes": os.path.getsize(dest_path),
                     }
                 except Exception as e:
                     print(f"Failed to copy attached file: {e}")
@@ -2998,49 +1465,32 @@ class CrewGUI:
                 attach_btn.config(text="Attach File")
             if not (msg or file_meta) or not recipients:
                 return
-            # Use UserStrategy to process message
-            response = user_strategy.process_message(msg) if msg else ""
             self.message_router.send_message(
-                sender,
-                recipients,
-                msg if msg else "[File sent]",
-                file_meta=file_meta,
-                room=chat_room,
+                sender, recipients, msg if msg else "[File sent]", file_meta=file_meta
             )
             append_chat(sender, recipients, msg, file_meta)
-            # Optionally, display bot response (if needed)
-            if response:
-                self.message_router.send_message(
-                    user_strategy.name, [sender], response, room=chat_room
-                )
-                append_chat(user_strategy.name, [sender], response)
             user_entry.delete(0, tk.END)
-            refresh_audio_controls()
             status_var.set(f"Message sent at {time.strftime('%H:%M:%S')}")
 
         def refresh_messages():
             chat_display.config(state="normal")
             chat_display.delete(1.0, tk.END)
-            for m in self.message_router.get_messages(room=chat_room):
+            for m in self.message_router.get_messages():
                 append_chat(
-                    m["sender"],
-                    m["recipients"],
-                    m.get("text", ""),
-                    m.get("file"),
-                    notify=False,
+                    m["sender"], m["recipients"], m.get("text", ""), m.get("file")
                 )
             status_var.set("Messages refreshed.")
             chat_display.config(state="disabled")
 
         def update_user(event=None):
-            current_user["name"] = login_user_var.get().strip()
+            self.logged_in_user["name"] = login_user_var.get().strip()
             login_status.config(
-                text=f"Chatting as {current_user['name']}", fg="#228B22"
+                text=f"Chatting as {self.logged_in_user['name']}", fg="#228B22"
             )
             user_entry.config(state="normal")
             send_btn.config(state="normal")
             attach_btn.config(state="normal")
-            status_var.set(f"User set to {current_user['name']}")
+            status_var.set(f"User set to {self.logged_in_user['name']}")
 
         login_btn = tk.Button(login_frame, text="Set User", command=update_user)
         login_btn.pack(side="left", padx=(8, 0))
@@ -3048,49 +1498,21 @@ class CrewGUI:
         login_user_menu.bind("<Return>", update_user)
 
         user_entry.bind("<Return>", send_message)
-
-        def show_chat_help():
-            messagebox.showinfo(
-                "Crew Chat Help",
-                "Choose a crew role, pick a recipient, type a message, and press Send.\n"
-                "Use the Options menu for history, filters, and appearance settings.",
-            )
-
+        send_btn = tk.Button(
+            entry_frame, text="Send", command=send_message, state="normal"
+        )
+        send_btn.pack(side="right")
         user_entry.config(state="normal")
         attach_btn.config(state="normal")
 
         # Menu for extra features
-        menu_bar = tk.Menu(chat_win, tearoff=0)
+        menu_bar = tk.Menu(chat_win)
         chat_win.config(menu=menu_bar)
         # json, filedialog, and messagebox already imported at the top
         options_menu = tk.Menu(menu_bar, tearoff=0)
         menu_bar.add_cascade(label="Options", menu=options_menu)
-        status_reset_job = {"id": None}
-
-        def reset_status():
-            status_reset_job["id"] = None
-            if chat_win.winfo_exists():
-                status_var.set("Ready.")
-
-        def cancel_status_reset(event=None):
-            if status_reset_job["id"] is not None:
-                try:
-                    chat_win.after_cancel(status_reset_job["id"])
-                except tk.TclError:
-                    pass
-                status_reset_job["id"] = None
-
-        chat_win.bind("<Destroy>", cancel_status_reset, add="+")
 
         # --- Change Username Dialog ---
-        def menu_status(message):
-            status_var.set(message)
-            cancel_status_reset()
-            try:
-                status_reset_job["id"] = chat_win.after(3000, reset_status)
-            except tk.TclError:
-                status_reset_job["id"] = None
-
         def change_username_dialog():
             dialog = tk.Toplevel(chat_win)
             dialog.title("Change Username")
@@ -3098,19 +1520,18 @@ class CrewGUI:
             dialog.resizable(False, False)
             tk.Label(dialog, text="Enter new username:").pack(pady=(12, 4))
             entry = tk.Entry(dialog)
-            entry.insert(0, current_user["name"])
+            entry.insert(0, self.logged_in_user["name"])
             entry.pack(padx=12, pady=4)
 
             def set_username():
                 new_name = entry.get().strip()
                 if new_name:
-                    current_user["name"] = new_name
+                    self.logged_in_user["name"] = new_name
                     login_status.config(text=f"Chatting as {new_name}", fg="#228B22")
                     status_var.set(f"Username changed to {new_name}")
                     dialog.destroy()
 
             tk.Button(dialog, text="OK", command=set_username).pack(pady=8)
-            self._apply_dark_theme(dialog)
             entry.focus_set()
 
         # --- Set Status Message Dialog ---
@@ -3133,24 +1554,20 @@ class CrewGUI:
                 dialog.destroy()
 
             tk.Button(dialog, text="OK", command=set_status).pack(pady=8)
-            self._apply_dark_theme(dialog)
             entry.focus_set()
 
         options_menu.add_command(label="Refresh Messages", command=refresh_messages)
         options_menu.add_command(
             label="Clear All Messages",
-            command=lambda: (
-                self.message_router.clear_messages(room=chat_room),
-                refresh_messages(),
-            ),
+            command=lambda: (self.message_router.clear_messages(), refresh_messages()),
         )
         options_menu.add_command(label="Undo Last Message", command=undo_last_message)
         options_menu.add_separator()
         options_menu.add_command(
-            label="Change Username...", command=change_username_dialog
+            label="Change Username...", command=self.change_username_dialog
         )
         options_menu.add_command(
-            label="Set Status Message...", command=set_status_dialog
+            label="Set Status Message...", command=self.set_status_dialog
         )
         # Add Select Microphone option if STT is available
         if self.stt_available:
@@ -3241,7 +1658,7 @@ class CrewGUI:
             try:
                 with open(file_path, "w", encoding="utf-8") as f:
                     json.dump(
-                        self.message_router.get_messages(room=chat_room),
+                        self.message_router.get_messages(),
                         f,
                         ensure_ascii=False,
                         indent=2,
@@ -3265,14 +1682,13 @@ class CrewGUI:
                     imported = json.load(f)
                 if not isinstance(imported, list):
                     raise ValueError("Invalid chat history format.")
-                self.message_router.clear_messages(room=chat_room)
+                self.message_router.clear_messages()
                 for m in imported:
                     self.message_router.send_message(
                         m.get("sender", "Unknown"),
                         m.get("recipients", ["All"]),
                         m.get("text", ""),
                         m.get("file", None),
-                        room=chat_room,
                     )
                 refresh_messages()
                 messagebox.showinfo(
@@ -3285,13 +1701,10 @@ class CrewGUI:
 
         def copy_all_messages():
             try:
-                all_msgs = self.message_router.get_messages(room=chat_room)
+                all_msgs = self.message_router.get_messages()
                 lines = []
                 for m in all_msgs:
-                    line = (
-                        f"{m['sender']} → {', '.join(m['recipients'])}: "
-                        f"{m.get('text', '')}"
-                    )
+                    line = f"{m['sender']} → {', '.join(m['recipients'])}: {m.get('text','')}"
                     if m.get("file"):
                         line += f" [File: {m['file']['filename']}]"
                     lines.append(line)
@@ -3365,12 +1778,9 @@ class CrewGUI:
         options_menu.add_command(label="About Crew Chat", command=show_about)
 
         # Initial load: show welcome if no messages
-        if not self.message_router.get_messages(room=chat_room):
+        if not self.message_router.get_messages():
             self.message_router.send_message(
-                "Bot",
-                ["All"],
-                "Welcome to Crew Chat! Start your conversation below.",
-                room=chat_room,
+                "Bot", ["All"], "Welcome to Crew Chat! Start your conversation below."
             )
         refresh_messages()
         user_entry.focus_set()
@@ -3390,14 +1800,6 @@ class CrewGUI:
 
         self._on_message_reaction = on_message_reaction
         self._on_message_edit = on_message_edit
-        self._apply_dark_theme(chat_win)
-        self._configure_dark_menu(menu_bar)
-        login_status.config(fg=DARK_SUCCESS)
-        chat_win.chat_display = chat_display
-        chat_win.user_entry = user_entry
-        chat_win.send_button = send_btn
-        chat_win.status_var = status_var
-        return chat_win
 
     # --- Chatbot command handling stub ---
     def handle_chatbot_command(self, command: str, *args, **kwargs):
@@ -3413,20 +1815,17 @@ class CrewGUI:
 
     def open_chatbot_dialog(self):
         """Open a chatbot dialog window with persistent chat history and improved logic."""
-        from strategies.referee_strategy import RefereeStrategy
-
-        llm_backend = getattr(self, "llm_backend_var", None)
-        backend = llm_backend.get() if llm_backend else "ollama"
-        referee_strategy = RefereeStrategy(llm_backend=backend)
+        # json already imported at the top
 
         chat_win = tk.Toplevel(self.root)
         chat_win.title("Crew Chatbot")
         chat_win.geometry("500x600")
         chat_win.resizable(True, True)
-        logger.info(f"🔍 Chatbot window created. STT available: {self.stt_available}")
 
+        # Persistent history file
         history_path = os.path.join(os.path.expanduser("~"), ".crew_chat_history.json")
 
+        # --- Status Bar ---
         status_var = tk.StringVar(value="Ready.")
         status_bar = tk.Label(
             chat_win,
@@ -3437,367 +1836,179 @@ class CrewGUI:
             font=("Arial", 9),
         )
         status_bar.pack(side="bottom", fill="x")
+        ToolTip(status_bar, "Status and notifications for chat actions.")
+
         ToolTip(status_bar, "Shows status and feedback messages.")
 
+        # --- Search/filter bar ---
         filter_frame = tk.Frame(chat_win)
         filter_frame.pack(fill="x", padx=8, pady=(4, 0))
         tk.Label(filter_frame, text="Search:").pack(side="left")
         filter_var = tk.StringVar()
         filter_entry = tk.Entry(filter_frame, textvariable=filter_var)
         filter_entry.pack(side="left", fill="x", expand=True, padx=(4, 8))
+        ToolTip(
+            filter_entry,
+            "Type to search/filter chat messages. Press Enter to apply filter.",
+        )
+
         ToolTip(filter_entry, "Type to filter chat history. Press Enter to search.")
 
+        # Chat display area
         chat_display = tk.Text(
             chat_win,
             state="disabled",
             wrap="word",
-            bg=DARK_INPUT_BG,
-            fg=DARK_TEXT,
+            bg="#f8f8f8",
+            fg="#222",
             font=("Consolas", 10),
-            height=12,
         )
-        chat_display.pack(fill="both", expand=True, padx=8, pady=(4, 4))
-        self._bind_vertical_mousewheel(chat_display)
+        chat_display.pack(fill="both", expand=True, padx=8, pady=(8, 0))
+
         ToolTip(
             chat_display, "Chat history. Messages from you and the bot appear here."
         )
 
-        def load_history():
-            try:
-                with open(history_path, "r", encoding="utf-8") as history_file:
-                    data = json.load(history_file)
-            except (FileNotFoundError, json.JSONDecodeError, OSError):
-                return []
+        # --- Standardized 5-button interface ---
+        entry_frame = tk.Frame(chat_win)
+        entry_frame.pack(fill="x", padx=8, pady=8)
 
-            loaded_history = []
-            for entry in data if isinstance(data, list) else []:
-                if isinstance(entry, dict):
-                    loaded_history.append(
-                        {
-                            "sender": str(entry.get("sender", "Bot")),
-                            "message": str(entry.get("message", "")),
-                        }
-                    )
-                elif isinstance(entry, (list, tuple)) and len(entry) == 2:
-                    loaded_history.append(
-                        {"sender": str(entry[0]), "message": str(entry[1])}
-                    )
-            return loaded_history
+        # Rec/Play mode checkbox (per window)
 
-        conversation = load_history()
-        if not conversation:
-            conversation.append(
-                {
-                    "sender": "Bot",
-                    "message": "Welcome to Crew Chatbot! How can I help you today?",
-                }
-            )
-        last_bot_reply = [conversation[-1]["message"]]
-        bot_request_in_flight = [False]
+        rec_play_var = tk.BooleanVar(value=True)  # True=Record, False=Play
 
-        def save_history():
-            try:
-                with open(history_path, "w", encoding="utf-8") as history_file:
-                    json.dump(conversation, history_file, ensure_ascii=False, indent=2)
-            except OSError as exc:
-                logger.warning("Failed to save chatbot history: %s", exc)
-
-        def append_chat(sender, message):
-            chat_display.config(state="normal")
-            chat_display.insert(tk.END, f"{sender}: {message}\n")
-            chat_display.see(tk.END)
-            chat_display.config(state="disabled")
-            status_var.set(f"Last message from {sender}.")
-
-        def redraw_messages():
-            query = filter_var.get().strip().lower()
-            chat_display.config(state="normal")
-            chat_display.delete(1.0, tk.END)
-            for item in conversation:
-                sender = item.get("sender", "Bot")
-                message = item.get("message", "")
-                if item.get("pending"):
-                    sender = "Bot"
-                    message = f"{message}..."
-                if not query or query in sender.lower() or query in message.lower():
-                    chat_display.insert(tk.END, f"{sender}: {message}\n")
-            chat_display.config(state="disabled")
-
-        def bot_reply_task(user_msg):
-            try:
-                return self.generate_bot_reply(user_msg)
-            except Exception as exc:
-                logger.warning("Chatbot reply generation failed: %s", exc)
-                return referee_strategy.process_message(user_msg)
-
-        def on_bot_reply(reply):
-            bot_request_in_flight[0] = False
-            if not chat_win.winfo_exists():
-                return
-            for item in reversed(conversation):
-                if item.get("pending"):
-                    item["sender"] = "Bot"
-                    item["message"] = reply
-                    item.pop("pending", None)
-                    break
+        def on_toggle_rec_play():
+            if rec_play_var.get():
+                start_stop_btn.config(text="START")
+                save_load_btn.config(text="SAVE")
             else:
-                conversation.append({"sender": "Bot", "message": reply})
-            last_bot_reply[0] = reply
-            redraw_messages()
-            save_history()
-            send_btn.config(state="normal")
-            user_entry.config(state="normal")
-            status_var.set("Bot replied.")
-            user_entry.focus_set()
+                start_stop_btn.config(text="STOP")
+                save_load_btn.config(text="LOAD")
 
-        def send_message(event=None):
-            user_msg = user_entry.get().strip()
-            if not user_msg:
-                status_var.set("Type a message before sending.")
-                return "break"
-            if bot_request_in_flight[0]:
-                status_var.set("Wait for the current reply to finish.")
-                return "break"
-            conversation.append({"sender": "You", "message": user_msg})
-            append_chat("You", user_msg)
-            conversation.append(
-                {"sender": "Bot", "message": "Thinking", "pending": True}
-            )
-            redraw_messages()
-            user_entry.delete(0, tk.END)
-            save_history()
-            bot_request_in_flight[0] = True
-            send_btn.config(state="disabled")
-            user_entry.config(state="disabled")
-            status_var.set("Bot is thinking...")
-            self.run_in_background(bot_reply_task, user_msg, callback=on_bot_reply)
-            user_entry.focus_set()
-            return "break"
+        rec_play_chk = tk.Checkbutton(
+            entry_frame,
+            text="Rec/Play",
+            variable=rec_play_var,
+            command=on_toggle_rec_play,
+        )
+        rec_play_chk.pack(side="left", padx=(0, 8))
+        ToolTip(rec_play_chk, "Toggle between Record and Play mode for this window.")
 
-        def clear_history():
-            conversation[:] = [
-                {
-                    "sender": "Bot",
-                    "message": "Chat history cleared. How can I help you today?",
-                }
-            ]
-            last_bot_reply[0] = conversation[0]["message"]
-            redraw_messages()
-            save_history()
-            status_var.set("Chatbot history cleared.")
+        # SET: Microphone setup button
+        set_btn = tk.Button(
+            entry_frame,
+            text="SET",
+            width=4,
+            command=lambda: self.root.after(0, self.show_microphone_selection_dialog),
+        )
+        set_btn.pack(side="left", padx=(0, 4))
+        ToolTip(set_btn, "Set up/select microphone device.")
 
-        def load_wav_for_stt(entry_widget, parent_win):
-            """Load a WAV file and run STT on it for testing."""
-            if not self.stt_available:
-                status_var.set("Speech recognition is unavailable.")
-                return
+        # START/STOP: Recording or Playing
+        def start_stop_action():
+            if rec_play_var.get():
+                self._start_recording()
+                status_var.set("Recording started.")
+            else:
+                self._play_recording()
+                status_var.set("Playback started.")
 
-            wav_file = filedialog.askopenfilename(
-                title="Select WAV file for speech recognition",
+        start_stop_btn = tk.Button(
+            entry_frame, text="START", width=10, command=start_stop_action
+        )
+        start_stop_btn.pack(side="left", padx=(0, 4))
+        ToolTip(start_stop_btn, "Start/Stop recording or playback depending on mode.")
+
+        # SAVE/LOAD: Save or Load file
+        def save_load_action():
+            if rec_play_var.get():
+                self._save_recording_as()
+                status_var.set("Recording saved.")
+            else:
+                messagebox.showinfo("Load", "Load functionality not yet implemented.")
+
+        save_load_btn = tk.Button(
+            entry_frame, text="SAVE", width=10, command=save_load_action
+        )
+        save_load_btn.pack(side="left", padx=(0, 4))
+        ToolTip(
+            save_load_btn, "Save recording (Rec) or load file (Play) depending on mode."
+        )
+
+        # Ensure initial label state
+        on_toggle_rec_play()
+
+    def _load_recording_file(self):
+        """Open a file dialog to load and play a .wav file."""
+        from tkinter import filedialog, messagebox
+
+        try:
+            file_path = filedialog.askopenfilename(
+                title="Select WAV file to play",
                 filetypes=[("WAV files", "*.wav"), ("All files", "*.*")],
             )
-            if not wav_file:
+            if not file_path:
                 return
-
-            import speech_recognition as sr
-
-            def recognize_from_file():
-                recognizer = self.stt_recognizer
-                try:
-
-                    def set_loading():
-                        entry_widget.config(state="disabled")
-                        entry_widget.delete(0, tk.END)
-                        entry_widget.insert(0, "Loading WAV...")
-
-                    parent_win.after(0, set_loading)
-
-                    with sr.AudioFile(wav_file) as source:
-                        audio = recognizer.record(source)
-
-                    def set_recognizing():
-                        entry_widget.delete(0, tk.END)
-                        entry_widget.insert(0, "Recognizing...")
-
-                    parent_win.after(0, set_recognizing)
-
-                    result_text = self._recognize_stt_audio(recognizer, audio)
-
-                    def set_result():
-                        logger.info(f"[WAV] About to display: '{result_text}'")
-                        try:
-                            entry_widget.config(state="normal")
-                            entry_widget.delete(0, tk.END)
-                            entry_widget.insert(0, result_text)
-                            status_var.set(f"Recognized: {result_text}")
-                            logger.info(
-                                f"[WAV] Text inserted into entry widget and status bar"
-                            )
-                        except Exception as widget_err:
-                            logger.error(f"[WAV] Display error: {widget_err}")
-
-                    parent_win.after(0, set_result)
-                except Exception as exc:
-                    logger.warning("WAV recognition failed: %s", exc)
-
-                    def set_error():
-                        entry_widget.delete(0, tk.END)
-                        entry_widget.insert(0, "[WAV error]")
-                        status_var.set("WAV recognition error.")
-
-                    parent_win.after(0, set_error)
-                finally:
-
-                    def reset_ui():
-                        entry_widget.config(state="normal")
-
-                    parent_win.after(0, reset_ui)
-
-            threading.Thread(target=recognize_from_file, daemon=True).start()
-
-        def speak_last_bot_reply():
-            if self.tts_available and last_bot_reply[0]:
-                try:
-                    self._speak_text_with_lead_in(last_bot_reply[0])
-                    status_var.set("Spoken last bot reply.")
-                except Exception as exc:
-                    logger.warning("TTS error: %s", exc)
-                    status_var.set("TTS error.")
-
-        # Track recording state for all mic operations
-        recording_state = {"active": False, "recognizer": None}
-        mic_btn_ref = {"btn": None}  # Store button reference
-
-        def recognize_speech_to_entry(entry_widget, parent_win):
-            if not self.stt_available:
-                status_var.set("Speech recognition is unavailable.")
+            if not file_path.lower().endswith(".wav"):
+                messagebox.showerror("Invalid File", "Please select a .wav file.")
                 return
+            # Import play_audio from audio_manager
+            from audio_manager import play_audio
 
-            import threading
+            play_audio(file_path)
+        except Exception as e:
+            messagebox.showerror("Playback Error", f"Could not play file:\n{e}")
 
-            import speech_recognition as sr
+        # User entry (center, expands)
+        user_entry = tk.Entry(entry_frame, font=("Consolas", 10))
+        user_entry.pack(side="left", fill="x", expand=True, padx=(0, 8))
+        ToolTip(user_entry, "Type your message here. Press Enter to send.")
 
-            # Toggle recording state
-            if recording_state["active"]:
-                # Stop recording
-                recording_state["active"] = False
-                status_var.set("Stopping recording...")
-                return
+        # Send button (added for accessibility)
+        send_btn = tk.Button(
+            entry_frame, text="Send", width=8, command=lambda: send_message()
+        )
+        send_btn.pack(side="left", padx=(0, 4))
+        ToolTip(send_btn, "Send your message (or press Enter)")
 
-            # Start recording
-            recording_state["active"] = True
+        # Voice input (mic) button
+        if self.stt_available:
+            mic_btn = tk.Button(
+                entry_frame,
+                text="🎤",
+                width=2,
+                command=lambda: recognize_speech_to_entry(user_entry, chat_win),
+            )
+            mic_btn.pack(side="left", padx=(0, 4))
+            ToolTip(mic_btn, "Voice input: dictate your message.")
 
-            def recognize():
-                recognizer = self.stt_recognizer
-                recording_state["recognizer"] = recognizer
-                mic_index = getattr(self, "selected_mic_index", None)
-                src = None
-                try:
-                    src = (
-                        sr.Microphone(device_index=mic_index)
-                        if mic_index is not None
-                        else sr.Microphone()
-                    )
-                    with src as source:
-                        # Set UI to listening state
-                        def set_listening():
-                            entry_widget.config(state="disabled")
-                            entry_widget.delete(0, tk.END)
-                            entry_widget.insert(0, "Listening... (click STOP to end)")
-                            if mic_btn_ref["btn"]:
-                                mic_btn_ref["btn"].config(text="⏹ STOP")
+        # Voice output (speaker) button
+        if self.tts_available:
+            speaker_btn = tk.Button(
+                entry_frame, text="🔊", width=2, command=lambda: speak_last_bot_reply()
+            )
+            speaker_btn.pack(side="left", padx=(0, 4))
+            ToolTip(speaker_btn, "Read aloud the last bot reply.")
 
-                        parent_win.after(0, set_listening)
+        # --- Menu bar for chat tools ---
+        menu_bar = tk.Menu(chat_win)
+        chat_win.config(menu=menu_bar)
+        ToolTip(
+            chat_win,
+            "Crew Multi-User Chat: Menu bar for options, appearance, and more.",
+        )
+        options_menu = tk.Menu(menu_bar, tearoff=0)
+        menu_bar.add_cascade(label="Options", menu=options_menu)
 
-                        self._prepare_stt_source(recognizer, source)
+        # Tooltips for menu options (shown on click, not hover, due to Tkinter limitations)
+        # Instead, add status bar feedback on menu open
+        def menu_status(msg):
+            status_var.set(msg)
+            chat_win.after(3000, lambda: status_var.set("Ready."))
 
-                        # Listen - will be interrupted when user clicks STOP or timeout
-                        try:
-                            audio = recognizer.listen(
-                                source,
-                                timeout=self._get_stt_setting("listen_timeout", 15.0),
-                                phrase_time_limit=self._get_stt_setting(
-                                    "phrase_time_limit",
-                                    60.0,  # Increased to 60s for longer phrases
-                                ),
-                            )
-                        except sr.exceptions.RequestError as e:
-                            logger.error(f"[Mic] Listen error: {e}")
-
-                            def set_error():
-                                entry_widget.config(state="normal")
-                                entry_widget.delete(0, tk.END)
-                                status_var.set(f"[Listen error: {e}]")
-                                if mic_btn_ref["btn"]:
-                                    mic_btn_ref["btn"].config(text="🎤")
-                                recording_state["active"] = False
-
-                            parent_win.after(0, set_error)
-                            return
-
-                        if not recording_state["active"]:
-                            logger.info("[Mic] Recording stopped by user")
-
-                            def set_stopped():
-                                entry_widget.config(state="normal")
-                                status_var.set("Recording stopped.")
-                                if mic_btn_ref["btn"]:
-                                    mic_btn_ref["btn"].config(text="🎤")
-
-                            parent_win.after(0, set_stopped)
-                            return
-
-                        # Set UI to recognizing state
-                        def set_recognizing():
-                            entry_widget.delete(0, tk.END)
-                            entry_widget.insert(0, "Recognizing...")
-
-                        parent_win.after(0, set_recognizing)
-
-                        result_text = self._recognize_stt_audio(recognizer, audio)
-
-                        # Set UI to show result in both entry widget and status bar
-                        def set_result():
-                            logger.info(f"[Mic] About to display: '{result_text}'")
-                            try:
-                                entry_widget.config(state="normal")
-                                entry_widget.delete(0, tk.END)
-                                entry_widget.insert(0, result_text)
-                                entry_widget.config(state="normal")
-                                status_var.set(f"Recognized: {result_text}")
-                                logger.info(
-                                    f"[Mic] Text inserted into entry widget and status bar"
-                                )
-                                # Reset button
-                                if mic_btn_ref["btn"]:
-                                    mic_btn_ref["btn"].config(text="🎤")
-                                recording_state["active"] = False
-                            except Exception as widget_err:
-                                logger.error(f"[Mic] Display error: {widget_err}")
-
-                        parent_win.after(0, set_result)
-                except Exception as exc:
-                    logger.warning("Chatbot speech recognition failed: %s", exc)
-
-                    def set_error():
-                        entry_widget.delete(0, tk.END)
-                        entry_widget.insert(0, "[Voice error]")
-                        status_var.set("Voice recognition error.")
-
-                    parent_win.after(0, set_error)
-                finally:
-                    try:
-                        if src is not None and hasattr(src, "close"):
-                            src.close()
-                    except Exception as cleanup_exc:
-                        logger.debug("Cleanup error in Chatbot speech: %s", cleanup_exc)
-
-                    def reset_ui():
-                        entry_widget.config(state="normal")
-
-                    parent_win.after(0, reset_ui)
-
-            threading.Thread(target=recognize, daemon=True).start()
+        options_menu.bind(
+            "<Enter>", lambda e: menu_status("Options menu: chat tools and settings.")
+        )
 
         def export_chat_history():
             file_path = filedialog.asksaveasfilename(
@@ -3808,14 +2019,14 @@ class CrewGUI:
             if not file_path:
                 return
             try:
-                with open(file_path, "w", encoding="utf-8") as export_file:
-                    json.dump(conversation, export_file, ensure_ascii=False, indent=2)
+                with open(file_path, "w", encoding="utf-8") as f:
+                    json.dump(conversation, f, ensure_ascii=False, indent=2)
                 messagebox.showinfo(
                     "Export Chatbot History", f"Chatbot history exported to {file_path}"
                 )
-            except OSError as exc:
+            except Exception as e:
                 messagebox.showerror(
-                    "Export Error", f"Failed to export chatbot history:\n{exc}"
+                    "Export Error", f"Failed to export chatbot history:\n{e}"
                 )
 
         def import_chat_history():
@@ -3825,67 +2036,47 @@ class CrewGUI:
             if not file_path:
                 return
             try:
-                with open(file_path, "r", encoding="utf-8") as import_file:
-                    imported = json.load(import_file)
+                with open(file_path, "r", encoding="utf-8") as f:
+                    imported = json.load(f)
                 if not isinstance(imported, list):
                     raise ValueError("Invalid chatbot history format.")
                 conversation.clear()
-                for item in imported:
-                    if isinstance(item, dict):
-                        conversation.append(
-                            {
-                                "sender": str(item.get("sender", "Bot")),
-                                "message": str(item.get("message", "")),
-                            }
-                        )
-                if not conversation:
-                    conversation.append(
-                        {
-                            "sender": "Bot",
-                            "message": "Welcome to Crew Chatbot! How can I help you today?",
-                        }
-                    )
-                last_bot_reply[0] = conversation[-1]["message"]
+                conversation.extend(imported)
                 redraw_messages()
-                save_history()
                 messagebox.showinfo(
-                    "Import Chatbot History", f"Imported {len(conversation)} messages."
+                    "Import Chatbot History", f"Imported {len(imported)} messages."
                 )
-            except (OSError, ValueError, json.JSONDecodeError) as exc:
+                save_history()
+            except Exception as e:
                 messagebox.showerror(
-                    "Import Error", f"Failed to import chatbot history:\n{exc}"
+                    "Import Error", f"Failed to import chatbot history:\n{e}"
                 )
 
         def copy_all_messages():
             try:
-                text = "\n".join(
-                    f"{item['sender']}: {item.get('message', '')}"
-                    for item in conversation
-                )
+                lines = []
+                for m in conversation:
+                    line = f"{m['sender']}: {m.get('message','')}"
+                    lines.append(line)
+                text = "\n".join(lines)
                 chat_win.clipboard_clear()
                 chat_win.clipboard_append(text)
                 messagebox.showinfo(
                     "Copy All Messages", "All chatbot messages copied to clipboard."
                 )
-            except tk.TclError as exc:
-                messagebox.showerror("Copy Error", f"Failed to copy messages:\n{exc}")
+            except Exception as e:
+                messagebox.showerror("Copy Error", f"Failed to copy messages:\n{e}")
 
         def show_about():
-            messagebox.showinfo(
-                "About Crew Chatbot",
+            about = (
                 "Crew Chatbot\n"
-                "Version: 1.0.0\n\n"
-                "Persistent chat assistant for Crew with local history, search, "
-                "voice helpers, and export/import tools.",
+                "Version: 1.0.0\n"
+                "\nImage processing and crew management assistant.\n"
+                "Author: Crew Team\n"
+                "License: MIT\n"
+                "\nFeatures:\n- Chatbot\n- Persistent history\n- Voice input/output\n- Export/import/copy history\n- Theme/font controls\n- More in Options menu.\n"
             )
-
-        def show_chatbot_help():
-            messagebox.showinfo(
-                "Chatbot Help",
-                "Type a message and press Send.\n"
-                "Use Search to filter history, Options for export/import, and "
-                "Rec/Play controls for audio helpers.",
-            )
+            messagebox.showinfo("About Crew Chatbot", about)
 
         def set_light_mode():
             chat_display.config(bg="#f8f8f8", fg="#222")
@@ -3893,10 +2084,8 @@ class CrewGUI:
             status_var.set("Light mode enabled.")
 
         def set_dark_mode():
-            chat_display.config(bg=DARK_INPUT_BG, fg=DARK_TEXT)
-            user_entry.config(
-                bg=DARK_INPUT_BG, fg=DARK_TEXT, insertbackground=DARK_TEXT
-            )
+            chat_display.config(bg="#222", fg="#f8f8f8")
+            user_entry.config(bg="#333", fg="#f8f8f8")
             status_var.set("Dark mode enabled.")
 
         def increase_font():
@@ -3915,216 +2104,6 @@ class CrewGUI:
             user_entry.config(font=font)
             status_var.set("Font size decreased.")
 
-        # --- 3-row layout for Chatbot ---
-        entry_frame = tk.Frame(chat_win)
-        entry_frame.pack(fill="x", padx=8, pady=8)
-
-        # Row 1: Recording controls
-        row1_frame = tk.Frame(entry_frame)
-        row1_frame.pack(fill="x", pady=(0, 4))
-
-        rec_play_var = tk.BooleanVar(value=True)
-
-        def primary_action():
-            if rec_play_var.get():
-                if self._recording_process is not None:
-                    self._stop_recording()
-                    status_var.set("Recording stopped.")
-                else:
-                    self._start_recording()
-                    status_var.set("Recording started.")
-            else:
-                self._play_recording()
-                status_var.set("Playback started.")
-            refresh_audio_controls()
-
-        def secondary_action():
-            if rec_play_var.get():
-                self._save_recording_as()
-                status_var.set("Recording saved.")
-            else:
-                self._load_recording_file()
-                status_var.set("Recording loaded.")
-
-        source_btn = tk.Button(
-            row1_frame,
-            text="🎤",
-            width=3,
-        )
-        source_btn.pack(side="left", padx=(0, 4))
-        source_tooltip = ToolTip(source_btn, "Choose the microphone for recording.")
-
-        primary_btn = tk.Button(row1_frame, text="⏺", width=3, command=primary_action)
-        primary_btn.pack(side="left", padx=(0, 4))
-        primary_tooltip = ToolTip(
-            primary_btn, "Start recording. Press again to stop and save it."
-        )
-
-        secondary_btn = tk.Button(
-            row1_frame, text="💾", width=3, command=secondary_action
-        )
-        secondary_btn.pack(side="left", padx=(0, 4))
-        secondary_tooltip = ToolTip(
-            secondary_btn, "Save the current recording to a file."
-        )
-
-        # Compatibility Checkbutton for tests (exists but not packed so UI stays compact)
-        compat_rec_play_check = tk.Checkbutton(
-            row1_frame,
-            text="Record / Play",
-            variable=rec_play_var,
-            command=primary_action,
-        )
-        ToolTip(compat_rec_play_check, "Toggle Record / Play mode.")
-
-        def refresh_audio_controls() -> None:
-            if rec_play_var.get():
-                source_btn.config(
-                    text="🎤",
-                    command=lambda: self.root.after(
-                        0, self.show_microphone_selection_dialog
-                    ),
-                )
-                source_tooltip.text = "Choose the microphone for recording."
-                primary_btn.config(
-                    text=("⏹" if self._recording_process is not None else "⏺")
-                )
-                primary_tooltip.text = (
-                    "Stop the current recording."
-                    if self._recording_process is not None
-                    else "Start recording. Press again to stop and save it."
-                )
-                secondary_btn.config(text="💾")
-                secondary_tooltip.text = "Save the current recording to a file."
-            else:
-                source_btn.config(text="📁", command=self._load_recording_file)
-                source_tooltip.text = "Choose the recording file or source to play."
-                primary_btn.config(text="▶️")
-                primary_tooltip.text = "Play the current recording."
-                secondary_btn.config(text="📂")
-                secondary_tooltip.text = "Load a recording file from disk."
-
-        refresh_audio_controls()
-
-        toolbar_frame = tk.Frame(entry_frame)
-        toolbar_frame.pack(fill="x", pady=(0, 4))
-
-        # Ensure there's a Send and Help button available for the chatbot toolbar
-        send_btn = tk.Button(toolbar_frame, text="➡️", width=3, command=send_message)
-        send_btn.pack(side="left", padx=(0, 4))
-        ToolTip(send_btn, "Send your message (or press Enter).")
-
-        help_btn = tk.Button(
-            toolbar_frame, text="?", width=3, command=show_chatbot_help
-        )
-        help_btn.pack(side="left", padx=(0, 4))
-        ToolTip(help_btn, "Show chat help.")
-
-        if self.stt_available:
-            logger.info(f"✅ Creating mic button - STT is available")
-            mic_btn_ref = {"btn": None}
-            mic_btn_ref["btn"] = tk.Button(
-                toolbar_frame,
-                text="🎤",
-                width=2,
-                command=lambda: recognize_speech_to_entry(user_entry, chat_win),
-            )
-            mic_btn_ref["btn"].pack(side="right", padx=(4, 0))
-            ToolTip(
-                mic_btn_ref["btn"],
-                "Voice input: click to start, click STOP to end recording.",
-            )
-
-            wav_btn = tk.Button(
-                toolbar_frame,
-                text="📁",
-                width=2,
-                command=lambda: load_wav_for_stt(user_entry, chat_win),
-            )
-            wav_btn.pack(side="right", padx=(4, 0))
-            ToolTip(wav_btn, "Load WAV file and run STT (for testing).")
-        else:
-            logger.warning(
-                f"❌ NOT creating mic button - STT unavailable ({self.stt_available})"
-            )
-
-        if self.tts_available:
-            speaker_btn = tk.Button(
-                toolbar_frame, text="🔊", width=2, command=speak_last_bot_reply
-            )
-            speaker_btn.pack(side="right", padx=(4, 0))
-            ToolTip(speaker_btn, "Read aloud the last bot reply.")
-
-        # Advanced menu for secondary actions
-        advanced_mb = tk.Menubutton(toolbar_frame, text="⋯", width=3, relief=tk.RAISED)
-        adv_menu = tk.Menu(advanced_mb, tearoff=0)
-        advanced_mb.config(menu=adv_menu)
-        adv_menu.add_checkbutton(
-            label="Record / Play", variable=rec_play_var, command=refresh_audio_controls
-        )
-        adv_menu.add_command(
-            label="Load Recording...", command=self._load_recording_file
-        )
-        adv_menu.add_command(
-            label="Save Recording As...", command=self._save_recording_as
-        )
-        adv_menu.add_command(
-            label="Load WAV for STT...",
-            command=lambda: load_wav_for_stt(user_entry, chat_win),
-        )
-        advanced_mb.pack(side="right", padx=(4, 0))
-
-        # Row 3: User entry (message input)
-        row3_frame = tk.Frame(entry_frame)
-        row3_frame.pack(fill="both", expand=True)
-
-        user_entry = tk.Entry(row3_frame, font=("Consolas", 10))
-        user_entry.pack(side="left", fill="both", expand=True, ipady=6)
-        ToolTip(user_entry, "Type your message here. Press Enter to send.")
-
-        user_entry.bind("<Return>", send_message)
-
-        menu_bar = tk.Menu(chat_win, tearoff=0)
-        chat_win.config(menu=menu_bar)
-        ToolTip(
-            chat_win,
-            "Crew Chatbot: Menu bar for options, appearance, and history tools.",
-        )
-        options_menu = tk.Menu(menu_bar, tearoff=0)
-        menu_bar.add_cascade(label="Options", menu=options_menu)
-        status_reset_job = {"id": None}
-
-        def menu_status(message):
-            status_var.set(message)
-            if status_reset_job["id"] is not None:
-                try:
-                    chat_win.after_cancel(status_reset_job["id"])
-                except tk.TclError:
-                    pass
-
-            def reset_status():
-                status_reset_job["id"] = None
-                if chat_win.winfo_exists():
-                    status_var.set("Ready.")
-
-            try:
-                status_reset_job["id"] = chat_win.after(3000, reset_status)
-            except tk.TclError:
-                status_reset_job["id"] = None
-
-        def cancel_status_reset(event=None):
-            if status_reset_job["id"] is not None:
-                try:
-                    chat_win.after_cancel(status_reset_job["id"])
-                except tk.TclError:
-                    pass
-                status_reset_job["id"] = None
-
-        chat_win.bind("<Destroy>", cancel_status_reset, add="+")
-
-        options_menu.bind(
-            "<Enter>", lambda e: menu_status("Options menu: chat tools and settings.")
-        )
         options_menu.add_command(
             label="Export Chatbot History...", command=export_chat_history
         )
@@ -4133,7 +2112,13 @@ class CrewGUI:
         )
         options_menu.add_command(label="Copy All Messages", command=copy_all_messages)
         options_menu.add_separator()
-        options_menu.add_command(label="Clear Chatbot History", command=clear_history)
+        options_menu.add_command(
+            label="Clear Chatbot History",
+            command=lambda: (
+                clear_history(),
+                status_var.set("Chatbot history cleared."),
+            ),
+        )
         options_menu.add_separator()
         options_menu.add_command(label="Light Mode", command=set_light_mode)
         options_menu.add_command(label="Dark Mode", command=set_dark_mode)
@@ -4142,17 +2127,150 @@ class CrewGUI:
         options_menu.add_separator()
         options_menu.add_command(label="About Crew Chatbot", command=show_about)
 
+        # --- Redraw messages for search/filter ---
+        def redraw_messages():
+            chat_display.config(state="normal")
+            chat_display.delete(1.0, tk.END)
+            query = filter_var.get().strip().lower()
+            for m in conversation:
+                if (
+                    not query
+                    or query in m.get("sender", "").lower()
+                    or query in m.get("message", "").lower()
+                ):
+                    chat_display.insert(
+                        tk.END, f"{m['sender']}: {m.get('message','')}\n"
+                    )
+            chat_display.config(state="disabled")
+
         filter_entry.bind("<Return>", lambda e: redraw_messages())
+
+        # ...existing code...
+
+        def load_history():
+            try:
+                with open(history_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    if isinstance(data, list):
+                        # Convert tuples to dicts if needed
+                        fixed = []
+                        for entry in data:
+                            if isinstance(entry, dict):
+                                fixed.append(entry)
+                            elif isinstance(entry, (list, tuple)) and len(entry) == 2:
+                                fixed.append({"sender": entry[0], "message": entry[1]})
+                        return fixed
+            except Exception:
+                pass
+            return []
+
+        conversation = load_history()
+        last_bot_reply = [""]  # mutable container for closure
+
+        # Show welcome if empty
+        if not conversation:
+            welcome_msg = "Welcome to Crew Chatbot! How can I help you today?"
+            conversation.append({"sender": "Bot", "message": welcome_msg})
         redraw_messages()
-        self._apply_dark_theme(chat_win)
-        self._configure_dark_menu(menu_bar)
-        user_entry.focus_set()
-        status_var.set("Ready. Crew Chatbot loaded.")
-        chat_win.chat_display = chat_display
-        chat_win.user_entry = user_entry
-        chat_win.send_button = send_btn
-        chat_win.status_var = status_var
-        return chat_win
+
+        # Bind Return key to Send button for accessibility
+        user_entry.bind("<Return>", lambda e: send_btn.invoke())
+
+        def save_history():
+            try:
+                with open(history_path, "w", encoding="utf-8") as f:
+                    json.dump(conversation, f, ensure_ascii=False, indent=2)
+            except Exception:
+                pass
+
+        def clear_history():
+            conversation.clear()
+            chat_display.config(state="normal")
+            chat_display.delete(1.0, tk.END)
+            append_chat("Bot", "Chat history cleared. How can I help you today?")
+            conversation.append(
+                {
+                    "sender": "Bot",
+                    "message": "Chat history cleared. How can I help you today?",
+                }
+            )
+            save_history()
+            status_var.set("Chatbot history cleared.")
+
+        def append_chat(sender, msg):
+            chat_display.config(state="normal")
+            chat_display.insert(tk.END, f"{sender}: {msg}\n")
+            chat_display.see(tk.END)
+            chat_display.config(state="disabled")
+            status_var.set(f"Last message from {sender}.")
+
+        def send_message(event=None):
+            user_msg = user_entry.get().strip()
+            if not user_msg:
+                return
+            conversation.append({"sender": "You", "message": user_msg})
+            append_chat("You", user_msg)
+            user_entry.delete(0, tk.END)
+            chat_win.after(200, lambda: bot_reply(user_msg))
+            save_history()
+            user_entry.focus_set()
+
+        def bot_reply(user_msg):
+            reply = self.generate_bot_reply(user_msg)
+            conversation.append({"sender": "Bot", "message": reply})
+            append_chat("Bot", reply)
+            last_bot_reply[0] = reply
+            save_history()
+            status_var.set("Bot replied.")
+
+        def speak_last_bot_reply():
+            if self.tts_available and last_bot_reply[0]:
+                try:
+                    self.tts_engine.say(last_bot_reply[0])
+                    self.tts_engine.runAndWait()
+                    status_var.set("Spoken last bot reply.")
+                except Exception as e:
+                    print(f"TTS error: {e}")
+                    status_var.set("TTS error.")
+
+        def recognize_speech_to_entry(entry_widget, parent_win):
+            if not self.stt_available:
+                return
+            import threading
+
+            import speech_recognition as sr
+
+            def recognize():
+                recognizer = self.stt_recognizer
+                mic_index = getattr(self, "selected_mic_index", None)
+                try:
+                    if mic_index is not None:
+                        source = sr.Microphone(device_index=mic_index)
+                    else:
+                        source = sr.Microphone()
+                    with source as src:
+                        entry_widget.config(state="disabled")
+                        entry_widget.delete(0, tk.END)
+                        entry_widget.insert(0, "Listening...")
+                        parent_win.update()
+                        audio = recognizer.listen(src, timeout=5, phrase_time_limit=8)
+                        entry_widget.delete(0, tk.END)
+                        entry_widget.insert(0, "Recognizing...")
+                        parent_win.update()
+                        text = recognizer.recognize_google(audio)
+                        entry_widget.delete(0, tk.END)
+                        entry_widget.insert(0, text)
+                        status_var.set("Voice recognized.")
+                except Exception as e:
+                    entry_widget.delete(0, tk.END)
+                    entry_widget.insert(0, "[Voice error]")
+                    print(f"STT error: {e}")
+                    status_var.set("Voice recognition error.")
+                finally:
+                    entry_widget.config(state="normal")
+                    parent_win.update()
+
+            threading.Thread(target=recognize, daemon=True).start()
 
     def show_microphone_selection_dialog(self):
         import threading
@@ -4185,7 +2303,8 @@ class CrewGUI:
             anchor="w", padx=10, pady=(10, 0)
         )
         # Determine current selection
-        current_idx = self._resolve_selected_microphone_index(mics)
+        current_idx = getattr(self, "selected_mic_index", 0) if mics else 0
+        current_idx = current_idx if 0 <= current_idx < len(mics) else 0
         mic_var = tk.StringVar(value=mics[current_idx] if mics else "")
         if mics:
             from tkinter import ttk
@@ -4203,7 +2322,7 @@ class CrewGUI:
             mic_dropdown.bind("<<ComboboxSelected>>", on_select)
         else:
             mic_dropdown = None
-        save_btn = tk.Button(win, text="💾")
+        save_btn = tk.Button(win, text="Save")
         save_btn.pack(pady=10)
 
         def save_mic():
@@ -4211,8 +2330,6 @@ class CrewGUI:
             if selected in mics:
                 idx = mics.index(selected)
                 self.selected_mic_index = idx
-                self.selected_mic_name = selected
-                self._save_stt_settings(selected, idx)
                 messagebox.showinfo(
                     "Microphone Selected", f"Selected: {selected}", parent=win
                 )
@@ -4227,7 +2344,7 @@ class CrewGUI:
             tk.Label(win, text="No microphones detected.", fg="red").pack(pady=10)
 
         # Menu for extra features (for this dialog window)
-        menu_bar = tk.Menu(win, tearoff=0)
+        menu_bar = tk.Menu(win)
         win.config(menu=menu_bar)
         options_menu = tk.Menu(menu_bar, tearoff=0)
         menu_bar.add_cascade(label="Options", menu=options_menu)
@@ -4237,9 +2354,31 @@ class CrewGUI:
                 label="Select Microphone",
                 command=lambda: self.show_microphone_selection_dialog(),
             )
-        self._apply_dark_theme(win)
-        self._configure_dark_menu(menu_bar)
-        return win
+
+        user_entry.bind("<Return>", send_message)
+        user_entry.bind("<Control-Return", send_message)
+        send_btn = tk.Button(entry_frame, text="Send", command=send_message)
+        send_btn.pack(side="right")
+        ToolTip(send_btn, "Send your message to the selected recipient(s).")
+        ToolTip(send_btn, "Send your message to the bot.")
+
+        # Load and display history
+        loaded = load_history()
+        if loaded:
+            conversation.extend(loaded)
+            redraw_messages()
+        else:
+            append_chat(
+                "Bot", "Hello! I'm your Crew assistant. How can I help you today?"
+            )
+            conversation.append(
+                {
+                    "sender": "Bot",
+                    "message": "Hello! I'm your Crew assistant. How can I help you today?",
+                }
+            )
+            save_history()
+        user_entry.focus_set()
 
     def generate_bot_reply(self, user_msg: str) -> str:
         """Improved chatbot logic: supports commands, Crew context, and DeepSeek fallback."""
@@ -4274,9 +2413,9 @@ class CrewGUI:
         if "csv" in msg or "excel" in msg:
             return "You can import CSV or Excel files using the File menu."
         if "script" in msg:
-            return "To run a script, use Tools > Scripts."
+            return "To run a script, use the 'Run Script' option in the View menu."
         if "server" in msg:
-            return "To launch 0101, use Tools > Server > Launch 0101 on p48 (fallback local)."
+            return "To launch the 0101 server, use the Server menu."
         if "feature" in msg:
             return "Crew supports image processing, CSV/Excel import, grid overlays, script running, and more."
         if "trouble" in msg or "error" in msg:
@@ -4289,95 +2428,12 @@ class CrewGUI:
             return "Crew was created by the Crew Team."
         if "exit" in msg or "bye" in msg:
             return "Goodbye! If you need more help, just open this chat again."
-        # Fallback: Prefer Ollama, then DeepSeek, then referee strategy
-        OllamaClient = None
+        # Fallback: Use DeepSeek Code server for general queries
         try:
-            from .ollama_client import OllamaClient as _OllamaClient
-        except Exception:
-            try:
-                from ollama_client import OllamaClient as _OllamaClient
-            except Exception:
-                _OllamaClient = None
-        if _OllamaClient is not None:
-            try:
-                # Try to honour any configured model if available
-                model = None
-                try:
-                    model = getattr(self, "llm_model", None)
-                except Exception:
-                    model = None
-                # Fallback to config manager if present
-                if model is None and getattr(self, "config_manager", None) is not None:
-                    try:
-                        llm_conf = self.config_manager.get("llm", {})
-                        model = (
-                            llm_conf.get("model")
-                            if isinstance(llm_conf, dict)
-                            else None
-                        )
-                    except Exception:
-                        model = None
-                client = None
-                if model:
-                    try:
-                        client = _OllamaClient(model=model)
-                    except Exception:
-                        client = None
-                if client is None:
-                    try:
-                        client = _OllamaClient()
-                    except Exception:
-                        client = None
-                if client is not None:
-                    try:
-                        resp = client.generate(user_msg)
-                        if resp:
-                            return resp
-                    except Exception as e:
-                        logger.warning("Ollama generation failed: %s", e)
-            except Exception as e:
-                logger.debug("Ollama client setup failed: %s", e)
-        # Next fallback: DeepSeek if available
-        deepseek_code_query = None
-        try:
-            from .deepseek_integration import deepseek_code_query as _ds
-
-            deepseek_code_query = _ds
-        except Exception:
-            try:
-                from deepseek_integration import deepseek_code_query as _ds
-
-                deepseek_code_query = _ds
-            except Exception:
-                deepseek_code_query = None
-        if deepseek_code_query is not None:
-            try:
-                ds_resp = deepseek_code_query(user_msg)
-                if ds_resp and not str(ds_resp).startswith("[ERROR]"):
-                    return ds_resp
-            except Exception as e:
-                logger.warning("DeepSeek query failed: %s", e)
-        # Final fallback: instantiate a RefereeStrategy locally and use it
-        try:
-            from strategies.referee_strategy import RefereeStrategy
-
-            # Determine backend preference if available
-            bk = "ollama"
-            try:
-                llm_backend_attr = getattr(self, "llm_backend_var", None)
-                bk = llm_backend_attr.get() if llm_backend_attr else bk
-            except Exception:
-                try:
-                    bk_conf = getattr(self, "config_manager", None)
-                    if bk_conf is not None:
-                        bk = bk_conf.get("llm", {}).get("backend", bk)
-                except Exception:
-                    pass
-            referee = RefereeStrategy(llm_backend=bk)
-            return referee.process_message(user_msg)
-        except Exception:
-            # Last-resort fallback
-            return "Sorry, I'm unable to answer right now. Please try again later."
+            from .deepseek_integration import deepseek_code_query
+        except ImportError:
+            from deepseek_integration import deepseek_code_query
+        return deepseek_code_query(user_msg)
 
     def _start_recording(self):
         """Prompt for/select a microphone, then start recording. Dialog logic only."""
@@ -4411,7 +2467,11 @@ class CrewGUI:
             )
             self.update_status("No microphone detected. Recording aborted.", error=True)
             return
-        selected_idx = self._resolve_selected_microphone_index(input_mics)
+        selected_idx = (
+            getattr(self, "selected_mic_index", 0)
+            if hasattr(self, "selected_mic_index")
+            else 0
+        )
         selected_idx = selected_idx if 0 <= selected_idx < len(input_mics) else 0
         mic_var = tk.StringVar(value=input_mics[selected_idx])
         win = tk.Toplevel(self.root)
@@ -4440,8 +2500,6 @@ class CrewGUI:
             if selected in input_mics:
                 idx = input_mics.index(selected)
                 self.selected_mic_index = mic_indices[idx]
-                self.selected_mic_name = selected
-                self._save_stt_settings(selected, self.selected_mic_index)
                 win.destroy()
                 self._start_recording_with_device(selected)
             else:
@@ -4452,14 +2510,12 @@ class CrewGUI:
 
         start_btn = tk.Button(win, text="Start Recording", command=start_with_selected)
         start_btn.pack(pady=10)
-        self._apply_dark_theme(win)
         win.bind("<Return>", lambda event: start_with_selected())
 
     def _start_recording_with_device(self, device_name):
         """Start recording with the given device name (but pass index for robustness)."""
         import pyaudio
         import speech_recognition as sr
-
         from audio_manager import start_recording
 
         try:
@@ -4489,7 +2545,7 @@ class CrewGUI:
             self._recording_process = proc
             self._last_recording_path = path
             self._record_menu.entryconfig("Start Recording", state="disabled")
-            self._record_menu.entryconfig("⏹", state="normal")
+            self._record_menu.entryconfig("Stop Recording", state="normal")
             self.update_status(f"Recording from: {device_name}... (Stop to finish)")
         except Exception as e:
             self._recording_process = None
@@ -4509,7 +2565,7 @@ class CrewGUI:
                 stop_recording(self._recording_process)
                 self._recording_process = None
                 self._record_menu.entryconfig("Start Recording", state="normal")
-                self._record_menu.entryconfig("⏹", state="disabled")
+                self._record_menu.entryconfig("Stop Recording", state="disabled")
                 self._record_menu.entryconfig("Play Last Recording", state="normal")
                 self._record_menu.entryconfig("Save Recording As...", state="normal")
                 messagebox.showinfo(
@@ -4578,39 +2634,27 @@ class CrewGUI:
 
         def task():
             try:
-                from ReadMine import DocumentationFetcher, format_readmine_summary
-
-                summary = DocumentationFetcher(base_dir=READMINE_OUTPUT_DIR).process()
-                summary["message"] = format_readmine_summary(summary)
-                return summary
+                script_path = os.path.join(
+                    os.path.dirname(os.path.abspath(__file__)), "ReadMine.py"
+                )
+                result = subprocess.run(
+                    [sys.executable, script_path], capture_output=True, text=True
+                )
+                return (
+                    "Docs updated."
+                    if result.returncode == 0
+                    else f"Error: {result.stderr}"
+                )
             except Exception as e:
-                logging.exception("ReadMine failed")
-                return {
-                    "subjects_total": 0,
-                    "generated": 0,
-                    "skipped": 0,
-                    "failed": 1,
-                    "stub_generated": 0,
-                    "fetched_generated": 0,
-                    "output_dir": str(READMINE_OUTPUT_DIR),
-                    "subjects": {},
-                    "message": f"ReadMine failed: {e}",
-                }
+                return str(e)
 
-        def callback(summary):
-            message = summary.get("message", "ReadMine finished.")
-            has_failures = summary.get("failed", 0) > 0
-            self.update_status(message, error=has_failures)
-            if has_failures:
-                messagebox.showwarning("ReadMine", message)
-            else:
-                messagebox.showinfo("ReadMine", message)
-
-        self.run_in_background(task, callback=callback)
+        self.run_in_background(
+            task, callback=lambda m: messagebox.showinfo("ReadMine", m)
+        )
 
     def _browse_docs(self):
         """Select a documentation file to display in the details view."""
-        doc_dir = str(READMINE_OUTPUT_DIR)
+        doc_dir = os.path.join(os.getcwd(), "Reading Now")
         fp = filedialog.askopenfilename(
             initialdir=doc_dir, filetypes=[("Text", "*.txt")]
         )
@@ -4622,170 +2666,96 @@ class CrewGUI:
 
     def _open_documentation_folder(self):
         """Open the documentation directory in the system explorer."""
-        self._open_path_in_system_viewer(READMINE_OUTPUT_DIR, "ReadMine Output Folder")
+        doc_dir = os.path.join(os.getcwd(), "Reading Now")
+        if os.path.isdir(doc_dir):
+            if sys.platform == "win32":
+                os.startfile(doc_dir)
+            else:
+                subprocess.run(["xdg-open", doc_dir])
 
     def show_speech_settings_dialog(self):
-        return self._show_speech_settings()
+        if (
+            not TTS_AVAILABLE
+            or not hasattr(self, "tts_engine")
+            or self.tts_engine is None
+        ):
+            # messagebox already imported at the top
+            messagebox.showerror(
+                "Speech Settings", "Text-to-speech engine is not available."
+            )
+            return
+        win = tk.Toplevel(self.root)
+        win.title("Speech Settings")
+        win.geometry("350x250")
+        win.resizable(False, False)
+        # Voice selection
+        tk.Label(win, text="Voice:").pack(anchor="w", padx=10, pady=(10, 0))
+        voices = self.tts_engine.getProperty("voices")
+        voice_names = [v.name for v in voices]
+        voice_var = tk.StringVar(value=self.tts_engine.getProperty("voice"))
+        voice_map = {v.id: v.name for v in voices}
+        id_to_voice = {v.name: v.id for v in voices}
+        current_voice_name = next(
+            (v.name for v in voices if v.id == self.tts_engine.getProperty("voice")),
+            voice_names[0],
+        )
+        voice_dropdown = tk.OptionMenu(win, voice_var, *voice_names)
+        voice_var.set(current_voice_name)
+        voice_dropdown.pack(fill="x", padx=10)
+        # Rate
+        tk.Label(win, text="Rate:").pack(anchor="w", padx=10, pady=(10, 0))
+        rate_var = tk.IntVar(value=self.tts_engine.getProperty("rate"))
+        rate_scale = tk.Scale(
+            win, from_=80, to=300, orient="horizontal", variable=rate_var
+        )
+        rate_scale.pack(fill="x", padx=10)
+        # Volume
+        tk.Label(win, text="Volume:").pack(anchor="w", padx=10, pady=(10, 0))
+        volume_var = tk.DoubleVar(value=self.tts_engine.getProperty("volume"))
+        volume_scale = tk.Scale(
+            win,
+            from_=0.0,
+            to=1.0,
+            resolution=0.01,
+            orient="horizontal",
+            variable=volume_var,
+        )
+        volume_scale.pack(fill="x", padx=10)
+
+        # Save button
+        def save_settings():
+            # Set voice
+            selected_voice_name = voice_var.get()
+            selected_voice_id = id_to_voice.get(selected_voice_name, voices[0].id)
+            self.tts_engine.setProperty("voice", selected_voice_id)
+            # Set rate
+            self.tts_engine.setProperty("rate", rate_var.get())
+            # Set volume
+            self.tts_engine.setProperty("volume", volume_var.get())
+            win.destroy()
+
+        tk.Button(win, text="Save", command=save_settings).pack(pady=15)
 
     def show_quick_start(self):
         msg = (
             "Crew Quick Start Guide:\n\n"
             "- Open or import images and data using the File menu.\n"
             "- Use the Edit and View menus to filter, refresh, and customize columns.\n"
-            "- Use the Tools menu for speech, chat, scripts, docs, and server actions.\n"
-            "- Use Tools > Diagnostics to check feature status.\n"
-            "- Use Help > Project README for the main app guide.\n"
-            "- Use Help > ReadMine Guide for documentation-generation help.\n"
+            "- Use the Speech menu to have data read aloud or save speech to a file.\n"
+            "- Use the Diagnostics menu to check feature status.\n"
             "- For more help, see Troubleshooting.\n"
         )
         from tkinter import messagebox
 
         messagebox.showinfo("Quick Start", msg)
 
-    def _run_on_ui_thread(self, func: Callable[[], Any], timeout: float = 10.0) -> Any:
-        """Run a callable on the Tk main thread and return its result."""
-        if threading.current_thread() is threading.main_thread():
-            return func()
-
-        result_queue: Queue = Queue(maxsize=1)
-
-        def invoke() -> None:
-            try:
-                result_queue.put((True, func()))
-            except Exception as exc:
-                result_queue.put((False, exc))
-
-        self.root.after(0, invoke)
-        success, value = result_queue.get(timeout=timeout)
-        if success:
-            return value
-        raise value
-
-    def get_mobile_remote_status(self) -> Dict[str, Any]:
-        """Return a compact status payload for the mobile remote."""
-        return {
-            "app": "Crew",
-            "status": getattr(self, "latest_status_message", "Ready"),
-            "tts_available": bool(getattr(self, "tts_engine", None)),
-            "chat_messages": len(
-                self.message_router.get_messages(room="crew_multi_user")
-            ),
-            "remote_url": (
-                self.mobile_remote_server.access_url
-                if self.mobile_remote_server
-                else ""
-            ),
-        }
-
-    def handle_mobile_remote_action(
-        self, action: str, payload: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
-        """Handle LAN mobile remote actions safely on the Tk thread."""
-        payload = payload or {}
-
-        def run_action() -> Dict[str, Any]:
-            if action == "open_chatbot":
-                self.open_chatbot_dialog()
-                return {"ok": True, "message": "Crew Chatbot opened."}
-            if action == "open_crew_chat":
-                self.open_crew_chat_window()
-                return {"ok": True, "message": "Crew Chat opened."}
-            if action == "read_status":
-                self._read_status()
-                return {"ok": True, "message": "Reading status aloud."}
-            if action == "stop_reading":
-                self._stop_reading()
-                return {"ok": True, "message": "Stopped reading."}
-            if action == "show_about":
-                self.show_about()
-                return {"ok": True, "message": "About dialog opened."}
-            if action == "send_crew_message":
-                text = str(payload.get("text", "")).strip()
-                if not text:
-                    return {"ok": False, "message": "Message text is required."}
-                sender = str(payload.get("sender", "Mobile")).strip() or "Mobile"
-                recipient = str(payload.get("recipient", "All")).strip() or "All"
-                self.message_router.send_message(
-                    sender, [recipient], text, room="crew_multi_user"
-                )
-                self.update_status(f"Remote message sent from {sender} to {recipient}.")
-                return {"ok": True, "message": "Crew message sent."}
-            return {"ok": False, "message": f"Unknown action: {action}"}
-
-        try:
-            result = self._run_on_ui_thread(run_action)
-        except Exception as exc:
-            logging.error("Mobile remote action failed: %s", exc)
-            return {"ok": False, "message": str(exc)}
-        return result
-
-    def start_mobile_remote(self) -> None:
-        """Start the Crew LAN mobile remote."""
-        if self.mobile_remote_server is not None:
-            messagebox.showinfo(
-                "Mobile Remote Running", self.mobile_remote_server.access_url
-            )
-            self.update_status("Mobile remote already running.")
-            return
-
-        self.mobile_remote_server = CrewMobileRemoteServer(
-            status_callback=self.get_mobile_remote_status,
-            action_callback=self.handle_mobile_remote_action,
-        )
-        url = self.mobile_remote_server.start()
-        self.update_status("Mobile remote started.")
-        try:
-            # Copy URL to clipboard so it's available when the dialog appears
-            self.root.clipboard_clear()
-            self.root.clipboard_append(url)
-            self.root.update()
-        except Exception:
-            logging.exception("Failed to copy mobile remote URL to clipboard")
-        # Show URL dialog if the Tk root still exists (avoids TclError when app is closing)
-        try:
-            # winfo_exists() returns 1 if the widget exists; guard in case root was destroyed
-            if (
-                getattr(self.root, "winfo_exists", lambda: False)()
-                and self.root.winfo_exists()
-            ):
-                messagebox.showinfo(
-                    "Crew Mobile Remote", f"Open this URL on your phone:\n\n{url}"
-                )
-        except Exception:
-            logging.exception("Failed to display mobile remote URL dialog")
-
-    def stop_mobile_remote(self) -> None:
-        """Stop the Crew LAN mobile remote."""
-        if self.mobile_remote_server is None:
-            self.update_status("Mobile remote is not running.")
-            return
-        self.mobile_remote_server.stop()
-        self.mobile_remote_server = None
-        self.update_status("Mobile remote stopped.")
-
-    def show_mobile_remote_url(self) -> None:
-        """Show the Crew LAN mobile remote URL."""
-        if self.mobile_remote_server is None:
-            messagebox.showinfo("Crew Mobile Remote", "Start the mobile remote first.")
-            return
-        url = self.mobile_remote_server.access_url
-        try:
-            # Copy URL to clipboard so it's available when the dialog appears
-            self.root.clipboard_clear()
-            self.root.clipboard_append(url)
-            self.root.update()
-        except Exception:
-            logging.exception("Failed to copy mobile remote URL to clipboard")
-        messagebox.showinfo("Crew Mobile Remote", url)
-
     def show_troubleshooting(self):
         msg = (
             "Troubleshooting Tips:\n\n"
-            "- If a feature is missing, check Tools > Diagnostics.\n"
+            "- If a feature is missing, check the Diagnostics menu.\n"
             "- For speech issues, ensure your system audio is working and dependencies are installed.\n"
             "- If you see errors, check crew_app.log or crew_gui.log for details.\n"
-            "- For ReadMine issues, open Help > ReadMine Guide or ReadMine Output Notes.\n"
-            "- For further help, use the Project README, GitHub Issues, or Contact Support.\n"
+            "- For further help, consult the README or contact support.\n"
         )
         from tkinter import messagebox
 
@@ -4798,35 +2768,35 @@ class CrewGUI:
             features = []
             # TTS
             try:
-                pass
+                import pyttsx3
 
                 features.append(("Text-to-Speech (pyttsx3)", True))
             except ImportError:
                 features.append(("Text-to-Speech (pyttsx3)", False))
             # pandas
             try:
-                pass
+                import pandas
 
                 features.append(("pandas", True))
             except ImportError:
                 features.append(("pandas", False))
             # CustomTkinter
             try:
-                pass
+                import customtkinter
 
                 features.append(("CustomTkinter", True))
             except ImportError:
                 features.append(("CustomTkinter", False))
             # SpeechRecognition
             try:
-                pass
+                import speech_recognition
 
                 features.append(("SpeechRecognition", True))
             except ImportError:
                 features.append(("SpeechRecognition", False))
             # pyaudio
             try:
-                pass
+                import pyaudio
 
                 features.append(("pyaudio", True))
             except ImportError:
@@ -4882,52 +2852,9 @@ class CrewGUI:
                 self.root.bind(
                     "<Control-Shift-T>", lambda event: self._read_item_type()
                 )
-            self.root.bind(
-                "<Control-Shift-V>",
-                lambda event: self._paste_into_scratchpad(),
-            )
 
         except Exception as e:
             logging.error(f"Error setting up event bindings: {e}")
-
-    def _on_vertical_mousewheel(self, event: tk.Event, widget: tk.Widget) -> str:
-        """Scroll a widget vertically using mouse wheel input."""
-        try:
-            if not hasattr(widget, "yview_scroll"):
-                return "break"
-
-            delta = 0
-            if getattr(event, "delta", 0):
-                delta = -1 if event.delta > 0 else 1
-            elif getattr(event, "num", None) == 4:
-                delta = -1
-            elif getattr(event, "num", None) == 5:
-                delta = 1
-
-            if delta:
-                widget.yview_scroll(delta, "units")
-            return "break"
-        except Exception as e:
-            logging.error(f"Mouse wheel scroll error: {e}")
-            return "break"
-
-    def _bind_vertical_mousewheel(self, widget: tk.Widget) -> None:
-        """Enable vertical mouse wheel scrolling for a widget."""
-        widget.bind(
-            "<MouseWheel>",
-            lambda event, target=widget: self._on_vertical_mousewheel(event, target),
-            add="+",
-        )
-        widget.bind(
-            "<Button-4>",
-            lambda event, target=widget: self._on_vertical_mousewheel(event, target),
-            add="+",
-        )
-        widget.bind(
-            "<Button-5>",
-            lambda event, target=widget: self._on_vertical_mousewheel(event, target),
-            add="+",
-        )
 
     def _apply_main_window_geometry(self) -> None:
         """Force the main window to use the required centered startup size."""
@@ -4943,24 +2870,23 @@ class CrewGUI:
     def load_window_state(self) -> None:
         try:
             saved_window_size = self.config.get("window_size")
-            if self._is_valid_window_geometry(saved_window_size):
-                self.root.geometry(saved_window_size)
-                logging.info("Restored window geometry: %s", saved_window_size)
-            else:
-                self._apply_main_window_geometry()
-            saved_min_window_size = self.config.get("min_window_size")
-            if self._is_valid_window_size(saved_min_window_size):
-                width, height = map(int, saved_min_window_size.split("x"))
-                self.root.minsize(width, height)
+            if saved_window_size and saved_window_size != DEFAULT_MAIN_WINDOW_SIZE:
                 logging.info(
-                    "Restored minimum window size: %sx%s",
-                    width,
-                    height,
+                    "Ignoring saved window size '%s' and forcing '%s'.",
+                    saved_window_size,
+                    DEFAULT_MAIN_WINDOW_SIZE,
                 )
-            else:
-                self.root.minsize(
-                    DEFAULT_MAIN_WINDOW_WIDTH,
-                    DEFAULT_MAIN_WINDOW_HEIGHT,
+
+            self._apply_main_window_geometry()
+            saved_min_window_size = self.config.get("min_window_size")
+            if (
+                saved_min_window_size
+                and saved_min_window_size != DEFAULT_MAIN_WINDOW_SIZE
+            ):
+                logging.info(
+                    "Ignoring saved minimum window size '%s' and forcing '%s'.",
+                    saved_min_window_size,
+                    DEFAULT_MAIN_WINDOW_SIZE,
                 )
 
             # Store column widths for later application after table is populated
@@ -4971,20 +2897,13 @@ class CrewGUI:
             if saved_visibility and hasattr(self, "column_visibility"):
                 self.column_visibility.update(saved_visibility)
 
-            self._load_scratchpad_text()
-
         except Exception as e:
             logging.error(f"Error loading window state: {e}")
 
     def save_window_state(self) -> None:
         try:
-            self._save_scratchpad_text()
-            self.root.update_idletasks()
-            current_geometry = self.root.geometry()
-            if self._is_valid_window_geometry(current_geometry):
-                self.config.set("window_size", current_geometry)
-            min_width, min_height = self.root.minsize()
-            self.config.set("min_window_size", f"{min_width}x{min_height}")
+            self.config.set("window_size", DEFAULT_MAIN_WINDOW_SIZE)
+            self.config.set("min_window_size", DEFAULT_MAIN_WINDOW_SIZE)
 
             # Save column widths
             column_widths = {}
@@ -4998,25 +2917,6 @@ class CrewGUI:
 
         except Exception as e:
             logging.error(f"Error saving window state: {e}")
-
-    def _is_valid_window_geometry(self, geometry: Optional[str]) -> bool:
-        if not isinstance(geometry, str):
-            return False
-        return bool(re.fullmatch(r"\d+x\d+(?:[+-]\d+){0,2}", geometry))
-
-    def _is_valid_window_size(self, size: Optional[str]) -> bool:
-        if not isinstance(size, str):
-            return False
-        return bool(re.fullmatch(r"\d+x\d+", size))
-
-    def _on_app_exit(self) -> None:
-        try:
-            if self.mobile_remote_server is not None:
-                self.mobile_remote_server.stop()
-                self.mobile_remote_server = None
-            self.save_window_state()
-        finally:
-            self.root.destroy()
 
     def _update_filter_column_dropdown(self) -> None:
         try:
@@ -5096,9 +2996,6 @@ class CrewGUI:
         self.filter_case_sensitive_var = tk.BooleanVar(
             value=False
         )  # Default to case-insensitive
-        self._scratchpad_save_job: Optional[str] = None
-        self.latest_status_message = "Ready"
-        self.mobile_remote_server: Optional[CrewMobileRemoteServer] = None
 
     def create_main_layout(self) -> None:
         # Configure root window
@@ -5120,8 +3017,8 @@ class CrewGUI:
         self.paned_window = ttk.PanedWindow(self.main_frame, orient="horizontal")
         self.paned_window.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
 
-        # Left panel with a wider default width for controls and filters
-        self.left_frame = ttk.Frame(self.paned_window, width=DEFAULT_LEFT_PANEL_WIDTH)
+        # Left panel with fixed narrow width
+        self.left_frame = ttk.Frame(self.paned_window, width=140)  # Halved width
         self.left_frame.grid_propagate(False)  # Prevent frame from shrinking
 
         # Right panel
@@ -5138,25 +3035,21 @@ class CrewGUI:
         self.left_frame.grid_rowconfigure(0, weight=1)
         self.left_frame.grid_columnconfigure(0, weight=1)
 
-        # Split right panel into Data and a tabbed workspace for details/notes
+        # Split right panel into Data/Details
         self.paned_right = ttk.PanedWindow(self.right_frame, orient="vertical")
         self.paned_right.grid(row=0, column=0, sticky="nsew")
         # Ensure the right_frame fills the area for its PanedWindow
         self.right_frame.grid_rowconfigure(0, weight=1)
         self.right_frame.grid_columnconfigure(0, weight=1)
 
-        self.right_workspace_tabs = ttk.Notebook(
-            self.paned_right, style="Bottom.TNotebook"
-        )
-
     def create_all_widgets(self) -> None:
         try:
             self.create_control_section()
             self.create_group_section()
             self.create_filter_section()
+            self.create_new_view_section()  # Add this line
             self.create_data_section()
             self.create_details_section()
-            self.create_scratchpad_section()
             self.create_status_bar()
         except Exception as e:
             logging.error(f"Failed to create widgets: {e}")
@@ -5200,7 +3093,6 @@ class CrewGUI:
             if error:
                 message = f"❌ {message}"
 
-            self.latest_status_message = message
             self.status_var.set(message)
             self.root.update_idletasks()
 
@@ -5255,14 +3147,10 @@ class CrewGUI:
 
             # Add control buttons
             ttk.Button(
-                control_frame,
-                text="Open...",
-                command=self._on_open_file,  # Updated
+                control_frame, text="Open...", command=self._on_open_file  # Updated
             ).pack(fill="x", pady=2)
             ttk.Button(
-                control_frame,
-                text="Save...",
-                command=self._on_save_file,  # Updated
+                control_frame, text="Save...", command=self._on_save_file  # Updated
             ).pack(fill="x", pady=2)
         except Exception as e:
             logging.error(f"Failed to create control section: {e}")
@@ -5315,7 +3203,6 @@ class CrewGUI:
             )
             scrollbar.pack(side="right", fill="y")
             self.group_list.configure(yscrollcommand=scrollbar.set)
-            self._bind_vertical_mousewheel(self.group_list)
         except Exception as e:
             logging.error(f"Failed to create group section: {e}")
             raise
@@ -5417,137 +3304,30 @@ class CrewGUI:
             logging.error(f"Failed to create filter section: {e}")
             raise
 
-    def create_scratchpad_section(self) -> None:
+    def create_new_view_section(self) -> None:
         try:
-            scratchpad_frame = ttk.Frame(self.right_workspace_tabs, padding="5")
-            self.right_workspace_tabs.add(scratchpad_frame, text="Scratchpad")
+            # Create a new frame for your view
+            new_view_frame = ttk.LabelFrame(
+                self.paned_left, text="Mods View", padding="5"
+            )
+            # Add the new frame to the paned window in the left panel
+            # Adjust weight as needed; weight=0 means it won't expand as much as others
+            self.paned_left.add(new_view_frame, weight=0)
 
-            toolbar = ttk.Frame(scratchpad_frame)
-            toolbar.grid(row=0, column=0, sticky="ew", pady=(0, 5))
-            scratchpad_frame.grid_rowconfigure(1, weight=1)
-            scratchpad_frame.grid_columnconfigure(0, weight=1)
-
-            ttk.Label(
-                toolbar, text="Paste or type notes here. They are saved automatically."
-            ).pack(side="left", fill="x", expand=True)
-            ttk.Button(toolbar, text="Paste", command=self._paste_into_scratchpad).pack(
-                side="right", padx=(5, 0)
+            # Add any widgets you want in this new view
+            ttk.Label(new_view_frame, text="Content for the mods view").pack(
+                padx=5, pady=5
             )
-            ttk.Button(toolbar, text="Clear", command=self._clear_scratchpad).pack(
-                side="right"
-            )
-
-            text_frame = ttk.Frame(scratchpad_frame)
-            text_frame.grid(row=1, column=0, sticky="nsew")
-            text_frame.grid_rowconfigure(0, weight=1)
-            text_frame.grid_columnconfigure(0, weight=1)
-
-            self.scratchpad_text = tk.Text(
-                text_frame,
-                wrap=tk.WORD,
-                undo=True,
-                height=8,
-                font=("Consolas", 10),
-                background="white",
-                foreground="black",
-            )
-            scratchpad_scroll = ttk.Scrollbar(
-                text_frame, orient="vertical", command=self.scratchpad_text.yview
-            )
-            self.scratchpad_text.configure(yscrollcommand=scratchpad_scroll.set)
-            self.scratchpad_text.grid(row=0, column=0, sticky="nsew")
-            scratchpad_scroll.grid(row=0, column=1, sticky="ns")
-            self._bind_vertical_mousewheel(self.scratchpad_text)
-
-            self.scratchpad_menu = tk.Menu(self.root, tearoff=0)
-            self.scratchpad_menu.add_command(
-                label="Cut", command=self._cut_scratchpad_text
-            )
-            self.scratchpad_menu.add_command(
-                label="Copy", command=self._copy_scratchpad_text
-            )
-            self.scratchpad_menu.add_command(
-                label="Paste", command=self._paste_into_scratchpad
-            )
-            self.scratchpad_menu.add_separator()
-            self.scratchpad_menu.add_command(
-                label="Clear", command=self._clear_scratchpad
-            )
-
-            self.scratchpad_text.bind("<<Modified>>", self._on_scratchpad_modified)
-            self.scratchpad_text.bind("<Button-3>", self._show_scratchpad_menu)
-            self.scratchpad_text.bind("<Control-v>", self._paste_into_scratchpad_event)
-            self.scratchpad_text.bind("<Control-V>", self._paste_into_scratchpad_event)
+            # Example: Add a button
+            ttk.Button(
+                new_view_frame,
+                text="Saver",
+                command=lambda: print("Saver button in Mods View clicked"),
+            ).pack(fill="x", pady=2)
 
         except Exception as e:
-            logging.error(f"Failed to create scratchpad section: {e}")
+            logging.error(f"Failed to create mods view section: {e}")
             raise
-
-    def focus_scratchpad(self) -> None:
-        if hasattr(self, "scratchpad_text"):
-            self.scratchpad_text.focus_set()
-
-    def _show_scratchpad_menu(self, event: tk.Event) -> None:
-        try:
-            self.focus_scratchpad()
-            self.scratchpad_menu.tk_popup(event.x_root, event.y_root)
-        finally:
-            self.scratchpad_menu.grab_release()
-
-    def _cut_scratchpad_text(self) -> None:
-        if hasattr(self, "scratchpad_text"):
-            self.focus_scratchpad()
-            self.scratchpad_text.event_generate("<<Cut>>")
-
-    def _copy_scratchpad_text(self) -> None:
-        if hasattr(self, "scratchpad_text"):
-            self.focus_scratchpad()
-            self.scratchpad_text.event_generate("<<Copy>>")
-
-    def _paste_into_scratchpad(self) -> None:
-        if hasattr(self, "scratchpad_text"):
-            self.focus_scratchpad()
-            self.scratchpad_text.event_generate("<<Paste>>")
-            self.update_status("Pasted into scratchpad.")
-
-    def _paste_into_scratchpad_event(self, event: Optional[tk.Event] = None) -> str:
-        self._paste_into_scratchpad()
-        return "break"
-
-    def _clear_scratchpad(self) -> None:
-        if hasattr(self, "scratchpad_text"):
-            self.scratchpad_text.delete("1.0", tk.END)
-            self.scratchpad_text.edit_modified(False)
-            self._save_scratchpad_text()
-            self.update_status("Scratchpad cleared.")
-
-    def _on_scratchpad_modified(self, event: Optional[tk.Event] = None) -> None:
-        if not hasattr(self, "scratchpad_text"):
-            return
-        if not self.scratchpad_text.edit_modified():
-            return
-        self.scratchpad_text.edit_modified(False)
-        if self._scratchpad_save_job:
-            self.root.after_cancel(self._scratchpad_save_job)
-        self._scratchpad_save_job = self.root.after(500, self._save_scratchpad_text)
-
-    def _load_scratchpad_text(self) -> None:
-        if not hasattr(self, "scratchpad_text"):
-            return
-        saved_text = self.config.get("scratchpad_text", "")
-        self.scratchpad_text.delete("1.0", tk.END)
-        if saved_text:
-            self.scratchpad_text.insert("1.0", saved_text)
-        self.scratchpad_text.edit_modified(False)
-
-    def _save_scratchpad_text(self) -> None:
-        if not hasattr(self, "scratchpad_text"):
-            return
-        if self._scratchpad_save_job:
-            self.root.after_cancel(self._scratchpad_save_job)
-            self._scratchpad_save_job = None
-        scratchpad_value = self.scratchpad_text.get("1.0", "end-1c")
-        self.config.set("scratchpad_text", scratchpad_value)
 
     def create_data_section(self) -> None:
         try:
@@ -5595,7 +3375,6 @@ class CrewGUI:
             self.data_table.grid(row=0, column=0, sticky="nsew")
             y_scroll.grid(row=0, column=1, sticky="ns")
             x_scroll.grid(row=1, column=0, sticky="ew")
-            self._bind_vertical_mousewheel(self.data_table)
 
             # Configure style to ensure proper scrolling
             style = ttk.Style()
@@ -5630,11 +3409,10 @@ class CrewGUI:
 
     def create_details_section(self) -> None:
         try:
-            if str(self.right_workspace_tabs) not in self.paned_right.panes():
-                self.paned_right.add(self.right_workspace_tabs, weight=5)
-
-            details_frame = ttk.Frame(self.right_workspace_tabs, padding="5")
-            self.right_workspace_tabs.add(details_frame, text="Details")
+            details_frame = ttk.LabelFrame(
+                self.paned_right, text="Details View", padding="5"
+            )
+            self.paned_right.add(details_frame, weight=5)
 
             # Create container frame for text and scrollbar
             text_frame = ttk.Frame(details_frame)
@@ -5668,7 +3446,6 @@ class CrewGUI:
             # Grid layout with scrollbar
             self.details_text.grid(row=0, column=0, sticky="nsew")
             details_scroll.grid(row=0, column=1, sticky="ns")
-            self._bind_vertical_mousewheel(self.details_text)
 
             # Set initial content
             self.details_text.insert(
@@ -5752,7 +3529,8 @@ class CrewGUI:
 
             if selected_text.strip():
                 cleaned_text = self._clean_text(selected_text)
-                self._speak_text_with_lead_in(cleaned_text)
+                self.tts_engine.say(cleaned_text)
+                self.tts_engine.runAndWait()
                 logging.info("TTS playback completed for selection.")
 
         except Exception as e:
@@ -5771,7 +3549,8 @@ class CrewGUI:
             all_text = self.details_text.get("1.0", tk.END)
             if all_text.strip():
                 cleaned_text = self._clean_text(all_text)
-                self._speak_text_with_lead_in(cleaned_text)
+                self.tts_engine.say(cleaned_text)
+                self.tts_engine.runAndWait()
                 logging.info("TTS playback completed for all details.")
 
         except Exception as e:
@@ -5791,7 +3570,8 @@ class CrewGUI:
                 status_text = self.status_var.get()
                 if status_text.strip():
                     cleaned_text = self._clean_text(status_text)
-                    self._speak_text_with_lead_in(cleaned_text)
+                    self.tts_engine.say(cleaned_text)
+                    self.tts_engine.runAndWait()
                     logging.info("TTS playback completed for status.")
         except Exception as e:
             logging.error(f"TTS status error: {e}")
@@ -5816,7 +3596,8 @@ class CrewGUI:
                         text_to_read = (
                             str(item_values[0]) if item_values else "No details"
                         )
-                        self._speak_text_with_lead_in(text_to_read)
+                        self.tts_engine.say(text_to_read)
+                        self.tts_engine.runAndWait()
         except Exception as e:
             logging.error(f"TTS selected item error: {e}")
 
@@ -5943,7 +3724,9 @@ class CrewGUI:
         try:
             # Split text into chunks
             chunks = self.chunk_text(text, max_length=400)
-            self._speak_tts_chunks(chunks)
+            for chunk in chunks:
+                self.tts_engine.say(chunk)  # Queue each chunk for playback
+            self.tts_engine.runAndWait()  # Execute playback
         except Exception as e:
             logging.error(f"TTS playback error: {e}")
             messagebox.showerror("TTS Error", f"Failed to read text: {e}")
@@ -6021,108 +3804,87 @@ class CrewGUI:
 
                         cleaned_text = self.preprocess_text_for_speech(text_to_read)
                         chunks = self.chunk_text(cleaned_text)
-                        self._speak_tts_chunks(chunks)
+
+                        for chunk in chunks:
+                            self.tts_engine.say(chunk)
+                        self.tts_engine.runAndWait()
                     else:
-                        self._speak_text_with_lead_in(
+                        self.tts_engine.say(
                             "No item selected or no type information available"
                         )
+                        self.tts_engine.runAndWait()
                 else:
-                    self._speak_text_with_lead_in("No item selected")
+                    self.tts_engine.say("No item selected")
+                    self.tts_engine.runAndWait()
             else:
-                self._speak_text_with_lead_in("Data table not available")
+                self.tts_engine.say("Data table not available")
+                self.tts_engine.runAndWait()
 
         except Exception as e:
             logging.error(f"Error reading item type: {e}")
 
-    def _show_speech_settings(self) -> Optional[tk.Toplevel]:
-        """Show the main speech settings dialog for both TTS and STT."""
+    def _show_speech_settings(self) -> None:
+        """Show TTS configuration dialog with improved sizing"""
         if not TTS_AVAILABLE or not self.tts_engine:
             messagebox.showinfo(
                 "TTS Not Available", "Text-to-speech functionality is not available."
             )
-            return None
+            return
 
         try:
+            import tkinter.ttk as ttk
+
             settings_window = tk.Toplevel(self.root)
             settings_window.title("Speech Settings")
-            screen_width = self.root.winfo_screenwidth()
-            screen_height = self.root.winfo_screenheight()
-            window_width = min(720, max(600, screen_width - 120))
-            window_height = min(820, max(680, screen_height - 120))
-            settings_window.geometry(
-                self.build_centered_geometry(
-                    screen_width,
-                    screen_height,
-                    window_width=window_width,
-                    window_height=window_height,
-                )
-            )
-            settings_window.minsize(min(window_width, 600), min(window_height, 680))
-            settings_window.resizable(True, True)
+
+            # Improved sizing for RPi5 and better content fit
+            settings_window.geometry("500x450")  # Increased from 400x300
+            settings_window.minsize(450, 400)  # Set minimum size
+            settings_window.resizable(True, True)  # Allow resizing
+
             settings_window.transient(self.root)
             settings_window.grab_set()
 
+            # Center the window on the parent
+            settings_window.geometry(
+                "+%d+%d" % (self.root.winfo_rootx() + 50, self.root.winfo_rooty() + 50)
+            )
+
+            # Create main frame with scrollbar support
             main_frame = ttk.Frame(settings_window)
             main_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
-            voice_profiles = self._get_tts_voice_profiles()
-            voice_labels = [profile["label"] for profile in voice_profiles] or [
-                "Default"
-            ]
-            voice_profiles_by_label = {
-                profile["label"]: profile for profile in voice_profiles
-            }
-            current_voice_profile = self._find_tts_voice_profile(
-                self.tts_engine.getProperty("voice")
-            )
-
+            # Voice selection section
             voice_frame = ttk.LabelFrame(
                 main_frame, text="Voice Selection", padding="10"
             )
             voice_frame.pack(fill="x", pady=(0, 10))
+
             ttk.Label(voice_frame, text="Available Voices:").pack(
                 anchor="w", pady=(0, 5)
             )
+            voices = self.tts_engine.getProperty("voices")
+            voice_names = [voice.name for voice in voices] if voices else ["Default"]
 
-            voice_var = tk.StringVar(
-                value=(
-                    current_voice_profile["label"]
-                    if current_voice_profile
-                    else (voice_labels[0] if voice_labels else "Default")
-                )
-            )
+            voice_var = tk.StringVar()
+            current_voice = self.tts_engine.getProperty("voice")
+            for voice in voices:
+                if voice.id == current_voice:
+                    voice_var.set(voice.name)
+                    break
+            else:
+                voice_var.set(voice_names[0] if voice_names else "Default")
+
             voice_combo = ttk.Combobox(
                 voice_frame,
                 textvariable=voice_var,
-                values=voice_labels,
+                values=voice_names,
                 state="readonly",
-                width=50,
+                width=50,  # Increased width
             )
             voice_combo.pack(fill="x", pady=(0, 10))
 
-            voice_details_var = tk.StringVar()
-
-            def update_voice_details(*_args):
-                selected_profile = voice_profiles_by_label.get(voice_var.get())
-                if not selected_profile:
-                    voice_details_var.set("Voice details unavailable.")
-                    return
-                languages = ", ".join(selected_profile["languages"]) or "Unknown"
-                voice_details_var.set(
-                    f"Voice ID: {selected_profile['id']} | "
-                    f"Language: {languages} | "
-                    f"Gender guess: {selected_profile['gender'].title()}"
-                )
-
-            ttk.Label(
-                voice_frame,
-                textvariable=voice_details_var,
-                foreground=DARK_MUTED_TEXT,
-                wraplength=500,
-            ).pack(anchor="w", pady=(0, 10))
-            update_voice_details()
-            voice_combo.bind("<<ComboboxSelected>>", update_voice_details)
-
+            # Female voice preference
             female_voice_var = tk.BooleanVar()
             ttk.Checkbutton(
                 voice_frame,
@@ -6130,18 +3892,22 @@ class CrewGUI:
                 variable=female_voice_var,
             ).pack(anchor="w")
 
+            # Speech controls section
             controls_frame = ttk.LabelFrame(
                 main_frame, text="Speech Controls", padding="10"
             )
             controls_frame.pack(fill="x", pady=(0, 10))
 
+            # Speed control with better layout
             speed_frame = ttk.Frame(controls_frame)
             speed_frame.pack(fill="x", pady=(0, 10))
+
             ttk.Label(speed_frame, text="Speaking Speed:").pack(anchor="w")
-            speed_var = tk.IntVar(value=int(self.tts_engine.getProperty("rate")))
+            speed_var = tk.IntVar(value=self.tts_engine.getProperty("rate"))
 
             speed_control_frame = ttk.Frame(speed_frame)
             speed_control_frame.pack(fill="x", pady=(5, 0))
+
             ttk.Label(speed_control_frame, text="Slow").pack(side="left")
             speed_scale = ttk.Scale(
                 speed_control_frame,
@@ -6153,26 +3919,27 @@ class CrewGUI:
             speed_scale.pack(side="left", fill="x", expand=True, padx=(10, 10))
             ttk.Label(speed_control_frame, text="Fast").pack(side="right")
 
+            # Speed value display
             speed_value_label = ttk.Label(
-                speed_frame, text=f"Current: {int(speed_var.get())} WPM"
+                speed_frame, text=f"Current: {speed_var.get()} WPM"
             )
             speed_value_label.pack(anchor="w", pady=(5, 0))
-            speed_var.trace(
-                "w",
-                lambda *_args: speed_value_label.config(
-                    text=f"Current: {int(speed_var.get())} WPM"
-                ),
-            )
 
+            def update_speed_label(*args):
+                speed_value_label.config(text=f"Current: {int(speed_var.get())} WPM")
+
+            speed_var.trace("w", update_speed_label)
+
+            # Volume control with better layout
             volume_frame = ttk.Frame(controls_frame)
             volume_frame.pack(fill="x")
+
             ttk.Label(volume_frame, text="Volume:").pack(anchor="w")
-            volume_var = tk.DoubleVar(
-                value=float(self.tts_engine.getProperty("volume"))
-            )
+            volume_var = tk.DoubleVar(value=self.tts_engine.getProperty("volume"))
 
             volume_control_frame = ttk.Frame(volume_frame)
             volume_control_frame.pack(fill="x", pady=(5, 0))
+
             ttk.Label(volume_control_frame, text="Quiet").pack(side="left")
             volume_scale = ttk.Scale(
                 volume_control_frame,
@@ -6184,200 +3951,102 @@ class CrewGUI:
             volume_scale.pack(side="left", fill="x", expand=True, padx=(10, 10))
             ttk.Label(volume_control_frame, text="Loud").pack(side="right")
 
+            # Volume value display
             volume_value_label = ttk.Label(
                 volume_frame, text=f"Current: {int(volume_var.get() * 100)}%"
             )
             volume_value_label.pack(anchor="w", pady=(5, 0))
-            volume_var.trace(
-                "w",
-                lambda *_args: volume_value_label.config(
+
+            def update_volume_label(*args):
+                volume_value_label.config(
                     text=f"Current: {int(volume_var.get() * 100)}%"
-                ),
-            )
+                )
 
-            lead_in_frame = ttk.Frame(controls_frame)
-            lead_in_frame.pack(fill="x", pady=(10, 0))
-            ttk.Label(lead_in_frame, text="Playback lead-in (seconds):").pack(
-                side="left"
-            )
-            lead_in_var = tk.DoubleVar(value=self._get_tts_lead_in_seconds())
-            ttk.Spinbox(
-                lead_in_frame,
-                from_=0.0,
-                to=3.0,
-                increment=0.1,
-                textvariable=lead_in_var,
-                width=3,
-            ).pack(side="right")
-            ttk.Label(
-                controls_frame,
-                text="Adds a short pause before speech so the first words are easier to catch.",
-                foreground=DARK_MUTED_TEXT,
-                wraplength=500,
-            ).pack(anchor="w", pady=(5, 0))
+            volume_var.trace("w", update_volume_label)
 
-            stt_settings = self._get_stt_settings()
-            recognition_frame = ttk.LabelFrame(
-                main_frame, text="Speech Recognition", padding="10"
-            )
-            recognition_frame.pack(fill="x", pady=(0, 10))
-
-            selected_mic = (
-                getattr(self, "selected_mic_name", "") or "Default microphone"
-            )
-            ttk.Label(
-                recognition_frame,
-                text=f"Selected microphone: {selected_mic}",
-                foreground=DARK_MUTED_TEXT,
-            ).pack(anchor="w", pady=(0, 10))
-
-            listen_timeout_var = tk.DoubleVar(
-                value=float(stt_settings.get("listen_timeout", 5.0))
-            )
-            phrase_time_limit_var = tk.DoubleVar(
-                value=float(stt_settings.get("phrase_time_limit", 8.0))
-            )
-            energy_threshold_var = tk.IntVar(
-                value=int(stt_settings.get("energy_threshold", 300))
-            )
-            dynamic_energy_var = tk.BooleanVar(
-                value=bool(stt_settings.get("dynamic_energy_threshold", True))
-            )
-            ambient_noise_var = tk.BooleanVar(
-                value=bool(stt_settings.get("adjust_for_ambient_noise", False))
-            )
-
-            timeout_frame = ttk.Frame(recognition_frame)
-            timeout_frame.pack(fill="x", pady=(0, 8))
-            ttk.Label(timeout_frame, text="Listen timeout (s):").pack(side="left")
-            ttk.Spinbox(
-                timeout_frame,
-                from_=1.0,
-                to=60.0,
-                increment=0.5,
-                textvariable=listen_timeout_var,
-                width=3,
-            ).pack(side="right")
-
-            phrase_frame = ttk.Frame(recognition_frame)
-            phrase_frame.pack(fill="x", pady=(0, 8))
-            ttk.Label(phrase_frame, text="Phrase limit (s):").pack(side="left")
-            ttk.Spinbox(
-                phrase_frame,
-                from_=1.0,
-                to=120.0,
-                increment=0.5,
-                textvariable=phrase_time_limit_var,
-                width=3,
-            ).pack(side="right")
-
-            energy_frame = ttk.Frame(recognition_frame)
-            energy_frame.pack(fill="x", pady=(0, 8))
-            ttk.Label(energy_frame, text="Energy threshold:").pack(side="left")
-            ttk.Spinbox(
-                energy_frame,
-                from_=50,
-                to=5000,
-                increment=25,
-                textvariable=energy_threshold_var,
-                width=3,
-            ).pack(side="right")
-
-            ttk.Checkbutton(
-                recognition_frame,
-                text="Dynamic energy threshold",
-                variable=dynamic_energy_var,
-            ).pack(anchor="w")
-            ttk.Checkbutton(
-                recognition_frame,
-                text="Adjust for ambient noise before listening",
-                variable=ambient_noise_var,
-            ).pack(anchor="w", pady=(4, 0))
-
+            # Test and action buttons
             button_frame = ttk.Frame(main_frame)
             button_frame.pack(fill="x", pady=(10, 0))
 
+            # Test button with better feedback
             def test_voice():
                 try:
                     settings_window.config(cursor="watch")
                     settings_window.update()
 
-                    original_voice = self.tts_engine.getProperty("voice")
+                    # Apply current settings temporarily for test
                     original_rate = self.tts_engine.getProperty("rate")
                     original_volume = self.tts_engine.getProperty("volume")
-                    selected_profile = voice_profiles_by_label.get(voice_var.get())
 
-                    if selected_profile:
-                        self.tts_engine.setProperty("voice", selected_profile["id"])
                     self.tts_engine.setProperty("rate", int(speed_var.get()))
-                    self.tts_engine.setProperty("volume", float(volume_var.get()))
-                    self.tts_lead_in_seconds = float(lead_in_var.get())
-                    self._speak_text_with_lead_in(
-                        "This is a test of the current speech settings. How does this sound?"
-                    )
+                    self.tts_engine.setProperty("volume", volume_var.get())
 
-                    self.tts_engine.setProperty("voice", original_voice)
+                    test_text = "This is a test of the current speech settings. How does this sound?"
+                    self.tts_engine.say(test_text)
+                    self.tts_engine.runAndWait()
+
+                    # Restore original settings
                     self.tts_engine.setProperty("rate", original_rate)
                     self.tts_engine.setProperty("volume", original_volume)
+
                 except Exception as e:
                     messagebox.showerror("Test Error", f"Failed to test voice: {e}")
                 finally:
                     settings_window.config(cursor="")
 
-            ttk.Button(
+            test_btn = ttk.Button(
                 button_frame, text="🔊 Test Voice", command=test_voice, width=20
-            ).pack(pady=(0, 10))
+            )
+            test_btn.pack(pady=(0, 10))
 
+            # Apply and Cancel buttons
             action_frame = ttk.Frame(button_frame)
             action_frame.pack(fill="x")
 
+            # Create voice mapping dictionary
+            voice_mapping = {}
+            if voices:
+                for voice in voices:
+                    display_name = voice.name if voice.name else f"Voice {voice.id}"
+                    voice_mapping[display_name] = voice
+
             def apply_settings():
                 try:
-                    selected_profile = voice_profiles_by_label.get(voice_var.get())
+                    # Handle voice selection with female preference
                     if female_voice_var.get():
-                        selected_profile = self._find_preferred_tts_voice(
-                            voice_profiles,
-                            preferred_gender="female",
-                            fallback_id=(
-                                selected_profile["id"] if selected_profile else None
-                            ),
-                        )
-                        if selected_profile is None:
+                        # User wants female voice - try to find one
+                        logging.info("Attempting to set female voice")
+                        if not self.setup_female_voice(self.tts_engine):
+                            # No female voice found, show warning
                             messagebox.showwarning(
                                 "Female Voice",
-                                "No female voice detected. Using the selected voice instead.",
+                                "No female voice detected. Using selected voice instead.",
                             )
-                            selected_profile = voice_profiles_by_label.get(
-                                voice_var.get()
-                            )
+                            # Use selected voice as fallback
+                            selected_voice = voice_var.get()
+                            for voice in voices:
+                                if voice.name == selected_voice:
+                                    self.tts_engine.setProperty("voice", voice.id)
+                                    logging.info(
+                                        f"Female voice not found, using selected: {voice.name}"
+                                    )
+                                    break
+                    else:
+                        # User wants specific voice
+                        selected_voice = voice_var.get()
+                        for voice in voices:
+                            if voice.name == selected_voice:
+                                self.tts_engine.setProperty("voice", voice.id)
+                                logging.info(f"Voice set to: {voice.name}")
+                                break
 
-                    if selected_profile:
-                        self.tts_engine.setProperty("voice", selected_profile["id"])
+                    # Set speed and volume
                     self.tts_engine.setProperty("rate", int(speed_var.get()))
-                    self.tts_engine.setProperty("volume", float(volume_var.get()))
-                    self.tts_lead_in_seconds = float(lead_in_var.get())
+                    self.tts_engine.setProperty("volume", volume_var.get())
 
-                    if self.stt_recognizer:
-                        self.stt_recognizer.energy_threshold = int(
-                            energy_threshold_var.get()
-                        )
-                        self.stt_recognizer.dynamic_energy_threshold = bool(
-                            dynamic_energy_var.get()
-                        )
-                    stt_settings = self._get_stt_settings()
-                    stt_settings.update(
-                        {
-                            "listen_timeout": float(listen_timeout_var.get()),
-                            "phrase_time_limit": float(phrase_time_limit_var.get()),
-                            "energy_threshold": int(energy_threshold_var.get()),
-                            "dynamic_energy_threshold": bool(dynamic_energy_var.get()),
-                            "adjust_for_ambient_noise": bool(ambient_noise_var.get()),
-                        }
-                    )
-                    self.config.set("stt_settings", stt_settings)
-                    self._save_stt_settings()
-                    self._load_stt_settings()
-                    self._save_tts_settings()
+                    # Save settings
+                    if hasattr(self, "config"):
+                        self._save_tts_settings()
 
                     settings_window.destroy()
                     self.update_status("Speech settings applied successfully")
@@ -6385,39 +4054,32 @@ class CrewGUI:
                         "Settings Applied",
                         "Speech settings have been saved and applied.",
                     )
+
                 except Exception as e:
                     logging.error(f"Error applying speech settings: {e}")
                     messagebox.showerror("Error", f"Failed to apply settings: {e}")
 
+            def cancel_settings():
+                settings_window.destroy()
+
             ttk.Button(
                 action_frame, text="✓ Apply & Save", command=apply_settings, width=15
             ).pack(side="left", padx=(0, 10))
+
             ttk.Button(
-                action_frame,
-                text="✗ Cancel",
-                command=settings_window.destroy,
-                width=15,
+                action_frame, text="✗ Cancel", command=cancel_settings, width=15
             ).pack(side="left")
 
-            resize_footer = ttk.Frame(main_frame)
-            resize_footer.pack(fill="x", side="bottom", pady=(8, 0))
-            ttk.Label(
-                resize_footer,
-                text="Tip: drag the lower-right corner to resize this window.",
-                foreground=DARK_MUTED_TEXT,
-            ).pack(side="left")
-            ttk.Sizegrip(resize_footer).pack(side="right", anchor="se")
+            # Add keyboard shortcuts
+            settings_window.bind("<Return>", lambda e: apply_settings())
+            settings_window.bind("<Escape>", lambda e: cancel_settings())
 
-            settings_window.bind("<Return>", lambda _event: apply_settings())
-            settings_window.bind("<Escape>", lambda _event: settings_window.destroy())
-            self._apply_dark_theme(settings_window)
+            # Focus on the voice combo box
             voice_combo.focus_set()
-            return settings_window
 
         except Exception as e:
             logging.error(f"Error showing speech settings: {e}")
             messagebox.showerror("Error", f"Failed to open speech settings: {e}")
-            return None
 
     def _save_speech_to_file(self) -> None:
         """Save current text content as audio file"""
@@ -6819,7 +4481,7 @@ class CrewGUI:
                     key=lambda x: float(x[col_index]) if x[col_index] else 0,
                     reverse=self._sort_reverse,
                 )
-            except (ValueError, TypeError):
+            except ValueError, TypeError:
                 # Fall back to string sort
                 data.sort(
                     key=lambda x: str(x[col_index]).lower(),
@@ -7287,14 +4949,10 @@ class CrewGUI:
         """Save current TTS settings to configuration"""
         try:
             if hasattr(self, "tts_engine") and self.tts_engine:
-                rate = self.tts_engine.getProperty("rate")
-                if isinstance(rate, (int, float)) and 0 < rate <= 10:
-                    rate = int(rate * 100)
                 tts_settings = {
                     "voice": self.tts_engine.getProperty("voice"),
-                    "rate": int(rate),
+                    "rate": self.tts_engine.getProperty("rate"),
                     "volume": self.tts_engine.getProperty("volume"),
-                    "lead_in_seconds": self._get_tts_lead_in_seconds(),
                 }
                 self.config.set("tts_settings", tts_settings)
                 logging.info("TTS settings saved successfully")
@@ -7304,245 +4962,18 @@ class CrewGUI:
     def _load_tts_settings(self) -> None:
         """Load TTS settings from configuration"""
         try:
-            if (
-                hasattr(self, "config")
-                and hasattr(self, "tts_engine")
-                and self.tts_engine
-            ):
+            if hasattr(self, "tts_engine") and self.tts_engine:
                 tts_settings = self.config.get("tts_settings", {})
                 if tts_settings:
-                    if "voice" in tts_settings and tts_settings["voice"] != "default":
+                    if "voice" in tts_settings:
                         self.tts_engine.setProperty("voice", tts_settings["voice"])
                     if "rate" in tts_settings:
-                        rate = tts_settings["rate"]
-                        if isinstance(rate, (int, float)) and 0 < rate <= 10:
-                            rate = int(rate * 100)
-                        self.tts_engine.setProperty("rate", int(rate))
+                        self.tts_engine.setProperty("rate", tts_settings["rate"])
                     if "volume" in tts_settings:
-                        self.tts_engine.setProperty(
-                            "volume", float(tts_settings["volume"])
-                        )
-                    self.tts_lead_in_seconds = max(
-                        0.0,
-                        float(
-                            tts_settings.get(
-                                "lead_in_seconds", DEFAULT_TTS_LEAD_IN_SECONDS
-                            )
-                        ),
-                    )
+                        self.tts_engine.setProperty("volume", tts_settings["volume"])
                     logging.info("TTS settings loaded successfully")
         except Exception as e:
             logging.error(f"Error loading TTS settings: {e}")
-
-    def _normalize_tts_voice_languages(self, voice: Any) -> list[str]:
-        """Return readable language tags for a pyttsx3 voice."""
-        normalized = []
-        for language in getattr(voice, "languages", []) or []:
-            if isinstance(language, bytes):
-                language = language.decode("utf-8", "ignore")
-            language_text = str(language).strip().lstrip("\x05").replace("_", "-")
-            if language_text:
-                normalized.append(language_text)
-        return normalized
-
-    def _guess_tts_voice_gender(self, voice: Any) -> str:
-        """Return a best-effort gender guess for a voice."""
-        voice_text = f"{getattr(voice, 'name', '')} {getattr(voice, 'id', '')}".lower()
-        if any(token in voice_text for token in ("female", "woman", "zira", "hazel")):
-            return "female"
-        if any(token in voice_text for token in ("male", "man", "david", "mark")):
-            return "male"
-        return "unknown"
-
-    def _get_tts_voice_profiles(self) -> list[dict[str, Any]]:
-        """Build rich metadata for the available TTS voices."""
-        if not self.tts_engine:
-            return []
-
-        profiles = []
-        for voice in self.tts_engine.getProperty("voices") or []:
-            languages = self._normalize_tts_voice_languages(voice)
-            gender = self._guess_tts_voice_gender(voice)
-            label = getattr(voice, "name", None) or f"Voice {getattr(voice, 'id', '')}"
-            details = []
-            if languages:
-                details.append(", ".join(languages))
-            if gender != "unknown":
-                details.append(gender.title())
-            if details:
-                label = f"{label} ({' | '.join(details)})"
-            profiles.append(
-                {
-                    "id": getattr(voice, "id", ""),
-                    "name": getattr(voice, "name", "") or "Unnamed voice",
-                    "languages": languages,
-                    "gender": gender,
-                    "label": label,
-                }
-            )
-        return profiles
-
-    def _find_tts_voice_profile(self, voice_id: str | None) -> Optional[dict[str, Any]]:
-        """Return the voice profile matching a voice id."""
-        if not voice_id:
-            return None
-        for profile in self._get_tts_voice_profiles():
-            if profile["id"] == voice_id:
-                return profile
-        return None
-
-    def _find_preferred_tts_voice(
-        self,
-        voice_profiles: list[dict[str, Any]],
-        preferred_gender: str,
-        fallback_id: str | None = None,
-    ) -> Optional[dict[str, Any]]:
-        """Find the first preferred voice, or fall back to the selected/current one."""
-        for profile in voice_profiles:
-            if profile["gender"] == preferred_gender:
-                return profile
-        if fallback_id:
-            for profile in voice_profiles:
-                if profile["id"] == fallback_id:
-                    return profile
-        return voice_profiles[0] if voice_profiles else None
-
-    def _default_stt_settings(self) -> dict[str, Any]:
-        """Return default speech-recognition settings."""
-        return {
-            "selected_microphone_name": "",
-            "selected_microphone_index": -1,
-            "energy_threshold": 300,
-            "dynamic_energy_threshold": True,
-            "pause_threshold": 0.8,
-            "non_speaking_duration": 0.5,
-            "listen_timeout": 5.0,
-            "phrase_time_limit": 8.0,
-            "adjust_for_ambient_noise": False,
-            "ambient_noise_duration": 0.5,
-        }
-
-    def _get_stt_settings(self) -> dict[str, Any]:
-        """Return STT settings merged with defaults."""
-        settings = self._default_stt_settings()
-        if hasattr(self, "config"):
-            settings.update(self.config.get("stt_settings", {}))
-        return settings
-
-    def _get_stt_setting(self, key: str, default: Any) -> Any:
-        """Return a single STT setting."""
-        return self._get_stt_settings().get(key, default)
-
-    def _apply_stt_settings(self) -> None:
-        """Apply stored STT settings to the active recognizer."""
-        settings = self._get_stt_settings()
-        selected_index = int(settings.get("selected_microphone_index", -1))
-        self.selected_mic_index = selected_index if selected_index >= 0 else None
-        self.selected_mic_name = settings.get("selected_microphone_name", "")
-        if self.stt_recognizer:
-            self.stt_recognizer.energy_threshold = int(
-                settings.get("energy_threshold", 300)
-            )
-            self.stt_recognizer.dynamic_energy_threshold = bool(
-                settings.get("dynamic_energy_threshold", True)
-            )
-            self.stt_recognizer.pause_threshold = float(
-                settings.get("pause_threshold", 0.8)
-            )
-            self.stt_recognizer.non_speaking_duration = float(
-                settings.get("non_speaking_duration", 0.5)
-            )
-
-    def _load_stt_settings(self) -> None:
-        """Load STT settings from configuration."""
-        try:
-            if hasattr(self, "config"):
-                self._apply_stt_settings()
-        except Exception as e:
-            logging.error(f"Error loading STT settings: {e}")
-
-    def _save_stt_settings(
-        self,
-        microphone_name: Optional[str] = None,
-        microphone_index: Optional[int] = None,
-    ) -> None:
-        """Save current STT settings to configuration."""
-        try:
-            if not hasattr(self, "config"):
-                return
-            settings = self._get_stt_settings()
-            selected_name = (
-                microphone_name
-                if microphone_name is not None
-                else getattr(self, "selected_mic_name", "")
-            )
-            selected_index = (
-                microphone_index
-                if microphone_index is not None
-                else getattr(self, "selected_mic_index", None)
-            )
-            settings["selected_microphone_name"] = selected_name or ""
-            settings["selected_microphone_index"] = (
-                int(selected_index) if selected_index is not None else -1
-            )
-            if self.stt_recognizer:
-                settings["energy_threshold"] = int(self.stt_recognizer.energy_threshold)
-                settings["dynamic_energy_threshold"] = bool(
-                    self.stt_recognizer.dynamic_energy_threshold
-                )
-                settings["pause_threshold"] = float(self.stt_recognizer.pause_threshold)
-                settings["non_speaking_duration"] = float(
-                    self.stt_recognizer.non_speaking_duration
-                )
-            self.config.set("stt_settings", settings)
-            logging.info("STT settings saved successfully")
-        except Exception as e:
-            logging.error(f"Error saving STT settings: {e}")
-
-    def _resolve_selected_microphone_index(self, microphone_names: list[str]) -> int:
-        """Return the best microphone index for the current/saved preference."""
-        if not microphone_names:
-            return 0
-        current_index = getattr(self, "selected_mic_index", None)
-        if current_index is not None and 0 <= current_index < len(microphone_names):
-            return current_index
-        current_name = getattr(self, "selected_mic_name", "")
-        if current_name and current_name in microphone_names:
-            return microphone_names.index(current_name)
-        return 0
-
-    def _prepare_stt_source(self, recognizer: Any, source: Any) -> None:
-        """Apply ambient-noise calibration before listening when enabled."""
-        if self._get_stt_setting("adjust_for_ambient_noise", False):
-            recognizer.adjust_for_ambient_noise(
-                source,
-                duration=float(self._get_stt_setting("ambient_noise_duration", 0.5)),
-            )
-
-    def _recognize_stt_audio(self, recognizer: Any, audio: Any) -> str:
-        """Recognize speech from audio with the configured backend."""
-        try:
-            result = recognizer.recognize_google(audio)
-            logger.info(f"Google STT result: '{result}'")
-            if result.strip():
-                return result
-            else:
-                logger.warning("Google STT returned empty string")
-                return "[No speech detected]"
-        except Exception as e:
-            error_type = type(e).__name__
-            error_str = str(e).lower()
-            logger.warning(f"Google STT error - {error_type}: {e}")
-
-            # Handle specific exception types
-            if error_type == "UnknownValueError":
-                return "[Could not understand speech]"
-            elif error_type == "RequestError":
-                return "[Network or API error]"
-            elif "offline" in error_str or "network" in error_str:
-                return "[Network/offline error]"
-            else:
-                return f"[STT Error: {error_type}]"
 
     def _test_tts(self) -> None:
         if not TTS_AVAILABLE or not self.tts_engine:
@@ -7551,9 +4982,8 @@ class CrewGUI:
             )
             return
         try:
-            self._speak_text_with_lead_in(
-                "This is a test of the text-to-speech system."
-            )
+            self.tts_engine.say("This is a test of the text-to-speech system.")
+            self.tts_engine.runAndWait()
         except Exception as e:
             logging.error(f"TTS test error: {e}")
             messagebox.showerror("TTS Error", f"Failed to test TTS: {e}")
@@ -7608,1034 +5038,3 @@ if __name__ == "__main__":
         # Fallback to a simple error message if GUI initialization fails
         print(f"Error: {e}")
         input("Press Enter to exit...")
-
-    # ─────────────────────────────────────────────────────────────
-    # RECORD MENU HANDLERS (Phase 3)
-    # ─────────────────────────────────────────────────────────────
-
-    def _start_recording(self) -> None:
-        """Start recording audio from microphone."""
-        try:
-            import speech_recognition as sr
-
-            if not hasattr(self, "recognizer"):
-                self.recognizer = sr.Recognizer()
-
-            logging.info("Recording started...")
-            self.status_var.set("🔴 Recording... (say something)")
-
-            try:
-                with sr.Microphone() as source:
-                    # Adjust for ambient noise
-                    self.recognizer.adjust_for_ambient_noise(source, duration=0.5)
-                    audio = self.recognizer.listen(source, timeout=10)
-
-                    # Store audio for playback
-                    self.recording_audio = audio
-                    self.status_var.set("✅ Recording stopped - click ▶️ to play")
-                    logging.info("Recording captured successfully")
-
-            except sr.UnknownValueError:
-                self.status_var.set("❌ No speech detected")
-            except sr.RequestError as e:
-                self.status_var.set(f"❌ Service error: {e}")
-        except ImportError:
-            self.status_var.set("⚠️ speech_recognition not installed")
-        except Exception as e:
-            self.status_var.set(f"❌ Record error: {e}")
-            logging.error(f"Recording error: {e}")
-
-    def _stop_recording(self) -> None:
-        """Stop ongoing recording."""
-        self.status_var.set("⏹️ Recording stopped")
-        logging.info("Recording stopped via menu")
-
-    def _play_recording(self) -> None:
-        """Play back the last recording using speech recognition."""
-        if not hasattr(self, "recording_audio") or self.recording_audio is None:
-            self.status_var.set("⚠️ No recording available to play")
-            return
-
-        try:
-            import speech_recognition as sr
-
-            if not hasattr(self, "recognizer"):
-                self.recognizer = sr.Recognizer()
-
-            self.status_var.set("🔍 Transcribing recording...")
-
-            try:
-                text = self.recognizer.recognize_google(self.recording_audio)
-
-                # Speak back the recognized text
-                if self.tts_manager:
-                    self.tts_manager.speak(text)
-                    self.status_var.set(f"▶️ Playback: '{text[:50]}...'")
-                    logging.info(f"Played recording: {text}")
-                else:
-                    self.status_var.set(f"📝 Transcript: {text}")
-
-            except sr.UnknownValueError:
-                self.status_var.set("❌ Could not understand audio")
-            except sr.RequestError as e:
-                self.status_var.set(f"❌ Transcription error: {e}")
-        except Exception as e:
-            self.status_var.set(f"❌ Playback error: {e}")
-            logging.error(f"Playback error: {e}")
-
-    # ─────────────────────────────────────────────────────────────
-    # TALK MENU HANDLERS (Phase 3)
-    # ─────────────────────────────────────────────────────────────
-
-    def _speak_selection(self) -> None:
-        """Speak the selected tree item using TTS."""
-        try:
-            selection = self.tree.selection()
-            if not selection:
-                self.status_var.set("⚠️ No item selected")
-                return
-
-            item_id = selection[0]
-            item_text = self.tree.item(item_id, "text")
-
-            if not self.tts_manager:
-                self.status_var.set("⚠️ TTS not available")
-                return
-
-            self.status_var.set(f"🔊 Speaking: '{item_text[:30]}...'")
-            self.tts_manager.speak(item_text)
-            logging.info(f"Spoke selection: {item_text[:50]}")
-
-        except Exception as e:
-            self.status_var.set(f"❌ Speak error: {e}")
-            logging.error(f"Speak selection error: {e}")
-
-    def _speak_all(self) -> None:
-        """Speak all details of selected item using TTS."""
-        try:
-            selection = self.tree.selection()
-            if not selection:
-                self.status_var.set("⚠️ No item selected")
-                return
-
-            # Get all detail text from details pane
-            if hasattr(self, "details_text"):
-                full_text = self.details_text.get("1.0", "end").strip()
-            else:
-                full_text = ""
-
-            if not full_text:
-                self.status_var.set("⚠️ No details to speak")
-                return
-
-            if not self.tts_manager:
-                self.status_var.set("⚠️ TTS not available")
-                return
-
-            self.status_var.set("🔊 Speaking all details...")
-            self.tts_manager.speak(full_text)
-            logging.info(f"Spoke {len(full_text)} characters of details")
-
-        except Exception as e:
-            self.status_var.set(f"❌ Speak error: {e}")
-            logging.error(f"Speak all error: {e}")
-
-    # ─────────────────────────────────────────────────────────────
-    # CHAT MENU HANDLERS (Phase 3)
-    # ─────────────────────────────────────────────────────────────
-
-    def open_chatbot_dialog(self) -> None:
-        """Open a chatbot dialog for conversation with ollama AI."""
-        try:
-            import logging
-            import threading
-            import tkinter.scrolledtext as scrolledtext
-
-            import requests
-
-            # Language dictionary for multi-language support (Phase 5.5)
-            LANGUAGE_PROMPTS = {
-                "en": "You are a helpful AI assistant.",
-                "es": "Eres un asistente de IA útil.",
-                "fr": "Vous êtes un assistant IA utile.",
-                "de": "Sie sind ein hilfreicher KI-Assistent.",
-                "it": "Sei un assistente AI utile.",
-                "ja": "あなたは役に立つAIアシスタントです。",
-                "zh": "你是一个有用的AI助手。",
-                "ru": "Вы полезный помощник ИИ.",
-            }
-
-            LANGUAGE_NAMES = {
-                "en": "🇬🇧 English",
-                "es": "🇪🇸 Spanish",
-                "fr": "🇫🇷 French",
-                "de": "🇩🇪 German",
-                "it": "🇮🇹 Italian",
-                "ja": "🇯🇵 Japanese",
-                "zh": "🇨🇳 Chinese",
-                "ru": "🇷🇺 Russian",
-            }
-
-            chat_window = tk.Toplevel(self.root)
-            chat_window.title("Chatbot - Crew Chat (Ollama)")
-            chat_window.geometry("750x600")
-            chat_window.resizable(True, True)
-
-            # ─────────────────────────────────────────────────────────────
-            # TITLE BAR
-            # ─────────────────────────────────────────────────────────────
-            title_frame = tk.Frame(chat_window, bg="#2d2d30")
-            title_frame.pack(fill=tk.X)
-            title_label = tk.Label(
-                title_frame,
-                text="💬 Chatbot Assistant (Powered by Ollama)",
-                bg="#2d2d30",
-                fg="white",
-                font=("Arial", 11, "bold"),
-                pady=8,
-            )
-            title_label.pack()
-
-            # ─────────────────────────────────────────────────────────────
-            # MODEL SELECTOR (Phase 5.1)
-            # ─────────────────────────────────────────────────────────────
-            model_frame = tk.Frame(chat_window, bg="#3e3e42", height=35)
-            model_frame.pack(fill=tk.X, padx=8, pady=(0, 8))
-
-            model_label = tk.Label(
-                model_frame, text="Model:", bg="#3e3e42", fg="white", font=("Arial", 9)
-            )
-            model_label.pack(side=tk.LEFT, padx=4, pady=4)
-
-            # Get available models from ollama
-            available_models = ["deepseek-r1:1.5b", "gemma4:latest"]  # fallback list
-            current_model = self.config.get("chatbot", {}).get(
-                "model", "deepseek-r1:1.5b"
-            )
-
-            try:
-                response = requests.get("http://localhost:11434/api/tags", timeout=3)
-                if response.status_code == 200:
-                    data = response.json()
-                    available_models = [m["name"] for m in data.get("models", [])]
-            except Exception as e:
-                logging.warning(f"Could not fetch models from ollama: {e}")
-
-            model_var = tk.StringVar(value=current_model)
-
-            model_dropdown = ttk.Combobox(
-                model_frame,
-                textvariable=model_var,
-                values=available_models,
-                state="readonly",
-                width=30,
-                font=("Arial", 9),
-            )
-            model_dropdown.pack(side=tk.LEFT, padx=4, pady=4, fill=tk.X, expand=True)
-
-            # ─────────────────────────────────────────────────────────────
-            # CHAT HISTORY DISPLAY
-            # ─────────────────────────────────────────────────────────────
-            history_frame = tk.Frame(chat_window)
-            history_frame.pack(fill=tk.BOTH, expand=True, padx=8, pady=8)
-
-            scrollbar = tk.Scrollbar(history_frame)
-            scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-
-            history_text = scrolledtext.ScrolledText(
-                history_frame,
-                state="normal",
-                height=20,
-                wrap=tk.WORD,
-                yscrollcommand=scrollbar.set,
-            )
-            history_text.pack(fill=tk.BOTH, expand=True)
-            scrollbar.config(command=history_text.yview)
-
-            history_text.insert(tk.END, "💡 Chat started. Ask me anything!\n")
-            history_text.config(state="disabled")
-
-            # Input frame
-            input_frame = tk.Frame(chat_window)
-            input_frame.pack(fill=tk.X, padx=8, pady=8)
-
-            user_input = tk.Entry(input_frame, font=("Arial", 10))
-            user_input.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 8))
-
-            # ─────────────────────────────────────────────────────────────
-            # AUDIO BUTTONS (Phase 5.6)
-            # ─────────────────────────────────────────────────────────────
-
-            recording_state = {
-                "is_recording": False,
-                "recognizer": None,
-                "audio_text": "",
-            }
-            playback_state = {"is_playing": False, "engine": None}
-
-            def record_audio():
-                """Record audio and transcribe to text (Phase 5.6)."""
-                if not SPEECH_RECOGNITION_AVAILABLE:
-                    messagebox.showerror(
-                        "Audio Error",
-                        "speech_recognition library not installed.\nRun: pip install SpeechRecognition",
-                    )
-                    return
-
-                if recording_state["is_recording"]:
-                    # Stop recording
-                    recording_state["is_recording"] = False
-                    mic_btn.config(bg="#666666", text="🎤 Record")
-                    return
-
-                # Start recording
-                recording_state["is_recording"] = True
-                mic_btn.config(bg="#d9534f", text="⏹ Recording...")
-                chat_window.update()
-
-                def capture_audio():
-                    try:
-                        recognizer = sr.Recognizer()
-                        with sr.Microphone() as source:
-                            # Adjust for ambient noise
-                            recognizer.adjust_for_ambient_noise(source, duration=1)
-
-                            history_text.config(state="normal")
-                            history_text.insert(tk.END, "\n🎤 Listening...\n")
-                            history_text.config(state="disabled")
-                            chat_window.update()
-
-                            # Listen for audio (max 30 seconds)
-                            audio = recognizer.listen(source, timeout=30)
-
-                        if not recording_state["is_recording"]:
-                            return
-
-                        # Transcribe using Google Speech Recognition (free, no API key needed)
-                        try:
-                            text = recognizer.recognize_google(audio)
-
-                            history_text.config(state="normal")
-                            history_text.insert(tk.END, f"✅ Recognized: {text}\n")
-                            history_text.config(state="disabled")
-
-                            # Auto-populate input field
-                            user_input.delete(0, tk.END)
-                            user_input.insert(0, text)
-
-                        except sr.UnknownValueError:
-                            history_text.config(state="normal")
-                            history_text.insert(
-                                tk.END, "❌ Could not understand audio\n"
-                            )
-                            history_text.config(state="disabled")
-                        except sr.RequestError as e:
-                            history_text.config(state="normal")
-                            history_text.insert(
-                                tk.END, f"❌ Speech service error: {e}\n"
-                            )
-                            history_text.config(state="disabled")
-
-                    except Exception as e:
-                        history_text.config(state="normal")
-                        history_text.insert(
-                            tk.END, f"❌ Recording error: {str(e)[:60]}\n"
-                        )
-                        history_text.config(state="disabled")
-
-                    finally:
-                        recording_state["is_recording"] = False
-                        mic_btn.config(bg="#666666", text="🎤 Record")
-
-                thread = threading.Thread(target=capture_audio, daemon=True)
-                thread.start()
-
-            mic_btn = tk.Button(
-                input_frame,
-                text="🎤 Record",
-                width=10,
-                bg="#666666",
-                fg="white",
-                command=record_audio,
-                state="normal" if SPEECH_RECOGNITION_AVAILABLE else "disabled",
-            )
-            mic_btn.pack(side=tk.LEFT, padx=4)
-
-            send_btn = tk.Button(
-                input_frame, text="Send", width=3, bg="#0e639c", fg="white"
-            )
-            send_btn.pack(side=tk.RIGHT, padx=(0, 4))
-
-            # Cancel button (Phase 5.3) - disabled by default, enables during streaming
-            def cancel_streaming():
-                """Cancel ongoing stream generation (Phase 5.3)."""
-                setattr(cancel_btn, "_cancelled", True)
-                cancel_btn.config(state="disabled")
-
-            cancel_btn = tk.Button(
-                input_frame,
-                text="⛔ Cancel",
-                width=10,
-                bg="#c44e1c",
-                fg="white",
-                state="disabled",
-                command=cancel_streaming,
-            )
-            cancel_btn.pack(side=tk.RIGHT, padx=4)
-
-            clear_btn = tk.Button(
-                input_frame,
-                text="Clear",
-                width=3,
-                bg="#666666",
-                fg="white",
-                command=lambda: (
-                    history_text.config(state="normal"),
-                    history_text.delete(1.0, tk.END),
-                    history_text.insert(tk.END, "💡 Chat cleared.\n"),
-                    history_text.config(state="disabled"),
-                ),
-            )
-            clear_btn.pack(side=tk.RIGHT)
-
-            # ─────────────────────────────────────────────────────────────
-            # SETTINGS BUTTON & DIALOG (Phase 5.2)
-            # ─────────────────────────────────────────────────────────────
-
-            def show_settings_dialog():
-                """Open advanced settings dialog (Phase 5.2 + 5.5 language)."""
-                settings_window = tk.Toplevel(chat_window)
-                settings_window.title("Chatbot Settings")
-                settings_window.geometry(
-                    "400x420"
-                )  # Increased height for language selector
-                settings_window.transient(chat_window)
-                settings_window.grab_set()
-
-                # Load current settings from config
-                config_settings = self.config.get("chatbot", {})
-                temp_default = config_settings.get("temperature", 0.7)
-                tokens_default = config_settings.get("max_tokens", 200)
-                prompt_default = config_settings.get(
-                    "system_prompt", "You are a helpful AI assistant."
-                )
-                language_default = config_settings.get("language", "en")
-
-                # Temperature slider
-                temp_frame = tk.Frame(settings_window)
-                temp_frame.pack(fill=tk.X, padx=10, pady=10)
-
-                tk.Label(
-                    temp_frame,
-                    text="🔥 Temperature (Creativity):",
-                    font=("Arial", 10, "bold"),
-                ).pack(anchor=tk.W)
-                temp_var = tk.DoubleVar(value=temp_default)
-                tk.Scale(
-                    temp_frame,
-                    from_=0.0,
-                    to=1.0,
-                    orient=tk.HORIZONTAL,
-                    variable=temp_var,
-                    resolution=0.1,
-                    length=300,
-                ).pack(fill=tk.X, pady=5)
-                tk.Label(
-                    temp_frame,
-                    text="0.0 = Deterministic  |  1.0 = Creative",
-                    font=("Arial", 8, "italic"),
-                ).pack(anchor=tk.W)
-
-                # Max tokens slider
-                tokens_frame = tk.Frame(settings_window)
-                tokens_frame.pack(fill=tk.X, padx=10, pady=10)
-
-                tk.Label(
-                    tokens_frame,
-                    text="📝 Max Tokens (Response Length):",
-                    font=("Arial", 10, "bold"),
-                ).pack(anchor=tk.W)
-                tokens_var = tk.IntVar(value=tokens_default)
-                tk.Scale(
-                    tokens_frame,
-                    from_=10,
-                    to=500,
-                    orient=tk.HORIZONTAL,
-                    variable=tokens_var,
-                    length=300,
-                ).pack(fill=tk.X, pady=5)
-                tk.Label(
-                    tokens_frame,
-                    text="10 = Short  |  500 = Long",
-                    font=("Arial", 8, "italic"),
-                ).pack(anchor=tk.W)
-
-                # System prompt text
-                prompt_frame = tk.Frame(settings_window)
-                prompt_frame.pack(fill=tk.X, padx=10, pady=10)
-
-                tk.Label(
-                    prompt_frame, text="🤖 System Prompt:", font=("Arial", 10, "bold")
-                ).pack(anchor=tk.W)
-                prompt_text = tk.Text(
-                    prompt_frame, height=4, width=40, font=("Arial", 9)
-                )
-                prompt_text.insert(1.0, prompt_default)
-                prompt_text.pack(fill=tk.BOTH, expand=True, pady=5)
-
-                # Language selector (Phase 5.5)
-                lang_frame = tk.Frame(settings_window)
-                lang_frame.pack(fill=tk.X, padx=10, pady=10)
-
-                tk.Label(
-                    lang_frame, text="🌐 Language:", font=("Arial", 10, "bold")
-                ).pack(anchor=tk.W)
-                lang_var = tk.StringVar(value=language_default)
-                lang_dropdown = ttk.Combobox(
-                    lang_frame,
-                    textvariable=lang_var,
-                    values=list(LANGUAGE_NAMES.values()),
-                    state="readonly",
-                    width=30,
-                )
-                lang_dropdown.pack(fill=tk.X, pady=5)
-
-                # Buttons
-                button_frame = tk.Frame(settings_window)
-                button_frame.pack(fill=tk.X, padx=10, pady=10)
-
-                def apply_settings():
-                    """Save settings to config."""
-                    if "chatbot" not in self.config.config:
-                        self.config.config["chatbot"] = {}
-
-                    self.config.config["chatbot"]["temperature"] = temp_var.get()
-                    self.config.config["chatbot"]["max_tokens"] = tokens_var.get()
-                    self.config.config["chatbot"]["system_prompt"] = prompt_text.get(
-                        1.0, tk.END
-                    ).strip()
-
-                    # Convert language name back to code (Phase 5.5)
-                    lang_display = lang_var.get()
-                    lang_code = next(
-                        (k for k, v in LANGUAGE_NAMES.items() if v == lang_display),
-                        "en",
-                    )
-                    self.config.config["chatbot"]["language"] = lang_code
-
-                    self.config.save()
-
-                    history_text.config(state="normal")
-                    history_text.insert(
-                        tk.END,
-                        f"\n⚙️  Settings updated:\n"
-                        f"   • Temperature: {temp_var.get()}\n"
-                        f"   • Max tokens: {tokens_var.get()}\n"
-                        f"   • Language: {lang_display}\n",
-                    )
-                    history_text.see(tk.END)
-                    history_text.config(state="disabled")
-
-                    settings_window.destroy()
-
-                tk.Button(
-                    button_frame,
-                    text="Apply",
-                    width=10,
-                    bg="#0e639c",
-                    fg="white",
-                    command=apply_settings,
-                ).pack(side=tk.LEFT, padx=4)
-
-                tk.Button(
-                    button_frame,
-                    text="Cancel",
-                    width=10,
-                    bg="#666666",
-                    fg="white",
-                    command=settings_window.destroy,
-                ).pack(side=tk.LEFT)
-
-            settings_btn = tk.Button(
-                input_frame,
-                text="⚙️  Settings",
-                width=10,
-                bg="#666666",
-                fg="white",
-                command=show_settings_dialog,
-            )
-            settings_btn.pack(side=tk.RIGHT, padx=4)
-
-            # ─────────────────────────────────────────────────────────────
-            # SPEAKER BUTTON FOR TEXT-TO-SPEECH (Phase 5.6)
-            # ─────────────────────────────────────────────────────────────
-
-            last_bot_response = {"text": ""}  # Store last response for TTS
-
-            def play_audio():
-                """Play last bot response as speech (Phase 5.6)."""
-                if not TTS_AVAILABLE:
-                    messagebox.showerror(
-                        "Audio Error",
-                        "pyttsx3 library not installed.\nRun: pip install pyttsx3",
-                    )
-                    return
-
-                if not last_bot_response["text"]:
-                    messagebox.showwarning(
-                        "Audio", "No bot response to play. Ask the bot something first."
-                    )
-                    return
-
-                if playback_state["is_playing"]:
-                    # Stop playback
-                    playback_state["is_playing"] = False
-                    speaker_btn.config(bg="#666666", text="🔊 Speak")
-                    return
-
-                playback_state["is_playing"] = True
-                speaker_btn.config(bg="#0e9d58", text="⏹ Speaking...")
-                chat_window.update()
-
-                def speak_text():
-                    try:
-                        engine = pyttsx3.init()
-                        playback_state["engine"] = engine
-
-                        # Get language for voice
-                        config_settings = self.config.get("chatbot", {})
-                        language = config_settings.get("language", "en")
-
-                        # Set voice properties
-                        engine.setProperty("rate", 150)  # Speed
-                        engine.setProperty("volume", 0.9)  # Volume (0.0 to 1.0)
-
-                        # Try to set language (some languages not supported)
-                        try:
-                            if language == "es":
-                                voices = engine.getProperty("voices")
-                                for voice in voices:
-                                    if "spanish" in voice.name.lower():
-                                        engine.setProperty("voice", voice.id)
-                                        break
-                        except:
-                            pass
-
-                        # Speak
-                        history_text.config(state="normal")
-                        history_text.insert(tk.END, "🔊 Speaking...\n")
-                        history_text.config(state="disabled")
-                        chat_window.update()
-
-                        engine.say(last_bot_response["text"])
-                        engine.runAndWait()
-
-                        if playback_state["is_playing"]:
-                            history_text.config(state="normal")
-                            history_text.insert(tk.END, "✅ Playback complete\n")
-                            history_text.config(state="disabled")
-
-                    except Exception as e:
-                        history_text.config(state="normal")
-                        history_text.insert(
-                            tk.END, f"❌ Playback error: {str(e)[:60]}\n"
-                        )
-                        history_text.config(state="disabled")
-
-                    finally:
-                        playback_state["is_playing"] = False
-                        speaker_btn.config(bg="#666666", text="🔊 Speak")
-
-                thread = threading.Thread(target=speak_text, daemon=True)
-                thread.start()
-
-            speaker_btn = tk.Button(
-                input_frame,
-                text="🔊 Speak",
-                width=10,
-                bg="#666666",
-                fg="white",
-                command=play_audio,
-                state="normal" if TTS_AVAILABLE else "disabled",
-            )
-            speaker_btn.pack(side=tk.RIGHT, padx=4)
-
-            # ─────────────────────────────────────────────────────────────
-            # EXPORT BUTTON & DIALOG (Phase 5.4)
-            # ─────────────────────────────────────────────────────────────
-
-            def export_conversation():
-                """Export conversation in Markdown/JSON/PDF format (Phase 5.4)."""
-                # Get all text from history
-                full_text = history_text.get(1.0, tk.END)
-
-                # Parse messages
-                lines = full_text.split("\n")
-                conversations = []
-                current_role = None
-                current_content = []
-
-                for line in lines:
-                    if line.startswith("👤 You:"):
-                        # Save previous message
-                        if current_role and current_content:
-                            conversations.append(
-                                {
-                                    "role": current_role,
-                                    "content": "\n".join(current_content).strip(),
-                                }
-                            )
-                        current_role = "user"
-                        current_content = [line.replace("👤 You:", "").strip()]
-                    elif line.startswith("🤖 Bot:"):
-                        # Save previous message
-                        if current_role and current_content:
-                            conversations.append(
-                                {
-                                    "role": current_role,
-                                    "content": "\n".join(current_content).strip(),
-                                }
-                            )
-                        current_role = "bot"
-                        current_content = [line.replace("🤖 Bot:", "").strip()]
-                    elif (
-                        current_role
-                        and line
-                        and not line.startswith(("📊", "💡", "📌", "⏳", "❌"))
-                    ):
-                        current_content.append(line)
-
-                # Add last message
-                if current_role and current_content:
-                    conversations.append(
-                        {
-                            "role": current_role,
-                            "content": "\n".join(current_content).strip(),
-                        }
-                    )
-
-                if not conversations:
-                    messagebox.showwarning("Export", "No conversations to export")
-                    return
-
-                # Show export format dialog
-                export_window = tk.Toplevel(chat_window)
-                export_window.title("Export Conversation")
-                export_window.geometry("300x200")
-                export_window.transient(chat_window)
-                export_window.grab_set()
-
-                frame = tk.Frame(export_window)
-                frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-
-                tk.Label(
-                    frame, text="Select export format:", font=("Arial", 11, "bold")
-                ).pack(anchor=tk.W, pady=10)
-
-                format_var = tk.StringVar(value="markdown")
-
-                tk.Radiobutton(
-                    frame,
-                    text="📄 Markdown (.md)",
-                    variable=format_var,
-                    value="markdown",
-                ).pack(anchor=tk.W)
-                tk.Radiobutton(
-                    frame, text="📋 JSON (.json)", variable=format_var, value="json"
-                ).pack(anchor=tk.W)
-                try:
-                    pass
-
-                    tk.Radiobutton(
-                        frame, text="📕 PDF (.pdf)", variable=format_var, value="pdf"
-                    ).pack(anchor=tk.W)
-                except ImportError:
-                    tk.Label(frame, text="📕 PDF (requires reportlab)", fg="gray").pack(
-                        anchor=tk.W
-                    )
-
-                button_frame = tk.Frame(frame)
-                button_frame.pack(fill=tk.X, pady=10)
-
-                def do_export():
-                    """Perform the export with selected format."""
-                    fmt = format_var.get()
-
-                    # Get file extension
-                    ext_map = {"markdown": ".md", "json": ".json", "pdf": ".pdf"}
-                    ext = ext_map.get(fmt, ".txt")
-
-                    # File dialog
-                    file_path = filedialog.asksaveasfilename(
-                        defaultextension=ext,
-                        filetypes=[
-                            (
-                                (
-                                    "Markdown"
-                                    if fmt == "markdown"
-                                    else "JSON" if fmt == "json" else "PDF"
-                                ),
-                                f"*{ext}",
-                            ),
-                            ("All files", "*.*"),
-                        ],
-                    )
-
-                    if not file_path:
-                        return
-
-                    try:
-                        if fmt == "markdown":
-                            # Generate Markdown
-                            import datetime
-
-                            timestamp = datetime.datetime.now().strftime(
-                                "%Y-%m-%d %H:%M:%S"
-                            )
-                            md_content = f"# Chat Conversation - {timestamp}\n\n"
-                            md_content += f"**Model:** {model_var.get()}\n\n"
-
-                            for msg in conversations:
-                                if msg["role"] == "user":
-                                    md_content += f"## 👤 You\n{msg['content']}\n\n"
-                                else:
-                                    md_content += (
-                                        f"## 🤖 Bot\n{msg['content']}\n\n---\n\n"
-                                    )
-
-                            with open(file_path, "w") as f:
-                                f.write(md_content)
-
-                        elif fmt == "json":
-                            # Generate JSON
-                            import datetime
-
-                            export_data = {
-                                "timestamp": datetime.datetime.now().isoformat(),
-                                "model": model_var.get(),
-                                "conversations": conversations,
-                            }
-                            with open(file_path, "w") as f:
-                                json.dump(export_data, f, indent=2)
-
-                        elif fmt == "pdf":
-                            # Generate PDF (requires reportlab)
-                            try:
-                                from reportlab.lib.pagesizes import letter
-                                from reportlab.lib.styles import getSampleStyleSheet
-                                from reportlab.lib.units import inch
-                                from reportlab.platypus import (
-                                    Paragraph,
-                                    SimpleDocTemplate,
-                                    Spacer,
-                                )
-
-                                doc = SimpleDocTemplate(file_path, pagesize=letter)
-                                elements = []
-                                styles = getSampleStyleSheet()
-
-                                # Title
-                                title = Paragraph(
-                                    "<b>Chat Conversation Export</b>",
-                                    styles["Heading1"],
-                                )
-                                elements.append(title)
-                                elements.append(Spacer(1, 0.2 * inch))
-
-                                # Messages
-                                for msg in conversations:
-                                    role_text = (
-                                        "You" if msg["role"] == "user" else "Bot"
-                                    )
-                                    para = Paragraph(
-                                        f"<b>{role_text}:</b> {msg['content']}",
-                                        styles["BodyText"],
-                                    )
-                                    elements.append(para)
-                                    elements.append(Spacer(1, 0.1 * inch))
-
-                                doc.build(elements)
-                            except ImportError:
-                                messagebox.showerror(
-                                    "Export",
-                                    "reportlab not installed. Export as JSON instead.",
-                                )
-                                return
-
-                        messagebox.showinfo(
-                            "Export", f"Conversation exported to:\n{file_path}"
-                        )
-                        export_window.destroy()
-
-                    except Exception as e:
-                        messagebox.showerror("Export Error", str(e))
-
-                tk.Button(
-                    button_frame,
-                    text="Export",
-                    width=10,
-                    bg="#0e639c",
-                    fg="white",
-                    command=do_export,
-                ).pack(side=tk.LEFT, padx=4)
-                tk.Button(
-                    button_frame,
-                    text="Cancel",
-                    width=10,
-                    bg="#666666",
-                    fg="white",
-                    command=export_window.destroy,
-                ).pack(side=tk.LEFT)
-
-            export_btn = tk.Button(
-                input_frame,
-                text="💾 Export",
-                width=10,
-                bg="#4a7c4e",
-                fg="white",
-                command=export_conversation,
-            )
-            export_btn.pack(side=tk.RIGHT, padx=4)
-
-            def send_message():
-                msg = user_input.get().strip()
-                if not msg:
-                    return
-
-                # Get currently selected model
-                selected_model = model_var.get()
-
-                # Add user message to history
-                history_text.config(state="normal")
-                history_text.insert(tk.END, f"\n👤 You: {msg}\n")
-                history_text.see(tk.END)
-                history_text.config(state="disabled")
-                user_input.delete(0, tk.END)
-                send_btn.config(state="disabled")
-                cancel_btn.config(state="normal")  # Enable cancel button (Phase 5.3)
-
-                # Add thinking message
-                history_text.config(state="normal")
-                thinking_msg_idx = history_text.index(tk.END)
-                history_text.insert(tk.END, "\n🤖 Bot (thinking...)")
-                history_text.config(state="disabled")
-
-                # Call ollama in background thread with streaming (Phase 5.3)
-                def get_response():
-                    try:
-                        # Get settings from config (Phase 5.2 + 5.5 language)
-                        config_settings = self.config.get("chatbot", {})
-                        temperature = config_settings.get("temperature", 0.7)
-                        max_tokens = config_settings.get("max_tokens", 200)
-                        language = config_settings.get("language", "en")
-
-                        # Get language-specific system prompt (Phase 5.5)
-                        system_prompt = LANGUAGE_PROMPTS.get(
-                            language, LANGUAGE_PROMPTS["en"]
-                        )
-
-                        # Prepend system prompt to user message
-                        prompt_with_system = f"{system_prompt}\n\nUser: {msg}"
-
-                        # Create ollama client with selected model and settings
-                        client = OllamaClient(
-                            model=selected_model, temperature=temperature
-                        )
-
-                        # Stream response
-                        full_response = ""
-                        history_text.config(state="normal")
-
-                        # First, delete the "thinking..." message
-                        history_text.delete(thinking_msg_idx, tk.END)
-                        response_start_idx = history_text.index(tk.END)
-                        history_text.insert(tk.END, "\n🤖 Bot: ")
-
-                        # Stream chunks
-                        for chunk in client.stream(
-                            prompt_with_system, include_history=False
-                        ):
-                            if getattr(cancel_btn, "_cancelled", False):
-                                break
-
-                            full_response += chunk
-                            # Update UI with chunk
-                            history_text.insert(tk.END, chunk)
-                            history_text.see(tk.END)
-                            chat_window.update()  # Keep UI responsive
-
-                        # Add word/char count (Phase 5.3)
-                        word_count = len(full_response.split())
-                        char_count = len(full_response)
-                        history_text.insert(
-                            tk.END, f"\n📊 ({word_count} words, {char_count} chars)"
-                        )
-
-                        # Store response for TTS playback (Phase 5.6)
-                        last_bot_response["text"] = full_response.strip()
-
-                        history_text.see(tk.END)
-                        history_text.config(state="disabled")
-
-                    except Exception as e:
-                        history_text.config(state="normal")
-                        error_msg = str(e)[:100]
-                        # Replace thinking message with error
-                        history_text.delete(thinking_msg_idx, tk.END)
-                        history_text.insert(tk.END, f"\n❌ Bot: Error - {error_msg}\n")
-                        history_text.see(tk.END)
-                        history_text.config(state="disabled")
-                    finally:
-                        send_btn.config(state="normal")
-                        cancel_btn.config(state="disabled")
-                        setattr(cancel_btn, "_cancelled", False)
-
-                thread = threading.Thread(target=get_response, daemon=True)
-                thread.start()
-
-            # Model change handler (Phase 5.1)
-            def on_model_change(event=None):
-                """Handle model selection change."""
-                new_model = model_var.get()
-                # Save to config
-                if "chatbot" not in self.config.config:
-                    self.config.config["chatbot"] = {}
-                self.config.config["chatbot"]["model"] = new_model
-                self.config.save()
-                history_text.config(state="normal")
-                history_text.insert(tk.END, f"\n📌 Switched to model: {new_model}\n")
-                history_text.see(tk.END)
-                history_text.config(state="disabled")
-
-            model_var.trace_add("write", on_model_change)
-
-            send_btn.config(command=send_message)
-
-            # Bind Enter key
-            user_input.bind("<Return>", lambda e: send_message())
-            user_input.focus()
-
-        except Exception as e:
-            logging.error(f"Chatbot dialog error: {e}")
-            messagebox.showerror("Chatbot Error", f"Failed to open chatbot: {e}")
-
-            self.status_var.set("💬 Chatbot window opened")
-            logging.info("Chatbot dialog opened")
-
-        except Exception as e:
-            self.status_var.set(f"❌ Chatbot error: {e}")
-            logging.error(f"Chatbot error: {e}")
-
-    def _show_chat_history(self) -> None:
-        """Display previous chat conversations."""
-        try:
-            # Placeholder for loading chat history from database
-            self.status_var.set("📜 Chat history feature (loading...)")
-            logging.info("Chat history requested")
-
-            # Future: Load from database/file system
-            # For now, just show status
-
-        except Exception as e:
-            self.status_var.set(f"❌ History error: {e}")
-            logging.error(f"Chat history error: {e}")

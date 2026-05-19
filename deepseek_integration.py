@@ -1,25 +1,20 @@
-try:
-    import requests
-except Exception:
-    requests = None
+import requests
 
 DEESEEK_CODE_SERVER_URL = "http://localhost:8000"
-DEESEEK_REQUEST_TIMEOUT = 15
 
 
 def deepseek_code_query(prompt: str) -> str:
     """
     Send a prompt to the DeepSeek Code server and return the response.
-    If the 'requests' library is not installed, return a clear error message instead of raising on import.
+    Args:
+        prompt (str): The user prompt or code to send.
+    Returns:
+        str: The response from DeepSeek Code server.
     """
-    if requests is None:
-        return "[ERROR] 'requests' library not installed. Install it to use DeepSeek integration."
-
     try:
         response = requests.post(
             f"{DEESEEK_CODE_SERVER_URL}/v1/completions",  # Adjust endpoint as needed
             json={"prompt": prompt},
-            timeout=DEESEEK_REQUEST_TIMEOUT,
         )
         response.raise_for_status()
         data = response.json()

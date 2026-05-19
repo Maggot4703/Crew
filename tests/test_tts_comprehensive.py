@@ -1,4 +1,3 @@
-# flake8: noqa: E402
 #!/usr/bin/env python3
 """
 Comprehensive TTS Test Suite for Crew Project
@@ -123,7 +122,7 @@ class TestVoicePropertyManagement(unittest.TestCase):
         if TTS_AVAILABLE:
             try:
                 self.engine = pyttsx3.init()
-            except Exception:
+            except:
                 self.engine = MockTTSEngine()
         else:
             self.engine = MockTTSEngine()
@@ -172,7 +171,7 @@ class TestVoicePropertyManagement(unittest.TestCase):
         voices = self.engine.getProperty("voices")
         if voices:
             # Test setting voice by ID
-            _original_voice = self.engine.getProperty("voice")
+            original_voice = self.engine.getProperty("voice")
             test_voice = voices[0]
 
             self.engine.setProperty("voice", test_voice.id)
@@ -188,7 +187,7 @@ class TestFemaleVoiceSetup(unittest.TestCase):
         if TTS_AVAILABLE:
             try:
                 self.engine = pyttsx3.init()
-            except Exception:
+            except:
                 self.engine = MockTTSEngine()
         else:
             self.engine = MockTTSEngine()
@@ -587,8 +586,8 @@ class TestThreadSafety(unittest.TestCase):
             try:
                 for i in range(10):
                     # Get properties
-                    _rate = self.engine.getProperty("rate")
-                    _volume = self.engine.getProperty("volume")
+                    rate = self.engine.getProperty("rate")
+                    volume = self.engine.getProperty("volume")
 
                     # Set properties
                     self.engine.setProperty("rate", 200 + worker_id * 10)
@@ -665,7 +664,7 @@ class TestIntegration(unittest.TestCase):
         if TTS_AVAILABLE:
             try:
                 self.engine = pyttsx3.init()
-            except Exception:
+            except:
                 self.engine = MockTTSEngine()
         else:
             self.engine = MockTTSEngine()
@@ -1003,7 +1002,7 @@ if __name__ == "__main__":
             engine = pyttsx3.init()
             voices = engine.getProperty("voices")
             print(f"Available Voices: {len(voices) if voices else 0}")
-        except Exception:
+        except:
             print("TTS Engine initialization failed")
     else:
         print("Using Mock TTS Engine for testing")

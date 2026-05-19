@@ -39,7 +39,6 @@ class Config:
         "min_window_size": "800x800",
         "column_widths": {},
         "column_visibility": {},
-        "scratchpad_text": "",
         "last_directory": str(Path.home()),
         "last_file_path": "",
         "data_dir": "data",
@@ -51,22 +50,9 @@ class Config:
         "tts_enabled": True,
         "tts_settings": {
             "voice": "default",
-            "rate": 150,
+            "rate": 1.0,
             "volume": 1.0,
             "language": "en-US",
-            "lead_in_seconds": 0.5,
-        },
-        "stt_settings": {
-            "selected_microphone_name": "",
-            "selected_microphone_index": -1,
-            "energy_threshold": 300,
-            "dynamic_energy_threshold": True,
-            "pause_threshold": 0.8,
-            "non_speaking_duration": 0.5,
-            "listen_timeout": 5.0,
-            "phrase_time_limit": 8.0,
-            "adjust_for_ambient_noise": False,
-            "ambient_noise_duration": 0.5,
         },
         "import_timeout": 30,
         "max_file_size": 100,  # MB
@@ -74,11 +60,10 @@ class Config:
 
     # Configuration validation schema
     VALIDATION_SCHEMA = {
-        "window_size": {"type": str, "pattern": r"^\d+x\d+(?:[+-]\d+){0,2}$"},
+        "window_size": {"type": str, "pattern": r"^\d+x\d+$"},
         "min_window_size": {"type": str, "pattern": r"^\d+x\d+$"},
         "column_widths": {"type": dict},
         "column_visibility": {"type": dict},
-        "scratchpad_text": {"type": str},
         "last_directory": {"type": str},
         "last_file_path": {"type": str},
         "data_dir": {"type": str},
@@ -95,37 +80,9 @@ class Config:
             "type": dict,
             "schema": {
                 "voice": {"type": str},
-                "rate": {"type": (int, float), "min": 0.5, "max": 300},
-                "volume": {"type": (int, float), "min": 0.0, "max": 1.0},
+                "rate": {"type": float, "min": 0.5, "max": 2.0},
+                "volume": {"type": float, "min": 0.0, "max": 1.0},
                 "language": {"type": str},
-                "lead_in_seconds": {"type": (int, float), "min": 0.0, "max": 3.0},
-            },
-        },
-        "stt_settings": {
-            "type": dict,
-            "schema": {
-                "selected_microphone_name": {"type": str},
-                "selected_microphone_index": {"type": int, "min": -1, "max": 256},
-                "energy_threshold": {"type": (int, float), "min": 1, "max": 10000},
-                "dynamic_energy_threshold": {"type": bool},
-                "pause_threshold": {"type": (int, float), "min": 0.1, "max": 5.0},
-                "non_speaking_duration": {
-                    "type": (int, float),
-                    "min": 0.1,
-                    "max": 5.0,
-                },
-                "listen_timeout": {"type": (int, float), "min": 1.0, "max": 60.0},
-                "phrase_time_limit": {
-                    "type": (int, float),
-                    "min": 1.0,
-                    "max": 120.0,
-                },
-                "adjust_for_ambient_noise": {"type": bool},
-                "ambient_noise_duration": {
-                    "type": (int, float),
-                    "min": 0.1,
-                    "max": 5.0,
-                },
             },
         },
         "import_timeout": {"type": int, "min": 5, "max": 300},
@@ -321,21 +278,19 @@ class Config:
         logger.info("Configuration has been reset to defaults.")
 
     def get_window_geometry(self) -> Optional[tuple[int, int, int, int]]:
-        """Parse window_size and return as (width, height, x_offset, y_offset)."""
+        """Parse window_size and return as (width, height, x_offset, y_offset).
+        x_offset and y_offset are not in current config, returning 0,0 for them.
+        """
         size_str = self.get("window_size")
         if size_str and isinstance(size_str, str) and "x" in size_str:
             try:
-                match = re.fullmatch(r"(\d+)x(\d+)([+-]\d+)?([+-]\d+)?", size_str)
-                if not match:
-                    raise ValueError(size_str)
-                width = int(match.group(1))
-                height = int(match.group(2))
-                x_offset = int(match.group(3) or 0)
-                y_offset = int(match.group(4) or 0)
-                return width, height, x_offset, y_offset
+                width, height = map(int, size_str.split("x"))
+                # Assuming x_offset and y_offset are not stored, default to 0
+                # If they were stored, they'd be fetched similarly, e.g., self.get("window_position", "0,0").split(',')
+                return width, height, 0, 0
             except ValueError:
                 logger.error(
-                    f"Invalid window_size format: '{size_str}'. Expected 'WIDTHxHEIGHT' or 'WIDTHxHEIGHT+X+Y'."
+                    f"Invalid window_size format: '{size_str}'. Expected 'WIDTHxHEIGHT'."
                 )
                 return None
         return None

@@ -1,4 +1,3 @@
-# flake8: noqa: E402
 #!/usr/bin/env python3
 """Test the pandas parsing fix without GUI"""
 
@@ -110,7 +109,7 @@ def test_would_fail_on_text_file():
 
         # This should fail with pandas parsing error
         try:
-            _data = pd.read_csv(text_file)
+            data = pd.read_csv(text_file)
             print("✗ Unexpected success - pandas parsed text file!")
             return False
         except Exception as e:

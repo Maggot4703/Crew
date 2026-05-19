@@ -13,7 +13,8 @@ from typing import Any, Dict, Optional, Union
 
 # Import custom errors for proper error handling
 try:
-    from errors import ConfigError  # Relative import if errors is in the same package
+    from errors import \
+        ConfigError  # Relative import if errors is in the same package
 except ImportError:
     # Fallback if errors module not available or not in a package context
     class ConfigError(Exception):

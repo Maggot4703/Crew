@@ -10,7 +10,7 @@ from typing import Callable
 
 # Check if TTS is available
 try:
-    pass
+    import pyttsx3
 
     TTS_AVAILABLE = True
 except ImportError:

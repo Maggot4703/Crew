@@ -82,7 +82,10 @@ class DataManager:
             # Check if pandas is available
             try:
                 import pandas as pd
+
+                PANDAS_AVAILABLE = True
             except ImportError:
+                PANDAS_AVAILABLE = False
                 raise ImportError("Pandas is required to load data.")
 
             if ext == ".csv":
@@ -101,7 +104,7 @@ class DataManager:
             elif ext == ".txt":
                 # For text files, create single column data
                 with open(file_path, "r", encoding="utf-8") as f:
-                    lines = [line.strip() for line in f if line.strip()]
+                    lines = [l.strip() for l in f if l.strip()]
                 df = pd.DataFrame(lines, columns=["text_data"])
             else:
                 raise ValueError(f"Unsupported file extension: {ext}")
@@ -258,12 +261,12 @@ class DataManager:
 
                     col_index = self._state.headers.index(key_info.column)
 
-                    def make_sort_key(row: List[Any], col_index=col_index):
+                    def make_sort_key(row: List[Any]):
                         if col_index < len(row):
                             value = row[col_index]
                             try:
                                 return (0, float(value))
-                            except (ValueError, TypeError):
+                            except ValueError, TypeError:
                                 return (1, str(value).lower())
                         return (1, "")
 
@@ -284,7 +287,7 @@ class DataManager:
                     # Try to convert to number for proper numeric sorting
                     try:
                         return float(value)
-                    except (ValueError, TypeError):
+                    except ValueError, TypeError:
                         return str(value).lower()
                 return ""
 

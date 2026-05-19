@@ -1,4 +1,3 @@
-# flake8: noqa: E402
 import os
 import sys
 from unittest import mock
@@ -37,37 +36,16 @@ def test_cli_invalid_command(capsys):
 # Add more tests for each subcommand, patching file I/O as needed
 # Example for grid-image (does not actually write files)
 def test_cli_grid_image(monkeypatch, tmp_path, capsys):
-    from unittest.mock import MagicMock, patch
-
     dummy_image = tmp_path / "dummy.png"
+    dummy_image.write_bytes(b"\x89PNG\r\n\x1a\n")  # PNG header
     output_image = tmp_path / "output.png"
-
-    # Mock PIL.Image.open to return a mock image
-    mock_image = MagicMock()
-    mock_image.save = MagicMock()
-
-    # Create dummy image file (doesn't need to be valid)
-    dummy_image.write_bytes(b"\x89PNG\r\n\x1a\n")
-
-    # Patch PIL.Image.open and overlay_grid
-    with (
-        patch("PIL.Image.open", return_value=mock_image),
-        patch("cli.overlay_grid", return_value=mock_image),
-    ):
-        parser = cli_mod.create_cli_parser()
-        args = parser.parse_args(
-            [
-                "grid-image",
-                "--image-path",
-                str(dummy_image),
-                "--output-path",
-                str(output_image),
-            ]
-        )
-        code = cli_mod.run_cli(args)
-
-        assert code == 0, f"Exit code {code}"
-        mock_image.save.assert_called_once()
+    monkeypatch.setattr(
+        cli_mod, "overlay_grid", lambda *a, **kw: mock.Mock(save=lambda *a, **kw: None)
+    )
+    code = run_cli_with_args(["grid-image", str(dummy_image), str(output_image)])
+    out, err = capsys.readouterr()
+    assert code == 0
+    assert "saved" in out.lower()
 
 
 # More tests for other subcommands and error cases can be added similarly

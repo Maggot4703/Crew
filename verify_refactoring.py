@@ -11,7 +11,6 @@ def main():
 
     # Test imports
     try:
-        pass
 
         print("✅ All imports successful")
     except Exception as e:
