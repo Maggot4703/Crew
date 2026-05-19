@@ -20,7 +20,6 @@ Run with a command for CLI mode:
 import importlib
 import logging
 import os
-import subprocess
 import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
@@ -73,33 +72,57 @@ REQUIRED_PACKAGES = [
 
 
 def _auto_install_deps() -> None:
-    """Attempt to auto-install required dependencies if missing."""
+    """
+    Verify required dependencies are available. The previous behavior of attempting
+    to auto-install missing packages has been disabled to avoid unexpected changes
+    to the user's environment. If dependencies are missing, the function logs a
+    clear error and exits with status 1.
+    """
+    missing = []
     for mod, pip_name in REQUIRED_PACKAGES:
         if mod == "tkinter":
             try:
                 importlib.import_module("tkinter")
             except ImportError:
-                logger.error(
-                    "tkinter is not installed. Please install the "
-                    "python3-tk package via your system package manager."
-                )
-                show_user_error(
-                    "tkinter is not installed. Please install the "
-                    "python3-tk package via your system package manager."
-                )
-                sys.exit(1)
+                missing.append(("tkinter", "system package 'python3-tk'"))
             continue
         try:
             importlib.import_module(mod)
         except ImportError:
-            if pip_name:
-                try:
-                    subprocess.check_call(["python3", "-m", "pip", "install", pip_name])
-                    logger.info(f"Auto-installed missing dependency: {pip_name}")
-                except Exception as e:
-                    logger.error(f"Failed to auto-install {pip_name}: {e}")
-            else:
-                logger.warning(f"Dependency {mod} not found and no pip name provided.")
+            missing.append((mod, pip_name or "unknown"))
+
+    if not missing:
+        return
+
+    lines = ["Missing required dependencies for Crew:"]
+    for mod, pkg in missing:
+        if mod == "tkinter":
+            lines.append(
+                f" - {mod}: install your system package (e.g. Debian/Ubuntu: 'apt install python3-tk', Fedora/RHEL: 'dnf install python3-tkinter')"
+            )
+        elif pkg and pkg != "unknown":
+            lines.append(f" - {mod}: pip install {pkg}")
+        else:
+            lines.append(f" - {mod}: please install the appropriate package")
+
+    lines.extend(
+        [
+            "",
+            "Recommended actions:",
+            " - Use the workspace manager 'uv': run 'uv sync' in the workspace, then run Crew via 'uv run python CREW/Crew/Crew.py'",
+            " - Or install required packages into your Python environment: 'pip install <pkg>'",
+            " - For system packages (tkinter) use your OS package manager",
+        ]
+    )
+    msg = "\n".join(lines)
+    logger.error(msg)
+    # show_user_error is a UI helper that will present the message to the user in GUI contexts
+    try:
+        show_user_error(msg)
+    except Exception:
+        # If GUI helpers are not available, gracefully fall back to printing.
+        print(msg, file=sys.stderr)
+    sys.exit(1)
 
 
 # These .png files are to be 'CUT' into individual picture files
