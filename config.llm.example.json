@@ -5,5 +5,6 @@
         "ollama_base_url": "http://localhost:11434",
         "deepseek_base_url": "http://localhost:8000",
         "timeout": 30
-    }
+    },
+    "template_instructions": "Copy this file to config.json and edit host/model/timeouts to match your environment. Do NOT store secrets or machine-specific credentials in config.json if it will be committed. This is a safe example for onboarding and local debugging (mock DeepSeek at http://127.0.0.1:8000)."
 }
